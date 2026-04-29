@@ -405,6 +405,7 @@ export default function Tasks() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
+  const [dividers, setDividers] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -414,14 +415,16 @@ export default function Tasks() {
   });
 
   const load = async () => {
-    const [t, c, p] = await Promise.all([
-      supabase.from("tasks").select("*, clients(name), projects(name)").order("created_at", { ascending: false }),
+    const [t, c, p, d] = await Promise.all([
+      supabase.from("tasks").select("*, clients(name), projects(name)").order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id"),
+      supabase.from("kanban_dividers").select("*").order("position", { ascending: true }),
     ]);
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
     setProjects(p.data ?? []);
+    setDividers(d.data ?? []);
   };
   useEffect(() => { load(); }, []);
 
@@ -444,6 +447,39 @@ export default function Tasks() {
   };
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
+
+  const maxPositionFor = (status: Status) => {
+    const taskMax = Math.max(0, ...tasks.filter((t) => t.status === status).map((t) => t.position ?? 0));
+    const divMax = Math.max(0, ...dividers.filter((d) => d.status === status).map((d) => d.position ?? 0));
+    return Math.max(taskMax, divMax);
+  };
+
+  const addDivider = async (status: Status) => {
+    const position = maxPositionFor(status) + 10;
+    const { data, error } = await supabase
+      .from("kanban_dividers")
+      .insert({ status, label: "Nouveau séparateur", position })
+      .select()
+      .single();
+    if (error) return toast.error(error.message);
+    setDividers((ds) => [...ds, data]);
+  };
+
+  const updateDivider = async (id: string, label: string) => {
+    setDividers((ds) => ds.map((d) => (d.id === id ? { ...d, label } : d)));
+    const { error } = await supabase.from("kanban_dividers").update({ label }).eq("id", id);
+    if (error) toast.error(error.message);
+  };
+
+  const deleteDivider = async (id: string) => {
+    const prev = dividers;
+    setDividers((ds) => ds.filter((d) => d.id !== id));
+    const { error } = await supabase.from("kanban_dividers").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setDividers(prev);
+    }
+  };
 
   const updateTask = async (taskId: string, patch: any) => {
     const prev = tasks;
@@ -627,6 +663,10 @@ export default function Tasks() {
                   tasks={tasks.filter((t) => t.status === s)}
                   clients={clients}
                   onUpdate={updateTask}
+                  dividers={dividers.filter((d) => d.status === s)}
+                  onAddDivider={addDivider}
+                  onUpdateDivider={updateDivider}
+                  onDeleteDivider={deleteDivider}
                 />
               ))}
             </div>
