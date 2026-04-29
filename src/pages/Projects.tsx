@@ -90,20 +90,25 @@ export default function Projects() {
           Crée d'abord un client pour pouvoir créer un projet.
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((p) => (
-            <Link key={p.id} to={`/projets/${p.id}`}>
-              <Card className="p-5 hover:border-foreground/20 transition cursor-pointer h-full">
-                <div className="text-xs text-muted-foreground mb-1">{p.clients?.name}</div>
-                <div className="font-medium mb-2">{p.name}</div>
-                <div className="text-xs text-muted-foreground">{PROJECT_TYPE_LABEL[p.type]}</div>
-              </Card>
-            </Link>
-          ))}
-          {projects.length === 0 && (
-            <Card className="col-span-full p-12 text-center text-sm text-muted-foreground">Aucun projet</Card>
+        <Card className="overflow-hidden">
+          {projects.length === 0 ? (
+            <div className="p-12 text-center text-sm text-muted-foreground">Aucun projet</div>
+          ) : (
+            <div className="divide-y">
+              {projects.map((p) => (
+                <Link
+                  key={p.id}
+                  to={`/projets/${p.id}`}
+                  className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-secondary/40 items-center text-sm"
+                >
+                  <div className="col-span-6 truncate font-medium">{p.name}</div>
+                  <div className="col-span-4 text-muted-foreground truncate">{p.clients?.name ?? "—"}</div>
+                  <div className="col-span-2 text-xs text-muted-foreground truncate">{PROJECT_TYPE_LABEL[p.type]}</div>
+                </Link>
+              ))}
+            </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );
