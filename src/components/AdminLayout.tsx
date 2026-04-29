@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import QuickCapture from "@/components/QuickCapture";
+import GlobalTimer from "@/components/GlobalTimer";
 
 const nav = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
@@ -81,6 +82,7 @@ export default function AdminLayout() {
         <Outlet />
       </main>
       <QuickCapture open={captureOpen} onOpenChange={setCaptureOpen} />
+      <GlobalTimer />
     </div>
   );
 }
