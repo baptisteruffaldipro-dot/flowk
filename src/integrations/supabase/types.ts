@@ -258,6 +258,33 @@ export type Database = {
           },
         ]
       }
+      kanban_dividers: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          position: number
+          status: Database["public"]["Enums"]["task_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          position?: number
+          status: Database["public"]["Enums"]["task_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          position?: number
+          status?: Database["public"]["Enums"]["task_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       print_orders: {
         Row: {
           amount: number | null
@@ -548,6 +575,7 @@ export type Database = {
           hourly_rate: number | null
           id: string
           notes: string | null
+          position: number
           prestation: Database["public"]["Enums"]["prestation_type"]
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -570,6 +598,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           notes?: string | null
+          position?: number
           prestation?: Database["public"]["Enums"]["prestation_type"]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -592,6 +621,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           notes?: string | null
+          position?: number
           prestation?: Database["public"]["Enums"]["prestation_type"]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
