@@ -6,6 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -20,16 +23,19 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [notes, setNotes] = useState("");
+  const [clients, setClients] = useState<any[]>([]);
 
   const load = async () => {
     if (!id) return;
-    const [p, t] = await Promise.all([
+    const [p, t, c] = await Promise.all([
       supabase.from("projects").select("*, clients(id,name)").eq("id", id).maybeSingle(),
       supabase.from("tasks").select("id,title,status").eq("project_id", id).order("created_at", { ascending: false }),
+      supabase.from("clients").select("id,name").order("name"),
     ]);
     setProject(p.data);
     setNotes(p.data?.notes ?? "");
     setTasks(t.data ?? []);
+    setClients(c.data ?? []);
   };
   useEffect(() => { load(); }, [id]);
 
@@ -37,6 +43,21 @@ export default function ProjectDetail() {
     const { error } = await supabase.from("projects").update({ notes }).eq("id", id);
     if (error) toast.error(error.message);
     else toast.success("Enregistré");
+  };
+
+  const updateField = async (patch: any) => {
+    setProject({ ...project, ...patch });
+    const { error } = await supabase.from("projects").update(patch).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      load();
+    }
+  };
+
+  const saveName = async () => {
+    if (!project.name?.trim()) return toast.error("Nom requis");
+    const { error } = await supabase.from("projects").update({ name: project.name.trim() }).eq("id", id);
+    if (error) toast.error(error.message);
   };
 
   const deleteProject = async () => {
@@ -58,8 +79,8 @@ export default function ProjectDetail() {
         <ArrowLeft className="h-3 w-3" /> Projets
       </Link>
       <PageHeader
-        title={project.name}
-        description={`${project.clients?.name} • ${PROJECT_TYPE_LABEL[project.type]}`}
+        title="Projet"
+        description={project.clients?.name ?? ""}
         actions={
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -84,6 +105,37 @@ export default function ProjectDetail() {
           </AlertDialog>
         }
       />
+
+      <Card className="p-5 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Nom</Label>
+            <Input
+              value={project.name ?? ""}
+              onChange={(e) => setProject({ ...project, name: e.target.value })}
+              onBlur={saveName}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Client</Label>
+            <Select value={project.client_id} onValueChange={(v) => updateField({ client_id: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Catégorie</Label>
+            <Select value={project.type} onValueChange={(v) => updateField({ type: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(PROJECT_TYPE_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
