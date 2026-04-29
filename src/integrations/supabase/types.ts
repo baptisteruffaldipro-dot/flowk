@@ -90,6 +90,7 @@ export type Database = {
           format: string | null
           id: string
           observations: string | null
+          print_status: Database["public"]["Enums"]["bat_print_status"] | null
           project_id: string | null
           quantity: number | null
           reference: string | null
@@ -115,6 +116,7 @@ export type Database = {
           format?: string | null
           id?: string
           observations?: string | null
+          print_status?: Database["public"]["Enums"]["bat_print_status"] | null
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
@@ -140,6 +142,7 @@ export type Database = {
           format?: string | null
           id?: string
           observations?: string | null
+          print_status?: Database["public"]["Enums"]["bat_print_status"] | null
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
@@ -857,6 +860,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "client"
+      bat_print_status: "a_imprimer" | "en_impression" | "expedie" | "livre"
       bat_status: "brouillon" | "en_relecture" | "valide" | "rejete"
       billing_type: "horaire" | "forfait"
       capture_source:
@@ -1069,6 +1073,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "client"],
+      bat_print_status: ["a_imprimer", "en_impression", "expedie", "livre"],
       bat_status: ["brouillon", "en_relecture", "valide", "rejete"],
       billing_type: ["horaire", "forfait"],
       capture_source: [
