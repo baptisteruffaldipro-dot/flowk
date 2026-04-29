@@ -108,32 +108,34 @@ export const PRIORITY_COLOR: Record<string, string> = {
   devis: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30",
 };
 
-// Notion-inspired soft palette per status column
-export const STATUS_META: Record<string, { emoji: string; bg: string; ring: string; count: string }> = {
-  a_faire:      { emoji: "📁", bg: "bg-rose-950/30",    ring: "ring-rose-900/40",   count: "text-rose-400" },
-  aujourdhui:   { emoji: "👷", bg: "bg-amber-950/30",   ring: "ring-amber-900/40",  count: "text-amber-400" },
-  envoye:       { emoji: "📤", bg: "bg-sky-950/30",     ring: "ring-sky-900/40",    count: "text-sky-400" },
-  a_facturer:   { emoji: "💰", bg: "bg-emerald-950/30", ring: "ring-emerald-900/40",count: "text-emerald-400" },
-  archive:      { emoji: "✅", bg: "bg-emerald-950/30", ring: "ring-emerald-900/40",count: "text-emerald-400" },
+// Notion-inspired column palette — works on light AND dark themes
+export const STATUS_META: Record<string, { emoji: string; bg: string; ring: string; count: string; accent: string }> = {
+  a_faire:    { emoji: "📁", bg: "bg-rose-50 dark:bg-rose-950/40",       ring: "ring-rose-200/70 dark:ring-rose-900/50",       count: "text-rose-600 dark:text-rose-400",       accent: "bg-rose-400" },
+  aujourdhui: { emoji: "👷", bg: "bg-amber-50 dark:bg-amber-950/40",     ring: "ring-amber-200/70 dark:ring-amber-900/50",     count: "text-amber-600 dark:text-amber-400",     accent: "bg-amber-400" },
+  envoye:     { emoji: "📤", bg: "bg-sky-50 dark:bg-sky-950/40",         ring: "ring-sky-200/70 dark:ring-sky-900/50",         count: "text-sky-600 dark:text-sky-400",         accent: "bg-sky-400" },
+  a_facturer: { emoji: "💰", bg: "bg-emerald-50 dark:bg-emerald-950/40", ring: "ring-emerald-200/70 dark:ring-emerald-900/50", count: "text-emerald-600 dark:text-emerald-400", accent: "bg-emerald-400" },
+  archive:    { emoji: "✅", bg: "bg-stone-100 dark:bg-stone-900/40",    ring: "ring-stone-200 dark:ring-stone-800/60",        count: "text-stone-600 dark:text-stone-400",     accent: "bg-stone-400" },
 };
 
-// Pastel palette pool, picked deterministically from a string (client / prestation)
+// Tag palette — readable on both light & dark themes (Notion-style soft chips)
 const TAG_PALETTE = [
-  "bg-rose-500/20 text-rose-200 border-rose-500/30",
-  "bg-amber-500/20 text-amber-200 border-amber-500/30",
-  "bg-yellow-500/20 text-yellow-200 border-yellow-500/30",
-  "bg-lime-500/20 text-lime-200 border-lime-500/30",
-  "bg-emerald-500/20 text-emerald-200 border-emerald-500/30",
-  "bg-teal-500/20 text-teal-200 border-teal-500/30",
-  "bg-cyan-500/20 text-cyan-200 border-cyan-500/30",
-  "bg-sky-500/20 text-sky-200 border-sky-500/30",
-  "bg-blue-500/20 text-blue-200 border-blue-500/30",
-  "bg-indigo-500/20 text-indigo-200 border-indigo-500/30",
-  "bg-violet-500/20 text-violet-200 border-violet-500/30",
-  "bg-purple-500/20 text-purple-200 border-purple-500/30",
-  "bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-500/30",
-  "bg-pink-500/20 text-pink-200 border-pink-500/30",
-  "bg-stone-500/20 text-stone-200 border-stone-500/30",
+  "bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-500/30",
+  "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-500/20 dark:text-orange-200 dark:border-orange-500/30",
+  "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-500/30",
+  "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-200 dark:border-yellow-500/30",
+  "bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-500/20 dark:text-lime-200 dark:border-lime-500/30",
+  "bg-green-100 text-green-800 border-green-200 dark:bg-green-500/20 dark:text-green-200 dark:border-green-500/30",
+  "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-200 dark:border-emerald-500/30",
+  "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-500/20 dark:text-teal-200 dark:border-teal-500/30",
+  "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-500/20 dark:text-cyan-200 dark:border-cyan-500/30",
+  "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-500/20 dark:text-sky-200 dark:border-sky-500/30",
+  "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-500/20 dark:text-blue-200 dark:border-blue-500/30",
+  "bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-500/30",
+  "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-500/20 dark:text-violet-200 dark:border-violet-500/30",
+  "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-500/20 dark:text-purple-200 dark:border-purple-500/30",
+  "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200 dark:bg-fuchsia-500/20 dark:text-fuchsia-200 dark:border-fuchsia-500/30",
+  "bg-pink-100 text-pink-800 border-pink-200 dark:bg-pink-500/20 dark:text-pink-200 dark:border-pink-500/30",
+  "bg-stone-100 text-stone-700 border-stone-200 dark:bg-stone-500/20 dark:text-stone-200 dark:border-stone-500/30",
 ];
 
 export function tagColor(key?: string | null): string {
