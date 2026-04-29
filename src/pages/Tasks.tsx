@@ -283,8 +283,7 @@ function KanbanCard({
             )}
             <AddStickerMenu task={task} onUpdate={onUpdate} />
           </div>
-        </Card>
-      </Link>
+      </Card>
     </div>
   );
 }
