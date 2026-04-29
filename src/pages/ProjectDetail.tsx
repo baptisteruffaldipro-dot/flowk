@@ -24,20 +24,39 @@ export default function ProjectDetail() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [notes, setNotes] = useState("");
   const [clients, setClients] = useState<any[]>([]);
+  const [availableTasks, setAvailableTasks] = useState<any[]>([]);
+  const [linkValue, setLinkValue] = useState<string>("");
 
   const load = async () => {
     if (!id) return;
-    const [p, t, c] = await Promise.all([
+    const [p, t, c, all] = await Promise.all([
       supabase.from("projects").select("*, clients(id,name)").eq("id", id).maybeSingle(),
       supabase.from("tasks").select("id,title,status").eq("project_id", id).order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
+      supabase.from("tasks").select("id,title,status,client_id,project_id,clients(name)").is("project_id", null).order("created_at", { ascending: false }),
     ]);
     setProject(p.data);
     setNotes(p.data?.notes ?? "");
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
+    setAvailableTasks(all.data ?? []);
   };
   useEffect(() => { load(); }, [id]);
+
+  const linkTask = async (taskId: string) => {
+    if (!taskId || !id) return;
+    const t = availableTasks.find((x) => x.id === taskId);
+    const patch: any = { project_id: id };
+    // Aligner le client de la tâche sur celui du projet si manquant ou différent
+    if (project?.client_id && t?.client_id !== project.client_id) {
+      patch.client_id = project.client_id;
+    }
+    const { error } = await supabase.from("tasks").update(patch).eq("id", taskId);
+    if (error) return toast.error(error.message);
+    toast.success("Tâche liée au projet");
+    setLinkValue("");
+    load();
+  };
 
   const saveNotes = async () => {
     const { error } = await supabase.from("projects").update({ notes }).eq("id", id);
@@ -151,6 +170,34 @@ export default function ProjectDetail() {
 
         <Card className="p-5">
           <h2 className="text-sm font-semibold mb-3">Tâches du projet</h2>
+          <div className="mb-3">
+            <Label className="text-xs">Lier une tâche existante</Label>
+            <Select value={linkValue} onValueChange={linkTask}>
+              <SelectTrigger className="mt-1.5">
+                <SelectValue placeholder={availableTasks.length ? "Sélectionner une tâche…" : "Aucune tâche disponible"} />
+              </SelectTrigger>
+              <SelectContent>
+                {(() => {
+                  const sameClient = availableTasks.filter((t) => t.client_id === project?.client_id);
+                  const others = availableTasks.filter((t) => t.client_id !== project?.client_id);
+                  return (
+                    <>
+                      {sameClient.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.title}
+                        </SelectItem>
+                      ))}
+                      {others.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.title} — {t.clients?.name ?? "Sans client"}
+                        </SelectItem>
+                      ))}
+                    </>
+                  );
+                })()}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1">
             {tasks.length === 0 ? (
               <div className="text-sm text-muted-foreground py-6 text-center">Aucune tâche</div>
