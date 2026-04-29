@@ -5,29 +5,35 @@ import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL, INVOICE_STATUS_LABEL } from "@/lib/format";
-import { ArrowRight, Sun, AlertTriangle, Calendar } from "lucide-react";
+import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL } from "@/lib/format";
+import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
 
 type Task = { id: string; title: string; status: string; deadline: string | null; clients?: { name: string } | null };
 type Order = { id: string; description: string; status: string; clients?: { name: string } | null };
 type Inv = { id: string; label: string; amount: number; status: string; clients?: { name: string } | null };
+type Appt = { id: string; title: string; start_at: string; type: string; location: string | null; clients?: { name: string } | null };
+
+const APPT_TYPE_ICON: Record<string, any> = { visio: Video, presentiel: MapPin, telephone: Phone, autre: CalendarDays };
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [invoices, setInvoices] = useState<Inv[]>([]);
+  const [appointments, setAppointments] = useState<Appt[]>([]);
   const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, awaitingBat: 0 });
 
   const load = async () => {
-      const [t, o, i] = await Promise.all([
+      const [t, o, i, a] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
         supabase.from("print_orders").select("id,description,status,clients(name)").not("status", "in", "(livre)").order("created_at", { ascending: false }).limit(50),
         supabase.from("invoices").select("id,label,amount,status,clients(name)").neq("status", "payee").order("created_at", { ascending: false }).limit(50),
+        supabase.from("appointments").select("id,title,start_at,type,location,clients(name)").gte("start_at", new Date().toISOString()).neq("status", "annule").order("start_at", { ascending: true }).limit(8),
       ]);
       setTasks((t.data as any) ?? []);
       setOrders((o.data as any) ?? []);
       setInvoices((i.data as any) ?? []);
+      setAppointments((a.data as any) ?? []);
 
       // Compteurs globaux pour la barre de progression
       const allTasksRes = await supabase.from("tasks").select("status", { count: "exact" });
@@ -87,19 +93,26 @@ export default function Dashboard() {
           ))}
         </Column>
 
-        <Column title="Gestion budgétaire" href="/facturation" empty="Aucune facture en attente">
-          {invoices.slice(0, 8).map((i) => (
-            <Link key={i.id} to="/facturation" className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
-              <div className="flex items-start justify-between gap-2">
-                <div className="text-sm font-medium leading-snug truncate">{i.label}</div>
-                <div className="text-sm font-semibold shrink-0">{fmtMoney(Number(i.amount))}</div>
-              </div>
-              <div className="flex items-center justify-between mt-1">
-                <div className="text-xs text-muted-foreground truncate">{i.clients?.name ?? "—"}</div>
-                <Badge variant="outline" className="shrink-0 text-[10px]">{INVOICE_STATUS_LABEL[i.status]}</Badge>
-              </div>
-            </Link>
-          ))}
+        <Column title="Prochains rendez-vous" href="/rdv" empty="Aucun rendez-vous à venir">
+          {appointments.map((a) => {
+            const Icon = APPT_TYPE_ICON[a.type] ?? CalendarDays;
+            const dt = new Date(a.start_at);
+            const dateStr = dt.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short" });
+            const timeStr = dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+            return (
+              <Link key={a.id} to="/rdv" className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="text-sm font-medium leading-snug truncate">{a.title}</div>
+                  <Badge variant="outline" className="shrink-0 text-[10px] inline-flex items-center gap-1">
+                    <Icon className="h-2.5 w-2.5" /> {timeStr}
+                  </Badge>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 truncate">
+                  {dateStr} · {a.clients?.name ?? "—"}
+                </div>
+              </Link>
+            );
+          })}
         </Column>
       </div>
     </div>
