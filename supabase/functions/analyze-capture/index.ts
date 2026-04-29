@@ -27,10 +27,64 @@ Deno.serve(async (req) => {
     if (!(roles ?? []).some((r: any) => r.role === 'admin')) return json({ error: 'Forbidden' }, 403)
 
     const body = await req.json().catch(() => ({}))
-    const content: string = (body?.content ?? '').toString().trim()
+    let content: string = (body?.content ?? '').toString().trim()
     const source: string = (body?.source ?? 'autre').toString()
-    if (!content) return json({ error: 'content required' }, 400)
+    const imagePath: string | null = body?.image_path ? String(body.image_path) : null
+    if (!content && !imagePath) return json({ error: 'content or image_path required' }, 400)
     if (content.length > 8000) return json({ error: 'content too long' }, 400)
+
+    // If an image was uploaded, run OCR + description first via Gemini vision
+    let imageDataUrl: string | null = null
+    let ocrText = ''
+    if (imagePath) {
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      const adminClient = createClient(supabaseUrl, serviceKey)
+      const { data: signed, error: signErr } = await adminClient.storage
+        .from('quick-captures')
+        .createSignedUrl(imagePath, 60)
+      if (signErr || !signed?.signedUrl) return json({ error: 'Image introuvable' }, 400)
+
+      // Download and convert to base64 data URL for Gemini
+      const imgResp = await fetch(signed.signedUrl)
+      if (!imgResp.ok) return json({ error: 'Image illisible' }, 400)
+      const buf = new Uint8Array(await imgResp.arrayBuffer())
+      const mime = imgResp.headers.get('content-type') || 'image/png'
+      // base64 encode
+      let bin = ''
+      for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i])
+      const b64 = btoa(bin)
+      imageDataUrl = `data:${mime};base64,${b64}`
+
+      // First call: extract text + visual description from the image
+      const visionResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${lovableKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: "Tu es un OCR + analyste visuel. Extrais TOUT le texte visible dans l'image (mails, SMS, devis, captures…), puis ajoute une courte description visuelle (1 phrase). Réponds en français, format:\nTEXTE:\n<texte brut tel quel>\n\nVISUEL:\n<description courte>" },
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: content ? `Contexte fourni par l'utilisateur: ${content}` : 'Analyse cette image.' },
+                { type: 'image_url', image_url: { url: imageDataUrl } },
+              ],
+            },
+          ],
+        }),
+      })
+      if (visionResp.status === 429) return json({ error: 'Trop de requêtes IA, réessayez bientôt.' }, 429)
+      if (visionResp.status === 402) return json({ error: 'Crédits IA épuisés. Ajoutez-en dans Lovable.' }, 402)
+      if (!visionResp.ok) {
+        const t = await visionResp.text()
+        console.error('Vision error', visionResp.status, t)
+        return json({ error: 'Lecture image impossible' }, 500)
+      }
+      const visionData = await visionResp.json()
+      ocrText = visionData?.choices?.[0]?.message?.content ?? ''
+      // Merge into content for downstream analysis
+      content = (content ? content + '\n\n' : '') + `[Contenu image]\n${ocrText}`
+    }
 
     // Fetch lightweight context for matching (last 200 of each)
     const [{ data: clients }, { data: projects }, { data: tasks }, { data: orders }] = await Promise.all([
@@ -141,7 +195,7 @@ Réponds STRICTEMENT via l'outil "propose_capture_actions". Choisis null pour le
     let parsed: any
     try { parsed = JSON.parse(call.function.arguments) } catch { return json({ error: 'JSON invalide' }, 500) }
 
-    return json({ ok: true, ...parsed })
+    return json({ ok: true, ...parsed, ocr_text: ocrText || undefined, content_used: content })
   } catch (e: any) {
     console.error(e)
     return json({ error: e?.message ?? 'Erreur serveur' }, 500)
