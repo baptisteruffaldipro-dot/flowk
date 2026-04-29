@@ -45,9 +45,13 @@ function KanbanCard({ task }: { task: any }) {
               {task.clients.name}
             </div>
           )}
-          <div className="text-sm font-medium leading-snug">{task.title}</div>
+          <div className="text-sm font-semibold leading-snug">
+            {task.projects?.name ?? task.title}
+          </div>
           {task.projects?.name && (
-            <div className="text-xs text-muted-foreground truncate mt-1">{task.projects.name}</div>
+            <Badge variant="secondary" className="mt-2 text-[10px] font-normal">
+              {task.title}
+            </Badge>
           )}
         </Card>
       </Link>
