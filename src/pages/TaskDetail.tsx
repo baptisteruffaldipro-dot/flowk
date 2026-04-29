@@ -18,7 +18,7 @@ import {
 import { ArrowLeft, Play, Pause, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { STATUS_LABEL, PRESTATION_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
+import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -198,6 +198,15 @@ export default function TaskDetail() {
           </Select>
         </Card>
         <Card className="p-4">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Priorité</div>
+          <Select value={task.priority ?? "secondaire"} onValueChange={(v) => updateField({ priority: v })}>
+            <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(PRIORITY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Card>
+        <Card className="p-4">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Prestation</div>
           <Select value={task.prestation} onValueChange={(v) => updateField({ prestation: v })}>
             <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
@@ -206,6 +215,9 @@ export default function TaskDetail() {
             </SelectContent>
           </Select>
         </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <Card className="p-4">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Deadline</div>
           <Input type="date" value={task.deadline ?? ""} onChange={(e) => updateField({ deadline: e.target.value || null })} className="mt-2" />

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import { STATUS_LABEL, PRESTATION_LABEL, fmtDate, fmtMinutes } from "@/lib/format";
+import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, fmtDate, fmtMinutes } from "@/lib/format";
 import {
   DndContext,
   DragEndEvent,
@@ -25,7 +25,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 
-const STATUSES = ["a_faire", "aujourdhui", "en_attente", "envoye", "a_facturer", "archive"] as const;
+const STATUSES = ["a_faire", "aujourdhui", "envoye", "a_facturer", "archive"] as const;
 type Status = typeof STATUSES[number];
 
 function KanbanCard({ task }: { task: any }) {
@@ -52,6 +52,11 @@ function KanbanCard({ task }: { task: any }) {
             {task.projects?.name && (
               <Badge variant="secondary" className="text-[10px] font-normal">
                 {PRESTATION_LABEL[task.prestation] ?? task.title}
+              </Badge>
+            )}
+            {task.priority && task.priority !== "secondaire" && (
+              <Badge variant="outline" className={`text-[10px] font-normal ${PRIORITY_COLOR[task.priority]}`}>
+                {PRIORITY_LABEL[task.priority]}
               </Badge>
             )}
           </div>
@@ -89,7 +94,7 @@ export default function Tasks() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
-    title: "", client_id: "", project_id: "", prestation: "creation",
+    title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire",
     deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "",
   });
 
@@ -132,6 +137,7 @@ export default function Tasks() {
       client_id: form.client_id || null,
       project_id: form.project_id || null,
       prestation: form.prestation,
+      priority: form.priority,
       deadline: form.deadline || null,
       billing_type: form.billing_type,
       hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
@@ -142,7 +148,7 @@ export default function Tasks() {
     if (error) return toast.error(error.message);
     toast.success("Tâche créée");
     setOpen(false);
-    setForm({ title: "", client_id: "", project_id: "", prestation: "creation", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
+    setForm({ title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
     load();
   };
 
@@ -196,9 +202,18 @@ export default function Tasks() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Deadline</Label>
-                    <Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+                    <Label className="text-xs">Priorité</Label>
+                    <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(PRIORITY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Deadline</Label>
+                  <Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1.5">
@@ -251,10 +266,16 @@ export default function Tasks() {
                     <div className="col-span-5 truncate font-medium">{t.projects?.name ?? t.title}</div>
                     <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
                     <div className="col-span-1 text-muted-foreground text-xs">{PRESTATION_LABEL[t.prestation]}</div>
-                    <div className="col-span-2 text-muted-foreground text-xs flex items-center gap-1">
+                    <div className="col-span-2">
+                      {t.priority && t.priority !== "secondaire" && (
+                        <Badge variant="outline" className={`text-[10px] ${PRIORITY_COLOR[t.priority]}`}>
+                          {PRIORITY_LABEL[t.priority]}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="col-span-1 text-muted-foreground text-xs flex items-center gap-1">
                       {t.deadline && <Calendar className="h-3 w-3" />}{fmtDate(t.deadline)}
                     </div>
-                    <div className="col-span-1 text-xs text-muted-foreground">{fmtMinutes(t.total_minutes)}</div>
                     <div className="col-span-1"><Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status]}</Badge></div>
                   </Link>
                 ))}

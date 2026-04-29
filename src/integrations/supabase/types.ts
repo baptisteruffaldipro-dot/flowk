@@ -549,6 +549,7 @@ export type Database = {
           id: string
           notes: string | null
           prestation: Database["public"]["Enums"]["prestation_type"]
+          priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           timer_started_at: string | null
@@ -570,6 +571,7 @@ export type Database = {
           id?: string
           notes?: string | null
           prestation?: Database["public"]["Enums"]["prestation_type"]
+          priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           timer_started_at?: string | null
@@ -591,6 +593,7 @@ export type Database = {
           id?: string
           notes?: string | null
           prestation?: Database["public"]["Enums"]["prestation_type"]
+          priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           timer_started_at?: string | null
@@ -747,6 +750,11 @@ export type Database = {
         | "web"
         | "impression"
         | "autre"
+      task_priority:
+        | "en_priorite"
+        | "secondaire"
+        | "attente_retour_client"
+        | "devis"
       task_status:
         | "a_faire"
         | "en_attente"
@@ -917,6 +925,12 @@ export const Constants = {
         "web",
         "impression",
         "autre",
+      ],
+      task_priority: [
+        "en_priorite",
+        "secondaire",
+        "attente_retour_client",
+        "devis",
       ],
       task_status: [
         "a_faire",
