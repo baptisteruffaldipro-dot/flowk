@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import { STATUS_LABEL, PRESTATION_LABEL, fmtDate, fmtMinutes } from "@/lib/format";
+import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, fmtDate, fmtMinutes } from "@/lib/format";
 import {
   DndContext,
   DragEndEvent,
@@ -25,7 +25,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 
-const STATUSES = ["a_faire", "aujourdhui", "en_attente", "envoye", "a_facturer", "archive"] as const;
+const STATUSES = ["a_faire", "aujourdhui", "envoye", "a_facturer", "archive"] as const;
 type Status = typeof STATUSES[number];
 
 function KanbanCard({ task }: { task: any }) {
@@ -52,6 +52,11 @@ function KanbanCard({ task }: { task: any }) {
             {task.projects?.name && (
               <Badge variant="secondary" className="text-[10px] font-normal">
                 {PRESTATION_LABEL[task.prestation] ?? task.title}
+              </Badge>
+            )}
+            {task.priority && task.priority !== "secondaire" && (
+              <Badge variant="outline" className={`text-[10px] font-normal ${PRIORITY_COLOR[task.priority]}`}>
+                {PRIORITY_LABEL[task.priority]}
               </Badge>
             )}
           </div>
