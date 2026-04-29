@@ -414,6 +414,35 @@ export default function TaskDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={newClientDialog} onOpenChange={setNewClientDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouveau client</DialogTitle>
+            <DialogDescription>Créer un client et l'assigner à cette tâche.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Nom *</Label>
+              <Input value={newClientName} onChange={(e) => setNewClientName(e.target.value)} autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Société</Label>
+              <Input value={newClientCompany} onChange={(e) => setNewClientCompany(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Email</Label>
+              <Input type="email" value={newClientEmail} onChange={(e) => setNewClientEmail(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewClientDialog(false)}>Annuler</Button>
+            <Button onClick={createClient} disabled={!newClientName.trim() || creatingClient}>
+              {creatingClient ? "Création…" : "Créer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
