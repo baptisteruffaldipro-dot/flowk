@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL, INVOICE_STATUS_LABEL } from "@/lib/format";
 import { ArrowRight } from "lucide-react";
+import QuickCreate from "@/components/QuickCreate";
 
 type Task = { id: string; title: string; status: string; deadline: string | null; clients?: { name: string } | null };
 type Order = { id: string; description: string; status: string; clients?: { name: string } | null };
@@ -17,8 +18,7 @@ export default function Dashboard() {
   const [invoices, setInvoices] = useState<Inv[]>([]);
   const [stats, setStats] = useState({ today: 0, pendingRevenue: 0, awaitingBat: 0 });
 
-  useEffect(() => {
-    (async () => {
+  const load = async () => {
       const [t, o, i] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
         supabase.from("print_orders").select("id,description,status,clients(name)").not("status", "in", "(livre)").order("created_at", { ascending: false }).limit(50),
@@ -33,12 +33,16 @@ export default function Dashboard() {
       const pendingRev = ((i.data as any) ?? []).filter((x: Inv) => x.status === "a_facturer" || x.status === "facturee").reduce((s: number, x: Inv) => s + Number(x.amount), 0);
       const awaitBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "bat_en_attente").length;
       setStats({ today: todayTasks, pendingRevenue: pendingRev, awaitingBat: awaitBat });
-    })();
-  }, []);
+  };
+  useEffect(() => { load(); }, []);
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <PageHeader title="Dashboard" description="Vue d'ensemble de ton activité" />
+
+      <div className="mb-6">
+        <QuickCreate onCreated={load} />
+      </div>
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <StatCard label="Tâches aujourd'hui" value={String(stats.today)} />
