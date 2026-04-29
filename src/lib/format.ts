@@ -52,3 +52,6 @@ export const PROJECT_TYPE_LABEL: Record<string, string> = {
   impression: "Impression",
   autre: "Autre",
 };
+
+export const fmtDateTime = (d?: string | null) =>
+  d ? new Date(d).toLocaleString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
