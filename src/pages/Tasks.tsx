@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Calendar, Tag } from "lucide-react";
+import { Plus, Calendar, Tag, GripVertical, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes } from "@/lib/format";
 import {
@@ -293,14 +293,29 @@ function KanbanColumn({
   tasks,
   clients,
   onUpdate,
+  dividers,
+  onAddDivider,
+  onUpdateDivider,
+  onDeleteDivider,
 }: {
   status: Status;
   tasks: any[];
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
+  dividers: any[];
+  onAddDivider: (status: Status) => void;
+  onUpdateDivider: (id: string, label: string) => void;
+  onDeleteDivider: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
+
+  // Merge tasks and dividers by position
+  const items: Array<{ kind: "task"; data: any; pos: number } | { kind: "divider"; data: any; pos: number }> = [
+    ...tasks.map((t) => ({ kind: "task" as const, data: t, pos: t.position ?? 0 })),
+    ...dividers.map((d) => ({ kind: "divider" as const, data: d, pos: d.position ?? 0 })),
+  ].sort((a, b) => a.pos - b.pos);
+
   return (
     <div
       ref={setNodeRef}
@@ -314,11 +329,74 @@ function KanbanColumn({
           <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length}</span>
         </div>
         <div className="space-y-2 min-h-[80px]">
-          {tasks.map((t) => (
-            <KanbanCard key={t.id} task={t} clients={clients} onUpdate={onUpdate} />
-          ))}
+          {items.map((it) =>
+            it.kind === "task" ? (
+              <KanbanCard key={`t-${it.data.id}`} task={it.data} clients={clients} onUpdate={onUpdate} />
+            ) : (
+              <DividerRow
+                key={`d-${it.data.id}`}
+                divider={it.data}
+                onRename={onUpdateDivider}
+                onDelete={onDeleteDivider}
+              />
+            )
+          )}
+          <button
+            type="button"
+            onClick={() => onAddDivider(status)}
+            className="w-full mt-2 py-1.5 px-2 text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-accent/40 rounded inline-flex items-center justify-center gap-1 border border-dashed border-border/40"
+          >
+            <Plus className="h-3 w-3" /> Séparateur
+          </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DividerRow({
+  divider,
+  onRename,
+  onDelete,
+}: {
+  divider: any;
+  onRename: (id: string, label: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(divider.label);
+  useEffect(() => setValue(divider.label), [divider.label]);
+  return (
+    <div className="group rounded-md bg-background/40 border border-border/40 px-2 py-1.5 flex items-center gap-1">
+      {editing ? (
+        <Input
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => { setEditing(false); if (value.trim() && value !== divider.label) onRename(divider.id, value.trim()); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); }
+            if (e.key === "Escape") { setValue(divider.label); setEditing(false); }
+          }}
+          className="h-6 text-[11px] uppercase tracking-wider font-semibold"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="flex-1 text-left text-[11px] uppercase tracking-wider font-semibold text-foreground/80 truncate"
+        >
+          {divider.label}
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => onDelete(divider.id)}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition"
+        aria-label="Supprimer le séparateur"
+      >
+        <Trash2 className="h-3 w-3" />
+      </button>
     </div>
   );
 }
@@ -327,6 +405,7 @@ export default function Tasks() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
+  const [dividers, setDividers] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -336,14 +415,16 @@ export default function Tasks() {
   });
 
   const load = async () => {
-    const [t, c, p] = await Promise.all([
-      supabase.from("tasks").select("*, clients(name), projects(name)").order("created_at", { ascending: false }),
+    const [t, c, p, d] = await Promise.all([
+      supabase.from("tasks").select("*, clients(name), projects(name)").order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id"),
+      supabase.from("kanban_dividers").select("*").order("position", { ascending: true }),
     ]);
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
     setProjects(p.data ?? []);
+    setDividers(d.data ?? []);
   };
   useEffect(() => { load(); }, []);
 
@@ -366,6 +447,39 @@ export default function Tasks() {
   };
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
+
+  const maxPositionFor = (status: Status) => {
+    const taskMax = Math.max(0, ...tasks.filter((t) => t.status === status).map((t) => t.position ?? 0));
+    const divMax = Math.max(0, ...dividers.filter((d) => d.status === status).map((d) => d.position ?? 0));
+    return Math.max(taskMax, divMax);
+  };
+
+  const addDivider = async (status: Status) => {
+    const position = maxPositionFor(status) + 10;
+    const { data, error } = await supabase
+      .from("kanban_dividers")
+      .insert({ status, label: "Nouveau séparateur", position })
+      .select()
+      .single();
+    if (error) return toast.error(error.message);
+    setDividers((ds) => [...ds, data]);
+  };
+
+  const updateDivider = async (id: string, label: string) => {
+    setDividers((ds) => ds.map((d) => (d.id === id ? { ...d, label } : d)));
+    const { error } = await supabase.from("kanban_dividers").update({ label }).eq("id", id);
+    if (error) toast.error(error.message);
+  };
+
+  const deleteDivider = async (id: string) => {
+    const prev = dividers;
+    setDividers((ds) => ds.filter((d) => d.id !== id));
+    const { error } = await supabase.from("kanban_dividers").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setDividers(prev);
+    }
+  };
 
   const updateTask = async (taskId: string, patch: any) => {
     const prev = tasks;
@@ -549,6 +663,10 @@ export default function Tasks() {
                   tasks={tasks.filter((t) => t.status === s)}
                   clients={clients}
                   onUpdate={updateTask}
+                  dividers={dividers.filter((d) => d.status === s)}
+                  onAddDivider={addDivider}
+                  onUpdateDivider={updateDivider}
+                  onDeleteDivider={deleteDivider}
                 />
               ))}
             </div>
