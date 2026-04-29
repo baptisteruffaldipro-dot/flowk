@@ -738,6 +738,43 @@ export type Database = {
         | "moodboard"
         | "ajustements"
         | "autre"
+        | "illustration"
+        | "crea"
+        | "logotype"
+        | "a_commander"
+        | "recherche_graphique"
+        | "post_insta"
+        | "affiche"
+        | "motion"
+        | "projet"
+        | "shooting"
+        | "vecto"
+        | "reel"
+        | "sideprojet"
+        | "en_attente_client"
+        | "livrables"
+        | "gestion"
+        | "prospect"
+        | "developpement"
+        | "conception_graphique"
+        | "rendez_vous"
+        | "croquis"
+        | "test"
+        | "programmer"
+        | "maj_carte"
+        | "rappeler"
+        | "refonte"
+        | "vectorisation"
+        | "covering"
+        | "impaye"
+        | "prevoir_rdv"
+        | "organiser"
+        | "etiquette"
+        | "acompte"
+        | "facture_a_payer"
+        | "facture_a_faire"
+        | "strategie"
+        | "traduction"
       print_status:
         | "bat_en_attente"
         | "bat_valide"
@@ -911,6 +948,43 @@ export const Constants = {
         "moodboard",
         "ajustements",
         "autre",
+        "illustration",
+        "crea",
+        "logotype",
+        "a_commander",
+        "recherche_graphique",
+        "post_insta",
+        "affiche",
+        "motion",
+        "projet",
+        "shooting",
+        "vecto",
+        "reel",
+        "sideprojet",
+        "en_attente_client",
+        "livrables",
+        "gestion",
+        "prospect",
+        "developpement",
+        "conception_graphique",
+        "rendez_vous",
+        "croquis",
+        "test",
+        "programmer",
+        "maj_carte",
+        "rappeler",
+        "refonte",
+        "vectorisation",
+        "covering",
+        "impaye",
+        "prevoir_rdv",
+        "organiser",
+        "etiquette",
+        "acompte",
+        "facture_a_payer",
+        "facture_a_faire",
+        "strategie",
+        "traduction",
       ],
       print_status: [
         "bat_en_attente",
