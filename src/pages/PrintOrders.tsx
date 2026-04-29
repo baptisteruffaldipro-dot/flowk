@@ -45,7 +45,7 @@ export default function PrintOrders() {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from("print_orders").update({ status }).eq("id", id);
+    await supabase.from("print_orders").update({ status: status as any }).eq("id", id);
     load();
   };
 
