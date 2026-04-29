@@ -439,16 +439,85 @@ export default function Tasks() {
     setActiveId(null);
     const { active, over } = e;
     if (!over) return;
-    const newStatus = String(over.id) as Status;
-    if (!STATUSES.includes(newStatus)) return;
+    const overId = String(over.id);
     const task = tasks.find((t) => t.id === String(active.id));
-    if (!task || task.status === newStatus) return;
-    const prev = tasks;
-    setTasks((ts) => ts.map((t) => (t.id === String(active.id) ? { ...t, status: newStatus } : t)));
-    const { error } = await supabase.from("tasks").update({ status: newStatus }).eq("id", String(active.id));
-    if (error) {
-      toast.error(error.message);
-      setTasks(prev);
+    if (!task) return;
+
+    // Drop on a divider → place task just after that divider
+    if (overId.startsWith("divider:")) {
+      const dividerId = overId.slice("divider:".length);
+      const divider = dividers.find((d) => d.id === dividerId);
+      if (!divider) return;
+      const newStatus = divider.status as Status;
+      const newPosition = (divider.position ?? 0) + 1;
+
+      // Shift everything in this column with position >= newPosition by +10
+      const shiftedTasks = tasks.map((t) =>
+        t.id === task.id
+          ? { ...t, status: newStatus, position: newPosition }
+          : t.status === newStatus && (t.position ?? 0) >= newPosition
+          ? { ...t, position: (t.position ?? 0) + 10 }
+          : t
+      );
+      const shiftedDividers = dividers.map((d) =>
+        d.id !== dividerId && d.status === newStatus && (d.position ?? 0) >= newPosition
+          ? { ...d, position: (d.position ?? 0) + 10 }
+          : d
+      );
+      const prev = { tasks, dividers };
+      setTasks(shiftedTasks);
+      setDividers(shiftedDividers);
+
+      // Persist: update moved task + shifted siblings
+      const taskUpdates = shiftedTasks.filter((t) => {
+        const old = tasks.find((o) => o.id === t.id);
+        return old && (old.status !== t.status || (old.position ?? 0) !== (t.position ?? 0));
+      });
+      const dividerUpdates = shiftedDividers.filter((d) => {
+        const old = dividers.find((o) => o.id === d.id);
+        return old && (old.position ?? 0) !== (d.position ?? 0);
+      });
+
+      const errors: string[] = [];
+      for (const t of taskUpdates) {
+        const { error } = await supabase
+          .from("tasks")
+          .update({ status: t.status, position: t.position })
+          .eq("id", t.id);
+        if (error) errors.push(error.message);
+      }
+      for (const d of dividerUpdates) {
+        const { error } = await supabase
+          .from("kanban_dividers")
+          .update({ position: d.position })
+          .eq("id", d.id);
+        if (error) errors.push(error.message);
+      }
+      if (errors.length) {
+        toast.error(errors[0]);
+        setTasks(prev.tasks);
+        setDividers(prev.dividers);
+      }
+      return;
+    }
+
+    // Drop on a column background → just change status (place at end)
+    if (STATUSES.includes(overId as Status)) {
+      const newStatus = overId as Status;
+      if (task.status === newStatus) return;
+      const newPosition = maxPositionFor(newStatus) + 10;
+      const prev = tasks;
+      setTasks((ts) =>
+        ts.map((t) => (t.id === task.id ? { ...t, status: newStatus, position: newPosition } : t))
+      );
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: newStatus, position: newPosition })
+        .eq("id", task.id);
+      if (error) {
+        toast.error(error.message);
+        setTasks(prev);
+      }
     }
   };
 
