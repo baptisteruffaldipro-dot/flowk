@@ -143,7 +143,13 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
       setProjectId(result.link.project_id ?? "");
       setTaskId(result.link.task_id ?? "");
       setPrintOrderId(result.link.print_order_id ?? "");
-      setSelectedActions(new Set([0]));
+      // Pré-cocher en priorité les actions de création (tâche / projet)
+      const preselect = new Set<number>();
+      result.actions.forEach((a, i) => {
+        if (a.type === "create_task" || a.type === "create_project") preselect.add(i);
+      });
+      if (preselect.size === 0 && result.actions.length > 0) preselect.add(0);
+      setSelectedActions(preselect);
 
       await supabase.from("quick_captures").update({
         ai_summary: result.summary,
