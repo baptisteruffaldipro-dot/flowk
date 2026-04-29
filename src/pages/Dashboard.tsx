@@ -5,7 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL, INVOICE_STATUS_LABEL } from "@/lib/format";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sun, AlertTriangle, Calendar } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
 
 type Task = { id: string; title: string; status: string; deadline: string | null; clients?: { name: string } | null };
@@ -43,6 +43,8 @@ export default function Dashboard() {
       <div className="mb-6">
         <QuickCreate onCreated={load} />
       </div>
+
+      <TodayBoard tasks={tasks} />
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <StatCard label="Tâches aujourd'hui" value={String(stats.today)} />
@@ -100,6 +102,89 @@ function StatCard({ label, value }: { label: string; value: string }) {
       <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
       <div className="text-2xl font-semibold mt-2">{value}</div>
     </Card>
+  );
+}
+
+function TodayBoard({ tasks }: { tasks: Task[] }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const isToday = (t: Task) => t.status === "aujourdhui" || t.deadline === today;
+  const isOverdue = (t: Task) => !!t.deadline && t.deadline < today && t.status !== "envoye" && t.status !== "archive";
+
+  const todayTasks = tasks.filter(isToday);
+  const overdueTasks = tasks.filter((t) => isOverdue(t) && !isToday(t));
+
+  return (
+    <Card className="p-5 mb-6 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center">
+            <Sun className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold tracking-tight">Aujourd'hui</h2>
+            <p className="text-xs text-muted-foreground">
+              {todayTasks.length} tâche{todayTasks.length > 1 ? "s" : ""} à faire
+              {overdueTasks.length > 0 && ` • ${overdueTasks.length} en retard`}
+            </p>
+          </div>
+        </div>
+        <Link to="/taches" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          Toutes les tâches <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+
+      {todayTasks.length === 0 && overdueTasks.length === 0 ? (
+        <div className="text-center py-8 text-sm text-muted-foreground">
+          🎉 Rien de prévu pour aujourd'hui
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {overdueTasks.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-destructive uppercase tracking-wider">
+                <AlertTriangle className="h-3.5 w-3.5" /> En retard
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {overdueTasks.map((t) => <TodayCard key={t.id} task={t} variant="overdue" />)}
+              </div>
+            </div>
+          )}
+          {todayTasks.length > 0 && (
+            <div>
+              {overdueTasks.length > 0 && (
+                <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <Calendar className="h-3.5 w-3.5" /> Aujourd'hui
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {todayTasks.map((t) => <TodayCard key={t.id} task={t} variant="today" />)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function TodayCard({ task, variant }: { task: Task; variant: "today" | "overdue" }) {
+  return (
+    <Link
+      to={`/taches/${task.id}`}
+      className={`block p-3 rounded-md border bg-card hover:bg-secondary/60 transition ${
+        variant === "overdue" ? "border-destructive/40" : "border-border"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-sm font-medium leading-snug truncate">{task.title}</div>
+        <Badge variant={variant === "overdue" ? "destructive" : "default"} className="shrink-0 text-[10px]">
+          {variant === "overdue" && task.deadline
+            ? `Retard ${new Date(task.deadline).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}`
+            : STATUS_LABEL[task.status]}
+        </Badge>
+      </div>
+      <div className="text-xs text-muted-foreground mt-1 truncate">{task.clients?.name ?? "—"}</div>
+    </Link>
   );
 }
 
