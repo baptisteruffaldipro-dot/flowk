@@ -16,10 +16,13 @@ import Tasks from "./pages/Tasks";
 import TaskDetail from "./pages/TaskDetail";
 import PrintOrders from "./pages/PrintOrders";
 import PrintOrderDetail from "./pages/PrintOrderDetail";
+import Bats from "./pages/Bats";
+import BatDetail from "./pages/BatDetail";
 import Invoices from "./pages/Invoices";
 import ClientPortal from "./pages/ClientPortal";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
 import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
+import ClientBatPortal from "./pages/ClientBatPortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +39,7 @@ const App = () => (
             <Route path="/portail" element={<ProtectedRoute requireRole="client"><ClientPortal /></ProtectedRoute>} />
             <Route path="/portail/projet/:id" element={<ProtectedRoute requireRole="client"><ClientProjectPortal /></ProtectedRoute>} />
             <Route path="/portail/impression/:id" element={<ProtectedRoute requireRole="client"><ClientPrintOrderPortal /></ProtectedRoute>} />
+            <Route path="/portail/bat/:id" element={<ProtectedRoute requireRole="client"><ClientBatPortal /></ProtectedRoute>} />
             <Route element={<ProtectedRoute requireRole="admin"><AdminLayout /></ProtectedRoute>}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/clients" element={<Clients />} />
@@ -46,6 +50,8 @@ const App = () => (
               <Route path="/taches/:id" element={<TaskDetail />} />
               <Route path="/impressions" element={<PrintOrders />} />
               <Route path="/impressions/:id" element={<PrintOrderDetail />} />
+              <Route path="/bats" element={<Bats />} />
+              <Route path="/bats/:id" element={<BatDetail />} />
               <Route path="/facturation" element={<Invoices />} />
             </Route>
             <Route path="*" element={<NotFound />} />
