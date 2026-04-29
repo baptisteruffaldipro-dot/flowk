@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, fmtDate, fmtMinutes } from "@/lib/format";
+import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes } from "@/lib/format";
 import {
   DndContext,
   DragEndEvent,
@@ -30,6 +30,8 @@ type Status = typeof STATUSES[number];
 
 function KanbanCard({ task }: { task: any }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
+  const projectName = task.projects?.name ?? task.title;
+  const showPrestation = !!task.projects?.name;
   return (
     <div
       ref={setNodeRef}
@@ -39,23 +41,26 @@ function KanbanCard({ task }: { task: any }) {
       className="touch-none"
     >
       <Link to={`/taches/${task.id}`} onClick={(e) => isDragging && e.preventDefault()}>
-        <Card className="p-3 hover:border-foreground/20 transition cursor-grab active:cursor-grabbing">
-          <div className="text-sm font-semibold leading-snug mb-1.5">
-            {task.projects?.name ?? task.title}
+        <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition cursor-grab active:cursor-grabbing rounded-lg">
+          <div className="flex items-start gap-2 mb-3">
+            <span className="text-base leading-none mt-0.5">📄</span>
+            <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
+              {projectName}
+            </div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {task.clients?.name && (
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+              <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(task.clients.name)}`}>
                 {task.clients.name}
-              </span>
+              </Badge>
             )}
-            {task.projects?.name && (
-              <Badge variant="secondary" className="text-[10px] font-normal">
-                {PRESTATION_LABEL[task.prestation] ?? task.title}
+            {showPrestation && (
+              <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(task.prestation)}`}>
+                {PRESTATION_LABEL[task.prestation] ?? "Autre"}
               </Badge>
             )}
             {task.priority && task.priority !== "secondaire" && (
-              <Badge variant="outline" className={`text-[10px] font-normal ${PRIORITY_COLOR[task.priority]}`}>
+              <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${PRIORITY_COLOR[task.priority]}`}>
                 {PRIORITY_LABEL[task.priority]}
               </Badge>
             )}
@@ -68,21 +73,23 @@ function KanbanCard({ task }: { task: any }) {
 
 function KanbanColumn({ status, tasks }: { status: Status; tasks: any[] }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
+  const meta = STATUS_META[status];
   return (
-    <Card
+    <div
       ref={setNodeRef}
-      className={`p-3 bg-secondary/30 transition ${isOver ? "ring-2 ring-primary" : ""}`}
+      className={`rounded-xl p-3 ${meta.bg} ring-1 ${meta.ring} transition ${isOver ? "ring-2 ring-primary" : ""}`}
     >
-      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 px-1 flex items-center justify-between">
-        <span>{STATUS_LABEL[status]}</span>
-        <span className="text-muted-foreground/60">{tasks.length}</span>
+      <div className="flex items-center gap-2 mb-3 px-1.5 pt-1">
+        <span className="text-base leading-none">{meta.emoji}</span>
+        <span className="text-sm font-semibold text-foreground">{STATUS_LABEL[status]}</span>
+        <span className={`text-sm font-semibold ${meta.count}`}>{tasks.length}</span>
       </div>
-      <div className="space-y-2 min-h-[60px]">
+      <div className="space-y-2.5 min-h-[80px]">
         {tasks.map((t) => (
           <KanbanCard key={t.id} task={t} />
         ))}
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -293,14 +300,14 @@ export default function Tasks() {
             </div>
             <DragOverlay>
               {activeTask ? (
-                <Card className="p-3 shadow-lg cursor-grabbing">
-                  <div className="text-sm font-semibold leading-snug mb-1">
+                <Card className="p-4 shadow-2xl cursor-grabbing rotate-2 border border-border">
+                  <div className="text-[15px] font-semibold leading-snug mb-2">
                     {activeTask.projects?.name ?? activeTask.title}
                   </div>
                   {activeTask.clients?.name && (
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                    <Badge variant="outline" className={`text-[11px] ${tagColor(activeTask.clients.name)}`}>
                       {activeTask.clients.name}
-                    </div>
+                    </Badge>
                   )}
                 </Card>
               ) : null}
