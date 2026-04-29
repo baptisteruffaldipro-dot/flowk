@@ -377,6 +377,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          archived: boolean
           brief: Json | null
           brief_submitted_at: string | null
           client_id: string
@@ -389,6 +390,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean
           brief?: Json | null
           brief_submitted_at?: string | null
           client_id: string
@@ -401,6 +403,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean
           brief?: Json | null
           brief_submitted_at?: string | null
           client_id?: string
