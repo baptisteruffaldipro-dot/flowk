@@ -37,7 +37,7 @@ function DeadlineBadge({ value, onChange }: { value: string; onChange: (v: strin
         <button
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onClick={(e) => e.stopPropagation()}
           className="focus:outline-none"
         >
           <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5 cursor-pointer hover:opacity-80 inline-flex items-center gap-1">
@@ -89,7 +89,7 @@ function AddStickerMenu({
         <button
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onClick={(e) => e.stopPropagation()}
           className="focus:outline-none"
           aria-label="Ajouter un sticker"
         >
@@ -172,7 +172,7 @@ function QuickEditBadge({
         <button
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          onClick={(e) => e.stopPropagation()}
           className="focus:outline-none"
         >
           <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 cursor-pointer hover:opacity-80 ${className}`}>
