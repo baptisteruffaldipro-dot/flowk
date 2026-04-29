@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -225,24 +225,27 @@ function KanbanCard({
   onUpdate: (id: string, patch: any) => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
+  const navigate = useNavigate();
   const projectName = task.projects?.name ?? task.title;
   const showPrestation = !!task.projects?.name;
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
       style={{ opacity: isDragging ? 0.4 : 1 }}
       className="touch-none"
     >
-      <Link to={`/taches/${task.id}`} onClick={(e) => isDragging && e.preventDefault()}>
-        <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition cursor-grab active:cursor-grabbing rounded-lg">
-          <div className="flex items-start gap-2 mb-3">
-            <span className="text-base leading-none mt-0.5">📄</span>
-            <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
-              {projectName}
-            </div>
+      <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
+        <div
+          {...listeners}
+          {...attributes}
+          onClick={() => { if (!isDragging) navigate(`/taches/${task.id}`); }}
+          className="flex items-start gap-2 mb-3 cursor-grab active:cursor-grabbing"
+        >
+          <span className="text-base leading-none mt-0.5">📄</span>
+          <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
+            {projectName}
           </div>
+        </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             <QuickEditBadge
               className={tagColor(task.clients?.name ?? "—")}
@@ -280,8 +283,7 @@ function KanbanCard({
             )}
             <AddStickerMenu task={task} onUpdate={onUpdate} />
           </div>
-        </Card>
-      </Link>
+      </Card>
     </div>
   );
 }
