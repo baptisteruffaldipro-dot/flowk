@@ -563,6 +563,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          acompte_invoiced: boolean
           billing_type: Database["public"]["Enums"]["billing_type"]
           client_id: string | null
           client_revisions_count: number
@@ -586,6 +587,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          acompte_invoiced?: boolean
           billing_type?: Database["public"]["Enums"]["billing_type"]
           client_id?: string | null
           client_revisions_count?: number
@@ -609,6 +611,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          acompte_invoiced?: boolean
           billing_type?: Database["public"]["Enums"]["billing_type"]
           client_id?: string | null
           client_revisions_count?: number

@@ -304,6 +304,16 @@ export default function TaskDetail() {
               />
             </div>
           </div>
+          <div className="mt-4 flex items-center gap-2">
+            <Checkbox
+              id="acompte_invoiced"
+              checked={!!task.acompte_invoiced}
+              onCheckedChange={(v) => updateField({ acompte_invoiced: !!v })}
+            />
+            <Label htmlFor="acompte_invoiced" className="text-sm cursor-pointer">
+              Acompte facturé
+            </Label>
+          </div>
         </Card>
 
         <Card className="p-5">

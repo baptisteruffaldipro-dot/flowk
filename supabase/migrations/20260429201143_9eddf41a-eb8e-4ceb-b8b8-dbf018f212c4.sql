@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS acompte_invoiced boolean NOT NULL DEFAULT false;
