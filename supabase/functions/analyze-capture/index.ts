@@ -154,8 +154,7 @@ Réponds STRICTEMENT via l'outil "propose_capture_actions". Choisis null pour le
                 additionalProperties: false,
                 required: ['type', 'label'],
                 properties: {
-                  type: { type: 'string', enum: ['add_note','create_task','create_subtask','count_revision','set_deadline','create_client','create_print_order'] },
-                  // Étendu plus bas : project
+                  type: { type: 'string', enum: ['add_note','create_task','create_project','create_subtask','count_revision','set_deadline','create_client','create_print_order'] },
                   label: { type: 'string' },
                   target: { type: 'string', enum: ['task','project','print_order','client'] },
                   target_id: { type: ['string', 'null'] },
