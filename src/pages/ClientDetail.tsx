@@ -5,7 +5,11 @@ import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL, INVOICE_STATUS_LABEL } from "@/lib/format";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase as sb } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useState as useStateLocal } from "react";
 
 export default function ClientDetail() {
   const { id } = useParams();
@@ -14,6 +18,7 @@ export default function ClientDetail() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [inviting, setInviting] = useStateLocal(false);
 
   useEffect(() => {
     if (!id) return;
@@ -35,12 +40,40 @@ export default function ClientDetail() {
 
   if (!client) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
+  const invite = async () => {
+    if (!client.email) return toast.error("Ajoutez d'abord un email au client");
+    setInviting(true);
+    const { data, error } = await sb.functions.invoke("invite-client", { body: { client_id: client.id } });
+    setInviting(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error ?? error?.message ?? "Échec de l'invitation");
+      return;
+    }
+    toast.success("Invitation envoyée par email");
+    const { data: c } = await sb.from("clients").select("*").eq("id", client.id).maybeSingle();
+    setClient(c);
+  };
+
   return (
     <div className="p-8 max-w-[1400px] mx-auto">
       <Link to="/clients" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4">
         <ArrowLeft className="h-3 w-3" /> Clients
       </Link>
-      <PageHeader title={client.name} description={client.company ?? undefined} />
+      <PageHeader
+        title={client.name}
+        description={client.company ?? undefined}
+        actions={
+          client.portal_user_id ? (
+            <span className="text-xs inline-flex items-center gap-1 text-emerald-600">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Portail activé
+            </span>
+          ) : (
+            <Button size="sm" variant="outline" onClick={invite} disabled={inviting || !client.email}>
+              <Mail className="h-4 w-4 mr-1" /> {inviting ? "Envoi…" : "Inviter au portail"}
+            </Button>
+          )
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <InfoCard label="Email" value={client.email ?? "—"} />
