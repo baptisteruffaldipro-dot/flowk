@@ -29,6 +29,121 @@ import {
 const STATUSES = ["a_faire", "aujourdhui", "envoye", "a_facturer", "archive"] as const;
 type Status = typeof STATUSES[number];
 
+function DeadlineBadge({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          className="focus:outline-none"
+        >
+          <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5 cursor-pointer hover:opacity-80 inline-flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            {fmtDate(value)}
+          </Badge>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-auto p-2"
+        align="start"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Input
+          type="date"
+          value={value ?? ""}
+          onChange={(e) => onChange(e.target.value || null)}
+          className="h-8 text-xs"
+        />
+        <button
+          type="button"
+          onClick={() => { onChange(null); setOpen(false); }}
+          className="w-full text-left px-2 py-1 mt-1 text-xs rounded hover:bg-accent text-muted-foreground"
+        >
+          Retirer la deadline
+        </button>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function AddStickerMenu({
+  task,
+  onUpdate,
+}: {
+  task: any;
+  onUpdate: (id: string, patch: any) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const showPriority = !task.priority || task.priority === "secondaire";
+  const showDeadline = !task.deadline;
+
+  if (!showPriority && !showDeadline) return null;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          className="focus:outline-none"
+          aria-label="Ajouter un sticker"
+        >
+          <Badge variant="outline" className="text-[11px] font-medium px-1.5 py-0.5 cursor-pointer hover:bg-accent border-dashed text-muted-foreground inline-flex items-center gap-0.5">
+            <Plus className="h-3 w-3" />
+          </Badge>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-48 p-1"
+        align="start"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground">Ajouter</div>
+        {showPriority && (
+          <div className="space-y-0.5">
+            {Object.entries(PRIORITY_LABEL)
+              .filter(([k]) => k !== "secondaire")
+              .map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => { onUpdate(task.id, { priority: k }); setOpen(false); }}
+                  className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-accent inline-flex items-center gap-2"
+                >
+                  <Tag className="h-3 w-3" />
+                  Priorité : {label as string}
+                </button>
+              ))}
+          </div>
+        )}
+        {showDeadline && (
+          <div className="px-2 py-1.5">
+            <Label className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+              <Calendar className="h-3 w-3" /> Deadline
+            </Label>
+            <Input
+              type="date"
+              className="h-8 text-xs mt-1"
+              onChange={(e) => {
+                if (e.target.value) {
+                  onUpdate(task.id, { deadline: e.target.value });
+                  setOpen(false);
+                }
+              }}
+            />
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function QuickEditBadge({
   children,
   className,
