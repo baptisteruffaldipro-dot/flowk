@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          location: string | null
+          notes: string | null
+          project_id: string | null
+          start_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          title: string
+          type: Database["public"]["Enums"]["appointment_type"]
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          location?: string | null
+          notes?: string | null
+          project_id?: string | null
+          start_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          title: string
+          type?: Database["public"]["Enums"]["appointment_type"]
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          location?: string | null
+          notes?: string | null
+          project_id?: string | null
+          start_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["appointment_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bat_annotations: {
         Row: {
           author_id: string | null
@@ -884,6 +929,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "client"
+      appointment_status: "planifie" | "confirme" | "annule" | "termine"
+      appointment_type: "visio" | "presentiel" | "telephone" | "autre"
       bat_print_status: "a_imprimer" | "en_impression" | "expedie" | "livre"
       bat_status: "brouillon" | "en_relecture" | "valide" | "rejete"
       billing_type: "horaire" | "forfait"
@@ -1097,6 +1144,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "client"],
+      appointment_status: ["planifie", "confirme", "annule", "termine"],
+      appointment_type: ["visio", "presentiel", "telephone", "autre"],
       bat_print_status: ["a_imprimer", "en_impression", "expedie", "livre"],
       bat_status: ["brouillon", "en_relecture", "valide", "rejete"],
       billing_type: ["horaire", "forfait"],

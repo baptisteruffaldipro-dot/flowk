@@ -20,6 +20,7 @@ import Bats from "./pages/Bats";
 import BatDetail from "./pages/BatDetail";
 import Invoices from "./pages/Invoices";
 import Inbox from "./pages/Inbox";
+import Appointments from "./pages/Appointments";
 import ClientPortal from "./pages/ClientPortal";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
 import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/bats/:id" element={<BatDetail />} />
               <Route path="/facturation" element={<Invoices />} />
               <Route path="/inbox" element={<Inbox />} />
+              <Route path="/rdv" element={<Appointments />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
