@@ -17,6 +17,8 @@ export const STATUS_LABEL: Record<string, string> = {
   aujourdhui: "Aujourd'hui",
   envoye: "Envoyé",
   a_facturer: "À facturer",
+  facturee: "Facturée",
+  payee: "Payée",
   archive: "Archivé",
 };
 
