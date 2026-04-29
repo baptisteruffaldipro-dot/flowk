@@ -400,12 +400,20 @@ export type Database = {
           bat_uploaded_at: string | null
           bat_validated_at: string | null
           client_id: string
+          colors: string | null
           created_at: string
           deliverables: Json
           description: string
+          finitions: string | null
+          format: string | null
+          grammage: string | null
           id: string
+          observations: string | null
           project_id: string | null
+          quantity: number | null
+          reference: string | null
           status: Database["public"]["Enums"]["print_status"]
+          support: string | null
           total_minutes: number
           updated_at: string
         }
@@ -417,12 +425,20 @@ export type Database = {
           bat_uploaded_at?: string | null
           bat_validated_at?: string | null
           client_id: string
+          colors?: string | null
           created_at?: string
           deliverables?: Json
           description: string
+          finitions?: string | null
+          format?: string | null
+          grammage?: string | null
           id?: string
+          observations?: string | null
           project_id?: string | null
+          quantity?: number | null
+          reference?: string | null
           status?: Database["public"]["Enums"]["print_status"]
+          support?: string | null
           total_minutes?: number
           updated_at?: string
         }
@@ -434,12 +450,20 @@ export type Database = {
           bat_uploaded_at?: string | null
           bat_validated_at?: string | null
           client_id?: string
+          colors?: string | null
           created_at?: string
           deliverables?: Json
           description?: string
+          finitions?: string | null
+          format?: string | null
+          grammage?: string | null
           id?: string
+          observations?: string | null
           project_id?: string | null
+          quantity?: number | null
+          reference?: string | null
           status?: Database["public"]["Enums"]["print_status"]
+          support?: string | null
           total_minutes?: number
           updated_at?: string
         }

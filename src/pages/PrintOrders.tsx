@@ -18,7 +18,10 @@ export default function PrintOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<any>({ description: "", client_id: "", amount: "", status: "bat_en_attente" });
+  const [form, setForm] = useState<any>({
+    description: "", client_id: "", amount: "", status: "bat_en_attente",
+    reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "",
+  });
 
   const load = async () => {
     const [b, o, c] = await Promise.all([
@@ -52,11 +55,19 @@ export default function PrintOrders() {
       client_id: form.client_id,
       amount: form.amount ? Number(form.amount) : null,
       status: form.status,
+      reference: form.reference.trim() || null,
+      quantity: form.quantity ? Number(form.quantity) : null,
+      format: form.format.trim() || null,
+      grammage: form.grammage.trim() || null,
+      support: form.support.trim() || null,
+      colors: form.colors.trim() || null,
+      finitions: form.finitions.trim() || null,
+      observations: form.observations.trim() || null,
     });
     if (error) return toast.error(error.message);
     toast.success("Commande créée");
     setOpen(false);
-    setForm({ description: "", client_id: "", amount: "", status: "bat_en_attente" });
+    setForm({ description: "", client_id: "", amount: "", status: "bat_en_attente", reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "" });
     load();
   };
 
@@ -70,12 +81,16 @@ export default function PrintOrders() {
             <DialogTrigger asChild>
               <Button size="sm" disabled={clients.length === 0}><Plus className="h-4 w-4 mr-1" /> Nouvelle commande</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Nouvelle commande d'impression</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">Description *</Label>
                   <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Référence</Label>
+                  <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} maxLength={50} placeholder="CMD-2026-001" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Client *</Label>
@@ -85,8 +100,36 @@ export default function PrintOrders() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
+                  <Label className="text-xs">Quantité</Label>
+                  <Input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Format</Label>
+                  <Input value={form.format} onChange={(e) => setForm({ ...form, format: e.target.value })} placeholder="A4, 100x200mm…" maxLength={100} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Grammage</Label>
+                  <Input value={form.grammage} onChange={(e) => setForm({ ...form, grammage: e.target.value })} placeholder="300g, 170g…" maxLength={50} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Support / papier</Label>
+                  <Input value={form.support} onChange={(e) => setForm({ ...form, support: e.target.value })} placeholder="Couché mat, Offset…" maxLength={100} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Couleurs</Label>
+                  <Input value={form.colors} onChange={(e) => setForm({ ...form, colors: e.target.value })} placeholder="Quadri R°/V°" maxLength={100} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Finitions</Label>
+                  <Input value={form.finitions} onChange={(e) => setForm({ ...form, finitions: e.target.value })} placeholder="Pelliculage, vernis…" maxLength={150} />
+                </div>
+                <div className="space-y-1.5">
                   <Label className="text-xs">Montant (€)</Label>
                   <Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+                </div>
+                <div className="space-y-1.5 col-span-2">
+                  <Label className="text-xs">Observations</Label>
+                  <Input value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} maxLength={500} />
                 </div>
               </div>
               <DialogFooter><Button onClick={createOrder}>Créer</Button></DialogFooter>
