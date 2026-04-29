@@ -77,7 +77,7 @@ function KanbanColumn({ status, tasks }: { status: Status; tasks: any[] }) {
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl overflow-hidden ${meta.bg} ring-1 ${meta.ring} transition ${isOver ? "ring-2 ring-primary" : ""}`}
+      className={`rounded-xl overflow-hidden flex-shrink-0 w-80 ${meta.bg} ring-1 ${meta.ring} transition ${isOver ? "ring-2 ring-primary" : ""}`}
     >
       <div className={`h-1 w-full ${meta.accent}`} />
       <div className="p-3">
