@@ -23,12 +23,13 @@ interface Annotation {
 interface Props {
   printOrderId?: string;
   taskId?: string;
+  batId?: string;
   filePath: string; // path in 'bat' bucket
   canAnnotate: boolean;
   canResolve: boolean; // admin can resolve
 }
 
-export default function BatViewer({ printOrderId, taskId, filePath, canAnnotate, canResolve }: Props) {
+export default function BatViewer({ printOrderId, taskId, batId, filePath, canAnnotate, canResolve }: Props) {
   const { user } = useAuth();
   const [url, setUrl] = useState<string | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
@@ -48,7 +49,8 @@ export default function BatViewer({ printOrderId, taskId, filePath, canAnnotate,
 
   const loadAnnotations = async () => {
     let q = supabase.from("bat_annotations").select("*").order("created_at", { ascending: true });
-    if (printOrderId) q = q.eq("print_order_id", printOrderId);
+    if (batId) q = q.eq("bat_id", batId);
+    else if (printOrderId) q = q.eq("print_order_id", printOrderId);
     else if (taskId) q = q.eq("task_id", taskId);
     const { data } = await q;
     setAnnotations((data ?? []) as Annotation[]);
@@ -58,7 +60,7 @@ export default function BatViewer({ printOrderId, taskId, filePath, canAnnotate,
     loadUrl();
     loadAnnotations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filePath, printOrderId, taskId]);
+  }, [filePath, printOrderId, taskId, batId]);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!canAnnotate || !isImage) return;
@@ -78,6 +80,7 @@ export default function BatViewer({ printOrderId, taskId, filePath, canAnnotate,
       comment: draft.trim(),
       author_id: user?.id ?? null,
     };
+    if (batId) payload.bat_id = batId;
     if (printOrderId) payload.print_order_id = printOrderId;
     if (taskId) payload.task_id = taskId;
     const { error } = await supabase.from("bat_annotations").insert(payload);

@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, FolderOpen, Printer, Receipt, ChevronRight, AlertCircle } from "lucide-react";
-import { fmtMoney, INVOICE_STATUS_LABEL, PROJECT_TYPE_LABEL, PRINT_STATUS_LABEL } from "@/lib/format";
+import { LogOut, FolderOpen, Printer, Receipt, ChevronRight, AlertCircle, FileCheck2 } from "lucide-react";
+import { fmtMoney, INVOICE_STATUS_LABEL, PROJECT_TYPE_LABEL, PRINT_STATUS_LABEL, BAT_STATUS_LABEL } from "@/lib/format";
 
 export default function ClientPortal() {
   const { signOut, user } = useAuth();
@@ -15,26 +15,32 @@ export default function ClientPortal() {
   const [projects, setProjects] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [bats, setBats] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
       const { data: c } = await supabase.from("clients").select("*").maybeSingle();
       setClient(c);
       if (!c) return;
-      const [p, o, i] = await Promise.all([
+      const [p, o, i, b] = await Promise.all([
         supabase.from("projects").select("*").eq("client_id", c.id).order("created_at", { ascending: false }),
         supabase.from("print_orders").select("*").eq("client_id", c.id).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*").eq("client_id", c.id).order("created_at", { ascending: false }),
+        supabase.from("bats").select("*").eq("client_id", c.id).order("created_at", { ascending: false }),
       ]);
       setProjects(p.data ?? []);
       setOrders(o.data ?? []);
       setInvoices(i.data ?? []);
+      setBats(b.data ?? []);
     })();
   }, []);
 
   const handleSignOut = async () => { await signOut(); navigate("/auth"); };
 
-  const batToValidate = orders.filter((o) => o.bat_file_path && !o.bat_validated_at && !o.bat_rejected_at);
+  const batToValidate = [
+    ...orders.filter((o) => o.bat_file_path && !o.bat_validated_at && !o.bat_rejected_at),
+    ...bats.filter((b) => b.status === "en_relecture"),
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,6 +94,22 @@ export default function ClientPortal() {
                   <Badge className="bg-amber-500 hover:bg-amber-500 text-[10px]">BAT à valider</Badge>
                 )}
                 {o.bat_validated_at && <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">BAT validé</Badge>}
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </Link>
+          ))}
+        </Section>
+
+        <Section icon={<FileCheck2 className="h-4 w-4" />} title="Bons à tirer" count={bats.length}>
+          {bats.length === 0 ? <Empty text="Aucun BAT" /> : bats.map((b) => (
+            <Link key={b.id} to={`/portail/bat/${b.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-secondary/60 transition">
+              <div className="min-w-0">
+                <div className="text-sm font-medium truncate">{b.title}</div>
+                <div className="text-xs text-muted-foreground">{BAT_STATUS_LABEL[b.status]}</div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {b.status === "en_relecture" && <Badge className="bg-amber-500 hover:bg-amber-500 text-[10px]">À valider</Badge>}
+                {b.status === "valide" && <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Validé</Badge>}
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
             </Link>

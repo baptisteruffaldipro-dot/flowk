@@ -80,6 +80,13 @@ export const PRINT_STATUS_LABEL: Record<string, string> = {
   livre: "Livré",
 };
 
+export const BAT_STATUS_LABEL: Record<string, string> = {
+  brouillon: "Brouillon",
+  en_relecture: "En relecture client",
+  valide: "Validé",
+  rejete: "Rejeté",
+};
+
 export const INVOICE_STATUS_LABEL: Record<string, string> = {
   a_facturer: "À facturer",
   facturee: "Facturée",

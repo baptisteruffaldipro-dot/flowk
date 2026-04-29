@@ -17,6 +17,7 @@ export type Database = {
       bat_annotations: {
         Row: {
           author_id: string | null
+          bat_id: string | null
           comment: string
           created_at: string
           id: string
@@ -29,6 +30,7 @@ export type Database = {
         }
         Insert: {
           author_id?: string | null
+          bat_id?: string | null
           comment: string
           created_at?: string
           id?: string
@@ -41,6 +43,7 @@ export type Database = {
         }
         Update: {
           author_id?: string | null
+          bat_id?: string | null
           comment?: string
           created_at?: string
           id?: string
@@ -53,6 +56,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "bat_annotations_bat_id_fkey"
+            columns: ["bat_id"]
+            isOneToOne: false
+            referencedRelation: "bats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bat_annotations_print_order_id_fkey"
             columns: ["print_order_id"]
             isOneToOne: false
@@ -64,6 +74,99 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bats: {
+        Row: {
+          client_id: string
+          colors: string | null
+          created_at: string
+          description: string | null
+          file_path: string | null
+          file_uploaded_at: string | null
+          finitions: string | null
+          format: string | null
+          id: string
+          observations: string | null
+          project_id: string | null
+          quantity: number | null
+          reference: string | null
+          rejected_at: string | null
+          rejection_reason: string | null
+          sent_at: string | null
+          signed_at: string | null
+          signed_by_name: string | null
+          status: Database["public"]["Enums"]["bat_status"]
+          support: string | null
+          title: string
+          updated_at: string
+          validated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          colors?: string | null
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          file_uploaded_at?: string | null
+          finitions?: string | null
+          format?: string | null
+          id?: string
+          observations?: string | null
+          project_id?: string | null
+          quantity?: number | null
+          reference?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          status?: Database["public"]["Enums"]["bat_status"]
+          support?: string | null
+          title: string
+          updated_at?: string
+          validated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          colors?: string | null
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          file_uploaded_at?: string | null
+          finitions?: string | null
+          format?: string | null
+          id?: string
+          observations?: string | null
+          project_id?: string | null
+          quantity?: number | null
+          reference?: string | null
+          rejected_at?: string | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          signed_at?: string | null
+          signed_by_name?: string | null
+          status?: Database["public"]["Enums"]["bat_status"]
+          support?: string | null
+          title?: string
+          updated_at?: string
+          validated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bats_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bats_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -754,6 +857,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "client"
+      bat_status: "brouillon" | "en_relecture" | "valide" | "rejete"
       billing_type: "horaire" | "forfait"
       capture_source:
         | "sms"
@@ -963,6 +1067,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "client"],
+      bat_status: ["brouillon", "en_relecture", "valide", "rejete"],
       billing_type: ["horaire", "forfait"],
       capture_source: [
         "sms",
