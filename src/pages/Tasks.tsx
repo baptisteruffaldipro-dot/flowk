@@ -40,19 +40,21 @@ function KanbanCard({ task }: { task: any }) {
     >
       <Link to={`/taches/${task.id}`} onClick={(e) => isDragging && e.preventDefault()}>
         <Card className="p-3 hover:border-foreground/20 transition cursor-grab active:cursor-grabbing">
-          {task.clients?.name && (
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 truncate">
-              {task.clients.name}
-            </div>
-          )}
-          <div className="text-sm font-semibold leading-snug">
+          <div className="text-sm font-semibold leading-snug mb-1.5">
             {task.projects?.name ?? task.title}
           </div>
-          {task.projects?.name && (
-            <Badge variant="secondary" className="mt-2 text-[10px] font-normal">
-              {task.title}
-            </Badge>
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {task.clients?.name && (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                {task.clients.name}
+              </span>
+            )}
+            {task.projects?.name && (
+              <Badge variant="secondary" className="text-[10px] font-normal">
+                {PRESTATION_LABEL[task.prestation] ?? task.title}
+              </Badge>
+            )}
+          </div>
         </Card>
       </Link>
     </div>
@@ -246,7 +248,7 @@ export default function Tasks() {
               <div className="divide-y">
                 {tasks.map((t) => (
                   <Link key={t.id} to={`/taches/${t.id}`} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-secondary/40 items-center text-sm">
-                    <div className="col-span-5 truncate font-medium">{t.title}</div>
+                    <div className="col-span-5 truncate font-medium">{t.projects?.name ?? t.title}</div>
                     <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
                     <div className="col-span-1 text-muted-foreground text-xs">{PRESTATION_LABEL[t.prestation]}</div>
                     <div className="col-span-2 text-muted-foreground text-xs flex items-center gap-1">
@@ -271,12 +273,14 @@ export default function Tasks() {
             <DragOverlay>
               {activeTask ? (
                 <Card className="p-3 shadow-lg cursor-grabbing">
+                  <div className="text-sm font-semibold leading-snug mb-1">
+                    {activeTask.projects?.name ?? activeTask.title}
+                  </div>
                   {activeTask.clients?.name && (
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 truncate">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
                       {activeTask.clients.name}
                     </div>
                   )}
-                  <div className="text-sm font-medium leading-snug">{activeTask.title}</div>
                 </Card>
               ) : null}
             </DragOverlay>

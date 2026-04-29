@@ -133,8 +133,8 @@ export default function TaskDetail() {
         <ArrowLeft className="h-3 w-3" /> Tâches
       </Link>
       <PageHeader
-        title={task.title}
-        description={`${task.clients?.name ?? "Sans client"} ${task.projects?.name ? `• ${task.projects.name}` : ""}`}
+        title={task.projects?.name ?? task.title}
+        description={`${task.clients?.name ?? "Sans client"} • ${PRESTATION_LABEL[task.prestation] ?? task.title}`}
         actions={
           running ? (
             <Button onClick={stopTimer} variant="destructive" size="sm" className="gap-2">
