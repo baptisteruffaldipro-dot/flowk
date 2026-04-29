@@ -32,6 +32,11 @@ export default function TaskDetail() {
   const [tick, setTick] = useState(0);
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
+  const [newClientDialog, setNewClientDialog] = useState(false);
+  const [newClientName, setNewClientName] = useState("");
+  const [newClientEmail, setNewClientEmail] = useState("");
+  const [newClientCompany, setNewClientCompany] = useState("");
+  const [creatingClient, setCreatingClient] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -49,6 +54,32 @@ export default function TaskDetail() {
     setProjects(p.data ?? []);
   };
   useEffect(() => { load(); }, [id]);
+
+  const createClient = async () => {
+    if (!newClientName.trim()) return;
+    setCreatingClient(true);
+    const { data, error } = await supabase
+      .from("clients")
+      .insert({
+        name: newClientName.trim(),
+        email: newClientEmail.trim() || null,
+        company: newClientCompany.trim() || null,
+      })
+      .select("id,name")
+      .single();
+    setCreatingClient(false);
+    if (error || !data) {
+      toast.error("Erreur lors de la création du client");
+      return;
+    }
+    setClients((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+    await updateField({ client_id: data.id, project_id: null });
+    setNewClientDialog(false);
+    setNewClientName("");
+    setNewClientEmail("");
+    setNewClientCompany("");
+    toast.success("Client créé");
+  };
 
   // Tick every second when timer is running
   useEffect(() => {
@@ -209,11 +240,20 @@ export default function TaskDetail() {
             <Label className="text-xs">Client</Label>
             <Select
               value={task.client_id ?? ""}
-              onValueChange={(v) => updateField({ client_id: v, project_id: null })}
+              onValueChange={(v) => {
+                if (v === "__new__") {
+                  setNewClientDialog(true);
+                  return;
+                }
+                updateField({ client_id: v, project_id: null });
+              }}
             >
               <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
               <SelectContent>
                 {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                <SelectItem value="__new__" className="text-primary font-medium">
+                  + Nouveau client…
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -371,6 +411,35 @@ export default function TaskDetail() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEstimDialog(false)}>Annuler</Button>
             <Button onClick={confirmStart}><Play className="h-4 w-4 mr-1" /> Démarrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={newClientDialog} onOpenChange={setNewClientDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouveau client</DialogTitle>
+            <DialogDescription>Créer un client et l'assigner à cette tâche.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Nom *</Label>
+              <Input value={newClientName} onChange={(e) => setNewClientName(e.target.value)} autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Société</Label>
+              <Input value={newClientCompany} onChange={(e) => setNewClientCompany(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Email</Label>
+              <Input type="email" value={newClientEmail} onChange={(e) => setNewClientEmail(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewClientDialog(false)}>Annuler</Button>
+            <Button onClick={createClient} disabled={!newClientName.trim() || creatingClient}>
+              {creatingClient ? "Création…" : "Créer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
