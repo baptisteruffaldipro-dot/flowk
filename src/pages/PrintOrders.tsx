@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { PRINT_STATUS_LABEL, fmtMoney, fmtMinutes } from "@/lib/format";
 
@@ -89,11 +90,11 @@ export default function PrintOrders() {
         ) : (
           <div className="divide-y">
             {orders.map((o) => (
-              <div key={o.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm">
-                <div className="col-span-5">
-                  <div className="font-medium truncate">{o.description}</div>
+              <div key={o.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm hover:bg-secondary/40">
+                <Link to={`/impressions/${o.id}`} className="col-span-5 min-w-0">
+                  <div className="font-medium truncate hover:underline">{o.description}</div>
                   <div className="text-xs text-muted-foreground">{o.clients?.name}</div>
-                </div>
+                </Link>
                 <div className="col-span-2 text-xs text-muted-foreground">{fmtMinutes(o.total_minutes)}</div>
                 <div className="col-span-2 font-medium">{fmtMoney(o.amount ? Number(o.amount) : null)}</div>
                 <div className="col-span-3">

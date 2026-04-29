@@ -175,9 +175,13 @@ export type Database = {
         Row: {
           amount: number | null
           bat_file_path: string | null
+          bat_rejected_at: string | null
+          bat_rejection_reason: string | null
+          bat_uploaded_at: string | null
           bat_validated_at: string | null
           client_id: string
           created_at: string
+          deliverables: Json
           description: string
           id: string
           project_id: string | null
@@ -188,9 +192,13 @@ export type Database = {
         Insert: {
           amount?: number | null
           bat_file_path?: string | null
+          bat_rejected_at?: string | null
+          bat_rejection_reason?: string | null
+          bat_uploaded_at?: string | null
           bat_validated_at?: string | null
           client_id: string
           created_at?: string
+          deliverables?: Json
           description: string
           id?: string
           project_id?: string | null
@@ -201,9 +209,13 @@ export type Database = {
         Update: {
           amount?: number | null
           bat_file_path?: string | null
+          bat_rejected_at?: string | null
+          bat_rejection_reason?: string | null
+          bat_uploaded_at?: string | null
           bat_validated_at?: string | null
           client_id?: string
           created_at?: string
+          deliverables?: Json
           description?: string
           id?: string
           project_id?: string | null
@@ -252,6 +264,7 @@ export type Database = {
       projects: {
         Row: {
           brief: Json | null
+          brief_submitted_at: string | null
           client_id: string
           created_at: string
           description: string | null
@@ -263,6 +276,7 @@ export type Database = {
         }
         Insert: {
           brief?: Json | null
+          brief_submitted_at?: string | null
           client_id: string
           created_at?: string
           description?: string | null
@@ -274,6 +288,7 @@ export type Database = {
         }
         Update: {
           brief?: Json | null
+          brief_submitted_at?: string | null
           client_id?: string
           created_at?: string
           description?: string | null
@@ -335,6 +350,8 @@ export type Database = {
           client_revisions_count: number
           created_at: string
           deadline: string | null
+          deliverables: Json
+          delivered_at: string | null
           estimated_minutes: number | null
           flat_amount: number | null
           hourly_rate: number | null
@@ -354,6 +371,8 @@ export type Database = {
           client_revisions_count?: number
           created_at?: string
           deadline?: string | null
+          deliverables?: Json
+          delivered_at?: string | null
           estimated_minutes?: number | null
           flat_amount?: number | null
           hourly_rate?: number | null
@@ -373,6 +392,8 @@ export type Database = {
           client_revisions_count?: number
           created_at?: string
           deadline?: string | null
+          deliverables?: Json
+          delivered_at?: string | null
           estimated_minutes?: number | null
           flat_amount?: number | null
           hourly_rate?: number | null
