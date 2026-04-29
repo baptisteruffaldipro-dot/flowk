@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2, Inbox } from "lucide-react";
+import { Sparkles, Loader2, Inbox, ImagePlus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +47,9 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   const [saving, setSaving] = useState(false);
   const [ai, setAi] = useState<AiResult | null>(null);
   const [captureId, setCaptureId] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadedPath, setUploadedPath] = useState<string | null>(null);
 
   // editable link state
   const [clientId, setClientId] = useState<string>("");
@@ -79,6 +82,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
     setContent(""); setSource("autre"); setAi(null); setCaptureId(null);
     setClientId(""); setProjectId(""); setTaskId(""); setPrintOrderId("");
     setSelectedActions(new Set());
+    setImageFile(null); setImagePreview(null); setUploadedPath(null);
   };
   useEffect(() => { if (!open) reset(); }, [open]);
 
@@ -91,24 +95,47 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   }, [tasks, clientId, projectId]);
   const filteredOrders = useMemo(() => clientId ? orders.filter(o => o.client_id === clientId) : orders, [orders, clientId]);
 
+  const onPickImage = (file: File | null) => {
+    if (!file) { setImageFile(null); setImagePreview(null); return; }
+    if (!file.type.startsWith("image/")) { toast.error("Fichier image attendu"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Image > 10 Mo"); return; }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
   const analyze = async () => {
-    if (!content.trim()) return;
+    if (!content.trim() && !imageFile) return;
     setAnalyzing(true); setAi(null); setCaptureId(null);
     try {
-      // 1) Save the raw capture immediately
       const { data: u } = await supabase.auth.getUser();
+      // 0) Upload image first if present
+      let imagePath: string | null = uploadedPath;
+      if (imageFile && !imagePath) {
+        const ext = imageFile.name.split(".").pop()?.toLowerCase() || "png";
+        const path = `${u.user!.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("quick-captures").upload(path, imageFile, {
+          contentType: imageFile.type, upsert: false,
+        });
+        if (upErr) throw upErr;
+        imagePath = path;
+        setUploadedPath(path);
+      }
+      // 1) Save the raw capture immediately
       const { data: cap, error: capErr } = await supabase.from("quick_captures").insert({
-        content, source, created_by: u.user!.id,
+        content: content || (imagePath ? "[Image]" : ""), source, created_by: u.user!.id,
       }).select("id").single();
       if (capErr) throw capErr;
       setCaptureId(cap.id);
 
       // 2) Ask the AI
-      const { data, error } = await supabase.functions.invoke("analyze-capture", { body: { content, source } });
+      const { data, error } = await supabase.functions.invoke("analyze-capture", { body: { content, source, image_path: imagePath } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const result = data as AiResult;
       setAi(result);
+      if ((data as any)?.ocr_text && !content.trim()) {
+        setContent((data as any).ocr_text);
+      }
       setClientId(result.link.client_id ?? "");
       setProjectId(result.link.project_id ?? "");
       setTaskId(result.link.task_id ?? "");
@@ -228,12 +255,37 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
 
         <div className="space-y-3">
           <div className="grid grid-cols-[1fr_140px] gap-2">
-            <Textarea
-              autoFocus value={content} onChange={(e) => setContent(e.target.value)}
-              placeholder="Collez ici le SMS, l'email, le DM Instagram, ou prenez une note rapide…"
-              className="min-h-[120px] resize-none"
-              maxLength={8000}
-            />
+            <div className="space-y-2">
+              <Textarea
+                autoFocus value={content} onChange={(e) => setContent(e.target.value)}
+                placeholder="Collez ici le SMS, l'email, le DM Instagram, ou prenez une note rapide…"
+                className="min-h-[120px] resize-none"
+                maxLength={8000}
+              />
+              {imagePreview && (
+                <div className="relative inline-block">
+                  <img src={imagePreview} alt="Aperçu" className="max-h-32 rounded-md border border-border" />
+                  <button
+                    type="button"
+                    onClick={() => onPickImage(null)}
+                    className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-0.5 hover:bg-muted"
+                    aria-label="Retirer l'image"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
+                <ImagePlus className="h-3.5 w-3.5" />
+                {imageFile ? "Changer l'image" : "Joindre une image (screen, photo…)"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => onPickImage(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            </div>
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Source</Label>
               <Select value={source} onValueChange={(v) => setSource(v as Source)}>
@@ -242,7 +294,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                   {Object.entries(SOURCE_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Button onClick={analyze} disabled={!content.trim() || analyzing} className="w-full" size="sm">
+              <Button onClick={analyze} disabled={(!content.trim() && !imageFile) || analyzing} className="w-full" size="sm">
                 {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Sparkles className="h-3.5 w-3.5 mr-1" /> Analyser</>}
               </Button>
             </div>
