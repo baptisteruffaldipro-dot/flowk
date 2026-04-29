@@ -90,13 +90,7 @@ export default function BatDetail() {
       </Button>
       <PageHeader
         title={bat.title}
-        description={
-          <span className="flex flex-wrap items-center gap-2">
-            <Link to={`/clients/${bat.client_id}`} className="hover:underline">{bat.clients?.name}</Link>
-            {bat.projects?.name && <>· <Link to={`/projets/${bat.project_id}`} className="hover:underline">{bat.projects.name}</Link></>}
-            <Badge variant={STATUS_VARIANT[bat.status] ?? "outline"} className="text-[10px]">{BAT_STATUS_LABEL[bat.status]}</Badge>
-          </span> as any
-        }
+        description={`${bat.clients?.name ?? ""}${bat.projects?.name ? " · " + bat.projects.name : ""} · ${BAT_STATUS_LABEL[bat.status]}`}
         actions={
           <div className="flex items-center gap-2">
             <input ref={fileInput} type="file" accept="application/pdf" hidden
