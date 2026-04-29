@@ -190,11 +190,29 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
           }
         } else if (a.type === "create_task") {
           if (!clientId) { toast.error("Client requis pour créer une tâche"); continue; }
-          await supabase.from("tasks").insert({
+          const insertPayload: any = {
             title: a.task_title || ai?.summary?.slice(0, 80) || "Nouvelle tâche",
             client_id: clientId, project_id: projectId || null,
             notes: noteText(), deadline: a.deadline || null,
-          });
+          };
+          if (a.prestation) insertPayload.prestation = a.prestation;
+          const { error: tErr } = await supabase.from("tasks").insert(insertPayload);
+          if (tErr) toast.error(`Création tâche: ${tErr.message}`);
+          else toast.success(`Tâche créée : ${insertPayload.title}`);
+        } else if (a.type === "create_project") {
+          if (!clientId) { toast.error("Client requis pour créer un projet"); continue; }
+          const insertPayload: any = {
+            name: a.project_name || ai?.summary?.slice(0, 80) || "Nouveau projet",
+            client_id: clientId,
+            notes: noteText(),
+          };
+          if (a.project_type) insertPayload.type = a.project_type;
+          const { data: np, error: pErr } = await supabase.from("projects").insert(insertPayload).select("id").single();
+          if (pErr) toast.error(`Création projet: ${pErr.message}`);
+          else {
+            toast.success(`Projet créé : ${insertPayload.name}`);
+            if (np?.id) setProjectId(np.id);
+          }
         } else if (a.type === "create_subtask") {
           if (!taskId) { toast.error("Tâche requise pour la sous-tâche"); continue; }
           await supabase.from("subtasks").insert({ task_id: taskId, title: a.subtask_title || a.label });
