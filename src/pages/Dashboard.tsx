@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL, INVOICE_STATUS_LABEL } from "@/lib/format";
 import { ArrowRight, Sun, AlertTriangle, Calendar } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
@@ -16,7 +17,7 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [invoices, setInvoices] = useState<Inv[]>([]);
-  const [stats, setStats] = useState({ today: 0, pendingRevenue: 0, awaitingBat: 0 });
+  const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, awaitingBat: 0 });
 
   const load = async () => {
       const [t, o, i] = await Promise.all([
@@ -28,11 +29,15 @@ export default function Dashboard() {
       setOrders((o.data as any) ?? []);
       setInvoices((i.data as any) ?? []);
 
-      const today = new Date().toISOString().slice(0, 10);
-      const todayTasks = ((t.data as any) ?? []).filter((x: Task) => x.status === "aujourdhui" || x.deadline === today).length;
+      // Compteurs globaux pour la barre de progression
+      const allTasksRes = await supabase.from("tasks").select("status", { count: "exact" });
+      const all = (allTasksRes.data as any) ?? [];
+      const totalCount = all.filter((x: any) => x.status !== "archive").length;
+      const doneCount = all.filter((x: any) => x.status === "envoye" || x.status === "a_facturer").length;
+      const todoCount = totalCount - doneCount;
       const pendingRev = ((i.data as any) ?? []).filter((x: Inv) => x.status === "a_facturer" || x.status === "facturee").reduce((s: number, x: Inv) => s + Number(x.amount), 0);
       const awaitBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "bat_en_attente").length;
-      setStats({ today: todayTasks, pendingRevenue: pendingRev, awaitingBat: awaitBat });
+      setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, awaitingBat: awaitBat });
   };
   useEffect(() => { load(); }, []);
 
@@ -47,7 +52,12 @@ export default function Dashboard() {
       <TodayBoard tasks={tasks} />
 
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <StatCard label="Tâches aujourd'hui" value={String(stats.today)} />
+        <ProgressStatCard
+          label="Tâches à faire"
+          value={stats.todoCount}
+          done={stats.doneCount}
+          total={stats.totalCount}
+        />
         <StatCard label="CA en attente" value={fmtMoney(stats.pendingRevenue)} />
         <StatCard label="BAT à valider" value={String(stats.awaitingBat)} />
       </div>
