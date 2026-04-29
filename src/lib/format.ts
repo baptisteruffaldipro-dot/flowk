@@ -53,5 +53,19 @@ export const PROJECT_TYPE_LABEL: Record<string, string> = {
   autre: "Autre",
 };
 
+export const PRIORITY_LABEL: Record<string, string> = {
+  en_priorite: "En priorité",
+  secondaire: "Secondaire",
+  attente_retour_client: "En attente retour client",
+  devis: "Devis",
+};
+
+export const PRIORITY_COLOR: Record<string, string> = {
+  en_priorite: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30",
+  secondaire: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+  attente_retour_client: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+  devis: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30",
+};
+
 export const fmtDateTime = (d?: string | null) =>
   d ? new Date(d).toLocaleString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
