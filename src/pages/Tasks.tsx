@@ -13,14 +13,75 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, fmtDate, fmtMinutes } from "@/lib/format";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 
 const STATUSES = ["a_faire", "aujourdhui", "en_attente", "envoye", "a_facturer", "archive"] as const;
+type Status = typeof STATUSES[number];
+
+function KanbanCard({ task }: { task: any }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={{ opacity: isDragging ? 0.4 : 1 }}
+      className="touch-none"
+    >
+      <Link to={`/taches/${task.id}`} onClick={(e) => isDragging && e.preventDefault()}>
+        <Card className="p-3 hover:border-foreground/20 transition cursor-grab active:cursor-grabbing">
+          {task.clients?.name && (
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 truncate">
+              {task.clients.name}
+            </div>
+          )}
+          <div className="text-sm font-medium leading-snug">{task.title}</div>
+          {task.projects?.name && (
+            <div className="text-xs text-muted-foreground truncate mt-1">{task.projects.name}</div>
+          )}
+        </Card>
+      </Link>
+    </div>
+  );
+}
+
+function KanbanColumn({ status, tasks }: { status: Status; tasks: any[] }) {
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+  return (
+    <Card
+      ref={setNodeRef}
+      className={`p-3 bg-secondary/30 transition ${isOver ? "ring-2 ring-primary" : ""}`}
+    >
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 px-1 flex items-center justify-between">
+        <span>{STATUS_LABEL[status]}</span>
+        <span className="text-muted-foreground/60">{tasks.length}</span>
+      </div>
+      <div className="space-y-2 min-h-[60px]">
+        {tasks.map((t) => (
+          <KanbanCard key={t.id} task={t} />
+        ))}
+      </div>
+    </Card>
+  );
+}
 
 export default function Tasks() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
     title: "", client_id: "", project_id: "", prestation: "creation",
     deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "",
@@ -37,6 +98,26 @@ export default function Tasks() {
     setProjects(p.data ?? []);
   };
   useEffect(() => { load(); }, []);
+
+  const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
+  const onDragEnd = async (e: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = e;
+    if (!over) return;
+    const newStatus = String(over.id) as Status;
+    if (!STATUSES.includes(newStatus)) return;
+    const task = tasks.find((t) => t.id === active.id);
+    if (!task || task.status === newStatus) return;
+    const prev = tasks;
+    setTasks((ts) => ts.map((t) => (t.id === active.id ? { ...t, status: newStatus } : t)));
+    const { error } = await supabase.from("tasks").update({ status: newStatus }).eq("id", active.id);
+    if (error) {
+      toast.error(error.message);
+      setTasks(prev);
+    }
+  };
+
+  const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
 
   const create = async () => {
     if (!form.title.trim()) return toast.error("Titre requis");
@@ -177,23 +258,25 @@ export default function Tasks() {
         </TabsContent>
 
         <TabsContent value="kanban" className="mt-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-            {STATUSES.map((s) => (
-              <Card key={s} className="p-3 bg-secondary/30">
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 px-1">{STATUS_LABEL[s]}</div>
-                <div className="space-y-2">
-                  {tasks.filter((t) => t.status === s).map((t) => (
-                    <Link key={t.id} to={`/taches/${t.id}`}>
-                      <Card className="p-3 hover:border-foreground/20 transition cursor-pointer">
-                        <div className="text-sm font-medium leading-snug mb-1">{t.title}</div>
-                        <div className="text-xs text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              </Card>
-            ))}
-          </div>
+          <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+              {STATUSES.map((s) => (
+                <KanbanColumn key={s} status={s} tasks={tasks.filter((t) => t.status === s)} />
+              ))}
+            </div>
+            <DragOverlay>
+              {activeTask ? (
+                <Card className="p-3 shadow-lg cursor-grabbing">
+                  {activeTask.clients?.name && (
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 truncate">
+                      {activeTask.clients.name}
+                    </div>
+                  )}
+                  <div className="text-sm font-medium leading-snug">{activeTask.title}</div>
+                </Card>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         </TabsContent>
       </Tabs>
     </div>
