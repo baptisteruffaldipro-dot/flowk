@@ -115,6 +115,22 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ProgressStatCard({ label, value, done, total }: { label: string; value: number; done: number; total: number }) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  return (
+    <Card className="p-5">
+      <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
+      <div className="flex items-baseline justify-between mt-2 mb-3">
+        <div className="text-2xl font-semibold">{value}</div>
+        <div className="text-xs text-muted-foreground tabular-nums">
+          {done}/{total} terminées · {pct}%
+        </div>
+      </div>
+      <Progress value={pct} className="h-2" />
+    </Card>
+  );
+}
+
 function TodayBoard({ tasks }: { tasks: Task[] }) {
   const today = new Date().toISOString().slice(0, 10);
   const isToday = (t: Task) => t.status === "aujourdhui" || t.deadline === today;
