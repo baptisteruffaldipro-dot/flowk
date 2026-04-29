@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2 } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ const nav = [
   { to: "/clients", icon: Users, label: "Clients" },
   { to: "/projets", icon: FolderKanban, label: "Projets" },
   { to: "/taches", icon: ListChecks, label: "Tâches" },
+  { to: "/rdv", icon: CalendarDays, label: "Rendez-vous" },
   { to: "/impressions", icon: Printer, label: "Impressions" },
   { to: "/bats", icon: FileCheck2, label: "BAT" },
   { to: "/facturation", icon: Receipt, label: "Facturation" },
