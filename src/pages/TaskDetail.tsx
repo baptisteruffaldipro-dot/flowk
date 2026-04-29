@@ -30,17 +30,23 @@ export default function TaskDetail() {
   const [estimDialog, setEstimDialog] = useState(false);
   const [estimValue, setEstimValue] = useState<string>("");
   const [tick, setTick] = useState(0);
+  const [clients, setClients] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
 
   const load = async () => {
     if (!id) return;
-    const [t, s, e] = await Promise.all([
+    const [t, s, e, c, p] = await Promise.all([
       supabase.from("tasks").select("*, clients(id,name), projects(id,name)").eq("id", id).maybeSingle(),
       supabase.from("subtasks").select("*").eq("task_id", id).order("position"),
       supabase.from("time_entries").select("*").eq("task_id", id).order("started_at", { ascending: false }),
+      supabase.from("clients").select("id,name").order("name"),
+      supabase.from("projects").select("id,name,client_id").order("name"),
     ]);
     setTask(t.data);
     setSubtasks(s.data ?? []);
     setEntries(e.data ?? []);
+    setClients(c.data ?? []);
+    setProjects(p.data ?? []);
   };
   useEffect(() => { load(); }, [id]);
 
@@ -142,6 +148,7 @@ export default function TaskDetail() {
   if (!task) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
   const running = !!task.timer_started_at;
+  const filteredProjects = projects.filter((p) => !task.client_id || p.client_id === task.client_id);
 
   return (
     <div className="p-8 max-w-[1200px] mx-auto">
@@ -149,8 +156,8 @@ export default function TaskDetail() {
         <ArrowLeft className="h-3 w-3" /> Tâches
       </Link>
       <PageHeader
-        title={task.projects?.name ?? task.title}
-        description={`${task.clients?.name ?? "Sans client"} • ${PRESTATION_LABEL[task.prestation] ?? task.title}`}
+        title="Tâche"
+        description={`${task.clients?.name ?? "Sans client"} • ${PRESTATION_LABEL[task.prestation] ?? ""}`}
         actions={
           <div className="flex items-center gap-2">
             {running ? (
@@ -186,6 +193,45 @@ export default function TaskDetail() {
           </div>
         }
       />
+
+      <Card className="p-4 mb-4 space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Titre</Label>
+          <Input
+            value={task.title ?? ""}
+            onChange={(e) => setTask({ ...task, title: e.target.value })}
+            onBlur={() => updateField({ title: task.title })}
+            className="text-base font-semibold"
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Client</Label>
+            <Select
+              value={task.client_id ?? ""}
+              onValueChange={(v) => updateField({ client_id: v, project_id: null })}
+            >
+              <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+              <SelectContent>
+                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Projet</Label>
+            <Select
+              value={task.project_id ?? ""}
+              onValueChange={(v) => updateField({ project_id: v })}
+              disabled={!task.client_id}
+            >
+              <SelectTrigger><SelectValue placeholder={task.client_id ? "Sélectionner" : "Choisir un client d'abord"} /></SelectTrigger>
+              <SelectContent>
+                {filteredProjects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <Card className="p-4">
