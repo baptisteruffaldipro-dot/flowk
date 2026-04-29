@@ -259,10 +259,10 @@ export default function Tasks() {
         }
       />
 
-      <Tabs defaultValue="list">
+      <Tabs defaultValue="kanban">
         <TabsList>
-          <TabsTrigger value="list">Liste</TabsTrigger>
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
+          <TabsTrigger value="list">Liste</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="mt-4">
