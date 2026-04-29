@@ -241,6 +241,24 @@ export default function Tasks() {
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
 
+  const updateTask = async (taskId: string, patch: any) => {
+    const prev = tasks;
+    setTasks((ts) => ts.map((t) => {
+      if (t.id !== taskId) return t;
+      const next = { ...t, ...patch };
+      if (patch.client_id !== undefined) {
+        const c = clients.find((x) => x.id === patch.client_id);
+        next.clients = c ? { name: c.name } : null;
+      }
+      return next;
+    }));
+    const { error } = await supabase.from("tasks").update(patch).eq("id", taskId);
+    if (error) {
+      toast.error(error.message);
+      setTasks(prev);
+    }
+  };
+
   const create = async () => {
     if (!form.title.trim()) return toast.error("Titre requis");
     const payload: any = {
@@ -399,7 +417,13 @@ export default function Tasks() {
           <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
               {STATUSES.map((s) => (
-                <KanbanColumn key={s} status={s} tasks={tasks.filter((t) => t.status === s)} />
+                <KanbanColumn
+                  key={s}
+                  status={s}
+                  tasks={tasks.filter((t) => t.status === s)}
+                  clients={clients}
+                  onUpdate={updateTask}
+                />
               ))}
             </div>
             <DragOverlay>
