@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Calendar } from "lucide-react";
+import { Plus, Calendar, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes } from "@/lib/format";
 import {
@@ -147,14 +147,23 @@ function KanbanCard({
             >
               {PRESTATION_LABEL[task.prestation] ?? "Autre"}
             </QuickEditBadge>
-            <QuickEditBadge
-              className={PRIORITY_COLOR[task.priority] ?? ""}
-              options={Object.entries(PRIORITY_LABEL).map(([value, label]) => ({ value, label: label as string }))}
-              value={task.priority}
-              onChange={(v) => onUpdate(task.id, { priority: v })}
-            >
-              {PRIORITY_LABEL[task.priority] ?? "Priorité"}
-            </QuickEditBadge>
+            {task.priority && task.priority !== "secondaire" && (
+              <QuickEditBadge
+                className={PRIORITY_COLOR[task.priority] ?? ""}
+                options={Object.entries(PRIORITY_LABEL).map(([value, label]) => ({ value, label: label as string }))}
+                value={task.priority}
+                onChange={(v) => onUpdate(task.id, { priority: v })}
+              >
+                {PRIORITY_LABEL[task.priority]}
+              </QuickEditBadge>
+            )}
+            {task.deadline && (
+              <DeadlineBadge
+                value={task.deadline}
+                onChange={(v) => onUpdate(task.id, { deadline: v })}
+              />
+            )}
+            <AddStickerMenu task={task} onUpdate={onUpdate} />
           </div>
         </Card>
       </Link>
