@@ -19,11 +19,14 @@ const SOURCE_LABEL: Record<Source,string> = {
 };
 
 type Action = {
-  type: "add_note"|"create_task"|"create_subtask"|"count_revision"|"set_deadline"|"create_client"|"create_print_order";
+  type: "add_note"|"create_task"|"create_project"|"create_subtask"|"count_revision"|"set_deadline"|"create_client"|"create_print_order";
   label: string;
   target?: "task"|"project"|"print_order"|"client";
   target_id?: string|null;
   task_title?: string|null;
+  prestation?: string|null;
+  project_name?: string|null;
+  project_type?: string|null;
   subtask_title?: string|null;
   deadline?: string|null;
   client_name?: string|null;
