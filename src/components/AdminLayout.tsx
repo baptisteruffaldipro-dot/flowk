@@ -1,11 +1,14 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import QuickCapture from "@/components/QuickCapture";
 
 const nav = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
+  { to: "/inbox", icon: Inbox, label: "Inbox" },
   { to: "/clients", icon: Users, label: "Clients" },
   { to: "/projets", icon: FolderKanban, label: "Projets" },
   { to: "/taches", icon: ListChecks, label: "Tâches" },
@@ -16,6 +19,18 @@ const nav = [
 export default function AdminLayout() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const [captureOpen, setCaptureOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCaptureOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -28,6 +43,12 @@ export default function AdminLayout() {
         <div className="px-5 py-6">
           <div className="text-base font-semibold tracking-tight">Studio</div>
           <div className="text-xs text-muted-foreground mt-0.5">Gestion projets</div>
+        </div>
+        <div className="px-3 mb-2">
+          <Button onClick={() => setCaptureOpen(true)} size="sm" className="w-full justify-start gap-2">
+            <Sparkles className="h-4 w-4" /> Capture rapide
+            <span className="ml-auto text-[10px] opacity-70">⌘K</span>
+          </Button>
         </div>
         <nav className="flex-1 px-3 space-y-0.5">
           {nav.map((item) => (
@@ -59,6 +80,7 @@ export default function AdminLayout() {
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
+      <QuickCapture open={captureOpen} onOpenChange={setCaptureOpen} />
     </div>
   );
 }

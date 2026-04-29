@@ -395,6 +395,86 @@ export type Database = {
           },
         ]
       }
+      quick_captures: {
+        Row: {
+          ai_suggestions: Json
+          ai_summary: string | null
+          client_id: string | null
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          print_order_id: string | null
+          processed_at: string | null
+          project_id: string | null
+          source: Database["public"]["Enums"]["capture_source"]
+          status: Database["public"]["Enums"]["capture_status"]
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_suggestions?: Json
+          ai_summary?: string | null
+          client_id?: string | null
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          print_order_id?: string | null
+          processed_at?: string | null
+          project_id?: string | null
+          source?: Database["public"]["Enums"]["capture_source"]
+          status?: Database["public"]["Enums"]["capture_status"]
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_suggestions?: Json
+          ai_summary?: string | null
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          print_order_id?: string | null
+          processed_at?: string | null
+          project_id?: string | null
+          source?: Database["public"]["Enums"]["capture_source"]
+          status?: Database["public"]["Enums"]["capture_status"]
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quick_captures_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quick_captures_print_order_id_fkey"
+            columns: ["print_order_id"]
+            isOneToOne: false
+            referencedRelation: "print_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quick_captures_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quick_captures_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subtasks: {
         Row: {
           created_at: string
@@ -636,6 +716,15 @@ export type Database = {
     Enums: {
       app_role: "admin" | "client"
       billing_type: "horaire" | "forfait"
+      capture_source:
+        | "sms"
+        | "whatsapp"
+        | "email"
+        | "instagram"
+        | "messenger"
+        | "telephone"
+        | "autre"
+      capture_status: "a_traiter" | "traite" | "archive"
       invoice_status: "a_facturer" | "facturee" | "payee"
       prestation_type:
         | "mise_en_page"
@@ -794,6 +883,16 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "client"],
       billing_type: ["horaire", "forfait"],
+      capture_source: [
+        "sms",
+        "whatsapp",
+        "email",
+        "instagram",
+        "messenger",
+        "telephone",
+        "autre",
+      ],
+      capture_status: ["a_traiter", "traite", "archive"],
       invoice_status: ["a_facturer", "facturee", "payee"],
       prestation_type: [
         "mise_en_page",
