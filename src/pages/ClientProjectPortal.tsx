@@ -30,7 +30,7 @@ export default function ClientProjectPortal() {
     if (!id) return;
     const { data } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
     setProject(data);
-    setBrief(data?.brief ?? {});
+    setBrief((data?.brief as Record<string, string>) ?? {});
   };
   useEffect(() => { load(); }, [id]);
 
