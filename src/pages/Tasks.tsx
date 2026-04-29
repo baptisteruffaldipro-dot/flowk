@@ -77,17 +77,20 @@ function KanbanColumn({ status, tasks }: { status: Status; tasks: any[] }) {
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl p-3 ${meta.bg} ring-1 ${meta.ring} transition ${isOver ? "ring-2 ring-primary" : ""}`}
+      className={`rounded-xl overflow-hidden ${meta.bg} ring-1 ${meta.ring} transition ${isOver ? "ring-2 ring-primary" : ""}`}
     >
-      <div className="flex items-center gap-2 mb-3 px-1.5 pt-1">
-        <span className="text-base leading-none">{meta.emoji}</span>
-        <span className="text-sm font-semibold text-foreground">{STATUS_LABEL[status]}</span>
-        <span className={`text-sm font-semibold ${meta.count}`}>{tasks.length}</span>
-      </div>
-      <div className="space-y-2.5 min-h-[80px]">
-        {tasks.map((t) => (
-          <KanbanCard key={t.id} task={t} />
-        ))}
+      <div className={`h-1 w-full ${meta.accent}`} />
+      <div className="p-3">
+        <div className="flex items-center gap-2 mb-3 px-1">
+          <span className="text-base leading-none">{meta.emoji}</span>
+          <span className="text-sm font-semibold text-foreground flex-1 truncate">{STATUS_LABEL[status]}</span>
+          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length}</span>
+        </div>
+        <div className="space-y-2 min-h-[80px]">
+          {tasks.map((t) => (
+            <KanbanCard key={t.id} task={t} />
+          ))}
+        </div>
       </div>
     </div>
   );
