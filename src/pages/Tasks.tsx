@@ -77,7 +77,7 @@ function KanbanColumn({ status, tasks }: { status: Status; tasks: any[] }) {
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl overflow-hidden ${meta.bg} ring-1 ${meta.ring} transition ${isOver ? "ring-2 ring-primary" : ""}`}
+      className={`rounded-xl overflow-hidden flex-shrink-0 w-80 ${meta.bg} ring-1 ${meta.ring} transition ${isOver ? "ring-2 ring-primary" : ""}`}
     >
       <div className={`h-1 w-full ${meta.accent}`} />
       <div className="p-3">
@@ -165,7 +165,7 @@ export default function Tasks() {
   const filteredProjects = projects.filter((p) => !form.client_id || p.client_id === form.client_id);
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-8">
       <PageHeader
         title="Tâches"
         description={`${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`}
@@ -296,7 +296,7 @@ export default function Tasks() {
 
         <TabsContent value="kanban" className="mt-4">
           <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+            <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
               {STATUSES.map((s) => (
                 <KanbanColumn key={s} status={s} tasks={tasks.filter((t) => t.status === s)} />
               ))}
