@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { BAT_STATUS_LABEL, fmtDate } from "@/lib/format";
 
@@ -25,6 +25,8 @@ export default function Bats() {
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<any>({
     title: "",
     reference: "",
@@ -53,7 +55,10 @@ export default function Bats() {
   const create = async () => {
     if (!form.title.trim()) return toast.error("Titre requis");
     if (!form.client_id) return toast.error("Client requis");
-    const { error } = await supabase.from("bats").insert({
+    if (file && file.type !== "application/pdf") return toast.error("Le fichier doit être un PDF");
+    if (file && file.size > 50 * 1024 * 1024) return toast.error("Fichier trop volumineux (50 Mo max)");
+    setUploading(true);
+    const { data: inserted, error } = await supabase.from("bats").insert({
       title: form.title.trim(),
       reference: form.reference.trim() || null,
       client_id: form.client_id,
@@ -64,10 +69,22 @@ export default function Bats() {
       finitions: form.finitions.trim() || null,
       colors: form.colors.trim() || null,
       observations: form.observations.trim() || null,
-    });
-    if (error) return toast.error(error.message);
+    }).select().single();
+    if (error || !inserted) { setUploading(false); return toast.error(error?.message ?? "Erreur"); }
+    if (file) {
+      const path = `${inserted.client_id}/${inserted.id}/${Date.now()}-${file.name}`;
+      const { error: upErr } = await supabase.storage.from("bat").upload(path, file, { upsert: false, contentType: "application/pdf" });
+      if (upErr) {
+        setUploading(false);
+        toast.error(`BAT créé mais upload échoué : ${upErr.message}`);
+      } else {
+        await supabase.from("bats").update({ file_path: path, file_uploaded_at: new Date().toISOString() }).eq("id", inserted.id);
+      }
+    }
+    setUploading(false);
     toast.success("BAT créé");
     setForm({ title: "", reference: "", client_id: "", project_id: "", quantity: "", format: "", support: "", finitions: "", colors: "", observations: "" });
+    setFile(null);
     setOpen(false);
     load();
   };
@@ -137,8 +154,25 @@ export default function Bats() {
                   <Label className="text-xs">Observations</Label>
                   <Input value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} maxLength={500} />
                 </div>
+                <div className="space-y-1.5 col-span-2">
+                  <Label className="text-xs">Fichier PDF</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    />
+                    {file && (
+                      <span className="text-xs text-muted-foreground inline-flex items-center gap-1 whitespace-nowrap">
+                        <Upload className="h-3 w-3" />
+                        {(file.size / 1024 / 1024).toFixed(2)} Mo
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Optionnel — tu pourras aussi l'ajouter plus tard depuis la fiche du BAT.</p>
+                </div>
               </div>
-              <DialogFooter><Button onClick={create}>Créer</Button></DialogFooter>
+              <DialogFooter><Button onClick={create} disabled={uploading}>{uploading ? "Création…" : "Créer"}</Button></DialogFooter>
             </DialogContent>
           </Dialog>
         }
