@@ -750,7 +750,9 @@ export type Database = {
           deliverables: Json
           delivered_at: string | null
           estimated_minutes: number | null
+          extra_revision_rate: number | null
           flat_amount: number | null
+          free_revisions: number
           hourly_rate: number | null
           id: string
           notes: string | null
@@ -774,7 +776,9 @@ export type Database = {
           deliverables?: Json
           delivered_at?: string | null
           estimated_minutes?: number | null
+          extra_revision_rate?: number | null
           flat_amount?: number | null
+          free_revisions?: number
           hourly_rate?: number | null
           id?: string
           notes?: string | null
@@ -798,7 +802,9 @@ export type Database = {
           deliverables?: Json
           delivered_at?: string | null
           estimated_minutes?: number | null
+          extra_revision_rate?: number | null
           flat_amount?: number | null
+          free_revisions?: number
           hourly_rate?: number | null
           id?: string
           notes?: string | null

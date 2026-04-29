@@ -19,6 +19,7 @@ import { ArrowLeft, Play, Pause, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
+import { computeTaskBilling } from "@/lib/billing";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -169,11 +170,78 @@ export default function TaskDetail() {
     navigate("/taches");
   };
 
-  const computeAmount = () => {
+  const billing = useMemo(() => {
     if (!task) return null;
-    if (task.billing_type === "forfait") return task.flat_amount ? Number(task.flat_amount) : null;
-    if (!task.hourly_rate) return null;
-    return (totalMinutesLive / 60) * Number(task.hourly_rate);
+    return computeTaskBilling({
+      billing_type: task.billing_type,
+      flat_amount: task.flat_amount,
+      hourly_rate: task.hourly_rate,
+      estimated_minutes: task.estimated_minutes,
+      total_minutes: totalMinutesLive,
+      client_revisions_count: task.client_revisions_count,
+      free_revisions: task.free_revisions,
+      extra_revision_rate: task.extra_revision_rate,
+    });
+  }, [task, totalMinutesLive]);
+
+  const invoiceAcompte = async () => {
+    if (!task || !billing) return;
+    if (task.acompte_invoiced) return toast.error("Acompte déjà facturé");
+    if (billing.total <= 0) return toast.error("Renseigne un forfait ou un taux horaire");
+    const { error } = await supabase.from("invoices").insert({
+      client_id: task.client_id,
+      task_id: task.id,
+      label: `Acompte 50% — ${task.title}`,
+      amount: Number(billing.acompte.toFixed(2)),
+      status: "a_facturer",
+    });
+    if (error) return toast.error(error.message);
+    await supabase.from("tasks").update({ acompte_invoiced: true }).eq("id", task.id);
+    toast.success(`Acompte ${fmtMoney(billing.acompte)} ajouté à la facturation`);
+    load();
+  };
+
+  const invoiceBalance = async (silent = false) => {
+    if (!task || !billing) return;
+    const acompteAmount = task.acompte_invoiced ? billing.acompte : 0;
+    const balance = Number((billing.total - acompteAmount).toFixed(2));
+    if (balance <= 0) {
+      if (!silent) toast.error("Aucun solde à facturer");
+      return;
+    }
+    // Évite les doublons : ne pas créer deux fois le solde pour la même tâche
+    const { data: existing } = await supabase
+      .from("invoices")
+      .select("id,label")
+      .eq("task_id", task.id)
+      .ilike("label", "Solde%");
+    if (existing && existing.length > 0) {
+      if (!silent) toast.error("Solde déjà facturé");
+      return;
+    }
+    const { error } = await supabase.from("invoices").insert({
+      client_id: task.client_id,
+      task_id: task.id,
+      label: `Solde — ${task.title}`,
+      amount: balance,
+      status: "a_facturer",
+    });
+    if (error) return toast.error(error.message);
+    if (!silent) toast.success(`Solde ${fmtMoney(balance)} ajouté à la facturation`);
+    load();
+  };
+
+  // Auto-facturation du solde quand la tâche passe en "à facturer" (= livrée)
+  const updateStatusWithAutoBalance = async (newStatus: string) => {
+    const wasDelivered = task.status === "a_facturer" || task.status === "facturee" || task.status === "payee";
+    await updateField({
+      status: newStatus,
+      delivered_at: newStatus === "a_facturer" && !task.delivered_at ? new Date().toISOString() : task.delivered_at,
+    });
+    if (newStatus === "a_facturer" && !wasDelivered) {
+      // petit délai pour laisser load() rafraîchir, puis on tente le solde
+      setTimeout(() => invoiceBalance(true), 400);
+    }
   };
 
   if (!task) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
@@ -276,7 +344,7 @@ export default function TaskDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <Card className="p-4">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Statut</div>
-          <Select value={task.status} onValueChange={(v) => updateField({ status: v })}>
+          <Select value={task.status} onValueChange={(v) => updateStatusWithAutoBalance(v)}>
             <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.entries(STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
@@ -313,8 +381,106 @@ export default function TaskDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <StatBlock label="Temps estimé" value={fmtMinutes(task.estimated_minutes)} />
         <StatBlock label="Temps passé" value={fmtMinutes(totalMinutesLive)} highlight={running} />
-        <StatBlock label="Montant" value={fmtMoney(computeAmount())} />
+        <StatBlock label="Montant total" value={fmtMoney(billing?.total ?? null)} />
       </div>
+
+      <Card className="p-5 mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold">Facturation</h2>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={invoiceAcompte} disabled={task.acompte_invoiced}>
+              {task.acompte_invoiced ? "Acompte facturé" : `Facturer l'acompte (${fmtMoney(billing?.acompte ?? 0)})`}
+            </Button>
+            <Button size="sm" onClick={() => invoiceBalance(false)}>
+              Facturer le solde
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Type de facturation</Label>
+            <Select value={task.billing_type} onValueChange={(v) => updateField({ billing_type: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="horaire">Horaire</SelectItem>
+                <SelectItem value="forfait">Forfait (+ dépassement horaire)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {task.billing_type === "forfait" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Forfait (€)</Label>
+              <Input
+                type="number" step="0.01"
+                value={task.flat_amount ?? ""}
+                onChange={(e) => setTask({ ...task, flat_amount: e.target.value })}
+                onBlur={() => updateField({ flat_amount: task.flat_amount === "" ? null : Number(task.flat_amount) })}
+              />
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Taux horaire (€) {task.billing_type === "forfait" && <span className="text-muted-foreground">— dépassement</span>}</Label>
+            <Input
+              type="number" step="0.01"
+              value={task.hourly_rate ?? ""}
+              onChange={(e) => setTask({ ...task, hourly_rate: e.target.value })}
+              onBlur={() => updateField({ hourly_rate: task.hourly_rate === "" ? null : Number(task.hourly_rate) })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Retours clients effectués</Label>
+            <Input
+              type="number"
+              value={task.client_revisions_count ?? 0}
+              onChange={(e) => updateField({ client_revisions_count: Number(e.target.value) || 0 })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Retours inclus (gratuits)</Label>
+            <Input
+              type="number"
+              value={task.free_revisions ?? 0}
+              onChange={(e) => updateField({ free_revisions: Number(e.target.value) || 0 })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Tarif retour suppl. (€)</Label>
+            <Input
+              type="number" step="0.01"
+              value={task.extra_revision_rate ?? ""}
+              onChange={(e) => setTask({ ...task, extra_revision_rate: e.target.value })}
+              onBlur={() => updateField({ extra_revision_rate: task.extra_revision_rate === "" ? null : Number(task.extra_revision_rate) })}
+            />
+          </div>
+        </div>
+
+        {billing && (
+          <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1.5">
+            <BillingRow label={task.billing_type === "forfait" ? "Forfait" : `Heures (${fmtMinutes(totalMinutesLive)})`} value={fmtMoney(billing.base)} />
+            {billing.overrun > 0 && (
+              <BillingRow label={`Dépassement horaire (${fmtMinutes(billing.overrunMinutes)})`} value={fmtMoney(billing.overrun)} muted />
+            )}
+            {billing.revisionsBilled > 0 && (
+              <BillingRow label={`Retours suppl. (${billing.extraRevisions})`} value={fmtMoney(billing.revisionsBilled)} muted />
+            )}
+            <div className="border-t pt-1.5 mt-1.5 flex items-center justify-between font-semibold">
+              <span>Total</span><span>{fmtMoney(billing.total)}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Acompte 50% {task.acompte_invoiced && "(facturé)"}</span>
+              <span>{fmtMoney(billing.acompte)}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Solde restant</span>
+              <span>{fmtMoney(billing.total - (task.acompte_invoiced ? billing.acompte : 0))}</span>
+            </div>
+          </div>
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
@@ -323,37 +489,9 @@ export default function TaskDetail() {
             value={task.notes ?? ""}
             onChange={(e) => setTask({ ...task, notes: e.target.value })}
             onBlur={() => updateField({ notes: task.notes })}
-            rows={6}
+            rows={8}
             placeholder="Notes, brief, références…"
           />
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Retours clients</Label>
-              <Input
-                type="number"
-                value={task.client_revisions_count}
-                onChange={(e) => updateField({ client_revisions_count: Number(e.target.value) })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">{task.billing_type === "horaire" ? "Taux/h (€)" : "Forfait (€)"}</Label>
-              <Input
-                type="number" step="0.01"
-                value={(task.billing_type === "horaire" ? task.hourly_rate : task.flat_amount) ?? ""}
-                onChange={(e) => updateField(task.billing_type === "horaire" ? { hourly_rate: Number(e.target.value) || null } : { flat_amount: Number(e.target.value) || null })}
-              />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-2">
-            <Checkbox
-              id="acompte_invoiced"
-              checked={!!task.acompte_invoiced}
-              onCheckedChange={(v) => updateField({ acompte_invoiced: !!v })}
-            />
-            <Label htmlFor="acompte_invoiced" className="text-sm cursor-pointer">
-              Acompte facturé
-            </Label>
-          </div>
         </Card>
 
         <Card className="p-5">
@@ -453,5 +591,14 @@ function StatBlock({ label, value, highlight }: { label: string; value: string; 
       <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
       <div className={`text-xl font-semibold mt-2 ${highlight ? "text-accent" : ""}`}>{value}</div>
     </Card>
+  );
+}
+
+function BillingRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between ${muted ? "text-muted-foreground" : ""}`}>
+      <span>{label}</span>
+      <span className="font-medium">{value}</span>
+    </div>
   );
 }
