@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes } from "@/lib/format";
@@ -28,7 +29,86 @@ import {
 const STATUSES = ["a_faire", "aujourdhui", "envoye", "a_facturer", "archive"] as const;
 type Status = typeof STATUSES[number];
 
-function KanbanCard({ task }: { task: any }) {
+function QuickEditBadge({
+  children,
+  className,
+  options,
+  value,
+  onChange,
+  searchable,
+  placeholder,
+}: {
+  children: React.ReactNode;
+  className: string;
+  options: { value: string; label: string }[];
+  value: string | null;
+  onChange: (v: string | null) => void;
+  searchable?: boolean;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const filtered = searchable && q
+    ? options.filter((o) => o.label.toLowerCase().includes(q.toLowerCase()))
+    : options;
+  return (
+    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setQ(""); }}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          className="focus:outline-none"
+        >
+          <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 cursor-pointer hover:opacity-80 ${className}`}>
+            {children}
+          </Badge>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-56 p-1"
+        align="start"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {searchable && (
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={placeholder ?? "Rechercher…"}
+            className="h-8 mb-1 text-xs"
+            autoFocus
+          />
+        )}
+        <div className="max-h-64 overflow-y-auto">
+          {filtered.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => { onChange(o.value); setOpen(false); }}
+              className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-accent ${value === o.value ? "bg-accent/60 font-medium" : ""}`}
+            >
+              {o.label}
+            </button>
+          ))}
+          {filtered.length === 0 && (
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">Aucun résultat</div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function KanbanCard({
+  task,
+  clients,
+  onUpdate,
+}: {
+  task: any;
+  clients: { id: string; name: string }[];
+  onUpdate: (id: string, patch: any) => void;
+}) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   const projectName = task.projects?.name ?? task.title;
   const showPrestation = !!task.projects?.name;
@@ -49,21 +129,32 @@ function KanbanCard({ task }: { task: any }) {
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            {task.clients?.name && (
-              <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(task.clients.name)}`}>
-                {task.clients.name}
-              </Badge>
-            )}
-            {showPrestation && (
-              <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(task.prestation)}`}>
-                {PRESTATION_LABEL[task.prestation] ?? "Autre"}
-              </Badge>
-            )}
-            {task.priority && task.priority !== "secondaire" && (
-              <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${PRIORITY_COLOR[task.priority]}`}>
-                {PRIORITY_LABEL[task.priority]}
-              </Badge>
-            )}
+            <QuickEditBadge
+              className={tagColor(task.clients?.name ?? "—")}
+              options={clients.map((c) => ({ value: c.id, label: c.name }))}
+              value={task.client_id}
+              onChange={(v) => onUpdate(task.id, { client_id: v })}
+              searchable
+              placeholder="Rechercher un client"
+            >
+              {task.clients?.name ?? "Sans client"}
+            </QuickEditBadge>
+            <QuickEditBadge
+              className={tagColor(task.prestation)}
+              options={Object.entries(PRESTATION_LABEL).map(([value, label]) => ({ value, label: label as string }))}
+              value={task.prestation}
+              onChange={(v) => onUpdate(task.id, { prestation: v })}
+            >
+              {PRESTATION_LABEL[task.prestation] ?? "Autre"}
+            </QuickEditBadge>
+            <QuickEditBadge
+              className={PRIORITY_COLOR[task.priority] ?? ""}
+              options={Object.entries(PRIORITY_LABEL).map(([value, label]) => ({ value, label: label as string }))}
+              value={task.priority}
+              onChange={(v) => onUpdate(task.id, { priority: v })}
+            >
+              {PRIORITY_LABEL[task.priority] ?? "Priorité"}
+            </QuickEditBadge>
           </div>
         </Card>
       </Link>
@@ -71,7 +162,17 @@ function KanbanCard({ task }: { task: any }) {
   );
 }
 
-function KanbanColumn({ status, tasks }: { status: Status; tasks: any[] }) {
+function KanbanColumn({
+  status,
+  tasks,
+  clients,
+  onUpdate,
+}: {
+  status: Status;
+  tasks: any[];
+  clients: { id: string; name: string }[];
+  onUpdate: (id: string, patch: any) => void;
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
   return (
@@ -88,7 +189,7 @@ function KanbanColumn({ status, tasks }: { status: Status; tasks: any[] }) {
         </div>
         <div className="space-y-2 min-h-[80px]">
           {tasks.map((t) => (
-            <KanbanCard key={t.id} task={t} />
+            <KanbanCard key={t.id} task={t} clients={clients} onUpdate={onUpdate} />
           ))}
         </div>
       </div>
