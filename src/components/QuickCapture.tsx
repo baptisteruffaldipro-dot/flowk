@@ -19,11 +19,14 @@ const SOURCE_LABEL: Record<Source,string> = {
 };
 
 type Action = {
-  type: "add_note"|"create_task"|"create_subtask"|"count_revision"|"set_deadline"|"create_client"|"create_print_order";
+  type: "add_note"|"create_task"|"create_project"|"create_subtask"|"count_revision"|"set_deadline"|"create_client"|"create_print_order";
   label: string;
   target?: "task"|"project"|"print_order"|"client";
   target_id?: string|null;
   task_title?: string|null;
+  prestation?: string|null;
+  project_name?: string|null;
+  project_type?: string|null;
   subtask_title?: string|null;
   deadline?: string|null;
   client_name?: string|null;
@@ -140,7 +143,13 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
       setProjectId(result.link.project_id ?? "");
       setTaskId(result.link.task_id ?? "");
       setPrintOrderId(result.link.print_order_id ?? "");
-      setSelectedActions(new Set([0]));
+      // Pré-cocher en priorité les actions de création (tâche / projet)
+      const preselect = new Set<number>();
+      result.actions.forEach((a, i) => {
+        if (a.type === "create_task" || a.type === "create_project") preselect.add(i);
+      });
+      if (preselect.size === 0 && result.actions.length > 0) preselect.add(0);
+      setSelectedActions(preselect);
 
       await supabase.from("quick_captures").update({
         ai_summary: result.summary,
@@ -181,11 +190,29 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
           }
         } else if (a.type === "create_task") {
           if (!clientId) { toast.error("Client requis pour créer une tâche"); continue; }
-          await supabase.from("tasks").insert({
+          const insertPayload: any = {
             title: a.task_title || ai?.summary?.slice(0, 80) || "Nouvelle tâche",
             client_id: clientId, project_id: projectId || null,
             notes: noteText(), deadline: a.deadline || null,
-          });
+          };
+          if (a.prestation) insertPayload.prestation = a.prestation;
+          const { error: tErr } = await supabase.from("tasks").insert(insertPayload);
+          if (tErr) toast.error(`Création tâche: ${tErr.message}`);
+          else toast.success(`Tâche créée : ${insertPayload.title}`);
+        } else if (a.type === "create_project") {
+          if (!clientId) { toast.error("Client requis pour créer un projet"); continue; }
+          const insertPayload: any = {
+            name: a.project_name || ai?.summary?.slice(0, 80) || "Nouveau projet",
+            client_id: clientId,
+            notes: noteText(),
+          };
+          if (a.project_type) insertPayload.type = a.project_type;
+          const { data: np, error: pErr } = await supabase.from("projects").insert(insertPayload).select("id").single();
+          if (pErr) toast.error(`Création projet: ${pErr.message}`);
+          else {
+            toast.success(`Projet créé : ${insertPayload.name}`);
+            if (np?.id) setProjectId(np.id);
+          }
         } else if (a.type === "create_subtask") {
           if (!taskId) { toast.error("Tâche requise pour la sous-tâche"); continue; }
           await supabase.from("subtasks").insert({ task_id: taskId, title: a.subtask_title || a.label });
@@ -356,7 +383,14 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Actions suggérées</Label>
                 <div className="space-y-1 mt-1">
                   {ai.actions.map((a, i) => (
-                    <label key={i} className="flex items-start gap-2 p-2 rounded hover:bg-background cursor-pointer text-sm">
+                    <label
+                      key={i}
+                      className={`flex items-start gap-2 p-2 rounded cursor-pointer text-sm border ${
+                        a.type === "create_task" || a.type === "create_project"
+                          ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
+                          : "border-transparent hover:bg-background"
+                      }`}
+                    >
                       <Checkbox
                         checked={selectedActions.has(i)}
                         onCheckedChange={(c) => {
@@ -366,7 +400,19 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                         }}
                       />
                       <div className="flex-1">
-                        <div>{a.label}</div>
+                        <div className="font-medium">{a.label}</div>
+                        {a.type === "create_task" && a.task_title && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Titre : <span className="text-foreground">{a.task_title}</span>
+                            {a.prestation && <> · Prestation : <span className="text-foreground">{a.prestation}</span></>}
+                          </div>
+                        )}
+                        {a.type === "create_project" && a.project_name && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Nom : <span className="text-foreground">{a.project_name}</span>
+                            {a.project_type && <> · Type : <span className="text-foreground">{a.project_type}</span></>}
+                          </div>
+                        )}
                         {a.deadline && <div className="text-xs text-muted-foreground">Deadline : {a.deadline}</div>}
                       </div>
                       <Badge variant="outline" className="text-[10px]">{a.type}</Badge>

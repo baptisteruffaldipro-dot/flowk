@@ -104,12 +104,19 @@ Deno.serve(async (req) => {
     const system = `Tu es l'assistant de gestion d'un studio de graphisme. Un message brut (SMS, WhatsApp, email, etc.) est envoyé.
 Ta mission : 1) le résumer en 1-2 phrases en français, 2) identifier le client/projet/tâche/commande probable parmi la liste fournie (uniquement par leur id), 3) proposer 1 à 3 actions parmi:
 - add_note (ajouter une note datée à une entité existante)
-- create_task (créer une nouvelle tâche)
+- create_task (créer une nouvelle tâche — fournir task_title court et explicite, optionnel prestation parmi: mise_en_page, creation, logo, impression, devis, moodboard, ajustements, illustration, refonte, vectorisation, covering, strategie, traduction, shooting, autre — optionnel deadline ISO YYYY-MM-DD)
+- create_project (créer un nouveau projet — fournir project_name et project_type parmi: identite_graphique, support_communication, web, impression, autre — client_id requis ou create_client)
 - create_subtask (ajouter une sous-tâche à une tâche existante — task_id requis)
 - count_revision (incrémenter le compteur de retours client d'une tâche — task_id requis)
 - set_deadline (proposer une deadline ISO YYYY-MM-DD pour une tâche existante — task_id requis)
 - create_client (créer un nouveau client — fournir name, optionnel email/phone)
 - create_print_order (créer une commande d'impression — client_id requis, description requise)
+
+Règles importantes :
+- Si le message décrit un travail concret à réaliser (création visuel, mise en page, impression, devis à faire, etc.) ET qu'aucune tâche existante ne correspond, propose IMPÉRATIVEMENT create_task en première action.
+- Si le message évoque le démarrage d'une collaboration plus large (refonte d'identité, nouveau site web, gros chantier multi-livrables) ET qu'aucun projet existant ne correspond, propose create_project en première action.
+- Sinon, propose add_note rattaché à l'entité existante détectée.
+- Sois concret : task_title et project_name doivent être courts, clairs, prêts à utiliser tels quels (pas de "Nouvelle tâche").
 
 Réponds STRICTEMENT via l'outil "propose_capture_actions". Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la liste.`
 
@@ -147,11 +154,14 @@ Réponds STRICTEMENT via l'outil "propose_capture_actions". Choisis null pour le
                 additionalProperties: false,
                 required: ['type', 'label'],
                 properties: {
-                  type: { type: 'string', enum: ['add_note','create_task','create_subtask','count_revision','set_deadline','create_client','create_print_order'] },
+                  type: { type: 'string', enum: ['add_note','create_task','create_project','create_subtask','count_revision','set_deadline','create_client','create_print_order'] },
                   label: { type: 'string' },
                   target: { type: 'string', enum: ['task','project','print_order','client'] },
                   target_id: { type: ['string', 'null'] },
                   task_title: { type: ['string', 'null'] },
+                  prestation: { type: ['string', 'null'] },
+                  project_name: { type: ['string', 'null'] },
+                  project_type: { type: ['string', 'null'] },
                   subtask_title: { type: ['string', 'null'] },
                   deadline: { type: ['string', 'null'] },
                   client_name: { type: ['string', 'null'] },
