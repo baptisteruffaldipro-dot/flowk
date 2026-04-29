@@ -82,6 +82,13 @@ export const PRINT_STATUS_LABEL: Record<string, string> = {
   livre: "Livré",
 };
 
+export const BAT_PRINT_STATUS_LABEL: Record<string, string> = {
+  a_imprimer: "À imprimer",
+  en_impression: "En impression",
+  expedie: "Expédié",
+  livre: "Livré",
+};
+
 export const BAT_STATUS_LABEL: Record<string, string> = {
   brouillon: "Brouillon",
   en_relecture: "En relecture client",
