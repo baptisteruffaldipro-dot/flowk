@@ -248,7 +248,7 @@ export default function Tasks() {
               <div className="divide-y">
                 {tasks.map((t) => (
                   <Link key={t.id} to={`/taches/${t.id}`} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-secondary/40 items-center text-sm">
-                    <div className="col-span-5 truncate font-medium">{t.title}</div>
+                    <div className="col-span-5 truncate font-medium">{t.projects?.name ?? t.title}</div>
                     <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
                     <div className="col-span-1 text-muted-foreground text-xs">{PRESTATION_LABEL[t.prestation]}</div>
                     <div className="col-span-2 text-muted-foreground text-xs flex items-center gap-1">
