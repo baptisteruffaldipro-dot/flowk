@@ -94,7 +94,7 @@ export default function Tasks() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
-    title: "", client_id: "", project_id: "", prestation: "creation",
+    title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire",
     deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "",
   });
 
@@ -137,6 +137,7 @@ export default function Tasks() {
       client_id: form.client_id || null,
       project_id: form.project_id || null,
       prestation: form.prestation,
+      priority: form.priority,
       deadline: form.deadline || null,
       billing_type: form.billing_type,
       hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
@@ -147,7 +148,7 @@ export default function Tasks() {
     if (error) return toast.error(error.message);
     toast.success("Tâche créée");
     setOpen(false);
-    setForm({ title: "", client_id: "", project_id: "", prestation: "creation", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
+    setForm({ title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
     load();
   };
 
@@ -200,6 +201,17 @@ export default function Tasks() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Priorité</Label>
+                    <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(PRIORITY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Deadline</Label>
                     <Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
