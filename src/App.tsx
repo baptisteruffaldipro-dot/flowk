@@ -19,6 +19,7 @@ import PrintOrderDetail from "./pages/PrintOrderDetail";
 import Bats from "./pages/Bats";
 import BatDetail from "./pages/BatDetail";
 import Invoices from "./pages/Invoices";
+import Inbox from "./pages/Inbox";
 import ClientPortal from "./pages/ClientPortal";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
 import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/bats" element={<Bats />} />
               <Route path="/bats/:id" element={<BatDetail />} />
               <Route path="/facturation" element={<Invoices />} />
+              <Route path="/inbox" element={<Inbox />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
