@@ -366,8 +366,14 @@ function DividerRow({
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(divider.label);
   useEffect(() => setValue(divider.label), [divider.label]);
+  const { setNodeRef, isOver } = useDroppable({ id: `divider:${divider.id}` });
   return (
-    <div className="group rounded-md bg-background/40 border border-border/40 px-2 py-1.5 flex items-center gap-1">
+    <div
+      ref={setNodeRef}
+      className={`group rounded-md bg-background/40 border px-2 py-1.5 flex items-center gap-1 transition ${
+        isOver ? "border-primary ring-1 ring-primary" : "border-border/40"
+      }`}
+    >
       {editing ? (
         <Input
           autoFocus
