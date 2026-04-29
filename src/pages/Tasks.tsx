@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Calendar, Tag } from "lucide-react";
+import { Plus, Calendar, Tag, GripVertical, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes } from "@/lib/format";
 import {
@@ -293,14 +293,29 @@ function KanbanColumn({
   tasks,
   clients,
   onUpdate,
+  dividers,
+  onAddDivider,
+  onUpdateDivider,
+  onDeleteDivider,
 }: {
   status: Status;
   tasks: any[];
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
+  dividers: any[];
+  onAddDivider: (status: Status) => void;
+  onUpdateDivider: (id: string, label: string) => void;
+  onDeleteDivider: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
+
+  // Merge tasks and dividers by position
+  const items: Array<{ kind: "task"; data: any; pos: number } | { kind: "divider"; data: any; pos: number }> = [
+    ...tasks.map((t) => ({ kind: "task" as const, data: t, pos: t.position ?? 0 })),
+    ...dividers.map((d) => ({ kind: "divider" as const, data: d, pos: d.position ?? 0 })),
+  ].sort((a, b) => a.pos - b.pos);
+
   return (
     <div
       ref={setNodeRef}
@@ -314,11 +329,74 @@ function KanbanColumn({
           <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length}</span>
         </div>
         <div className="space-y-2 min-h-[80px]">
-          {tasks.map((t) => (
-            <KanbanCard key={t.id} task={t} clients={clients} onUpdate={onUpdate} />
-          ))}
+          {items.map((it) =>
+            it.kind === "task" ? (
+              <KanbanCard key={`t-${it.data.id}`} task={it.data} clients={clients} onUpdate={onUpdate} />
+            ) : (
+              <DividerRow
+                key={`d-${it.data.id}`}
+                divider={it.data}
+                onRename={onUpdateDivider}
+                onDelete={onDeleteDivider}
+              />
+            )
+          )}
+          <button
+            type="button"
+            onClick={() => onAddDivider(status)}
+            className="w-full mt-2 py-1.5 px-2 text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-accent/40 rounded inline-flex items-center justify-center gap-1 border border-dashed border-border/40"
+          >
+            <Plus className="h-3 w-3" /> Séparateur
+          </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DividerRow({
+  divider,
+  onRename,
+  onDelete,
+}: {
+  divider: any;
+  onRename: (id: string, label: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(divider.label);
+  useEffect(() => setValue(divider.label), [divider.label]);
+  return (
+    <div className="group rounded-md bg-background/40 border border-border/40 px-2 py-1.5 flex items-center gap-1">
+      {editing ? (
+        <Input
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => { setEditing(false); if (value.trim() && value !== divider.label) onRename(divider.id, value.trim()); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); }
+            if (e.key === "Escape") { setValue(divider.label); setEditing(false); }
+          }}
+          className="h-6 text-[11px] uppercase tracking-wider font-semibold"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="flex-1 text-left text-[11px] uppercase tracking-wider font-semibold text-foreground/80 truncate"
+        >
+          {divider.label}
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => onDelete(divider.id)}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition"
+        aria-label="Supprimer le séparateur"
+      >
+        <Trash2 className="h-3 w-3" />
+      </button>
     </div>
   );
 }
