@@ -106,11 +106,11 @@ export default function Tasks() {
     if (!over) return;
     const newStatus = String(over.id) as Status;
     if (!STATUSES.includes(newStatus)) return;
-    const task = tasks.find((t) => t.id === active.id);
+    const task = tasks.find((t) => t.id === String(active.id));
     if (!task || task.status === newStatus) return;
     const prev = tasks;
-    setTasks((ts) => ts.map((t) => (t.id === active.id ? { ...t, status: newStatus } : t)));
-    const { error } = await supabase.from("tasks").update({ status: newStatus }).eq("id", active.id);
+    setTasks((ts) => ts.map((t) => (t.id === String(active.id) ? { ...t, status: newStatus } : t)));
+    const { error } = await supabase.from("tasks").update({ status: newStatus }).eq("id", String(active.id));
     if (error) {
       toast.error(error.message);
       setTasks(prev);
