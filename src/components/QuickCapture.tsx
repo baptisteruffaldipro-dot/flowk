@@ -383,7 +383,14 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Actions suggérées</Label>
                 <div className="space-y-1 mt-1">
                   {ai.actions.map((a, i) => (
-                    <label key={i} className="flex items-start gap-2 p-2 rounded hover:bg-background cursor-pointer text-sm">
+                    <label
+                      key={i}
+                      className={`flex items-start gap-2 p-2 rounded cursor-pointer text-sm border ${
+                        a.type === "create_task" || a.type === "create_project"
+                          ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
+                          : "border-transparent hover:bg-background"
+                      }`}
+                    >
                       <Checkbox
                         checked={selectedActions.has(i)}
                         onCheckedChange={(c) => {
@@ -393,7 +400,19 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                         }}
                       />
                       <div className="flex-1">
-                        <div>{a.label}</div>
+                        <div className="font-medium">{a.label}</div>
+                        {a.type === "create_task" && a.task_title && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Titre : <span className="text-foreground">{a.task_title}</span>
+                            {a.prestation && <> · Prestation : <span className="text-foreground">{a.prestation}</span></>}
+                          </div>
+                        )}
+                        {a.type === "create_project" && a.project_name && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Nom : <span className="text-foreground">{a.project_name}</span>
+                            {a.project_type && <> · Type : <span className="text-foreground">{a.project_type}</span></>}
+                          </div>
+                        )}
                         {a.deadline && <div className="text-xs text-muted-foreground">Deadline : {a.deadline}</div>}
                       </div>
                       <Badge variant="outline" className="text-[10px]">{a.type}</Badge>
