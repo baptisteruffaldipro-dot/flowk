@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -17,13 +16,6 @@ import { ArrowLeft, Upload, Send, CheckCircle2, XCircle, Trash2, FileText } from
 import { toast } from "sonner";
 import BatViewer from "@/components/BatViewer";
 import { BAT_STATUS_LABEL, fmtDateTime } from "@/lib/format";
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  brouillon: "outline",
-  en_relecture: "secondary",
-  valide: "default",
-  rejete: "destructive",
-};
 
 const FIELDS: { key: string; label: string; placeholder?: string; type?: string }[] = [
   { key: "reference", label: "Référence" },
