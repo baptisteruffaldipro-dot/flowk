@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     }
 
     const system = `Tu es l'assistant de gestion d'un studio de graphisme. Un message brut (SMS, WhatsApp, email, etc.) est envoyé.
-Ta mission : 1) le résumer en 1-2 phrases en français, 2) identifier le client/projet/tâche/commande probable parmi la liste fournie (uniquement par leur id), 3) proposer 1 à 3 actions parmi:
+Ta mission : 1) le résumer en 1-2 phrases en français, 2) identifier le client/projet/tâche/commande probable parmi la liste fournie (uniquement par leur id), 3) proposer 1 à 4 actions parmi:
 - add_note (ajouter une note datée à une entité existante)
 - create_task (créer une nouvelle tâche — fournir task_title court et explicite, optionnel prestation parmi: mise_en_page, creation, logo, impression, devis, moodboard, ajustements, illustration, refonte, vectorisation, covering, strategie, traduction, shooting, autre — optionnel deadline ISO YYYY-MM-DD)
 - create_project (créer un nouveau projet — fournir project_name et project_type parmi: identite_graphique, support_communication, web, impression, autre — client_id requis ou create_client)
@@ -116,6 +116,7 @@ Règles importantes :
 - Si le message décrit un travail concret à réaliser (création visuel, mise en page, impression, devis à faire, etc.) ET qu'aucune tâche existante ne correspond, propose IMPÉRATIVEMENT create_task en première action.
 - Si le message évoque le démarrage d'une collaboration plus large (refonte d'identité, nouveau site web, gros chantier multi-livrables) ET qu'aucun projet existant ne correspond, propose create_project en première action.
 - Sinon, propose add_note rattaché à l'entité existante détectée.
+- Si tu proposes create_client (client inconnu), propose AUSSI create_task ou create_project pour le travail à effectuer (ou au minimum add_note si c'est juste une demande d'info / prise de contact). Le client seul ne suffit pas : il faut toujours une action concrète associée.
 - Sois concret : task_title et project_name doivent être courts, clairs, prêts à utiliser tels quels (pas de "Nouvelle tâche").
 
 Réponds STRICTEMENT via l'outil "propose_capture_actions". Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la liste.`
