@@ -11,12 +11,18 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, Play, Pause, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { STATUS_LABEL, PRESTATION_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
 
 export default function TaskDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [task, setTask] = useState<any>(null);
   const [subtasks, setSubtasks] = useState<any[]>([]);
   const [entries, setEntries] = useState<any[]>([]);
@@ -116,6 +122,16 @@ export default function TaskDetail() {
     load();
   };
 
+  const deleteTask = async () => {
+    if (!id) return;
+    await supabase.from("subtasks").delete().eq("task_id", id);
+    await supabase.from("time_entries").delete().eq("task_id", id);
+    const { error } = await supabase.from("tasks").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Tâche supprimée");
+    navigate("/taches");
+  };
+
   const computeAmount = () => {
     if (!task) return null;
     if (task.billing_type === "forfait") return task.flat_amount ? Number(task.flat_amount) : null;
@@ -136,15 +152,38 @@ export default function TaskDetail() {
         title={task.projects?.name ?? task.title}
         description={`${task.clients?.name ?? "Sans client"} • ${PRESTATION_LABEL[task.prestation] ?? task.title}`}
         actions={
-          running ? (
-            <Button onClick={stopTimer} variant="destructive" size="sm" className="gap-2">
-              <Pause className="h-4 w-4" /> Stop ({fmtMinutes(totalMinutesLive)})
-            </Button>
-          ) : (
-            <Button onClick={askEstimAndStart} size="sm" className="gap-2">
-              <Play className="h-4 w-4" /> Démarrer
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            {running ? (
+              <Button onClick={stopTimer} variant="destructive" size="sm" className="gap-2">
+                <Pause className="h-4 w-4" /> Stop ({fmtMinutes(totalMinutesLive)})
+              </Button>
+            ) : (
+              <Button onClick={askEstimAndStart} size="sm" className="gap-2">
+                <Play className="h-4 w-4" /> Démarrer
+              </Button>
+            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" /> Supprimer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer cette tâche ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action est définitive. Sous-tâches et historique du timer seront aussi supprimés.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={deleteTask} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         }
       />
 

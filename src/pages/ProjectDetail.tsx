@@ -1,17 +1,22 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { PROJECT_TYPE_LABEL, STATUS_LABEL } from "@/lib/format";
 import { toast } from "sonner";
 
 export default function ProjectDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [notes, setNotes] = useState("");
@@ -34,6 +39,17 @@ export default function ProjectDetail() {
     else toast.success("Enregistré");
   };
 
+  const deleteProject = async () => {
+    if (!id) return;
+    if (tasks.length > 0) {
+      return toast.error(`Impossible : ${tasks.length} tâche(s) liée(s). Supprime-les d'abord.`);
+    }
+    const { error } = await supabase.from("projects").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Projet supprimé");
+    navigate("/projets");
+  };
+
   if (!project) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
   return (
@@ -44,6 +60,29 @@ export default function ProjectDetail() {
       <PageHeader
         title={project.name}
         description={`${project.clients?.name} • ${PROJECT_TYPE_LABEL[project.type]}`}
+        actions={
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4" /> Supprimer
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer ce projet ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Action définitive. Les tâches liées doivent être supprimées au préalable.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={deleteProject} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        }
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
