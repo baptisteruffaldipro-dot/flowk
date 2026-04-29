@@ -211,11 +211,9 @@ export default function Tasks() {
                     </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Deadline</Label>
-                    <Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
-                  </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Deadline</Label>
+                  <Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1.5">
@@ -268,10 +266,16 @@ export default function Tasks() {
                     <div className="col-span-5 truncate font-medium">{t.projects?.name ?? t.title}</div>
                     <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
                     <div className="col-span-1 text-muted-foreground text-xs">{PRESTATION_LABEL[t.prestation]}</div>
-                    <div className="col-span-2 text-muted-foreground text-xs flex items-center gap-1">
+                    <div className="col-span-2">
+                      {t.priority && t.priority !== "secondaire" && (
+                        <Badge variant="outline" className={`text-[10px] ${PRIORITY_COLOR[t.priority]}`}>
+                          {PRIORITY_LABEL[t.priority]}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="col-span-1 text-muted-foreground text-xs flex items-center gap-1">
                       {t.deadline && <Calendar className="h-3 w-3" />}{fmtDate(t.deadline)}
                     </div>
-                    <div className="col-span-1 text-xs text-muted-foreground">{fmtMinutes(t.total_minutes)}</div>
                     <div className="col-span-1"><Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status]}</Badge></div>
                   </Link>
                 ))}
