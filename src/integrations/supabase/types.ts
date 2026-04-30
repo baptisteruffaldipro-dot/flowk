@@ -455,6 +455,7 @@ export type Database = {
           grammage: string | null
           id: string
           observations: string | null
+          payment_status: Database["public"]["Enums"]["print_payment_status"]
           project_id: string | null
           quantity: number | null
           reference: string | null
@@ -481,6 +482,7 @@ export type Database = {
           grammage?: string | null
           id?: string
           observations?: string | null
+          payment_status?: Database["public"]["Enums"]["print_payment_status"]
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
@@ -507,6 +509,7 @@ export type Database = {
           grammage?: string | null
           id?: string
           observations?: string | null
+          payment_status?: Database["public"]["Enums"]["print_payment_status"]
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
@@ -1131,6 +1134,7 @@ export type Database = {
         | "facture_a_faire"
         | "strategie"
         | "traduction"
+      print_payment_status: "non_regle" | "acompte_50" | "regle"
       print_status:
         | "a_commander"
         | "validation_bat"
@@ -1350,6 +1354,7 @@ export const Constants = {
         "strategie",
         "traduction",
       ],
+      print_payment_status: ["non_regle", "acompte_50", "regle"],
       print_status: [
         "a_commander",
         "validation_bat",

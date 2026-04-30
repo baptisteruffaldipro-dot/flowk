@@ -26,13 +26,19 @@ export default function Dashboard() {
   const load = async () => {
       const [t, o, i, a, paid] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
-        supabase.from("print_orders").select("id,description,status,amount,clients(name)").not("status", "in", "(livre,livre_paye)").order("created_at", { ascending: false }).limit(50),
+        supabase.from("print_orders").select("id,description,status,payment_status,amount,clients(name)").not("status", "in", "(livre,livre_paye)").order("created_at", { ascending: false }).limit(50),
         supabase.from("invoices").select("id,label,amount,status,clients(name)").neq("status", "payee").order("created_at", { ascending: false }).limit(50),
         supabase.from("appointments").select("id,title,start_at,type,location,clients(name)").gte("start_at", new Date().toISOString()).neq("status", "annule").order("start_at", { ascending: true }).limit(8),
         supabase.from("invoices").select("amount").eq("status", "payee"),
       ]);
-      const paidPrint = await supabase.from("print_orders").select("amount").eq("status", "livre_paye");
-      const paidPrintRev = ((paidPrint.data as any) ?? []).reduce((s: number, x: any) => s + (x.amount ? Number(x.amount) : 0), 0);
+      const allPrint = await supabase.from("print_orders").select("amount,payment_status,status");
+      const allPrintData = (allPrint.data as any[]) ?? [];
+      const paidPrintRev = allPrintData.reduce((s: number, x: any) => {
+        const amt = x.amount ? Number(x.amount) : 0;
+        if (x.payment_status === "regle" || x.status === "livre_paye") return s + amt;
+        if (x.payment_status === "acompte_50") return s + amt * 0.5;
+        return s;
+      }, 0);
       setTasks((t.data as any) ?? []);
       setOrders((o.data as any) ?? []);
       setInvoices((i.data as any) ?? []);
@@ -45,7 +51,12 @@ export default function Dashboard() {
       const doneCount = all.filter((x: any) => x.status === "envoye" || x.status === "a_facturer").length;
       const todoCount = totalCount - doneCount;
       const invoicesRev = ((i.data as any) ?? []).filter((x: Inv) => x.status === "a_facturer" || x.status === "facturee").reduce((s: number, x: Inv) => s + Number(x.amount), 0);
-      const printRev = ((o.data as any) ?? []).reduce((s: number, x: any) => s + (x.amount ? Number(x.amount) : 0), 0);
+      const printRev = ((o.data as any) ?? []).reduce((s: number, x: any) => {
+        const amt = x.amount ? Number(x.amount) : 0;
+        if (x.payment_status === "regle") return s;
+        if (x.payment_status === "acompte_50") return s + amt * 0.5;
+        return s + amt;
+      }, 0);
       const pendingRev = invoicesRev + printRev;
       const paidRev = ((paid.data as any) ?? []).reduce((s: number, x: any) => s + Number(x.amount ?? 0), 0);
       const awaitBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "a_commander").length;

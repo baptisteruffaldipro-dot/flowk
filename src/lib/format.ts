@@ -82,6 +82,12 @@ export const PRINT_STATUS_LABEL: Record<string, string> = {
   livre_paye: "Livré et payé",
 };
 
+export const PRINT_PAYMENT_LABEL: Record<string, string> = {
+  non_regle: "Non réglé",
+  acompte_50: "Acompte 50%",
+  regle: "Réglé",
+};
+
 export const BAT_PRINT_STATUS_LABEL: Record<string, string> = {
   a_imprimer: "À imprimer",
   en_impression: "En impression",
