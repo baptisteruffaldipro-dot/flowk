@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2, Inbox, ImagePlus, X } from "lucide-react";
+import { Sparkles, Loader2, Inbox, ImagePlus, X, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -471,6 +471,27 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                     </label>
                   ))}
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 gap-1"
+                  onClick={() => {
+                    const title = (ai?.summary?.slice(0, 80) || content.slice(0, 80) || "Nouvelle tâche").trim();
+                    const newAction: Action = {
+                      type: "create_task",
+                      label: `Créer une tâche : ${title}`,
+                      task_title: title,
+                    };
+                    const nextActions = [...(ai?.actions ?? []), newAction];
+                    setAi({ ...(ai as AiResult), actions: nextActions });
+                    const s = new Set(selectedActions);
+                    s.add(nextActions.length - 1);
+                    setSelectedActions(s);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Ajouter une tâche
+                </Button>
               </div>
             </div>
           )}
