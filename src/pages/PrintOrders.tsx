@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Upload, Loader2, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
+import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
 
 export default function PrintOrders() {
   const [bats, setBats] = useState<any[]>([]);
@@ -49,6 +49,11 @@ export default function PrintOrders() {
 
   const updateOrderStatus = async (id: string, status: string) => {
     await supabase.from("print_orders").update({ status: status as any }).eq("id", id);
+    load();
+  };
+
+  const updateOrderPayment = async (id: string, payment_status: string) => {
+    await supabase.from("print_orders").update({ payment_status: payment_status as any }).eq("id", id);
     load();
   };
 
@@ -259,7 +264,7 @@ export default function PrintOrders() {
           <div className="divide-y">
             {orders.map((o) => (
               <div key={o.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm hover:bg-secondary/40">
-                <Link to={`/impressions/${o.id}`} className="col-span-5 min-w-0">
+                <Link to={`/impressions/${o.id}`} className="col-span-4 min-w-0">
                   <div className="font-medium truncate hover:underline">{o.description}</div>
                   <div className="text-xs text-muted-foreground">{o.clients?.name}</div>
                 </Link>
@@ -268,15 +273,26 @@ export default function PrintOrders() {
                 </div>
                 <div className="col-span-2 font-medium flex items-center gap-2">
                   {fmtMoney(o.amount ? Number(o.amount) : null)}
-                  {(paidPrintIds.has(o.id) || o.status === "livre_paye") && (
+                  {(paidPrintIds.has(o.id) || o.payment_status === "regle" || o.status === "livre_paye") && (
                     <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">Payé</Badge>
                   )}
+                  {o.payment_status === "acompte_50" && (
+                    <Badge className="text-[10px] bg-amber-500 hover:bg-amber-500 text-white">Acompte 50%</Badge>
+                  )}
                 </div>
-                <div className="col-span-3">
+                <div className="col-span-2">
                   <Select value={o.status} onValueChange={(v) => updateOrderStatus(o.id, v)}>
                     <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(PRINT_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2">
+                  <Select value={o.payment_status ?? "non_regle"} onValueChange={(v) => updateOrderPayment(o.id, v)}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(PRINT_PAYMENT_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
