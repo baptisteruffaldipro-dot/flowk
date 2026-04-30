@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
     }
 
     const system = `Tu es l'assistant de gestion d'un studio de graphisme. Un message brut (SMS, WhatsApp, email, etc.) est envoyé.
-Ta mission : 1) le résumer en 1-2 phrases en français, 2) identifier le client/projet/tâche/commande probable parmi la liste fournie (uniquement par leur id), 3) proposer 1 à 4 actions parmi:
+Ta mission : 1) produire un RÉSUMÉ ACTIONNABLE en français — pas une simple paraphrase, mais une note "ce qu'il faut faire" : objectif, livrables attendus, échéance éventuelle, points d'attention (2-4 phrases max, ton direct style mémo interne, commence par un verbe d'action quand possible), 2) identifier le client/projet/tâche/commande probable parmi la liste fournie (uniquement par leur id), 3) proposer 1 à 4 actions parmi:
 - add_note (ajouter une note datée à une entité existante)
 - create_task (créer une nouvelle tâche — fournir task_title court et explicite, optionnel prestation parmi: mise_en_page, creation, logo, impression, devis, moodboard, ajustements, illustration, refonte, vectorisation, covering, strategie, traduction, shooting, autre — optionnel deadline ISO YYYY-MM-DD)
 - create_project (créer un nouveau projet — fournir project_name et project_type parmi: identite_graphique, support_communication, web, impression, autre — client_id requis ou create_client)
@@ -116,6 +116,7 @@ Ta mission : 1) le résumer en 1-2 phrases en français, 2) identifier le client
 
 Règles importantes :
 - Si le message décrit un travail concret à réaliser (création visuel, mise en page, impression, devis à faire, etc.) ET qu'aucune tâche existante ne correspond, propose IMPÉRATIVEMENT create_task en première action.
+- Quand tu proposes create_task, si le travail comporte plusieurs étapes claires et distinctes (ex: brief → moodboard → propositions → ajustements → livraison ; ou collecte infos → maquette → impression), fournis aussi un tableau "subtasks" (2 à 6 sous-tâches courtes, à l'impératif, ordonnées). Ne mets PAS de sous-tâches si la tâche est atomique (une seule action).
 - Si le message évoque le démarrage d'une collaboration plus large (refonte d'identité, nouveau site web, gros chantier multi-livrables) ET qu'aucun projet existant ne correspond, propose create_project en première action.
 - Sinon, propose add_note rattaché à l'entité existante détectée.
 - Si tu proposes create_client (client inconnu), propose AUSSI create_task ou create_project pour le travail à effectuer (ou au minimum add_note si c'est juste une demande d'info / prise de contact). Le client seul ne suffit pas : il faut toujours une action concrète associée.
@@ -165,7 +166,8 @@ Réponds STRICTEMENT via l'outil "propose_capture_actions". Choisis null pour le
                   prestation: { type: ['string', 'null'] },
                   project_name: { type: ['string', 'null'] },
                   project_type: { type: ['string', 'null'] },
-                  subtask_title: { type: ['string', 'null'] },
+                   subtask_title: { type: ['string', 'null'] },
+                   subtasks: { type: ['array', 'null'], items: { type: 'string' } },
                   deadline: { type: ['string', 'null'] },
                   client_name: { type: ['string', 'null'] },
                   client_email: { type: ['string', 'null'] },
