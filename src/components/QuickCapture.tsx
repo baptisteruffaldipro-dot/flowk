@@ -338,7 +338,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-2xl relative max-h-[85dvh] overflow-y-auto top-1/2 -translate-y-1/2 md:left-[calc(50%+120px)]"
+        className="max-w-2xl relative max-h-[85dvh] flex flex-col p-0 top-1/2 -translate-y-1/2 md:left-[calc(50%+120px)]"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -352,7 +352,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
             </div>
           </div>
         )}
-        <DialogHeader>
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" /> Capture rapide
           </DialogTitle>
