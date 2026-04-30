@@ -56,12 +56,22 @@ Deno.serve(async (req) => {
     await sendTelegram(
       chatId,
       text === '/start'
-        ? `👋 Salut ! Envoie-moi une description de tâche, je la créerai dans Flowk.\n\nEx : "Refaire logo Dupont pour vendredi prio haute"`
+        ? `👋 Salut ! Je peux créer dans Flowk :\n\n• 📌 <b>Tâche</b> — "refaire logo Dupont pour vendredi"\n• 👤 <b>Client</b> — "nouveau client Dupont, dupont@mail.fr, 0612..."\n• 📁 <b>Projet</b> — "nouveau projet identité Medusor"\n• 📅 <b>Rendez-vous</b> — "RDV avec Martin demain 14h en visio"\n• 🖨️ <b>Commande impression</b> — "impression 500 flyers A5 pour Dupont"\n\nÉcris naturellement, ou force avec <code>/client</code>, <code>/projet</code>, <code>/tache</code>, <code>/rdv</code>, <code>/impression</code>.`
         : "🔄 Conversation réinitialisée.",
       LOVABLE_API_KEY,
       TELEGRAM_API_KEY,
     )
     return json({ ok: true })
+  }
+
+  // Détecter une commande slash explicite pour forcer le type
+  let forcedType: string | null = null
+  let cleanText = text
+  const slashMatch = text.match(/^\/(client|projet|tache|tâche|rdv|impression)\b\s*(.*)$/i)
+  if (slashMatch) {
+    const cmd = slashMatch[1].toLowerCase().replace('â', 'a')
+    forcedType = cmd === 'tâche' ? 'tache' : cmd
+    cleanText = slashMatch[2].trim() || '(pas de détails)'
   }
 
   // 2. Charger conversation en cours
@@ -72,7 +82,7 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   const history: Array<{ role: string; content: string }> = Array.isArray(convo?.history) ? convo!.history : []
-  history.push({ role: 'user', content: text })
+  history.push({ role: 'user', content: forcedType ? `[FORCE_TYPE=${forcedType}] ${cleanText}` : text })
 
   // 3. Charger contexte (clients, projets)
   const [{ data: clients }, { data: projects }] = await Promise.all([
@@ -86,27 +96,61 @@ Deno.serve(async (req) => {
   }
 
   // 4. Appel IA
-  const system = `Tu es un assistant qui CRÉE des tâches dans Flowk (studio graphique) via Telegram.
+  const system = `Tu es un assistant qui CRÉE des entités dans Flowk (studio graphique) via Telegram.
 
-RÈGLE ABSOLUE : tu n'as PAS le droit de dire "tâche créée", "c'est fait", "ok je l'ajoute" sans avoir choisi action="create_task". Le message de confirmation n'est envoyé QUE si action="create_task". Sinon RIEN n'est créé en base.
+RÈGLE ABSOLUE : tu n'as PAS le droit de dire "créé", "c'est fait", "ok je l'ajoute" sans avoir choisi une action create_*. Le message de confirmation n'est envoyé QUE si action commence par "create_". Sinon RIEN n'est créé en base.
 
-Choisis UNE action :
-1. action="create_task" → dès que tu as un TITRE clair. Tout le reste (client, projet, deadline, sous-tâches) est OPTIONNEL et peut être null. Crée la tâche immédiatement, ne demande pas de confirmation.
-2. action="ask" → SEULEMENT si le titre lui-même est incompréhensible OU si le client mentionné correspond à plusieurs clients existants (ambiguïté réelle). Pose UNE question courte.
-3. action="reply" → uniquement si le message n'a rien à voir avec une tâche (salutation, question sur le bot, etc.).
+Si le message commence par [FORCE_TYPE=xxx], tu DOIS créer cette entité (pas de "reply", pas de doute sur le type). Tu peux poser une question si une info essentielle manque.
 
-Champs tâche (obligatoires dans le JSON, mais peuvent être null) :
-- title : string court et clair
-- client_id : choisis dans la liste si match évident (même partiel), sinon null. NE redemande PAS si pas trouvé, mets null.
-- project_id : idem
-- prestation : mise_en_page|creation|logo|impression|devis|moodboard|ajustements|illustration|refonte|vectorisation|covering|strategie|traduction|shooting|autre (déduis du contexte, "logo" → logo, "refaire" → refonte, etc.)
-- priority : principale|secondaire|urgente ("urgent"/"urgente"/"asap" → urgente)
-- deadline : YYYY-MM-DD ou null. Aujourd'hui = ${new Date().toISOString().slice(0, 10)}. Calcule les dates relatives ("vendredi", "lundi prochain", "demain").
-- subtasks : array de 2-5 strings si étapes évidentes, sinon null
+Actions disponibles :
+1. create_task — créer une tâche (work à faire)
+2. create_client — créer un nouveau client (personne ou entreprise)
+3. create_project — créer un projet (regroupement de tâches pour un client)
+4. create_appointment — créer un rendez-vous (date/heure obligatoire)
+5. create_print_order — créer une commande d'impression
+6. ask — poser UNE question courte si une info essentielle manque
+7. reply — uniquement si le message n'a rien à voir avec une création (salutation, question sur le bot)
 
-Pour reply_message lors d'un create_task : sois bref ("OK, je crée."), la confirmation détaillée est ajoutée automatiquement après l'insertion.
+Détection automatique du type (sauf si FORCE_TYPE) :
+- "RDV", "rendez-vous", "réunion avec", "call avec", "meeting" → create_appointment
+- "nouveau client", "ajouter client", "créer client" → create_client
+- "nouveau projet", "projet pour", "créer projet" → create_project
+- "impression", "imprimer", "flyers", "cartes de visite", "affiches X exemplaires" → create_print_order
+- "tâche", "à faire", "refaire", "créer logo", verbe d'action sans contexte spécial → create_task
 
-N'invente JAMAIS d'id absent de la liste.`
+CHAMPS PAR TYPE (tous obligatoires dans le JSON, mais la plupart peuvent être null) :
+
+task : { title, client_id, project_id, prestation, priority, deadline, subtasks }
+- prestation : mise_en_page|creation|logo|impression|devis|moodboard|ajustements|illustration|refonte|vectorisation|covering|strategie|traduction|shooting|autre
+- priority : principale|secondaire|urgente
+- deadline : YYYY-MM-DD ou null
+- subtasks : array 2-5 strings ou null
+
+client : { name, company, email, phone, address, notes }
+- name est OBLIGATOIRE. Si manque, action="ask".
+- Les autres peuvent être null.
+
+project : { name, client_id, type, description }
+- type : identite_graphique|support_communication|web|impression|autre
+- name et client_id OBLIGATOIRES. Si client absent ou ambigu → ask.
+
+appointment : { title, client_id, project_id, type, start_at, duration_minutes, location, notes }
+- type : visio|presentiel|telephone|autre
+- start_at : ISO complet "YYYY-MM-DDTHH:MM:00+02:00" (timezone Paris). OBLIGATOIRE avec heure précise. Si pas d'heure → ask.
+- duration_minutes : 60 par défaut
+- title OBLIGATOIRE (déduis-le, ex: "RDV Martin")
+
+print_order : { description, client_id, project_id, quantity, format, support, colors, finitions, observations, amount }
+- description OBLIGATOIRE (ex: "500 flyers A5 quadri")
+- client_id : si client mentionné inconnu → null (création possible quand même)
+- quantity, format, support, colors, finitions : déduis si possible, sinon null
+
+Règle commune :
+- N'invente JAMAIS d'id absent de la liste fournie.
+- Si client mentionné inconnu : mets client_id=null et continue (sauf project où c'est obligatoire → ask).
+- Aujourd'hui = ${new Date().toISOString().slice(0, 10)}. Calcule dates relatives ("demain", "vendredi", "lundi prochain").
+- Pour reply_message lors d'un create_* : sois bref ("OK, je crée."), la confirmation détaillée est ajoutée automatiquement.
+- Pose UNE seule question à la fois.`
 
   const userMsg = `Conversation:
 ${history.map((h) => `${h.role}: ${h.content}`).join('\n')}
@@ -126,7 +170,7 @@ ${JSON.stringify(convo?.pending_payload ?? {})}`
         additionalProperties: false,
         required: ['action', 'reply_message'],
         properties: {
-          action: { type: 'string', enum: ['create_task', 'ask', 'reply'] },
+          action: { type: 'string', enum: ['create_task', 'create_client', 'create_project', 'create_appointment', 'create_print_order', 'ask', 'reply'] },
           reply_message: { type: 'string' },
           task: {
             type: ['object', 'null'],
@@ -140,6 +184,62 @@ ${JSON.stringify(convo?.pending_payload ?? {})}`
               priority: { type: 'string' },
               deadline: { type: ['string', 'null'] },
               subtasks: { type: ['array', 'null'], items: { type: 'string' } },
+            },
+          },
+          client: {
+            type: ['object', 'null'],
+            additionalProperties: false,
+            required: ['name', 'company', 'email', 'phone', 'address', 'notes'],
+            properties: {
+              name: { type: 'string' },
+              company: { type: ['string', 'null'] },
+              email: { type: ['string', 'null'] },
+              phone: { type: ['string', 'null'] },
+              address: { type: ['string', 'null'] },
+              notes: { type: ['string', 'null'] },
+            },
+          },
+          project: {
+            type: ['object', 'null'],
+            additionalProperties: false,
+            required: ['name', 'client_id', 'type', 'description'],
+            properties: {
+              name: { type: 'string' },
+              client_id: { type: ['string', 'null'] },
+              type: { type: 'string' },
+              description: { type: ['string', 'null'] },
+            },
+          },
+          appointment: {
+            type: ['object', 'null'],
+            additionalProperties: false,
+            required: ['title', 'client_id', 'project_id', 'type', 'start_at', 'duration_minutes', 'location', 'notes'],
+            properties: {
+              title: { type: 'string' },
+              client_id: { type: ['string', 'null'] },
+              project_id: { type: ['string', 'null'] },
+              type: { type: 'string' },
+              start_at: { type: 'string' },
+              duration_minutes: { type: ['integer', 'null'] },
+              location: { type: ['string', 'null'] },
+              notes: { type: ['string', 'null'] },
+            },
+          },
+          print_order: {
+            type: ['object', 'null'],
+            additionalProperties: false,
+            required: ['description', 'client_id', 'project_id', 'quantity', 'format', 'support', 'colors', 'finitions', 'observations', 'amount'],
+            properties: {
+              description: { type: 'string' },
+              client_id: { type: ['string', 'null'] },
+              project_id: { type: ['string', 'null'] },
+              quantity: { type: ['integer', 'null'] },
+              format: { type: ['string', 'null'] },
+              support: { type: ['string', 'null'] },
+              colors: { type: ['string', 'null'] },
+              finitions: { type: ['string', 'null'] },
+              observations: { type: ['string', 'null'] },
+              amount: { type: ['number', 'null'] },
             },
           },
         },
@@ -172,7 +272,7 @@ ${JSON.stringify(convo?.pending_payload ?? {})}`
   const call = aiData?.choices?.[0]?.message?.tool_calls?.[0]
   let parsed: any = null
   try { parsed = JSON.parse(call?.function?.arguments ?? '{}') } catch {}
-  console.log('AI parsed action:', parsed?.action, 'task:', JSON.stringify(parsed?.task))
+  console.log('AI parsed action:', parsed?.action, 'payload:', JSON.stringify(parsed))
   if (!parsed?.action) {
     await sendTelegram(chatId, "🤔 Je n'ai pas compris, peux-tu reformuler ?", LOVABLE_API_KEY, TELEGRAM_API_KEY)
     return json({ ok: true })
@@ -223,10 +323,135 @@ ${JSON.stringify(convo?.pending_payload ?? {})}`
     return json({ ok: true, task_id: newTask.id })
   }
 
+  if (parsed.action === 'create_client' && parsed.client?.name) {
+    const c = parsed.client
+    const { data: newClient, error: insErr } = await supabase
+      .from('clients')
+      .insert({
+        name: c.name,
+        company: c.company || null,
+        email: c.email || null,
+        phone: c.phone || null,
+        address: c.address || null,
+        notes: c.notes || null,
+      })
+      .select('id')
+      .single()
+    if (insErr) {
+      await sendTelegram(chatId, `❌ Erreur création client : ${insErr.message}`, LOVABLE_API_KEY, TELEGRAM_API_KEY)
+      return json({ error: insErr.message }, 500)
+    }
+    await supabase.from('telegram_conversations').delete().eq('chat_id', chatId)
+    const url = `https://flowk.lovable.app/clients/${newClient.id}`
+    await sendTelegram(
+      chatId,
+      `✅ <b>Client créé</b>\n\n👤 ${escapeHtml(c.name)}${c.company ? ` — ${escapeHtml(c.company)}` : ''}\n${c.email ? `📧 ${escapeHtml(c.email)}\n` : ''}${c.phone ? `📞 ${escapeHtml(c.phone)}\n` : ''}\n<a href="${url}">Ouvrir dans Flowk</a>`,
+      LOVABLE_API_KEY,
+      TELEGRAM_API_KEY,
+    )
+    return json({ ok: true, client_id: newClient.id })
+  }
+
+  if (parsed.action === 'create_project' && parsed.project?.name && parsed.project?.client_id) {
+    const p = parsed.project
+    const allowedTypes = ['identite_graphique','support_communication','web','impression','autre']
+    const { data: newProject, error: insErr } = await supabase
+      .from('projects')
+      .insert({
+        name: p.name,
+        client_id: p.client_id,
+        type: allowedTypes.includes(p.type) ? p.type : 'autre',
+        description: p.description || null,
+      })
+      .select('id')
+      .single()
+    if (insErr) {
+      await sendTelegram(chatId, `❌ Erreur création projet : ${insErr.message}`, LOVABLE_API_KEY, TELEGRAM_API_KEY)
+      return json({ error: insErr.message }, 500)
+    }
+    await supabase.from('telegram_conversations').delete().eq('chat_id', chatId)
+    const url = `https://flowk.lovable.app/projets/${newProject.id}`
+    await sendTelegram(
+      chatId,
+      `✅ <b>Projet créé</b>\n\n📁 ${escapeHtml(p.name)}\n\n<a href="${url}">Ouvrir dans Flowk</a>`,
+      LOVABLE_API_KEY,
+      TELEGRAM_API_KEY,
+    )
+    return json({ ok: true, project_id: newProject.id })
+  }
+
+  if (parsed.action === 'create_appointment' && parsed.appointment?.title && parsed.appointment?.start_at) {
+    const a = parsed.appointment
+    const allowedTypes = ['visio','presentiel','telephone','autre']
+    const { data: newApt, error: insErr } = await supabase
+      .from('appointments')
+      .insert({
+        title: a.title,
+        client_id: a.client_id || null,
+        project_id: a.project_id || null,
+        type: allowedTypes.includes(a.type) ? a.type : 'presentiel',
+        start_at: a.start_at,
+        duration_minutes: a.duration_minutes || 60,
+        location: a.location || null,
+        notes: a.notes || null,
+        status: 'planifie',
+      })
+      .select('id, start_at')
+      .single()
+    if (insErr) {
+      await sendTelegram(chatId, `❌ Erreur création RDV : ${insErr.message}`, LOVABLE_API_KEY, TELEGRAM_API_KEY)
+      return json({ error: insErr.message }, 500)
+    }
+    await supabase.from('telegram_conversations').delete().eq('chat_id', chatId)
+    const url = `https://flowk.lovable.app/rdv`
+    const when = new Date(newApt.start_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Paris' })
+    await sendTelegram(
+      chatId,
+      `✅ <b>Rendez-vous créé</b>\n\n📅 ${escapeHtml(a.title)}\n🕐 ${escapeHtml(when)} (${a.duration_minutes || 60} min)\n${a.location ? `📍 ${escapeHtml(a.location)}\n` : ''}\n<a href="${url}">Ouvrir dans Flowk</a>`,
+      LOVABLE_API_KEY,
+      TELEGRAM_API_KEY,
+    )
+    return json({ ok: true, appointment_id: newApt.id })
+  }
+
+  if (parsed.action === 'create_print_order' && parsed.print_order?.description) {
+    const o = parsed.print_order
+    const { data: newOrder, error: insErr } = await supabase
+      .from('print_orders')
+      .insert({
+        description: o.description,
+        client_id: o.client_id || null,
+        project_id: o.project_id || null,
+        quantity: o.quantity || null,
+        format: o.format || null,
+        support: o.support || null,
+        colors: o.colors || null,
+        finitions: o.finitions || null,
+        observations: o.observations || null,
+        amount: o.amount || null,
+        status: 'bat_en_attente',
+      })
+      .select('id')
+      .single()
+    if (insErr) {
+      await sendTelegram(chatId, `❌ Erreur création commande : ${insErr.message}`, LOVABLE_API_KEY, TELEGRAM_API_KEY)
+      return json({ error: insErr.message }, 500)
+    }
+    await supabase.from('telegram_conversations').delete().eq('chat_id', chatId)
+    const url = `https://flowk.lovable.app/impressions/${newOrder.id}`
+    await sendTelegram(
+      chatId,
+      `✅ <b>Commande d'impression créée</b>\n\n🖨️ ${escapeHtml(o.description)}\n${o.quantity ? `📦 ${o.quantity} ex.\n` : ''}${o.format ? `📐 ${escapeHtml(o.format)}\n` : ''}\n<a href="${url}">Ouvrir dans Flowk</a>`,
+      LOVABLE_API_KEY,
+      TELEGRAM_API_KEY,
+    )
+    return json({ ok: true, order_id: newOrder.id })
+  }
+
   // ask or reply : on garde le contexte
   await supabase.from('telegram_conversations').upsert({
     chat_id: chatId,
-    pending_payload: parsed.task ?? null,
+    pending_payload: parsed.task ?? parsed.client ?? parsed.project ?? parsed.appointment ?? parsed.print_order ?? null,
     history: history.slice(-10),
     updated_at: new Date().toISOString(),
   })
