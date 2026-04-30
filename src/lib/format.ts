@@ -79,7 +79,6 @@ export const PRINT_STATUS_LABEL: Record<string, string> = {
   validation_bat: "Validation BAT",
   en_impression: "En impression",
   livre: "Livré",
-  livre_paye: "Livré et payé",
 };
 
 export const PRINT_PAYMENT_LABEL: Record<string, string> = {
