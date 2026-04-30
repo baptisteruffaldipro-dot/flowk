@@ -72,6 +72,47 @@ export default function PrintOrders() {
     load();
   };
 
+  const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+
+  const handleScreenshotUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const imgs = Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, 5);
+    if (imgs.length === 0) return toast.error("Sélectionnez une image");
+    setParsing(true);
+    try {
+      const images = await Promise.all(imgs.map(fileToDataUrl));
+      const { data, error } = await supabase.functions.invoke("parse-print-order", {
+        body: { images },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setForm((prev: any) => ({
+        ...prev,
+        description: data.description ?? prev.description,
+        reference: data.reference ?? prev.reference,
+        quantity: data.quantity != null ? String(data.quantity) : prev.quantity,
+        format: data.format ?? prev.format,
+        grammage: data.grammage ?? prev.grammage,
+        support: data.support ?? prev.support,
+        colors: data.colors ?? prev.colors,
+        finitions: data.finitions ?? prev.finitions,
+        observations: data.observations ?? prev.observations,
+        amount: data.amount != null ? String(data.amount) : prev.amount,
+      }));
+      toast.success("Champs remplis depuis la capture");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Analyse impossible");
+    } finally {
+      setParsing(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <PageHeader
