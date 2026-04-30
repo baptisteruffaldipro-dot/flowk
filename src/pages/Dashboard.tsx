@@ -26,10 +26,15 @@ export default function Dashboard() {
   const load = async () => {
       const [t, o, i, a, paid] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
-        supabase.from("print_orders").select("id,description,status,amount,clients(name)").not("status", "in", "(livre)").order("created_at", { ascending: false }).limit(50),
+        supabase.from("print_orders").select("id,description,status,amount,clients(name)").not("status", "in", "(livre,livre_paye)").order("created_at", { ascending: false }).limit(50),
         supabase.from("invoices").select("id,label,amount,status,clients(name)").neq("status", "payee").order("created_at", { ascending: false }).limit(50),
         supabase.from("appointments").select("id,title,start_at,type,location,clients(name)").gte("start_at", new Date().toISOString()).neq("status", "annule").order("start_at", { ascending: true }).limit(8),
         supabase.from("invoices").select("amount").eq("status", "payee"),
+      ]);
+      const paidPrint = await supabase.from("print_orders").select("amount").eq("status", "livre_paye");
+      const _paidPrintAmounts = (paidPrint.data as any) ?? [];
+      const paidPrintRev = _paidPrintAmounts.reduce((s: number, x: any) => s + (x.amount ? Number(x.amount) : 0), 0);
+      const __unused = ([
       ]);
       setTasks((t.data as any) ?? []);
       setOrders((o.data as any) ?? []);
