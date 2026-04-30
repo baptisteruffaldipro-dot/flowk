@@ -21,6 +21,9 @@ import BatDetail from "./pages/BatDetail";
 import Invoices from "./pages/Invoices";
 import Inbox from "./pages/Inbox";
 import Appointments from "./pages/Appointments";
+import Questionnaires from "./pages/Questionnaires";
+import QuestionnaireDetail from "./pages/QuestionnaireDetail";
+import QuestionnairePublic from "./pages/QuestionnairePublic";
 import ClientPortal from "./pages/ClientPortal";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
 import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
@@ -38,6 +41,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/q/:token" element={<QuestionnairePublic />} />
             <Route path="/portail" element={<ProtectedRoute requireRole="client"><ClientPortal /></ProtectedRoute>} />
             <Route path="/portail/projet/:id" element={<ProtectedRoute requireRole="client"><ClientProjectPortal /></ProtectedRoute>} />
             <Route path="/portail/impression/:id" element={<ProtectedRoute requireRole="client"><ClientPrintOrderPortal /></ProtectedRoute>} />
@@ -57,6 +61,8 @@ const App = () => (
               <Route path="/facturation" element={<Invoices />} />
               <Route path="/inbox" element={<Inbox />} />
               <Route path="/rdv" element={<Appointments />} />
+              <Route path="/questionnaires" element={<Questionnaires />} />
+              <Route path="/questionnaires/:id" element={<QuestionnaireDetail />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
