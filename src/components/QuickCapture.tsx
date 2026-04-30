@@ -28,6 +28,7 @@ type Action = {
   project_name?: string|null;
   project_type?: string|null;
   subtask_title?: string|null;
+  subtasks?: string[]|null;
   deadline?: string|null;
   client_name?: string|null;
   client_email?: string|null;
