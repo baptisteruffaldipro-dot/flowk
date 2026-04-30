@@ -115,7 +115,7 @@ export default function GlobalTimer() {
     <>
       <div className="fixed bottom-4 right-4 z-50">
         {running ? (
-          <Card className={`p-2.5 pr-3 shadow-lg border-2 ${overEstimate ? "border-destructive" : "border-primary"} bg-card flex items-center gap-3 min-w-[260px]`}>
+          <Card className={`p-2 pr-2.5 sm:p-2.5 sm:pr-3 shadow-lg border-2 ${overEstimate ? "border-destructive" : "border-primary"} bg-card flex items-center gap-2 sm:gap-3 max-w-[calc(100vw-2rem)] sm:min-w-[260px]`}>
             <div className={`h-2 w-2 rounded-full animate-pulse ${overEstimate ? "bg-destructive" : "bg-primary"}`} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -134,9 +134,16 @@ export default function GlobalTimer() {
             </Button>
           </Card>
         ) : (
-          <Button onClick={openPicker} size="sm" variant="default" className="shadow-lg gap-2 h-10">
-            <TimerIcon className="h-4 w-4" /> Démarrer un timer
-          </Button>
+          <>
+            {/* Mobile: bouton icône seule */}
+            <Button onClick={openPicker} size="icon" variant="default" className="sm:hidden shadow-lg h-11 w-11 rounded-full" aria-label="Démarrer un timer">
+              <TimerIcon className="h-5 w-5" />
+            </Button>
+            {/* Desktop: bouton complet */}
+            <Button onClick={openPicker} size="sm" variant="default" className="hidden sm:inline-flex shadow-lg gap-2 h-10">
+              <TimerIcon className="h-4 w-4" /> Démarrer un timer
+            </Button>
+          </>
         )}
       </div>
 
