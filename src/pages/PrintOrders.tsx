@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Upload, Loader2, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
@@ -18,6 +18,7 @@ export default function PrintOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [form, setForm] = useState<any>({
     description: "", client_id: "", amount: "", status: "bat_en_attente",
     reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "",
