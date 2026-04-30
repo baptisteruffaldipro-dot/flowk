@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList } from "lucide-react";
+import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList, Sparkles, Loader2, Upload, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PRESTATION_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
 
@@ -22,7 +23,15 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
   // Forms
   const [task, setTask] = useState<any>({ title: "", client_id: "", project_id: "", prestation: "creation", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
   const [project, setProject] = useState<any>({ name: "", client_id: "", type: "autre" });
-  const [order, setOrder] = useState<any>({ description: "", client_id: "", amount: "" });
+  const emptyOrder = {
+    description: "", client_id: "", amount: "",
+    reference: "", quantity: "", format: "", grammage: "",
+    support: "", colors: "", finitions: "", observations: "",
+  };
+  const [order, setOrder] = useState<any>(emptyOrder);
+  const [importText, setImportText] = useState("");
+  const [importFiles, setImportFiles] = useState<File[]>([]);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     if (mode) {
@@ -78,18 +87,84 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
   const createOrder = async () => {
     if (!order.description.trim()) return toast.error("Description requise");
     if (!order.client_id) return toast.error("Client requis");
-    const { data, error } = await supabase.from("print_orders").insert({
+    const payload: any = {
       description: order.description.trim(),
       client_id: order.client_id,
       amount: order.amount ? Number(order.amount) : null,
+      reference: order.reference?.trim() || null,
+      quantity: order.quantity ? Number(order.quantity) : null,
+      format: order.format?.trim() || null,
+      grammage: order.grammage?.trim() || null,
+      support: order.support?.trim() || null,
+      colors: order.colors?.trim() || null,
+      finitions: order.finitions?.trim() || null,
+      observations: order.observations?.trim() || null,
       status: "bat_en_attente",
-    }).select("id").single();
+    };
+    const { data, error } = await supabase.from("print_orders").insert(payload).select("id").single();
     if (error) return toast.error(error.message);
     toast.success("Commande créée");
     close();
-    setOrder({ description: "", client_id: "", amount: "" });
+    setOrder(emptyOrder);
+    setImportText(""); setImportFiles([]);
     onCreated?.();
     if (data?.id) navigate(`/impressions/${data.id}`);
+  };
+
+  const fileToDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const onPasteImport = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(e.clipboardData?.items ?? []);
+    const imgs = items.filter((it) => it.kind === "file" && it.type.startsWith("image/"));
+    if (imgs.length > 0) {
+      e.preventDefault();
+      const files = imgs.map((it) => it.getAsFile()).filter(Boolean) as File[];
+      setImportFiles((prev) => [...prev, ...files].slice(0, 5));
+      toast.success(`${files.length} image${files.length > 1 ? "s" : ""} collée${files.length > 1 ? "s" : ""}`);
+    }
+  };
+
+  const runImport = async () => {
+    if (!importText.trim() && importFiles.length === 0) {
+      return toast.error("Collez du texte ou une image de la commande");
+    }
+    setImporting(true);
+    try {
+      const images: string[] = [];
+      for (const f of importFiles) {
+        if (f.size > 8 * 1024 * 1024) { toast.error(`${f.name} > 8 Mo`); continue; }
+        images.push(await fileToDataUrl(f));
+      }
+      const { data, error } = await supabase.functions.invoke("parse-print-order", {
+        body: { text: importText, images },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const r = data as any;
+      setOrder((prev: any) => ({
+        ...prev,
+        description: r.description ?? prev.description,
+        reference: r.reference ?? prev.reference,
+        quantity: r.quantity != null ? String(r.quantity) : prev.quantity,
+        format: r.format ?? prev.format,
+        grammage: r.grammage ?? prev.grammage,
+        support: r.support ?? prev.support,
+        colors: r.colors ?? prev.colors,
+        finitions: r.finitions ?? prev.finitions,
+        observations: r.observations ?? prev.observations,
+        amount: r.amount != null ? String(r.amount) : prev.amount,
+      }));
+      toast.success("Commande pré-remplie ✨");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Import impossible");
+    } finally {
+      setImporting(false);
+    }
   };
 
   const filteredProjects = projects.filter((p) => !task.client_id || p.client_id === task.client_id);
