@@ -68,7 +68,7 @@ export default function Questionnaires() {
     <div className="p-8 max-w-6xl mx-auto">
       <PageHeader
         title="Questionnaires"
-        subtitle="Briefs clients structurés avec synthèse IA"
+        description="Briefs clients structurés avec synthèse IA"
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
