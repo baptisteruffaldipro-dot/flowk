@@ -338,7 +338,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-2xl relative max-h-[85dvh] flex flex-col p-0 top-1/2 -translate-y-1/2 md:left-[calc(50%+120px)]"
+        className="max-w-2xl max-h-[calc(100dvh-3rem)] flex flex-col overflow-hidden p-0 md:left-[calc(50%+120px)]"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
