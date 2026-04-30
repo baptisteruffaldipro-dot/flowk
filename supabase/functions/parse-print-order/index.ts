@@ -39,8 +39,8 @@ Deno.serve(async (req) => {
     if (!text && images.length === 0) return json({ error: 'text or images required' }, 400)
     if (text.length > 12000) return json({ error: 'text too long' }, 400)
 
-    const system = `Tu es un assistant qui extrait les informations d'une commande d'impression depuis un texte brut (copié-collé d'un site d'imprimeur, devis, email, etc.) ou une capture d'écran.
-Tu DOIS répondre UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, avec EXACTEMENT ces clés (toutes optionnelles, mets null si inconnu) :
+    const system = `Tu es un assistant OCR + extraction qui lit une commande d'impression depuis un texte brut (copié-collé d'un site d'imprimeur, devis, email, etc.) ou une capture d'écran.
+ Tu DOIS répondre UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, avec EXACTEMENT ces clés (toutes optionnelles, mets null si inconnu). Ne réponds jamais avec un tableau : si plusieurs lignes/produits sont visibles, regroupe-les dans une seule commande :
 {
   "description": string|null,
   "reference": string|null,
@@ -55,21 +55,21 @@ Tu DOIS répondre UNIQUEMENT avec un objet JSON valide, sans markdown, sans text
 }
 
 Règles :
-- "description" : libellé court et clair du produit imprimé (ex: "Cartes de visite", "Flyer A5 recto-verso").
+ - "description" : libellé court et clair du produit imprimé (ex: "Cartes de visite", "Flyer A5 recto-verso"). Si plusieurs lignes proches existent, synthétise (ex: "Enseigne vitres").
 - "reference" : numéro de commande / devis / référence interne de l'imprimeur si présent.
-- "quantity" : nombre d'exemplaires (entier).
-- "format" : dimensions (ex: "A4", "85 × 55 mm", "10 × 21 cm").
+ - "quantity" : nombre d'exemplaires/unités total visible (entier). Si plusieurs lignes affichent 7 unités et 4 unités, retourne 11.
+ - "format" : dimensions (ex: "A4", "85 × 55 mm", "10 × 21 cm"). S'il y en a plusieurs, mets les dimensions principales séparées par des virgules ou null si trop nombreuses.
 - "grammage" : grammage du papier (ex: "350 g/m²", "170 g").
 - "support" : type de papier/support (ex: "Couché brillant", "Offset", "Carton").
 - "colors" : impression couleur (ex: "Quadri recto-verso", "Pantone 485 C", "Noir recto").
 - "finitions" : finitions/options (ex: "Pelliculage mat", "Vernis sélectif", "Coins arrondis").
-- "observations" : remarques utiles non couvertes ailleurs.
-- "amount" : montant TTC en euros (nombre, sans symbole). Si seulement HT visible, prends le HT.
+ - "observations" : remarques utiles non couvertes ailleurs. Pour les captures avec plusieurs lignes, détaille les lignes, vues, dimensions et quantités ici.
+ - "amount" : montant TTC en euros (nombre positif, sans symbole). Si seulement HT visible, prends le HT. Si plusieurs montants de ligne sont visibles et aucun total n'est affiché, additionne-les. Si les montants sont affichés négatifs (ex: -210,00), retourne leur valeur positive.
 - Réponds en français pour les valeurs textuelles.`
 
     const userContent: any[] = []
     if (text) userContent.push({ type: 'text', text: `Texte de la commande :\n${text}` })
-    else userContent.push({ type: 'text', text: 'Extrait les informations de cette commande depuis l\'image.' })
+    else userContent.push({ type: 'text', text: 'Lis tout le texte visible de cette capture puis extrait les informations de commande. Les montants négatifs affichés sur une ligne doivent être interprétés comme des montants positifs à additionner.' })
     for (const url of images) {
       userContent.push({ type: 'image_url', image_url: { url } })
     }
@@ -78,7 +78,7 @@ Règles :
       method: 'POST',
       headers: { Authorization: `Bearer ${lovableKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: images.length > 0 ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: userContent },
