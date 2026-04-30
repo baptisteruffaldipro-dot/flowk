@@ -125,6 +125,30 @@ export default function PrintOrders() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Nouvelle commande d'impression</DialogTitle></DialogHeader>
+              <label
+                className={`flex items-center gap-3 p-3 border-2 border-dashed rounded-md cursor-pointer transition mb-3 ${parsing ? "opacity-60 pointer-events-none" : "hover:bg-secondary/50 hover:border-primary/40"}`}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => { e.preventDefault(); handleScreenshotUpload(e.dataTransfer.files); }}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  disabled={parsing}
+                  onChange={(e) => { handleScreenshotUpload(e.target.files); e.target.value = ""; }}
+                />
+                {parsing ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : <Sparkles className="h-5 w-5 text-primary" />}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium flex items-center gap-1.5">
+                    <Upload className="h-3.5 w-3.5" />
+                    {parsing ? "Analyse de la capture…" : "Importer une capture d'écran"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Glisse-dépose ou clique : l'IA remplit les champs depuis ta commande imprimeur
+                  </div>
+                </div>
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">Description *</Label>
