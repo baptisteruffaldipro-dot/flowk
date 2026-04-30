@@ -1131,7 +1131,12 @@ export type Database = {
         | "facture_a_faire"
         | "strategie"
         | "traduction"
-      print_status: "a_commander" | "validation_bat" | "en_impression" | "livre"
+      print_status:
+        | "a_commander"
+        | "validation_bat"
+        | "en_impression"
+        | "livre"
+        | "livre_paye"
       project_type:
         | "identite_graphique"
         | "support_communication"
@@ -1345,7 +1350,13 @@ export const Constants = {
         "strategie",
         "traduction",
       ],
-      print_status: ["a_commander", "validation_bat", "en_impression", "livre"],
+      print_status: [
+        "a_commander",
+        "validation_bat",
+        "en_impression",
+        "livre",
+        "livre_paye",
+      ],
       project_type: [
         "identite_graphique",
         "support_communication",
