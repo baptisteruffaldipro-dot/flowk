@@ -92,7 +92,7 @@ export default function Bats() {
   const filteredProjects = projects.filter((p) => !form.client_id || p.client_id === form.client_id);
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="BAT"
         description={`${bats.length} bon${bats.length > 1 ? "s" : ""} à tirer`}

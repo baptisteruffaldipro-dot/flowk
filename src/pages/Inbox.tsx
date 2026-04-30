@@ -37,7 +37,7 @@ export default function Inbox() {
   };
 
   return (
-    <div className="p-8 max-w-[1100px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1100px] mx-auto">
       <PageHeader
         title="Inbox"
         description="Captures rapides et messages clients à traiter"

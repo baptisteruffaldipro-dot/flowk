@@ -250,7 +250,7 @@ export default function TaskDetail() {
   const filteredProjects = projects.filter((p) => !task.client_id || p.client_id === task.client_id);
 
   return (
-    <div className="p-8 max-w-[1200px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1200px] mx-auto">
       <Link to="/taches" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4">
         <ArrowLeft className="h-3 w-3" /> Tâches
       </Link>

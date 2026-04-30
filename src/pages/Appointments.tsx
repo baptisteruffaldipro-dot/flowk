@@ -170,7 +170,7 @@ export default function Appointments() {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Rendez-vous"
         description={`${upcoming.length} à venir · ${past.length} passé${past.length > 1 ? "s" : ""}`}

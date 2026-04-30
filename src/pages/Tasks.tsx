@@ -665,7 +665,7 @@ export default function Tasks() {
   const filteredProjects = projects.filter((p) => !form.client_id || p.client_id === form.client_id);
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <PageHeader
         title="Tâches"
         description={`${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`}

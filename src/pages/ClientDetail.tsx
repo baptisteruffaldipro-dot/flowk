@@ -55,7 +55,7 @@ export default function ClientDetail() {
   };
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto">
       <Link to="/clients" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4">
         <ArrowLeft className="h-3 w-3" /> Clients
       </Link>
