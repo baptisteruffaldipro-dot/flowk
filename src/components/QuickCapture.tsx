@@ -338,7 +338,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-2xl relative max-h-[85dvh] overflow-y-auto top-1/2 -translate-y-1/2 md:left-[calc(50%+120px)]"
+        className="max-w-2xl relative max-h-[85dvh] flex flex-col p-0 top-1/2 -translate-y-1/2 md:left-[calc(50%+120px)]"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -352,7 +352,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
             </div>
           </div>
         )}
-        <DialogHeader>
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" /> Capture rapide
           </DialogTitle>
@@ -361,7 +361,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="space-y-3 px-6 pb-3 overflow-y-auto flex-1 min-h-0">
           <div className="grid grid-cols-[1fr_140px] gap-2">
             <div className="space-y-2">
               <Textarea
@@ -587,18 +587,19 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <Button variant="ghost" size="sm" onClick={() => { onOpenChange(false); navigate("/inbox"); }}>
-              <Inbox className="h-3.5 w-3.5 mr-1" /> Voir l'inbox
+        </div>
+
+        <div className="flex items-center justify-between gap-2 px-6 py-3 border-t border-border bg-background shrink-0 rounded-b-lg">
+          <Button variant="ghost" size="sm" onClick={() => { onOpenChange(false); navigate("/inbox"); }}>
+            <Inbox className="h-3.5 w-3.5 mr-1" /> Voir l'inbox
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={sendToInbox} disabled={!content.trim() || saving}>
+              Envoyer à l'inbox
             </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={sendToInbox} disabled={!content.trim() || saving}>
-                Envoyer à l'inbox
-              </Button>
-              <Button size="sm" onClick={() => apply(false)} disabled={!ai || saving || selectedActions.size === 0}>
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Appliquer"}
-              </Button>
-            </div>
+            <Button size="sm" onClick={() => apply(false)} disabled={!ai || saving || selectedActions.size === 0}>
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Appliquer"}
+            </Button>
           </div>
         </div>
       </DialogContent>
