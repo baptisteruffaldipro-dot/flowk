@@ -403,7 +403,7 @@ ${JSON.stringify(convo?.pending_payload ?? {})}`
       return json({ error: insErr.message }, 500)
     }
     await supabase.from('telegram_conversations').delete().eq('chat_id', chatId)
-    const url = `https://flowk.lovable.app/rendez-vous`
+    const url = `https://flowk.lovable.app/rdv`
     const when = new Date(newApt.start_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Paris' })
     await sendTelegram(
       chatId,
