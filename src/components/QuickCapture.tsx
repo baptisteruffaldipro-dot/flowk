@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2, Inbox, ImagePlus, X, Plus } from "lucide-react";
+import { Sparkles, Loader2, Inbox, ImagePlus, X, Plus, StickyNote, ListPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -459,6 +459,11 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                             ))}
                           </ul>
                         )}
+                        {a.type === "create_subtask" && a.subtask_title && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Sous-tâche : <span className="text-foreground">{a.subtask_title}</span>
+                          </div>
+                        )}
                         {a.type === "create_project" && a.project_name && (
                           <div className="text-xs text-muted-foreground mt-0.5">
                             Nom : <span className="text-foreground">{a.project_name}</span>
@@ -471,27 +476,70 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                     </label>
                   ))}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 gap-1"
-                  onClick={() => {
-                    const title = (ai?.summary?.slice(0, 80) || content.slice(0, 80) || "Nouvelle tâche").trim();
-                    const newAction: Action = {
-                      type: "create_task",
-                      label: `Créer une tâche : ${title}`,
-                      task_title: title,
-                    };
-                    const nextActions = [...(ai?.actions ?? []), newAction];
-                    setAi({ ...(ai as AiResult), actions: nextActions });
-                    const s = new Set(selectedActions);
-                    s.add(nextActions.length - 1);
-                    setSelectedActions(s);
-                  }}
-                >
-                  <Plus className="h-3.5 w-3.5" /> Ajouter une tâche
-                </Button>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => {
+                      const title = (ai?.summary?.slice(0, 80) || content.slice(0, 80) || "Nouvelle tâche").trim();
+                      const newAction: Action = {
+                        type: "create_task",
+                        label: `Créer une tâche : ${title}`,
+                        task_title: title,
+                      };
+                      const nextActions = [...(ai?.actions ?? []), newAction];
+                      setAi({ ...(ai as AiResult), actions: nextActions });
+                      const s = new Set(selectedActions);
+                      s.add(nextActions.length - 1);
+                      setSelectedActions(s);
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Ajouter une tâche
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => {
+                      const target = taskId ? "tâche" : projectId ? "projet" : clientId ? "client" : "cible";
+                      const newAction: Action = {
+                        type: "add_note",
+                        label: `Ajouter une note à la ${target}`,
+                      };
+                      const nextActions = [...(ai?.actions ?? []), newAction];
+                      setAi({ ...(ai as AiResult), actions: nextActions });
+                      const s = new Set(selectedActions);
+                      s.add(nextActions.length - 1);
+                      setSelectedActions(s);
+                    }}
+                  >
+                    <StickyNote className="h-3.5 w-3.5" /> Ajouter une note
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => {
+                      const title = (content.slice(0, 120) || ai?.summary?.slice(0, 120) || "Nouvelle sous-tâche").trim();
+                      const newAction: Action = {
+                        type: "create_subtask",
+                        label: `Ajouter une sous-tâche : ${title}`,
+                        subtask_title: title,
+                      };
+                      const nextActions = [...(ai?.actions ?? []), newAction];
+                      setAi({ ...(ai as AiResult), actions: nextActions });
+                      const s = new Set(selectedActions);
+                      s.add(nextActions.length - 1);
+                      setSelectedActions(s);
+                    }}
+                  >
+                    <ListPlus className="h-3.5 w-3.5" /> Ajouter une sous-tâche
+                  </Button>
+                </div>
               </div>
             </div>
           )}
