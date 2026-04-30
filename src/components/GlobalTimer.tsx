@@ -129,8 +129,8 @@ export default function GlobalTimer() {
                 {running.clients?.name ? ` • ${running.clients.name}` : ""}
               </div>
             </div>
-            <Button onClick={stop} size="sm" variant="destructive" className="h-8 px-2.5 gap-1 shrink-0">
-              <Square className="h-3.5 w-3.5 fill-current" /> <span className="hidden xs:inline">Stop</span>
+            <Button onClick={stop} size="sm" variant="destructive" className="h-8 px-2.5 gap-1 shrink-0" aria-label="Arrêter le timer">
+              <Square className="h-3.5 w-3.5 fill-current" /> <span className="hidden sm:inline">Stop</span>
             </Button>
           </Card>
         ) : (
