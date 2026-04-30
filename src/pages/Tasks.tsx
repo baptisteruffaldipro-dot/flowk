@@ -219,10 +219,12 @@ function KanbanCard({
   task,
   clients,
   onUpdate,
+  paid,
 }: {
   task: any;
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
+  paid?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   const navigate = useNavigate();
@@ -247,6 +249,11 @@ function KanbanCard({
           </div>
         </div>
           <div className="flex items-center gap-1.5 flex-wrap">
+            {paid && (
+              <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white px-2 py-0.5">
+                Payé
+              </Badge>
+            )}
             <QuickEditBadge
               className={tagColor(task.clients?.name ?? "—")}
               options={clients.map((c) => ({ value: c.id, label: c.name }))}
