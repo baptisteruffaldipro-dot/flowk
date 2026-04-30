@@ -304,6 +304,7 @@ function KanbanColumn({
   onAddDivider,
   onUpdateDivider,
   onDeleteDivider,
+  paidTaskIds,
 }: {
   status: Status;
   tasks: any[];
@@ -313,6 +314,7 @@ function KanbanColumn({
   onAddDivider: (status: Status) => void;
   onUpdateDivider: (id: string, label: string) => void;
   onDeleteDivider: (id: string) => void;
+  paidTaskIds: Set<string>;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
@@ -340,7 +342,7 @@ function KanbanColumn({
           {items.map((it, idx) => (
             <div key={it.kind === "task" ? `t-${it.data.id}` : `d-${it.data.id}`}>
               {it.kind === "task" ? (
-                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} />
+                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} paid={paidTaskIds.has(it.data.id)} />
               ) : (
                 <DividerRow
                   divider={it.data}
