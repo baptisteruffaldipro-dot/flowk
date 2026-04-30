@@ -28,6 +28,7 @@ type Action = {
   project_name?: string|null;
   project_type?: string|null;
   subtask_title?: string|null;
+  subtasks?: string[]|null;
   deadline?: string|null;
   client_name?: string|null;
   client_email?: string|null;
@@ -222,9 +223,20 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
             notes: noteText(), deadline: a.deadline || null,
           };
           if (a.prestation) insertPayload.prestation = a.prestation;
-          const { error: tErr } = await supabase.from("tasks").insert(insertPayload);
+          const { data: nt, error: tErr } = await supabase.from("tasks").insert(insertPayload).select("id").single();
           if (tErr) toast.error(`Création tâche: ${tErr.message}`);
-          else toast.success(`Tâche créée : ${insertPayload.title}`);
+          else {
+            toast.success(`Tâche créée : ${insertPayload.title}`);
+            const subs = (a.subtasks ?? []).filter((s) => typeof s === "string" && s.trim().length > 0);
+            if (nt?.id && subs.length > 0) {
+              const rows = subs.slice(0, 10).map((title, i) => ({
+                task_id: nt.id, title: title.trim().slice(0, 200), position: i,
+              }));
+              const { error: sErr } = await supabase.from("subtasks").insert(rows);
+              if (sErr) toast.error(`Sous-tâches: ${sErr.message}`);
+              else toast.success(`${rows.length} sous-tâche${rows.length > 1 ? "s" : ""} ajoutée${rows.length > 1 ? "s" : ""}`);
+            }
+          }
         } else if (a.type === "create_project") {
           if (!clientId) { toast.error("Client requis pour créer un projet"); continue; }
           const insertPayload: any = {
@@ -439,6 +451,13 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                             Titre : <span className="text-foreground">{a.task_title}</span>
                             {a.prestation && <> · Prestation : <span className="text-foreground">{a.prestation}</span></>}
                           </div>
+                        )}
+                        {a.type === "create_task" && Array.isArray(a.subtasks) && a.subtasks.length > 0 && (
+                          <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4 space-y-0.5">
+                            {a.subtasks.map((s, k) => (
+                              <li key={k}><span className="text-foreground">{s}</span></li>
+                            ))}
+                          </ul>
                         )}
                         {a.type === "create_project" && a.project_name && (
                           <div className="text-xs text-muted-foreground mt-0.5">
