@@ -258,12 +258,11 @@ export default function PrintOrders() {
               <div key={o.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm hover:bg-secondary/40">
                 <Link to={`/impressions/${o.id}`} className="col-span-5 min-w-0">
                   <div className="font-medium truncate hover:underline">{o.description}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {o.clients?.name}
-                    {o.estimated_delivery_date ? ` · livraison ${fmtDate(o.estimated_delivery_date)}` : ""}
-                  </div>
+                  <div className="text-xs text-muted-foreground">{o.clients?.name}</div>
                 </Link>
-                <div className="col-span-2 text-xs text-muted-foreground">{fmtMinutes(o.total_minutes)}</div>
+                <div className="col-span-2 text-xs text-muted-foreground">
+                  {o.estimated_delivery_date ? fmtDate(o.estimated_delivery_date) : "—"}
+                </div>
                 <div className="col-span-2 font-medium">{fmtMoney(o.amount ? Number(o.amount) : null)}</div>
                 <div className="col-span-3">
                   <Select value={o.status} onValueChange={(v) => updateOrderStatus(o.id, v)}>
