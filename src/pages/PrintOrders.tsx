@@ -22,6 +22,7 @@ export default function PrintOrders() {
   const [form, setForm] = useState<any>({
     description: "", client_id: "", amount: "", status: "a_commander",
     reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "",
+    estimated_delivery_date: "",
   });
 
   const load = async () => {
@@ -64,11 +65,12 @@ export default function PrintOrders() {
       colors: form.colors.trim() || null,
       finitions: form.finitions.trim() || null,
       observations: form.observations.trim() || null,
+      estimated_delivery_date: form.estimated_delivery_date || null,
     });
     if (error) return toast.error(error.message);
     toast.success("Commande créée");
     setOpen(false);
-    setForm({ description: "", client_id: "", amount: "", status: "a_commander", reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "" });
+    setForm({ description: "", client_id: "", amount: "", status: "a_commander", reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "", estimated_delivery_date: "" });
     load();
   };
 
@@ -193,6 +195,10 @@ export default function PrintOrders() {
                   <Label className="text-xs">Montant (€)</Label>
                   <Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Date de livraison estimée</Label>
+                  <Input type="date" value={form.estimated_delivery_date} onChange={(e) => setForm({ ...form, estimated_delivery_date: e.target.value })} />
+                </div>
                 <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">Observations</Label>
                   <Input value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} maxLength={500} />
@@ -252,7 +258,10 @@ export default function PrintOrders() {
               <div key={o.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm hover:bg-secondary/40">
                 <Link to={`/impressions/${o.id}`} className="col-span-5 min-w-0">
                   <div className="font-medium truncate hover:underline">{o.description}</div>
-                  <div className="text-xs text-muted-foreground">{o.clients?.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {o.clients?.name}
+                    {o.estimated_delivery_date ? ` · livraison ${fmtDate(o.estimated_delivery_date)}` : ""}
+                  </div>
                 </Link>
                 <div className="col-span-2 text-xs text-muted-foreground">{fmtMinutes(o.total_minutes)}</div>
                 <div className="col-span-2 font-medium">{fmtMoney(o.amount ? Number(o.amount) : null)}</div>

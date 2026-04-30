@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Upload, FileText, Download, Trash2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { PRINT_STATUS_LABEL, fmtMoney, fmtDateTime } from "@/lib/format";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import BatViewer from "@/components/BatViewer";
 
 export default function PrintOrderDetail() {
@@ -78,6 +80,11 @@ export default function PrintOrderDetail() {
 
   const updateStatus = async (status: string) => {
     await supabase.from("print_orders").update({ status: status as any }).eq("id", id);
+    load();
+  };
+
+  const updateEstimatedDelivery = async (value: string) => {
+    await supabase.from("print_orders").update({ estimated_delivery_date: value || null }).eq("id", id);
     load();
   };
 
@@ -154,6 +161,16 @@ export default function PrintOrderDetail() {
           <div className="text-sm mt-1">{(order.deliverables ?? []).length} fichier(s)</div>
         </Card>
       </div>
+
+      <Card className="p-4 mb-6">
+        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date de livraison estimée</Label>
+        <Input
+          type="date"
+          className="mt-2 max-w-xs"
+          value={order.estimated_delivery_date ?? ""}
+          onChange={(e) => updateEstimatedDelivery(e.target.value)}
+        />
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <Card className="p-5">

@@ -449,6 +449,7 @@ export type Database = {
           created_at: string
           deliverables: Json
           description: string
+          estimated_delivery_date: string | null
           finitions: string | null
           format: string | null
           grammage: string | null
@@ -474,6 +475,7 @@ export type Database = {
           created_at?: string
           deliverables?: Json
           description: string
+          estimated_delivery_date?: string | null
           finitions?: string | null
           format?: string | null
           grammage?: string | null
@@ -499,6 +501,7 @@ export type Database = {
           created_at?: string
           deliverables?: Json
           description?: string
+          estimated_delivery_date?: string | null
           finitions?: string | null
           format?: string | null
           grammage?: string | null
