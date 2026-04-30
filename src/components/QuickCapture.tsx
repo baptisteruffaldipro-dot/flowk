@@ -54,6 +54,8 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadedPaths, setUploadedPaths] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragDepth, setDragDepth] = useState(0);
 
   // editable link state
   const [clientId, setClientId] = useState<string>("");
@@ -127,6 +129,33 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
       return prev.filter((_, i) => i !== idx);
     });
     setUploadedPaths([]);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    if (!e.dataTransfer?.types?.includes("Files")) return;
+    e.preventDefault();
+    setDragDepth((d) => d + 1);
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragDepth((d) => {
+      const next = d - 1;
+      if (next <= 0) setIsDragging(false);
+      return Math.max(0, next);
+    });
+  };
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!e.dataTransfer?.types?.includes("Files")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  };
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    setDragDepth(0);
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) onPickImages(files);
   };
 
   const analyze = async () => {
@@ -308,7 +337,21 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent
+        className="max-w-2xl relative"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {isDragging && (
+          <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/10 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2 text-primary">
+              <ImagePlus className="h-8 w-8" />
+              <div className="text-sm font-medium">Déposez vos images ici</div>
+            </div>
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" /> Capture rapide
