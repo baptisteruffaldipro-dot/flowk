@@ -17,6 +17,7 @@ export default function PrintOrders() {
   const [bats, setBats] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+  const [paidPrintIds, setPaidPrintIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [form, setForm] = useState<any>({
@@ -26,15 +27,17 @@ export default function PrintOrders() {
   });
 
   const load = async () => {
-    const [b, o, c] = await Promise.all([
+    const [b, o, c, inv] = await Promise.all([
       supabase.from("bats").select("*, clients(name), projects(name)").eq("status", "valide").order("validated_at", { ascending: false }),
       supabase.from("print_orders").select("*, clients(name)").order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
+      supabase.from("invoices").select("print_order_id,status").eq("status", "payee").not("print_order_id", "is", null),
     ]);
     if (b.error) toast.error(b.error.message);
     setBats(b.data ?? []);
     setOrders(o.data ?? []);
     setClients(c.data ?? []);
+    setPaidPrintIds(new Set(((inv.data as any[]) ?? []).map((r) => r.print_order_id)));
   };
   useEffect(() => { load(); }, []);
 
@@ -263,7 +266,12 @@ export default function PrintOrders() {
                 <div className="col-span-2 text-xs text-muted-foreground">
                   {o.estimated_delivery_date ? fmtDate(o.estimated_delivery_date) : "—"}
                 </div>
-                <div className="col-span-2 font-medium">{fmtMoney(o.amount ? Number(o.amount) : null)}</div>
+                <div className="col-span-2 font-medium flex items-center gap-2">
+                  {fmtMoney(o.amount ? Number(o.amount) : null)}
+                  {paidPrintIds.has(o.id) && (
+                    <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">Payé</Badge>
+                  )}
+                </div>
                 <div className="col-span-3">
                   <Select value={o.status} onValueChange={(v) => updateOrderStatus(o.id, v)}>
                     <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
