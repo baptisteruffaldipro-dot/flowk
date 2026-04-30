@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckSquare, FolderKanban, Printer, Plus } from "lucide-react";
+import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { PRESTATION_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
 
@@ -100,10 +100,10 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="text-sm font-semibold tracking-tight">Créer rapidement</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Une tâche, un projet ou une commande d'impression</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Une tâche, un projet, une commande ou un questionnaire client</div>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <Button variant="outline" size="sm" onClick={() => setMode("task")} className="justify-start">
             <CheckSquare className="h-4 w-4 mr-2" /> Nouvelle tâche
           </Button>
@@ -112,6 +112,9 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
           </Button>
           <Button variant="outline" size="sm" onClick={() => setMode("order")} className="justify-start">
             <Printer className="h-4 w-4 mr-2" /> Nouvelle commande
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/questionnaires")} className="justify-start">
+            <ClipboardList className="h-4 w-4 mr-2" /> Questionnaire client
           </Button>
         </div>
       </Card>
