@@ -1,0 +1,1 @@
+ALTER TYPE print_status ADD VALUE 'validation_bat' BEFORE 'en_impression';
