@@ -341,7 +341,7 @@ export default function TaskDetail() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <Card className="p-4">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Statut</div>
           <Select value={task.status} onValueChange={(v) => updateStatusWithAutoBalance(v)}>
@@ -369,12 +369,46 @@ export default function TaskDetail() {
             </SelectContent>
           </Select>
         </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <Card className="p-4">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Deadline</div>
           <Input type="date" value={task.deadline ?? ""} onChange={(e) => updateField({ deadline: e.target.value || null })} className="mt-2" />
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <Card className="p-5">
+          <h2 className="text-sm font-semibold mb-3">Notes</h2>
+          <Textarea
+            value={task.notes ?? ""}
+            onChange={(e) => setTask({ ...task, notes: e.target.value })}
+            onBlur={() => updateField({ notes: task.notes })}
+            rows={8}
+            placeholder="Notes, brief, références…"
+          />
+        </Card>
+
+        <Card className="p-5">
+          <h2 className="text-sm font-semibold mb-3">Sous-tâches</h2>
+          <div className="space-y-1.5 mb-3">
+            {subtasks.map((s) => (
+              <div key={s.id} className="flex items-center gap-2 group">
+                <Checkbox checked={s.done} onCheckedChange={() => toggleSub(s)} />
+                <span className={`flex-1 text-sm ${s.done ? "line-through text-muted-foreground" : ""}`}>{s.title}</span>
+                <button onClick={() => removeSub(s.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Ajouter une sous-tâche"
+              value={newSub}
+              onChange={(e) => setNewSub(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addSubtask()}
+            />
+            <Button size="sm" variant="outline" onClick={addSubtask}><Plus className="h-4 w-4" /></Button>
+          </div>
         </Card>
       </div>
 
@@ -481,43 +515,6 @@ export default function TaskDetail() {
           </div>
         )}
       </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-5">
-          <h2 className="text-sm font-semibold mb-3">Notes</h2>
-          <Textarea
-            value={task.notes ?? ""}
-            onChange={(e) => setTask({ ...task, notes: e.target.value })}
-            onBlur={() => updateField({ notes: task.notes })}
-            rows={8}
-            placeholder="Notes, brief, références…"
-          />
-        </Card>
-
-        <Card className="p-5">
-          <h2 className="text-sm font-semibold mb-3">Sous-tâches</h2>
-          <div className="space-y-1.5 mb-3">
-            {subtasks.map((s) => (
-              <div key={s.id} className="flex items-center gap-2 group">
-                <Checkbox checked={s.done} onCheckedChange={() => toggleSub(s)} />
-                <span className={`flex-1 text-sm ${s.done ? "line-through text-muted-foreground" : ""}`}>{s.title}</span>
-                <button onClick={() => removeSub(s.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Ajouter une sous-tâche"
-              value={newSub}
-              onChange={(e) => setNewSub(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addSubtask()}
-            />
-            <Button size="sm" variant="outline" onClick={addSubtask}><Plus className="h-4 w-4" /></Button>
-          </div>
-        </Card>
-      </div>
 
       {entries.length > 0 && (
         <Card className="p-5 mt-4">
