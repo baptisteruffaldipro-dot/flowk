@@ -179,17 +179,17 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <Button variant="outline" size="sm" onClick={() => setMode("task")} className="justify-start">
-            <CheckSquare className="h-4 w-4 mr-2" /> Nouvelle tâche
+          <Button variant="outline" size="sm" onClick={() => setMode("task")} className="justify-start min-w-0 px-2.5">
+            <CheckSquare className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouvelle tâche</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setMode("project")} className="justify-start">
-            <FolderKanban className="h-4 w-4 mr-2" /> Nouveau projet
+          <Button variant="outline" size="sm" onClick={() => setMode("project")} className="justify-start min-w-0 px-2.5">
+            <FolderKanban className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouveau projet</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setMode("order")} className="justify-start">
-            <Printer className="h-4 w-4 mr-2" /> Nouvelle commande
+          <Button variant="outline" size="sm" onClick={() => setMode("order")} className="justify-start min-w-0 px-2.5">
+            <Printer className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouvelle commande</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate("/questionnaires")} className="justify-start">
-            <ClipboardList className="h-4 w-4 mr-2" /> Questionnaire client
+          <Button variant="outline" size="sm" onClick={() => navigate("/questionnaires")} className="justify-start min-w-0 px-2.5">
+            <ClipboardList className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Questionnaire client</span>
           </Button>
         </div>
       </Card>
