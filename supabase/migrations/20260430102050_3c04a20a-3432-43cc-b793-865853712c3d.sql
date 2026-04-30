@@ -1,0 +1,1 @@
+ALTER TABLE public.print_orders ADD COLUMN estimated_delivery_date date;
