@@ -294,23 +294,98 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
 
       {/* ORDER */}
       <Dialog open={mode === "order"} onOpenChange={(o) => !o && close()}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nouvelle commande d'impression</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Description *</Label>
-              <Input autoFocus value={order.description} onChange={(e) => setOrder({ ...order, description: e.target.value })} />
+          <div className="space-y-4">
+            {/* IMPORT IA */}
+            <div className="rounded-md border border-dashed border-border bg-secondary/30 p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium">
+                <Sparkles className="h-3.5 w-3.5" /> Import auto depuis l'imprimeur
+              </div>
+              <Textarea
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                onPaste={onPasteImport}
+                placeholder="Collez le récap de commande (texte ou screenshot Ctrl+V) — l'IA remplit les champs."
+                className="min-h-[70px] resize-none text-xs"
+              />
+              {importFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {importFiles.map((f, i) => (
+                    <div key={i} className="relative">
+                      <img src={URL.createObjectURL(f)} alt="" className="h-16 w-16 object-cover rounded border border-border" />
+                      <button type="button" onClick={() => setImportFiles((p) => p.filter((_, j) => j !== i))}
+                        className="absolute -top-1.5 -right-1.5 bg-background border border-border rounded-full p-0.5 hover:bg-muted">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
+                  <Upload className="h-3.5 w-3.5" /> Joindre un screenshot
+                  <input type="file" accept="image/*" multiple className="hidden"
+                    onChange={(e) => {
+                      const fs = Array.from(e.target.files ?? []);
+                      setImportFiles((p) => [...p, ...fs].slice(0, 5));
+                      e.target.value = "";
+                    }} />
+                </label>
+                <Button size="sm" onClick={runImport} disabled={importing || (!importText.trim() && importFiles.length === 0)} className="ml-auto">
+                  {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Sparkles className="h-3.5 w-3.5 mr-1" /> Analyser</>}
+                </Button>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Client *</Label>
-              <Select value={order.client_id} onValueChange={(v) => setOrder({ ...order, client_id: v })}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Montant (€)</Label>
-              <Input type="number" step="0.01" value={order.amount} onChange={(e) => setOrder({ ...order, amount: e.target.value })} />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5 col-span-2">
+                <Label className="text-xs">Description *</Label>
+                <Input autoFocus value={order.description} onChange={(e) => setOrder({ ...order, description: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Client *</Label>
+                <Select value={order.client_id} onValueChange={(v) => setOrder({ ...order, client_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Référence</Label>
+                <Input value={order.reference} onChange={(e) => setOrder({ ...order, reference: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Quantité</Label>
+                <Input type="number" value={order.quantity} onChange={(e) => setOrder({ ...order, quantity: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Format</Label>
+                <Input value={order.format} onChange={(e) => setOrder({ ...order, format: e.target.value })} placeholder="A4, 85×55 mm…" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Grammage</Label>
+                <Input value={order.grammage} onChange={(e) => setOrder({ ...order, grammage: e.target.value })} placeholder="350 g/m²" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Support</Label>
+                <Input value={order.support} onChange={(e) => setOrder({ ...order, support: e.target.value })} placeholder="Couché brillant…" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Couleurs</Label>
+                <Input value={order.colors} onChange={(e) => setOrder({ ...order, colors: e.target.value })} placeholder="Quadri R°/V°" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Finitions</Label>
+                <Input value={order.finitions} onChange={(e) => setOrder({ ...order, finitions: e.target.value })} placeholder="Pelliculage mat…" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Montant (€)</Label>
+                <Input type="number" step="0.01" value={order.amount} onChange={(e) => setOrder({ ...order, amount: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label className="text-xs">Observations</Label>
+                <Textarea value={order.observations} onChange={(e) => setOrder({ ...order, observations: e.target.value })} className="min-h-[60px] text-xs" />
+              </div>
             </div>
           </div>
           <DialogFooter><Button onClick={createOrder}><Plus className="h-4 w-4 mr-1" />Créer</Button></DialogFooter>
