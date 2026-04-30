@@ -786,7 +786,12 @@ export default function Tasks() {
                     <div className="col-span-1 text-muted-foreground text-xs flex items-center gap-1">
                       {t.deadline && <Calendar className="h-3 w-3" />}{fmtDate(t.deadline)}
                     </div>
-                    <div className="col-span-1"><Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status]}</Badge></div>
+                    <div className="col-span-1 flex items-center gap-1">
+                      <Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status]}</Badge>
+                      {paidTaskIds.has(t.id) && (
+                        <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">Payé</Badge>
+                      )}
+                    </div>
                   </Link>
                 ))}
               </div>
