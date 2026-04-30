@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, FileText, Download, Trash2, Send } from "lucide-react";
 import { toast } from "sonner";
-import { PRINT_STATUS_LABEL, fmtMoney, fmtDateTime } from "@/lib/format";
+import { PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtMoney, fmtDateTime } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BatViewer from "@/components/BatViewer";
@@ -83,6 +83,11 @@ export default function PrintOrderDetail() {
     load();
   };
 
+  const updatePayment = async (payment_status: string) => {
+    await supabase.from("print_orders").update({ payment_status: payment_status as any }).eq("id", id);
+    load();
+  };
+
   const updateEstimatedDelivery = async (value: string) => {
     await supabase.from("print_orders").update({ estimated_delivery_date: value || null }).eq("id", id);
     load();
@@ -117,12 +122,20 @@ export default function PrintOrderDetail() {
         title={order.description}
         description={`${order.clients?.name} • ${fmtMoney(order.amount ? Number(order.amount) : null)}`}
         actions={
-          <Select value={order.status} onValueChange={updateStatus}>
-            <SelectTrigger className="h-9 w-[180px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(PRINT_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select value={order.status} onValueChange={updateStatus}>
+              <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(PRINT_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={order.payment_status ?? "non_regle"} onValueChange={updatePayment}>
+              <SelectTrigger className="h-9 w-[150px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Object.entries(PRINT_PAYMENT_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         }
       />
 
