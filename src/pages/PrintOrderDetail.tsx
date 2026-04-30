@@ -162,14 +162,55 @@ export default function PrintOrderDetail() {
         </Card>
       </div>
 
-      <Card className="p-4 mb-6">
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date de livraison estimée</Label>
-        <Input
-          type="date"
-          className="mt-2 max-w-xs"
-          value={order.estimated_delivery_date ?? ""}
-          onChange={(e) => updateEstimatedDelivery(e.target.value)}
-        />
+      <Card className="p-5 mb-6">
+        <h2 className="text-sm font-semibold mb-4">Détails de la commande</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Référence</div>
+            <div>{order.reference || "—"}</div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Quantité</div>
+            <div>{order.quantity ? `${order.quantity} ex.` : "—"}</div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Format</div>
+            <div>{order.format || "—"}</div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Grammage</div>
+            <div>{order.grammage || "—"}</div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Support</div>
+            <div>{order.support || "—"}</div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Couleurs</div>
+            <div>{order.colors || "—"}</div>
+          </div>
+          <div className="col-span-2 md:col-span-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Finitions</div>
+            <div>{order.finitions || "—"}</div>
+          </div>
+          <div className="col-span-2 md:col-span-3">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Observations</div>
+            <div className="whitespace-pre-wrap">{order.observations || "—"}</div>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Montant</div>
+            <div>{fmtMoney(order.amount ? Number(order.amount) : null)}</div>
+          </div>
+          <div className="col-span-2">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date de livraison estimée</Label>
+            <Input
+              type="date"
+              className="mt-1 max-w-xs"
+              value={order.estimated_delivery_date ?? ""}
+              onChange={(e) => updateEstimatedDelivery(e.target.value)}
+            />
+          </div>
+        </div>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
