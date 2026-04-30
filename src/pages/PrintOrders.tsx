@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Upload, Loader2, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
@@ -18,6 +18,7 @@ export default function PrintOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [parsing, setParsing] = useState(false);
   const [form, setForm] = useState<any>({
     description: "", client_id: "", amount: "", status: "bat_en_attente",
     reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "",
@@ -71,6 +72,47 @@ export default function PrintOrders() {
     load();
   };
 
+  const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+
+  const handleScreenshotUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const imgs = Array.from(files).filter((f) => f.type.startsWith("image/")).slice(0, 5);
+    if (imgs.length === 0) return toast.error("Sélectionnez une image");
+    setParsing(true);
+    try {
+      const images = await Promise.all(imgs.map(fileToDataUrl));
+      const { data, error } = await supabase.functions.invoke("parse-print-order", {
+        body: { images },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setForm((prev: any) => ({
+        ...prev,
+        description: data.description ?? prev.description,
+        reference: data.reference ?? prev.reference,
+        quantity: data.quantity != null ? String(data.quantity) : prev.quantity,
+        format: data.format ?? prev.format,
+        grammage: data.grammage ?? prev.grammage,
+        support: data.support ?? prev.support,
+        colors: data.colors ?? prev.colors,
+        finitions: data.finitions ?? prev.finitions,
+        observations: data.observations ?? prev.observations,
+        amount: data.amount != null ? String(data.amount) : prev.amount,
+      }));
+      toast.success("Champs remplis depuis la capture");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Analyse impossible");
+    } finally {
+      setParsing(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <PageHeader
@@ -83,6 +125,30 @@ export default function PrintOrders() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Nouvelle commande d'impression</DialogTitle></DialogHeader>
+              <label
+                className={`flex items-center gap-3 p-3 border-2 border-dashed rounded-md cursor-pointer transition mb-3 ${parsing ? "opacity-60 pointer-events-none" : "hover:bg-secondary/50 hover:border-primary/40"}`}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => { e.preventDefault(); handleScreenshotUpload(e.dataTransfer.files); }}
+              >
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  disabled={parsing}
+                  onChange={(e) => { handleScreenshotUpload(e.target.files); e.target.value = ""; }}
+                />
+                {parsing ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : <Sparkles className="h-5 w-5 text-primary" />}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium flex items-center gap-1.5">
+                    <Upload className="h-3.5 w-3.5" />
+                    {parsing ? "Analyse de la capture…" : "Importer une capture d'écran"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Glisse-dépose ou clique : l'IA remplit les champs depuis ta commande imprimeur
+                  </div>
+                </div>
+              </label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">Description *</Label>
