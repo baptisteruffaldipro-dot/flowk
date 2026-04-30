@@ -600,6 +600,75 @@ export type Database = {
           },
         ]
       }
+      questionnaires: {
+        Row: {
+          ai_summary: string | null
+          ai_summary_generated_at: string | null
+          answers: Json
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          filled_by_client: boolean
+          id: string
+          project_id: string | null
+          share_token: string | null
+          status: Database["public"]["Enums"]["questionnaire_status"]
+          submitted_at: string | null
+          template: Database["public"]["Enums"]["questionnaire_template"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          ai_summary_generated_at?: string | null
+          answers?: Json
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          filled_by_client?: boolean
+          id?: string
+          project_id?: string | null
+          share_token?: string | null
+          status?: Database["public"]["Enums"]["questionnaire_status"]
+          submitted_at?: string | null
+          template: Database["public"]["Enums"]["questionnaire_template"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          ai_summary_generated_at?: string | null
+          answers?: Json
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          filled_by_client?: boolean
+          id?: string
+          project_id?: string | null
+          share_token?: string | null
+          status?: Database["public"]["Enums"]["questionnaire_status"]
+          submitted_at?: string | null
+          template?: Database["public"]["Enums"]["questionnaire_template"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionnaires_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questionnaires_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quick_captures: {
         Row: {
           ai_suggestions: Json
@@ -1008,6 +1077,8 @@ export type Database = {
         | "web"
         | "impression"
         | "autre"
+      questionnaire_status: "brouillon" | "envoye" | "complete" | "archive"
+      questionnaire_template: "logo" | "print" | "web" | "rapide"
       task_priority:
         | "en_priorite"
         | "secondaire"
@@ -1227,6 +1298,8 @@ export const Constants = {
         "impression",
         "autre",
       ],
+      questionnaire_status: ["brouillon", "envoye", "complete", "archive"],
+      questionnaire_template: ["logo", "print", "web", "rapide"],
       task_priority: [
         "en_priorite",
         "secondaire",
