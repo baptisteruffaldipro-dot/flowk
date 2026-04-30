@@ -24,6 +24,7 @@ import Appointments from "./pages/Appointments";
 import Questionnaires from "./pages/Questionnaires";
 import QuestionnaireDetail from "./pages/QuestionnaireDetail";
 import QuestionnairePublic from "./pages/QuestionnairePublic";
+import TelegramSettings from "./pages/TelegramSettings";
 import ClientPortal from "./pages/ClientPortal";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
 import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
@@ -63,6 +64,7 @@ const App = () => (
               <Route path="/rdv" element={<Appointments />} />
               <Route path="/questionnaires" element={<Questionnaires />} />
               <Route path="/questionnaires/:id" element={<QuestionnaireDetail />} />
+              <Route path="/telegram" element={<TelegramSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
