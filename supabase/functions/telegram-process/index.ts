@@ -86,28 +86,27 @@ Deno.serve(async (req) => {
   }
 
   // 4. Appel IA
-  const system = `Tu es un assistant qui aide à créer des tâches dans un studio de graphisme via Telegram.
-L'utilisateur t'envoie un message décrivant une tâche à créer. Ton job :
+  const system = `Tu es un assistant qui CRÉE des tâches dans Flowk (studio graphique) via Telegram.
 
-1. Si tu as assez d'infos pour créer une tâche claire, réponds avec action="create_task" et tous les champs.
-2. Si une info CRUCIALE manque (ex : titre flou, client ambigu entre plusieurs clients existants), réponds avec action="ask" et une question courte et précise (1 phrase max).
-3. Si l'utilisateur veut juste discuter ou que le message n'est pas une demande de tâche, réponds avec action="reply" et un message court.
+RÈGLE ABSOLUE : tu n'as PAS le droit de dire "tâche créée", "c'est fait", "ok je l'ajoute" sans avoir choisi action="create_task". Le message de confirmation n'est envoyé QUE si action="create_task". Sinon RIEN n'est créé en base.
 
-Champs tâche :
-- title (string, court et clair, requis pour create_task)
-- client_id (string|null, choisis dans la liste si match évident, sinon null)
-- project_id (string|null, idem)
-- prestation: mise_en_page|creation|logo|impression|devis|moodboard|ajustements|illustration|refonte|vectorisation|covering|strategie|traduction|shooting|autre
-- priority: principale|secondaire|urgente
-- deadline: ISO YYYY-MM-DD ou null
-- subtasks: tableau de strings (2-5) si étapes claires, sinon null
+Choisis UNE action :
+1. action="create_task" → dès que tu as un TITRE clair. Tout le reste (client, projet, deadline, sous-tâches) est OPTIONNEL et peut être null. Crée la tâche immédiatement, ne demande pas de confirmation.
+2. action="ask" → SEULEMENT si le titre lui-même est incompréhensible OU si le client mentionné correspond à plusieurs clients existants (ambiguïté réelle). Pose UNE question courte.
+3. action="reply" → uniquement si le message n'a rien à voir avec une tâche (salutation, question sur le bot, etc.).
 
-Règles :
-- N'invente JAMAIS d'id qui ne soit pas dans la liste fournie.
-- Si client mentionné par nom mais inconnu, mets client_id=null et reply_message="Client X non trouvé, je crée la tâche sans client. Tu pourras le rattacher dans Flowk."
-- Pose UNE seule question à la fois.
-- Pour les dates relatives ("vendredi", "lundi prochain"), calcule par rapport à aujourd'hui : ${new Date().toISOString().slice(0, 10)}.
-- Sois bref et direct. Pas de blabla.`
+Champs tâche (obligatoires dans le JSON, mais peuvent être null) :
+- title : string court et clair
+- client_id : choisis dans la liste si match évident (même partiel), sinon null. NE redemande PAS si pas trouvé, mets null.
+- project_id : idem
+- prestation : mise_en_page|creation|logo|impression|devis|moodboard|ajustements|illustration|refonte|vectorisation|covering|strategie|traduction|shooting|autre (déduis du contexte, "logo" → logo, "refaire" → refonte, etc.)
+- priority : principale|secondaire|urgente ("urgent"/"urgente"/"asap" → urgente)
+- deadline : YYYY-MM-DD ou null. Aujourd'hui = ${new Date().toISOString().slice(0, 10)}. Calcule les dates relatives ("vendredi", "lundi prochain", "demain").
+- subtasks : array de 2-5 strings si étapes évidentes, sinon null
+
+Pour reply_message lors d'un create_task : sois bref ("OK, je crée."), la confirmation détaillée est ajoutée automatiquement après l'insertion.
+
+N'invente JAMAIS d'id absent de la liste.`
 
   const userMsg = `Conversation:
 ${history.map((h) => `${h.role}: ${h.content}`).join('\n')}
@@ -173,6 +172,7 @@ ${JSON.stringify(convo?.pending_payload ?? {})}`
   const call = aiData?.choices?.[0]?.message?.tool_calls?.[0]
   let parsed: any = null
   try { parsed = JSON.parse(call?.function?.arguments ?? '{}') } catch {}
+  console.log('AI parsed action:', parsed?.action, 'task:', JSON.stringify(parsed?.task))
   if (!parsed?.action) {
     await sendTelegram(chatId, "🤔 Je n'ai pas compris, peux-tu reformuler ?", LOVABLE_API_KEY, TELEGRAM_API_KEY)
     return json({ ok: true })
