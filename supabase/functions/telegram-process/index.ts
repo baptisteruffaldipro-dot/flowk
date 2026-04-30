@@ -122,7 +122,7 @@ CHAMPS PAR TYPE (tous obligatoires dans le JSON, mais la plupart peuvent être n
 
 task : { title, client_id, project_id, prestation, priority, deadline, subtasks }
 - prestation : mise_en_page|creation|logo|impression|devis|moodboard|ajustements|illustration|refonte|vectorisation|covering|strategie|traduction|shooting|autre
-- priority : principale|secondaire|urgente
+- priority : en_priorite|secondaire|attente_retour_client|devis (mappe : "urgent"/"urgente"/"prioritaire"/"asap" → en_priorite, "en attente"/"retour client" → attente_retour_client, "devis" → devis, sinon secondaire)
 - deadline : YYYY-MM-DD ou null
 - subtasks : array 2-5 strings ou null
 
@@ -283,7 +283,7 @@ ${JSON.stringify(convo?.pending_payload ?? {})}`
   if (parsed.action === 'create_task' && parsed.task?.title) {
     const t = parsed.task
     const allowedPrest = ['mise_en_page','creation','logo','impression','devis','moodboard','ajustements','illustration','refonte','vectorisation','covering','strategie','traduction','shooting','autre']
-    const allowedPrio = ['principale','secondaire','urgente']
+    const allowedPrio = ['en_priorite','secondaire','attente_retour_client','devis']
     const insertPayload: any = {
       title: t.title,
       client_id: t.client_id || null,
