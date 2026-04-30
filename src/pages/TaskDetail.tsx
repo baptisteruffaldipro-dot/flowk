@@ -466,6 +466,23 @@ export default function TaskDetail() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="space-y-1.5">
+            <Label className="text-xs">
+              Heures travaillées
+              {Number(task.hourly_rate) > 0 && (
+                <span className="text-muted-foreground"> — {fmtMoney(((task.total_minutes ?? 0) / 60) * Number(task.hourly_rate))}</span>
+              )}
+            </Label>
+            <Input
+              type="number" step="0.25" min="0"
+              value={task.total_minutes != null ? (task.total_minutes / 60).toString() : ""}
+              onChange={(e) => setTask({ ...task, total_minutes: e.target.value === "" ? 0 : Math.round(Number(e.target.value) * 60) })}
+              onBlur={() => updateField({ total_minutes: task.total_minutes ?? 0 })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="space-y-1.5">
             <Label className="text-xs">Retours clients effectués</Label>
             <Input
               type="number"
