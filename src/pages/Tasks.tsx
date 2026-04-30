@@ -456,6 +456,47 @@ export default function Tasks() {
     const task = tasks.find((t) => t.id === String(active.id));
     if (!task) return;
 
+    // Drop on a slot between items → insert at exact position
+    if (overId.startsWith("slot:")) {
+      const [, statusStr, idxStr] = overId.split(":");
+      const newStatus = statusStr as Status;
+      const slotIndex = Number(idxStr);
+
+      // Build sorted items in target column (excluding the dragged task)
+      const colTasks = tasks.filter((t) => t.status === newStatus && t.id !== task.id);
+      const colDividers = dividers.filter((d) => d.status === newStatus);
+      const sorted = [
+        ...colTasks.map((t) => ({ kind: "task" as const, data: t, pos: t.position ?? 0 })),
+        ...colDividers.map((d) => ({ kind: "divider" as const, data: d, pos: d.position ?? 0 })),
+      ].sort((a, b) => a.pos - b.pos);
+
+      const before = sorted[slotIndex - 1];
+      const after = sorted[slotIndex];
+      let newPosition: number;
+      if (!before && !after) newPosition = 10;
+      else if (!before) newPosition = (after!.pos) - 5;
+      else if (!after) newPosition = before.pos + 10;
+      else newPosition = (before.pos + after.pos) / 2;
+
+      // No-op check: same status and same effective position
+      if (task.status === newStatus && task.position === newPosition) return;
+
+      const prev = tasks;
+      const updated = tasks.map((t) =>
+        t.id === task.id ? { ...t, status: newStatus, position: newPosition } : t
+      );
+      setTasks(updated);
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: newStatus, position: newPosition })
+        .eq("id", task.id);
+      if (error) {
+        toast.error(error.message);
+        setTasks(prev);
+      }
+      return;
+    }
+
     // Drop on a divider → place task just after that divider
     if (overId.startsWith("divider:")) {
       const dividerId = overId.slice("divider:".length);
