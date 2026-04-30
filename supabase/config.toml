@@ -13,3 +13,7 @@ project_id = "mfboxlbczltwsgobylwn"
     verify_jwt = false
   [functions.handle-email-suppression]
     verify_jwt = false
+  [functions.get-public-questionnaire]
+    verify_jwt = false
+  [functions.submit-public-questionnaire]
+    verify_jwt = false
