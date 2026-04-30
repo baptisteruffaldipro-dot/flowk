@@ -32,10 +32,7 @@ export default function Dashboard() {
         supabase.from("invoices").select("amount").eq("status", "payee"),
       ]);
       const paidPrint = await supabase.from("print_orders").select("amount").eq("status", "livre_paye");
-      const _paidPrintAmounts = (paidPrint.data as any) ?? [];
-      const paidPrintRev = _paidPrintAmounts.reduce((s: number, x: any) => s + (x.amount ? Number(x.amount) : 0), 0);
-      const __unused = ([
-      ]);
+      const paidPrintRev = ((paidPrint.data as any) ?? []).reduce((s: number, x: any) => s + (x.amount ? Number(x.amount) : 0), 0);
       setTasks((t.data as any) ?? []);
       setOrders((o.data as any) ?? []);
       setInvoices((i.data as any) ?? []);
@@ -52,7 +49,7 @@ export default function Dashboard() {
       const pendingRev = invoicesRev + printRev;
       const paidRev = ((paid.data as any) ?? []).reduce((s: number, x: any) => s + Number(x.amount ?? 0), 0);
       const awaitBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "a_commander").length;
-      setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, paidRevenue: paidRev, awaitingBat: awaitBat });
+      setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, paidRevenue: paidRev + paidPrintRev, awaitingBat: awaitBat });
   };
   useEffect(() => { load(); }, []);
 
