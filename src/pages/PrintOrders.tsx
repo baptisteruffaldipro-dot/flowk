@@ -268,7 +268,7 @@ export default function PrintOrders() {
                 </div>
                 <div className="col-span-2 font-medium flex items-center gap-2">
                   {fmtMoney(o.amount ? Number(o.amount) : null)}
-                  {paidPrintIds.has(o.id) && (
+                  {(paidPrintIds.has(o.id) || o.status === "livre_paye") && (
                     <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">Payé</Badge>
                   )}
                 </div>
