@@ -26,7 +26,7 @@ export default function Dashboard() {
   const load = async () => {
       const [t, o, i, a] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
-        supabase.from("print_orders").select("id,description,status,clients(name)").not("status", "in", "(livre)").order("created_at", { ascending: false }).limit(50),
+        supabase.from("print_orders").select("id,description,status,amount,clients(name)").not("status", "in", "(livre)").order("created_at", { ascending: false }).limit(50),
         supabase.from("invoices").select("id,label,amount,status,clients(name)").neq("status", "payee").order("created_at", { ascending: false }).limit(50),
         supabase.from("appointments").select("id,title,start_at,type,location,clients(name)").gte("start_at", new Date().toISOString()).neq("status", "annule").order("start_at", { ascending: true }).limit(8),
       ]);
@@ -41,7 +41,9 @@ export default function Dashboard() {
       const totalCount = all.filter((x: any) => x.status !== "archive").length;
       const doneCount = all.filter((x: any) => x.status === "envoye" || x.status === "a_facturer").length;
       const todoCount = totalCount - doneCount;
-      const pendingRev = ((i.data as any) ?? []).filter((x: Inv) => x.status === "a_facturer" || x.status === "facturee").reduce((s: number, x: Inv) => s + Number(x.amount), 0);
+      const invoicesRev = ((i.data as any) ?? []).filter((x: Inv) => x.status === "a_facturer" || x.status === "facturee").reduce((s: number, x: Inv) => s + Number(x.amount), 0);
+      const printRev = ((o.data as any) ?? []).reduce((s: number, x: any) => s + (x.amount ? Number(x.amount) : 0), 0);
+      const pendingRev = invoicesRev + printRev;
       const awaitBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "a_commander").length;
       setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, awaitingBat: awaitBat });
   };
