@@ -315,27 +315,34 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                 className="min-h-[120px] resize-none"
                 maxLength={8000}
               />
-              {imagePreview && (
-                <div className="relative inline-block">
-                  <img src={imagePreview} alt="Aperçu" className="max-h-32 rounded-md border border-border" />
-                  <button
-                    type="button"
-                    onClick={() => onPickImage(null)}
-                    className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-0.5 hover:bg-muted"
-                    aria-label="Retirer l'image"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+              {imagePreviews.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {imagePreviews.map((src, i) => (
+                    <div key={i} className="relative inline-block">
+                      <img src={src} alt={`Aperçu ${i + 1}`} className="max-h-24 rounded-md border border-border" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(i)}
+                        className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-0.5 hover:bg-muted"
+                        aria-label="Retirer l'image"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
               <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
                 <ImagePlus className="h-3.5 w-3.5" />
-                {imageFile ? "Changer l'image" : "Joindre une image (screen, photo…)"}
+                {imageFiles.length > 0
+                  ? `Ajouter d'autres images (${imageFiles.length}/${MAX_IMAGES})`
+                  : "Joindre des images (screens, photos…)"}
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
-                  onChange={(e) => onPickImage(e.target.files?.[0] ?? null)}
+                  onChange={(e) => { onPickImages(e.target.files); e.target.value = ""; }}
                 />
               </label>
             </div>
@@ -347,7 +354,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                   {Object.entries(SOURCE_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Button onClick={analyze} disabled={(!content.trim() && !imageFile) || analyzing} className="w-full" size="sm">
+              <Button onClick={analyze} disabled={(!content.trim() && imageFiles.length === 0) || analyzing} className="w-full" size="sm">
                 {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Sparkles className="h-3.5 w-3.5 mr-1" /> Analyser</>}
               </Button>
             </div>
