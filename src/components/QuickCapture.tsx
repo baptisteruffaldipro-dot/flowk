@@ -587,18 +587,19 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <Button variant="ghost" size="sm" onClick={() => { onOpenChange(false); navigate("/inbox"); }}>
-              <Inbox className="h-3.5 w-3.5 mr-1" /> Voir l'inbox
+        </div>
+
+        <div className="flex items-center justify-between gap-2 px-6 py-3 border-t border-border bg-background shrink-0 rounded-b-lg">
+          <Button variant="ghost" size="sm" onClick={() => { onOpenChange(false); navigate("/inbox"); }}>
+            <Inbox className="h-3.5 w-3.5 mr-1" /> Voir l'inbox
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={sendToInbox} disabled={!content.trim() || saving}>
+              Envoyer à l'inbox
             </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={sendToInbox} disabled={!content.trim() || saving}>
-                Envoyer à l'inbox
-              </Button>
-              <Button size="sm" onClick={() => apply(false)} disabled={!ai || saving || selectedActions.size === 0}>
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Appliquer"}
-              </Button>
-            </div>
+            <Button size="sm" onClick={() => apply(false)} disabled={!ai || saving || selectedActions.size === 0}>
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Appliquer"}
+            </Button>
           </div>
         </div>
       </DialogContent>
