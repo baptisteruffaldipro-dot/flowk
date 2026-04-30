@@ -219,10 +219,12 @@ function KanbanCard({
   task,
   clients,
   onUpdate,
+  paid,
 }: {
   task: any;
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
+  paid?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   const navigate = useNavigate();
@@ -247,6 +249,11 @@ function KanbanCard({
           </div>
         </div>
           <div className="flex items-center gap-1.5 flex-wrap">
+            {paid && (
+              <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white px-2 py-0.5">
+                Payé
+              </Badge>
+            )}
             <QuickEditBadge
               className={tagColor(task.clients?.name ?? "—")}
               options={clients.map((c) => ({ value: c.id, label: c.name }))}
@@ -297,6 +304,7 @@ function KanbanColumn({
   onAddDivider,
   onUpdateDivider,
   onDeleteDivider,
+  paidTaskIds,
 }: {
   status: Status;
   tasks: any[];
@@ -306,6 +314,7 @@ function KanbanColumn({
   onAddDivider: (status: Status) => void;
   onUpdateDivider: (id: string, label: string) => void;
   onDeleteDivider: (id: string) => void;
+  paidTaskIds: Set<string>;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
@@ -333,7 +342,7 @@ function KanbanColumn({
           {items.map((it, idx) => (
             <div key={it.kind === "task" ? `t-${it.data.id}` : `d-${it.data.id}`}>
               {it.kind === "task" ? (
-                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} />
+                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} paid={paidTaskIds.has(it.data.id)} />
               ) : (
                 <DividerRow
                   divider={it.data}
@@ -425,6 +434,7 @@ export default function Tasks() {
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [dividers, setDividers] = useState<any[]>([]);
+  const [paidTaskIds, setPaidTaskIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -434,16 +444,18 @@ export default function Tasks() {
   });
 
   const load = async () => {
-    const [t, c, p, d] = await Promise.all([
+    const [t, c, p, d, inv] = await Promise.all([
       supabase.from("tasks").select("*, clients(name), projects(name)").order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id"),
       supabase.from("kanban_dividers").select("*").order("position", { ascending: true }),
+      supabase.from("invoices").select("task_id,status").eq("status", "payee").not("task_id", "is", null),
     ]);
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
     setProjects(p.data ?? []);
     setDividers(d.data ?? []);
+    setPaidTaskIds(new Set(((inv.data as any[]) ?? []).map((r) => r.task_id)));
   };
   useEffect(() => { load(); }, []);
 
@@ -774,7 +786,12 @@ export default function Tasks() {
                     <div className="col-span-1 text-muted-foreground text-xs flex items-center gap-1">
                       {t.deadline && <Calendar className="h-3 w-3" />}{fmtDate(t.deadline)}
                     </div>
-                    <div className="col-span-1"><Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status]}</Badge></div>
+                    <div className="col-span-1 flex items-center gap-1">
+                      <Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status]}</Badge>
+                      {paidTaskIds.has(t.id) && (
+                        <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">Payé</Badge>
+                      )}
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -796,6 +813,7 @@ export default function Tasks() {
                   onAddDivider={addDivider}
                   onUpdateDivider={updateDivider}
                   onDeleteDivider={deleteDivider}
+                  paidTaskIds={paidTaskIds}
                 />
               ))}
             </div>

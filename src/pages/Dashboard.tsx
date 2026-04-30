@@ -21,14 +21,15 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [invoices, setInvoices] = useState<Inv[]>([]);
   const [appointments, setAppointments] = useState<Appt[]>([]);
-  const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, awaitingBat: 0 });
+  const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, awaitingBat: 0 });
 
   const load = async () => {
-      const [t, o, i, a] = await Promise.all([
+      const [t, o, i, a, paid] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
         supabase.from("print_orders").select("id,description,status,amount,clients(name)").not("status", "in", "(livre)").order("created_at", { ascending: false }).limit(50),
         supabase.from("invoices").select("id,label,amount,status,clients(name)").neq("status", "payee").order("created_at", { ascending: false }).limit(50),
         supabase.from("appointments").select("id,title,start_at,type,location,clients(name)").gte("start_at", new Date().toISOString()).neq("status", "annule").order("start_at", { ascending: true }).limit(8),
+        supabase.from("invoices").select("amount").eq("status", "payee"),
       ]);
       setTasks((t.data as any) ?? []);
       setOrders((o.data as any) ?? []);
@@ -44,8 +45,9 @@ export default function Dashboard() {
       const invoicesRev = ((i.data as any) ?? []).filter((x: Inv) => x.status === "a_facturer" || x.status === "facturee").reduce((s: number, x: Inv) => s + Number(x.amount), 0);
       const printRev = ((o.data as any) ?? []).reduce((s: number, x: any) => s + (x.amount ? Number(x.amount) : 0), 0);
       const pendingRev = invoicesRev + printRev;
+      const paidRev = ((paid.data as any) ?? []).reduce((s: number, x: any) => s + Number(x.amount ?? 0), 0);
       const awaitBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "a_commander").length;
-      setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, awaitingBat: awaitBat });
+      setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, paidRevenue: paidRev, awaitingBat: awaitBat });
   };
   useEffect(() => { load(); }, []);
 
@@ -59,7 +61,7 @@ export default function Dashboard() {
 
       <TodayBoard tasks={tasks} />
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <ProgressStatCard
           label="Tâches à faire"
           value={stats.todoCount}
@@ -67,6 +69,7 @@ export default function Dashboard() {
           total={stats.totalCount}
         />
         <StatCard label="CA en attente" value={fmtMoney(stats.pendingRevenue)} />
+        <StatCard label="Chiffre d'affaires HT" value={fmtMoney(stats.paidRevenue)} />
         <StatCard label="BAT à valider" value={String(stats.awaitingBat)} />
       </div>
 
