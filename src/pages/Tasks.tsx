@@ -328,19 +328,22 @@ function KanbanColumn({
           <span className="text-sm font-semibold text-foreground flex-1 truncate">{STATUS_LABEL[status]}</span>
           <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length}</span>
         </div>
-        <div className="space-y-2 min-h-[80px]">
-          {items.map((it) =>
-            it.kind === "task" ? (
-              <KanbanCard key={`t-${it.data.id}`} task={it.data} clients={clients} onUpdate={onUpdate} />
-            ) : (
-              <DividerRow
-                key={`d-${it.data.id}`}
-                divider={it.data}
-                onRename={onUpdateDivider}
-                onDelete={onDeleteDivider}
-              />
-            )
-          )}
+        <div className="space-y-1 min-h-[80px]">
+          <DropSlot id={`slot:${status}:0`} />
+          {items.map((it, idx) => (
+            <div key={it.kind === "task" ? `t-${it.data.id}` : `d-${it.data.id}`}>
+              {it.kind === "task" ? (
+                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} />
+              ) : (
+                <DividerRow
+                  divider={it.data}
+                  onRename={onUpdateDivider}
+                  onDelete={onDeleteDivider}
+                />
+              )}
+              <DropSlot id={`slot:${status}:${idx + 1}`} />
+            </div>
+          ))}
           <button
             type="button"
             onClick={() => onAddDivider(status)}
@@ -351,6 +354,16 @@ function KanbanColumn({
         </div>
       </div>
     </div>
+  );
+}
+
+function DropSlot({ id }: { id: string }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`transition-all rounded ${isOver ? "h-8 bg-primary/20 ring-1 ring-primary my-1" : "h-2"}`}
+    />
   );
 }
 
