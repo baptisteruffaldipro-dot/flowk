@@ -425,6 +425,7 @@ export default function Tasks() {
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [dividers, setDividers] = useState<any[]>([]);
+  const [paidTaskIds, setPaidTaskIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -434,16 +435,18 @@ export default function Tasks() {
   });
 
   const load = async () => {
-    const [t, c, p, d] = await Promise.all([
+    const [t, c, p, d, inv] = await Promise.all([
       supabase.from("tasks").select("*, clients(name), projects(name)").order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id"),
       supabase.from("kanban_dividers").select("*").order("position", { ascending: true }),
+      supabase.from("invoices").select("task_id,status").eq("status", "payee").not("task_id", "is", null),
     ]);
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
     setProjects(p.data ?? []);
     setDividers(d.data ?? []);
+    setPaidTaskIds(new Set(((inv.data as any[]) ?? []).map((r) => r.task_id)));
   };
   useEffect(() => { load(); }, []);
 
