@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Calendar as CalendarIcon, List, Video, MapPin, Phone, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, List, Video, MapPin, Phone, ChevronLeft, ChevronRight, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +42,7 @@ export default function Appointments() {
   const [form, setForm] = useState<any>({
     title: "", start_at: toLocalInput(), duration_minutes: "60",
     type: "presentiel", status: "planifie", client_id: "", project_id: "", location: "", notes: "",
+    reminder_minutes_before: "",
   });
 
   const load = async () => {
@@ -62,6 +63,7 @@ export default function Appointments() {
     setForm({
       title: "", start_at: toLocalInput(preset), duration_minutes: "60",
       type: "presentiel", status: "planifie", client_id: "", project_id: "", location: "", notes: "",
+      reminder_minutes_before: "",
     });
     setOpen(true);
   };
@@ -78,6 +80,7 @@ export default function Appointments() {
       project_id: a.project_id ?? "",
       location: a.location ?? "",
       notes: a.notes ?? "",
+      reminder_minutes_before: a.reminder_minutes_before != null ? String(a.reminder_minutes_before) : "",
     });
     setOpen(true);
   };
@@ -95,6 +98,8 @@ export default function Appointments() {
       project_id: form.project_id || null,
       location: form.location.trim() || null,
       notes: form.notes.trim() || null,
+      reminder_minutes_before: form.reminder_minutes_before ? Number(form.reminder_minutes_before) : null,
+      reminder_sent_at: null,
     };
     const { error } = editing
       ? await supabase.from("appointments").update(payload).eq("id", editing.id)
@@ -302,6 +307,21 @@ export default function Appointments() {
             <div className="space-y-1.5 col-span-2">
               <Label className="text-xs">Lieu / lien visio</Label>
               <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Adresse, salle, lien Meet…" />
+            </div>
+            <div className="space-y-1.5 col-span-2">
+              <Label className="text-xs flex items-center gap-1"><Bell className="h-3 w-3" /> Rappel</Label>
+              <Select value={form.reminder_minutes_before || "_none"} onValueChange={(v) => setForm({ ...form, reminder_minutes_before: v === "_none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="Pas de rappel" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">Pas de rappel</SelectItem>
+                  <SelectItem value="15">15 minutes avant</SelectItem>
+                  <SelectItem value="30">30 minutes avant</SelectItem>
+                  <SelectItem value="60">1 heure avant</SelectItem>
+                  <SelectItem value="120">2 heures avant</SelectItem>
+                  <SelectItem value="1440">1 jour avant</SelectItem>
+                  <SelectItem value="2880">2 jours avant</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5 col-span-2">
               <Label className="text-xs">Notes</Label>

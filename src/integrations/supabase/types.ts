@@ -23,6 +23,8 @@ export type Database = {
           location: string | null
           notes: string | null
           project_id: string | null
+          reminder_minutes_before: number | null
+          reminder_sent_at: string | null
           start_at: string
           status: Database["public"]["Enums"]["appointment_status"]
           title: string
@@ -37,6 +39,8 @@ export type Database = {
           location?: string | null
           notes?: string | null
           project_id?: string | null
+          reminder_minutes_before?: number | null
+          reminder_sent_at?: string | null
           start_at: string
           status?: Database["public"]["Enums"]["appointment_status"]
           title: string
@@ -51,6 +55,8 @@ export type Database = {
           location?: string | null
           notes?: string | null
           project_id?: string | null
+          reminder_minutes_before?: number | null
+          reminder_sent_at?: string | null
           start_at?: string
           status?: Database["public"]["Enums"]["appointment_status"]
           title?: string
