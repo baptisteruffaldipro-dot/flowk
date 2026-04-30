@@ -29,45 +29,47 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}))
     let content: string = (body?.content ?? '').toString().trim()
     const source: string = (body?.source ?? 'autre').toString()
-    const imagePath: string | null = body?.image_path ? String(body.image_path) : null
-    if (!content && !imagePath) return json({ error: 'content or image_path required' }, 400)
+    const rawPaths: string[] = Array.isArray(body?.image_paths)
+      ? body.image_paths.filter(Boolean).map((p: any) => String(p))
+      : (body?.image_path ? [String(body.image_path)] : [])
+    const imagePaths: string[] = rawPaths.slice(0, 8)
+    if (!content && imagePaths.length === 0) return json({ error: 'content or image_paths required' }, 400)
     if (content.length > 8000) return json({ error: 'content too long' }, 400)
 
     // If an image was uploaded, run OCR + description first via Gemini vision
-    let imageDataUrl: string | null = null
+    const imageDataUrls: string[] = []
     let ocrText = ''
-    if (imagePath) {
+    if (imagePaths.length > 0) {
       const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       const adminClient = createClient(supabaseUrl, serviceKey)
-      const { data: signed, error: signErr } = await adminClient.storage
-        .from('quick-captures')
-        .createSignedUrl(imagePath, 60)
-      if (signErr || !signed?.signedUrl) return json({ error: 'Image introuvable' }, 400)
+      for (const p of imagePaths) {
+        const { data: signed, error: signErr } = await adminClient.storage
+          .from('quick-captures')
+          .createSignedUrl(p, 60)
+        if (signErr || !signed?.signedUrl) return json({ error: `Image introuvable: ${p}` }, 400)
+        const imgResp = await fetch(signed.signedUrl)
+        if (!imgResp.ok) return json({ error: 'Image illisible' }, 400)
+        const buf = new Uint8Array(await imgResp.arrayBuffer())
+        const mime = imgResp.headers.get('content-type') || 'image/png'
+        let bin = ''
+        for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i])
+        const b64 = btoa(bin)
+        imageDataUrls.push(`data:${mime};base64,${b64}`)
+      }
 
-      // Download and convert to base64 data URL for Gemini
-      const imgResp = await fetch(signed.signedUrl)
-      if (!imgResp.ok) return json({ error: 'Image illisible' }, 400)
-      const buf = new Uint8Array(await imgResp.arrayBuffer())
-      const mime = imgResp.headers.get('content-type') || 'image/png'
-      // base64 encode
-      let bin = ''
-      for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i])
-      const b64 = btoa(bin)
-      imageDataUrl = `data:${mime};base64,${b64}`
-
-      // First call: extract text + visual description from the image
+      // First call: extract text + visual description from the images
       const visionResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: { Authorization: `Bearer ${lovableKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash',
           messages: [
-            { role: 'system', content: "Tu es un OCR + analyste visuel. Extrais TOUT le texte visible dans l'image (mails, SMS, devis, captures…), puis ajoute une courte description visuelle (1 phrase). Réponds en français, format:\nTEXTE:\n<texte brut tel quel>\n\nVISUEL:\n<description courte>" },
+            { role: 'system', content: "Tu es un OCR + analyste visuel. Pour CHAQUE image fournie, extrais TOUT le texte visible (mails, SMS, devis, captures…) puis ajoute une courte description visuelle (1 phrase). Si plusieurs images, numérote-les (Image 1, Image 2…). Réponds en français, format global:\nTEXTE:\n<texte brut tel quel, concaténé>\n\nVISUEL:\n<description courte par image>" },
             {
               role: 'user',
               content: [
-                { type: 'text', text: content ? `Contexte fourni par l'utilisateur: ${content}` : 'Analyse cette image.' },
-                { type: 'image_url', image_url: { url: imageDataUrl } },
+                { type: 'text', text: content ? `Contexte fourni par l'utilisateur: ${content}` : `Analyse ${imageDataUrls.length > 1 ? 'ces images' : 'cette image'}.` },
+                ...imageDataUrls.map((url) => ({ type: 'image_url', image_url: { url } })),
               ],
             },
           ],
