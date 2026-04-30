@@ -113,7 +113,7 @@ export default function GlobalTimer() {
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-20 right-4 z-50 sm:bottom-4">
         {running ? (
           <Card className={`p-2 pr-2.5 sm:p-2.5 sm:pr-3 shadow-lg border-2 ${overEstimate ? "border-destructive" : "border-primary"} bg-card flex items-center gap-2 sm:gap-3 max-w-[calc(100vw-2rem)] sm:min-w-[260px]`}>
             <div className={`h-2 w-2 rounded-full animate-pulse ${overEstimate ? "bg-destructive" : "bg-primary"}`} />
@@ -129,8 +129,8 @@ export default function GlobalTimer() {
                 {running.clients?.name ? ` • ${running.clients.name}` : ""}
               </div>
             </div>
-            <Button onClick={stop} size="sm" variant="destructive" className="h-8 px-2.5 gap-1">
-              <Square className="h-3.5 w-3.5 fill-current" /> Stop
+            <Button onClick={stop} size="sm" variant="destructive" className="h-8 px-2.5 gap-1 shrink-0" aria-label="Arrêter le timer">
+              <Square className="h-3.5 w-3.5 fill-current" /> <span className="hidden sm:inline">Stop</span>
             </Button>
           </Card>
         ) : (

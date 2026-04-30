@@ -381,11 +381,11 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Client</Label>
                   <Select value={clientId || "__none"} onValueChange={(v) => { setClientId(v === "__none" ? "" : v); setProjectId(""); setTaskId(""); setPrintOrderId(""); }}>
-                    <SelectTrigger className="h-8"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectTrigger className="h-8 w-full min-w-0"><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none">— Aucun</SelectItem>
                       {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}{c.company ? ` — ${c.company}` : ""}</SelectItem>)}
@@ -395,7 +395,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                 <div>
                   <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Projet</Label>
                   <Select value={projectId || "__none"} onValueChange={(v) => setProjectId(v === "__none" ? "" : v)}>
-                    <SelectTrigger className="h-8"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectTrigger className="h-8 w-full min-w-0"><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none">— Aucun</SelectItem>
                       {filteredProjects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -405,7 +405,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                 <div>
                   <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Tâche</Label>
                   <Select value={taskId || "__none"} onValueChange={(v) => setTaskId(v === "__none" ? "" : v)}>
-                    <SelectTrigger className="h-8"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectTrigger className="h-8 w-full min-w-0"><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none">— Aucune</SelectItem>
                       {filteredTasks.map(t => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
@@ -415,7 +415,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                 <div>
                   <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Commande impression</Label>
                   <Select value={printOrderId || "__none"} onValueChange={(v) => setPrintOrderId(v === "__none" ? "" : v)}>
-                    <SelectTrigger className="h-8"><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectTrigger className="h-8 w-full min-w-0"><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none">— Aucune</SelectItem>
                       {filteredOrders.map(o => <SelectItem key={o.id} value={o.id}>{o.description}</SelectItem>)}

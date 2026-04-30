@@ -341,42 +341,42 @@ export default function TaskDetail() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <Card className="p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <Card className="p-4 min-w-0">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Statut</div>
           <Select value={task.status} onValueChange={(v) => updateStatusWithAutoBalance(v)}>
-            <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-2 w-full min-w-0"><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.entries(STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 min-w-0">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Priorité</div>
           <Select value={task.priority ?? "secondaire"} onValueChange={(v) => updateField({ priority: v })}>
-            <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-2 w-full min-w-0"><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.entries(PRIORITY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 min-w-0">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Prestation</div>
           <Select value={task.prestation} onValueChange={(v) => updateField({ prestation: v })}>
-            <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="mt-2 w-full min-w-0"><SelectValue /></SelectTrigger>
             <SelectContent>
               {Object.entries(PRESTATION_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 min-w-0">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Deadline</div>
-          <Input type="date" value={task.deadline ?? ""} onChange={(e) => updateField({ deadline: e.target.value || null })} className="mt-2" />
+          <Input type="date" value={task.deadline ?? ""} onChange={(e) => updateField({ deadline: e.target.value || null })} className="mt-2 w-full min-w-0" />
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <Card className="p-5">
+        <Card className="p-4 sm:p-5 min-w-0">
           <h2 className="text-sm font-semibold mb-3">Notes</h2>
           <Textarea
             value={task.notes ?? ""}
@@ -387,25 +387,26 @@ export default function TaskDetail() {
           />
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-4 sm:p-5 min-w-0">
           <h2 className="text-sm font-semibold mb-3">Sous-tâches</h2>
           <div className="space-y-1.5 mb-3">
             {subtasks.map((s) => (
               <div key={s.id} className="flex items-center gap-2 group">
                 <Checkbox checked={s.done} onCheckedChange={() => toggleSub(s)} />
-                <span className={`flex-1 text-sm ${s.done ? "line-through text-muted-foreground" : ""}`}>{s.title}</span>
+                <span className={`flex-1 min-w-0 break-words text-sm ${s.done ? "line-through text-muted-foreground" : ""}`}>{s.title}</span>
                 <button onClick={() => removeSub(s.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 min-w-0">
             <Input
               placeholder="Ajouter une sous-tâche"
               value={newSub}
               onChange={(e) => setNewSub(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addSubtask()}
+              className="min-w-0"
             />
             <Button size="sm" variant="outline" onClick={addSubtask}><Plus className="h-4 w-4" /></Button>
           </div>
@@ -418,14 +419,14 @@ export default function TaskDetail() {
         <StatBlock label="Montant total" value={fmtMoney(billing?.total ?? null)} />
       </div>
 
-      <Card className="p-5 mb-4">
-        <div className="flex items-center justify-between mb-4">
+      <Card className="p-4 sm:p-5 mb-4 overflow-hidden">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="text-sm font-semibold">Facturation</h2>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={invoiceAcompte} disabled={task.acompte_invoiced}>
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
+            <Button size="sm" variant="outline" onClick={invoiceAcompte} disabled={task.acompte_invoiced} className="w-full sm:w-auto min-w-0 justify-center whitespace-normal text-center">
               {task.acompte_invoiced ? "Acompte facturé" : `Facturer l'acompte (${fmtMoney(billing?.acompte ?? 0)})`}
             </Button>
-            <Button size="sm" onClick={() => invoiceBalance(false)}>
+            <Button size="sm" onClick={() => invoiceBalance(false)} className="w-full sm:w-auto">
               Facturer le solde
             </Button>
           </div>

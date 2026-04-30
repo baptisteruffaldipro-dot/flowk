@@ -196,14 +196,14 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
 
       {/* TASK */}
       <Dialog open={mode === "task"} onOpenChange={(o) => !o && close()}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nouvelle tâche</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Titre *</Label>
               <Input autoFocus value={task.title} onChange={(e) => setTask({ ...task, title: e.target.value })} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Client</Label>
                 <Select value={task.client_id} onValueChange={(v) => setTask({ ...task, client_id: v, project_id: "" })}>
@@ -219,7 +219,7 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Prestation</Label>
                 <Select value={task.prestation} onValueChange={(v) => setTask({ ...task, prestation: v })}>
@@ -232,7 +232,7 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
                 <Input type="date" value={task.deadline} onChange={(e) => setTask({ ...task, deadline: e.target.value })} />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Facturation</Label>
                 <Select value={task.billing_type} onValueChange={(v) => setTask({ ...task, billing_type: v })}>
@@ -294,7 +294,7 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
 
       {/* ORDER */}
       <Dialog open={mode === "order"} onOpenChange={(o) => !o && close()}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nouvelle commande d'impression</DialogTitle></DialogHeader>
           <div className="space-y-4">
             {/* IMPORT IA */}
@@ -338,8 +338,8 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5 col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-xs">Description *</Label>
                 <Input autoFocus value={order.description} onChange={(e) => setOrder({ ...order, description: e.target.value })} />
               </div>
@@ -382,7 +382,7 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
                 <Label className="text-xs">Montant (€)</Label>
                 <Input type="number" step="0.01" value={order.amount} onChange={(e) => setOrder({ ...order, amount: e.target.value })} />
               </div>
-              <div className="space-y-1.5 col-span-2">
+              <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-xs">Observations</Label>
                 <Textarea value={order.observations} onChange={(e) => setOrder({ ...order, observations: e.target.value })} className="min-h-[60px] text-xs" />
               </div>
