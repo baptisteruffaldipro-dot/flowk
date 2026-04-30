@@ -9,8 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, Copy, Send, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { Sparkles, Copy, Send, ArrowLeft, Loader2, CheckCircle2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import QuestionnaireForm from "@/components/QuestionnaireForm";
 import { QUESTIONNAIRE_TEMPLATES } from "@/lib/questionnaireTemplates";
 
@@ -27,6 +31,7 @@ export default function QuestionnaireDetail() {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -99,6 +104,15 @@ export default function QuestionnaireDetail() {
 
   const filteredProjects = item.client_id ? projects.filter((p) => p.client_id === item.client_id) : projects;
 
+  const remove = async () => {
+    setDeleting(true);
+    const { error } = await supabase.from("questionnaires" as any).delete().eq("id", item.id);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Questionnaire supprimé");
+    navigate("/questionnaires");
+  };
+
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <Button variant="ghost" size="sm" onClick={() => navigate("/questionnaires")} className="mb-4 -ml-2">
@@ -115,6 +129,27 @@ export default function QuestionnaireDetail() {
             <Button size="sm" onClick={() => save()} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />} Enregistrer
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-1.5" /> Supprimer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer ce questionnaire ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action est définitive. Les réponses et le résumé IA seront perdus.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={remove} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {deleting && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />} Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         }
       />

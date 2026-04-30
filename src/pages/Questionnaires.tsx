@@ -9,8 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { TEMPLATE_OPTIONS, QUESTIONNAIRE_TEMPLATES } from "@/lib/questionnaireTemplates";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -63,6 +67,13 @@ export default function Questionnaires() {
   };
 
   const filteredProjects = form.client_id ? projects.filter((p) => p.client_id === form.client_id) : projects;
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("questionnaires" as any).delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Questionnaire supprimé");
+    load();
+  };
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -133,9 +144,9 @@ export default function Questionnaires() {
           </Card>
         )}
         {items.map((q) => (
-          <Link key={q.id} to={`/questionnaires/${q.id}`}>
-            <Card className="p-4 hover:bg-secondary/40 transition-colors flex items-center gap-4">
-              <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center">
+          <Card key={q.id} className="p-4 hover:bg-secondary/40 transition-colors flex items-center gap-4">
+            <Link to={`/questionnaires/${q.id}`} className="flex items-center gap-4 flex-1 min-w-0">
+              <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center shrink-0">
                 <FileText className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
@@ -147,8 +158,38 @@ export default function Questionnaires() {
                 </div>
               </div>
               <Badge variant={STATUS_VARIANT[q.status]}>{STATUS_LABEL[q.status]}</Badge>
-            </Card>
-          </Link>
+            </Link>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Supprimer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer « {q.title} » ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action est définitive. Les réponses et le résumé IA seront perdus.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => remove(q.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </Card>
         ))}
       </div>
     </div>
