@@ -76,6 +76,7 @@ export const PRESTATION_LABEL: Record<string, string> = {
 
 export const PRINT_STATUS_LABEL: Record<string, string> = {
   a_commander: "À commander",
+  validation_bat: "Validation BAT",
   en_impression: "En impression",
   livre: "Livré",
 };
