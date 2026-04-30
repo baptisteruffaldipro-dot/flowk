@@ -50,9 +50,9 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   const [saving, setSaving] = useState(false);
   const [ai, setAi] = useState<AiResult | null>(null);
   const [captureId, setCaptureId] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploadedPath, setUploadedPath] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadedPaths, setUploadedPaths] = useState<string[]>([]);
 
   // editable link state
   const [clientId, setClientId] = useState<string>("");
@@ -85,7 +85,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
     setContent(""); setSource("autre"); setAi(null); setCaptureId(null);
     setClientId(""); setProjectId(""); setTaskId(""); setPrintOrderId("");
     setSelectedActions(new Set());
-    setImageFile(null); setImagePreview(null); setUploadedPath(null);
+    setImageFiles([]); setImagePreviews([]); setUploadedPaths([]);
   };
   useEffect(() => { if (!open) reset(); }, [open]);
 
@@ -98,40 +98,66 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   }, [tasks, clientId, projectId]);
   const filteredOrders = useMemo(() => clientId ? orders.filter(o => o.client_id === clientId) : orders, [orders, clientId]);
 
-  const onPickImage = (file: File | null) => {
-    if (!file) { setImageFile(null); setImagePreview(null); return; }
-    if (!file.type.startsWith("image/")) { toast.error("Fichier image attendu"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("Image > 10 Mo"); return; }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+  const MAX_IMAGES = 8;
+  const onPickImages = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const arr = Array.from(files);
+    const valid: File[] = [];
+    for (const f of arr) {
+      if (!f.type.startsWith("image/")) { toast.error(`${f.name} : fichier image attendu`); continue; }
+      if (f.size > 10 * 1024 * 1024) { toast.error(`${f.name} : > 10 Mo`); continue; }
+      valid.push(f);
+    }
+    if (valid.length === 0) return;
+    setImageFiles((prev) => {
+      const next = [...prev, ...valid].slice(0, MAX_IMAGES);
+      if (prev.length + valid.length > MAX_IMAGES) toast.error(`Maximum ${MAX_IMAGES} images`);
+      return next;
+    });
+    setImagePreviews((prev) => [...prev, ...valid.map((f) => URL.createObjectURL(f))].slice(0, MAX_IMAGES));
+    // Reset uploaded paths since the set changed
+    setUploadedPaths([]);
+  };
+  const removeImage = (idx: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== idx));
+    setImagePreviews((prev) => {
+      const url = prev[idx];
+      if (url) URL.revokeObjectURL(url);
+      return prev.filter((_, i) => i !== idx);
+    });
+    setUploadedPaths([]);
   };
 
   const analyze = async () => {
-    if (!content.trim() && !imageFile) return;
+    if (!content.trim() && imageFiles.length === 0) return;
     setAnalyzing(true); setAi(null); setCaptureId(null);
     try {
       const { data: u } = await supabase.auth.getUser();
-      // 0) Upload image first if present
-      let imagePath: string | null = uploadedPath;
-      if (imageFile && !imagePath) {
-        const ext = imageFile.name.split(".").pop()?.toLowerCase() || "png";
-        const path = `${u.user!.id}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("quick-captures").upload(path, imageFile, {
-          contentType: imageFile.type, upsert: false,
-        });
-        if (upErr) throw upErr;
-        imagePath = path;
-        setUploadedPath(path);
+      // 0) Upload images first if present
+      let paths: string[] = uploadedPaths;
+      if (imageFiles.length > 0 && paths.length !== imageFiles.length) {
+        paths = [];
+        for (let i = 0; i < imageFiles.length; i++) {
+          const f = imageFiles[i];
+          const ext = f.name.split(".").pop()?.toLowerCase() || "png";
+          const path = `${u.user!.id}/${Date.now()}-${i}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("quick-captures").upload(path, f, {
+            contentType: f.type, upsert: false,
+          });
+          if (upErr) throw upErr;
+          paths.push(path);
+        }
+        setUploadedPaths(paths);
       }
       // 1) Save the raw capture immediately
       const { data: cap, error: capErr } = await supabase.from("quick_captures").insert({
-        content: content || (imagePath ? "[Image]" : ""), source, created_by: u.user!.id,
+        content: content || (paths.length > 0 ? `[${paths.length} image${paths.length > 1 ? "s" : ""}]` : ""), source, created_by: u.user!.id,
       }).select("id").single();
       if (capErr) throw capErr;
       setCaptureId(cap.id);
 
       // 2) Ask the AI
-      const { data, error } = await supabase.functions.invoke("analyze-capture", { body: { content, source, image_path: imagePath } });
+      const { data, error } = await supabase.functions.invoke("analyze-capture", { body: { content, source, image_paths: paths } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const result = data as AiResult;
@@ -289,27 +315,34 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                 className="min-h-[120px] resize-none"
                 maxLength={8000}
               />
-              {imagePreview && (
-                <div className="relative inline-block">
-                  <img src={imagePreview} alt="Aperçu" className="max-h-32 rounded-md border border-border" />
-                  <button
-                    type="button"
-                    onClick={() => onPickImage(null)}
-                    className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-0.5 hover:bg-muted"
-                    aria-label="Retirer l'image"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+              {imagePreviews.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {imagePreviews.map((src, i) => (
+                    <div key={i} className="relative inline-block">
+                      <img src={src} alt={`Aperçu ${i + 1}`} className="max-h-24 rounded-md border border-border" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(i)}
+                        className="absolute -top-2 -right-2 bg-background border border-border rounded-full p-0.5 hover:bg-muted"
+                        aria-label="Retirer l'image"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
               <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
                 <ImagePlus className="h-3.5 w-3.5" />
-                {imageFile ? "Changer l'image" : "Joindre une image (screen, photo…)"}
+                {imageFiles.length > 0
+                  ? `Ajouter d'autres images (${imageFiles.length}/${MAX_IMAGES})`
+                  : "Joindre des images (screens, photos…)"}
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
-                  onChange={(e) => onPickImage(e.target.files?.[0] ?? null)}
+                  onChange={(e) => { onPickImages(e.target.files); e.target.value = ""; }}
                 />
               </label>
             </div>
@@ -321,7 +354,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                   {Object.entries(SOURCE_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Button onClick={analyze} disabled={(!content.trim() && !imageFile) || analyzing} className="w-full" size="sm">
+              <Button onClick={analyze} disabled={(!content.trim() && imageFiles.length === 0) || analyzing} className="w-full" size="sm">
                 {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Sparkles className="h-3.5 w-3.5 mr-1" /> Analyser</>}
               </Button>
             </div>
