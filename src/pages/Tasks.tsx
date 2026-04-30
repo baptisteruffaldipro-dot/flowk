@@ -328,19 +328,22 @@ function KanbanColumn({
           <span className="text-sm font-semibold text-foreground flex-1 truncate">{STATUS_LABEL[status]}</span>
           <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length}</span>
         </div>
-        <div className="space-y-2 min-h-[80px]">
-          {items.map((it) =>
-            it.kind === "task" ? (
-              <KanbanCard key={`t-${it.data.id}`} task={it.data} clients={clients} onUpdate={onUpdate} />
-            ) : (
-              <DividerRow
-                key={`d-${it.data.id}`}
-                divider={it.data}
-                onRename={onUpdateDivider}
-                onDelete={onDeleteDivider}
-              />
-            )
-          )}
+        <div className="space-y-1 min-h-[80px]">
+          <DropSlot id={`slot:${status}:0`} />
+          {items.map((it, idx) => (
+            <div key={it.kind === "task" ? `t-${it.data.id}` : `d-${it.data.id}`}>
+              {it.kind === "task" ? (
+                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} />
+              ) : (
+                <DividerRow
+                  divider={it.data}
+                  onRename={onUpdateDivider}
+                  onDelete={onDeleteDivider}
+                />
+              )}
+              <DropSlot id={`slot:${status}:${idx + 1}`} />
+            </div>
+          ))}
           <button
             type="button"
             onClick={() => onAddDivider(status)}
@@ -351,6 +354,16 @@ function KanbanColumn({
         </div>
       </div>
     </div>
+  );
+}
+
+function DropSlot({ id }: { id: string }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`transition-all rounded ${isOver ? "h-8 bg-primary/20 ring-1 ring-primary my-1" : "h-2"}`}
+    />
   );
 }
 
@@ -442,6 +455,47 @@ export default function Tasks() {
     const overId = String(over.id);
     const task = tasks.find((t) => t.id === String(active.id));
     if (!task) return;
+
+    // Drop on a slot between items → insert at exact position
+    if (overId.startsWith("slot:")) {
+      const [, statusStr, idxStr] = overId.split(":");
+      const newStatus = statusStr as Status;
+      const slotIndex = Number(idxStr);
+
+      // Build sorted items in target column (excluding the dragged task)
+      const colTasks = tasks.filter((t) => t.status === newStatus && t.id !== task.id);
+      const colDividers = dividers.filter((d) => d.status === newStatus);
+      const sorted = [
+        ...colTasks.map((t) => ({ kind: "task" as const, data: t, pos: t.position ?? 0 })),
+        ...colDividers.map((d) => ({ kind: "divider" as const, data: d, pos: d.position ?? 0 })),
+      ].sort((a, b) => a.pos - b.pos);
+
+      const before = sorted[slotIndex - 1];
+      const after = sorted[slotIndex];
+      let newPosition: number;
+      if (!before && !after) newPosition = 10;
+      else if (!before) newPosition = (after!.pos) - 5;
+      else if (!after) newPosition = before.pos + 10;
+      else newPosition = (before.pos + after.pos) / 2;
+
+      // No-op check: same status and same effective position
+      if (task.status === newStatus && task.position === newPosition) return;
+
+      const prev = tasks;
+      const updated = tasks.map((t) =>
+        t.id === task.id ? { ...t, status: newStatus, position: newPosition } : t
+      );
+      setTasks(updated);
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status: newStatus, position: newPosition })
+        .eq("id", task.id);
+      if (error) {
+        toast.error(error.message);
+        setTasks(prev);
+      }
+      return;
+    }
 
     // Drop on a divider → place task just after that divider
     if (overId.startsWith("divider:")) {
