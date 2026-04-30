@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList } from "lucide-react";
+import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList, Sparkles, Loader2, Upload, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PRESTATION_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
 
@@ -22,7 +23,15 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
   // Forms
   const [task, setTask] = useState<any>({ title: "", client_id: "", project_id: "", prestation: "creation", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
   const [project, setProject] = useState<any>({ name: "", client_id: "", type: "autre" });
-  const [order, setOrder] = useState<any>({ description: "", client_id: "", amount: "" });
+  const emptyOrder = {
+    description: "", client_id: "", amount: "",
+    reference: "", quantity: "", format: "", grammage: "",
+    support: "", colors: "", finitions: "", observations: "",
+  };
+  const [order, setOrder] = useState<any>(emptyOrder);
+  const [importText, setImportText] = useState("");
+  const [importFiles, setImportFiles] = useState<File[]>([]);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     if (mode) {
@@ -78,18 +87,84 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
   const createOrder = async () => {
     if (!order.description.trim()) return toast.error("Description requise");
     if (!order.client_id) return toast.error("Client requis");
-    const { data, error } = await supabase.from("print_orders").insert({
+    const payload: any = {
       description: order.description.trim(),
       client_id: order.client_id,
       amount: order.amount ? Number(order.amount) : null,
+      reference: order.reference?.trim() || null,
+      quantity: order.quantity ? Number(order.quantity) : null,
+      format: order.format?.trim() || null,
+      grammage: order.grammage?.trim() || null,
+      support: order.support?.trim() || null,
+      colors: order.colors?.trim() || null,
+      finitions: order.finitions?.trim() || null,
+      observations: order.observations?.trim() || null,
       status: "bat_en_attente",
-    }).select("id").single();
+    };
+    const { data, error } = await supabase.from("print_orders").insert(payload).select("id").single();
     if (error) return toast.error(error.message);
     toast.success("Commande créée");
     close();
-    setOrder({ description: "", client_id: "", amount: "" });
+    setOrder(emptyOrder);
+    setImportText(""); setImportFiles([]);
     onCreated?.();
     if (data?.id) navigate(`/impressions/${data.id}`);
+  };
+
+  const fileToDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const onPasteImport = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(e.clipboardData?.items ?? []);
+    const imgs = items.filter((it) => it.kind === "file" && it.type.startsWith("image/"));
+    if (imgs.length > 0) {
+      e.preventDefault();
+      const files = imgs.map((it) => it.getAsFile()).filter(Boolean) as File[];
+      setImportFiles((prev) => [...prev, ...files].slice(0, 5));
+      toast.success(`${files.length} image${files.length > 1 ? "s" : ""} collée${files.length > 1 ? "s" : ""}`);
+    }
+  };
+
+  const runImport = async () => {
+    if (!importText.trim() && importFiles.length === 0) {
+      return toast.error("Collez du texte ou une image de la commande");
+    }
+    setImporting(true);
+    try {
+      const images: string[] = [];
+      for (const f of importFiles) {
+        if (f.size > 8 * 1024 * 1024) { toast.error(`${f.name} > 8 Mo`); continue; }
+        images.push(await fileToDataUrl(f));
+      }
+      const { data, error } = await supabase.functions.invoke("parse-print-order", {
+        body: { text: importText, images },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const r = data as any;
+      setOrder((prev: any) => ({
+        ...prev,
+        description: r.description ?? prev.description,
+        reference: r.reference ?? prev.reference,
+        quantity: r.quantity != null ? String(r.quantity) : prev.quantity,
+        format: r.format ?? prev.format,
+        grammage: r.grammage ?? prev.grammage,
+        support: r.support ?? prev.support,
+        colors: r.colors ?? prev.colors,
+        finitions: r.finitions ?? prev.finitions,
+        observations: r.observations ?? prev.observations,
+        amount: r.amount != null ? String(r.amount) : prev.amount,
+      }));
+      toast.success("Commande pré-remplie ✨");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Import impossible");
+    } finally {
+      setImporting(false);
+    }
   };
 
   const filteredProjects = projects.filter((p) => !task.client_id || p.client_id === task.client_id);
@@ -219,23 +294,98 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
 
       {/* ORDER */}
       <Dialog open={mode === "order"} onOpenChange={(o) => !o && close()}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Nouvelle commande d'impression</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Description *</Label>
-              <Input autoFocus value={order.description} onChange={(e) => setOrder({ ...order, description: e.target.value })} />
+          <div className="space-y-4">
+            {/* IMPORT IA */}
+            <div className="rounded-md border border-dashed border-border bg-secondary/30 p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium">
+                <Sparkles className="h-3.5 w-3.5" /> Import auto depuis l'imprimeur
+              </div>
+              <Textarea
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+                onPaste={onPasteImport}
+                placeholder="Collez le récap de commande (texte ou screenshot Ctrl+V) — l'IA remplit les champs."
+                className="min-h-[70px] resize-none text-xs"
+              />
+              {importFiles.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {importFiles.map((f, i) => (
+                    <div key={i} className="relative">
+                      <img src={URL.createObjectURL(f)} alt="" className="h-16 w-16 object-cover rounded border border-border" />
+                      <button type="button" onClick={() => setImportFiles((p) => p.filter((_, j) => j !== i))}
+                        className="absolute -top-1.5 -right-1.5 bg-background border border-border rounded-full p-0.5 hover:bg-muted">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
+                  <Upload className="h-3.5 w-3.5" /> Joindre un screenshot
+                  <input type="file" accept="image/*" multiple className="hidden"
+                    onChange={(e) => {
+                      const fs = Array.from(e.target.files ?? []);
+                      setImportFiles((p) => [...p, ...fs].slice(0, 5));
+                      e.target.value = "";
+                    }} />
+                </label>
+                <Button size="sm" onClick={runImport} disabled={importing || (!importText.trim() && importFiles.length === 0)} className="ml-auto">
+                  {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Sparkles className="h-3.5 w-3.5 mr-1" /> Analyser</>}
+                </Button>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Client *</Label>
-              <Select value={order.client_id} onValueChange={(v) => setOrder({ ...order, client_id: v })}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Montant (€)</Label>
-              <Input type="number" step="0.01" value={order.amount} onChange={(e) => setOrder({ ...order, amount: e.target.value })} />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5 col-span-2">
+                <Label className="text-xs">Description *</Label>
+                <Input autoFocus value={order.description} onChange={(e) => setOrder({ ...order, description: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Client *</Label>
+                <Select value={order.client_id} onValueChange={(v) => setOrder({ ...order, client_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Référence</Label>
+                <Input value={order.reference} onChange={(e) => setOrder({ ...order, reference: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Quantité</Label>
+                <Input type="number" value={order.quantity} onChange={(e) => setOrder({ ...order, quantity: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Format</Label>
+                <Input value={order.format} onChange={(e) => setOrder({ ...order, format: e.target.value })} placeholder="A4, 85×55 mm…" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Grammage</Label>
+                <Input value={order.grammage} onChange={(e) => setOrder({ ...order, grammage: e.target.value })} placeholder="350 g/m²" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Support</Label>
+                <Input value={order.support} onChange={(e) => setOrder({ ...order, support: e.target.value })} placeholder="Couché brillant…" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Couleurs</Label>
+                <Input value={order.colors} onChange={(e) => setOrder({ ...order, colors: e.target.value })} placeholder="Quadri R°/V°" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Finitions</Label>
+                <Input value={order.finitions} onChange={(e) => setOrder({ ...order, finitions: e.target.value })} placeholder="Pelliculage mat…" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Montant (€)</Label>
+                <Input type="number" step="0.01" value={order.amount} onChange={(e) => setOrder({ ...order, amount: e.target.value })} />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label className="text-xs">Observations</Label>
+                <Textarea value={order.observations} onChange={(e) => setOrder({ ...order, observations: e.target.value })} className="min-h-[60px] text-xs" />
+              </div>
             </div>
           </div>
           <DialogFooter><Button onClick={createOrder}><Plus className="h-4 w-4 mr-1" />Créer</Button></DialogFooter>
