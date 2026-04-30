@@ -808,6 +808,7 @@ export default function Tasks() {
                   onAddDivider={addDivider}
                   onUpdateDivider={updateDivider}
                   onDeleteDivider={deleteDivider}
+                  paidTaskIds={paidTaskIds}
                 />
               ))}
             </div>
