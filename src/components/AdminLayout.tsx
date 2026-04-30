@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ const nav = [
   { to: "/impressions", icon: Printer, label: "Impressions" },
   { to: "/bats", icon: FileCheck2, label: "BAT" },
   { to: "/facturation", icon: Receipt, label: "Facturation" },
+  { to: "/telegram", icon: Send, label: "Bot Telegram" },
 ];
 
 export default function AdminLayout() {
