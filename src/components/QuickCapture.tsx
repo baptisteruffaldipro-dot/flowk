@@ -452,6 +452,13 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                             {a.prestation && <> · Prestation : <span className="text-foreground">{a.prestation}</span></>}
                           </div>
                         )}
+                        {a.type === "create_task" && Array.isArray(a.subtasks) && a.subtasks.length > 0 && (
+                          <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4 space-y-0.5">
+                            {a.subtasks.map((s, k) => (
+                              <li key={k}><span className="text-foreground">{s}</span></li>
+                            ))}
+                          </ul>
+                        )}
                         {a.type === "create_project" && a.project_name && (
                           <div className="text-xs text-muted-foreground mt-0.5">
                             Nom : <span className="text-foreground">{a.project_name}</span>
