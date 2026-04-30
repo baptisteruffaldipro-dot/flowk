@@ -99,7 +99,7 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
       colors: order.colors?.trim() || null,
       finitions: order.finitions?.trim() || null,
       observations: order.observations?.trim() || null,
-      status: "bat_en_attente",
+      status: "a_commander",
     };
     const { data, error } = await supabase.from("print_orders").insert(payload).select("id").single();
     if (error) return toast.error(error.message);

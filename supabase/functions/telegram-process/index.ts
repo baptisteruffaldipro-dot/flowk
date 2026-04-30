@@ -429,7 +429,7 @@ ${JSON.stringify(convo?.pending_payload ?? {})}`
         finitions: o.finitions || null,
         observations: o.observations || null,
         amount: o.amount || null,
-        status: 'bat_en_attente',
+        status: 'a_commander',
       })
       .select('id')
       .single()

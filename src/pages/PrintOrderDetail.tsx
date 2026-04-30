@@ -38,7 +38,7 @@ export default function PrintOrderDetail() {
     await supabase.from("print_orders").update({
       bat_file_path: path,
       bat_uploaded_at: new Date().toISOString(),
-      status: "bat_en_attente",
+      status: "a_commander",
       bat_validated_at: null,
       bat_rejected_at: null,
       bat_rejection_reason: null,
