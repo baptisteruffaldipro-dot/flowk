@@ -57,7 +57,7 @@ export default function Invoices() {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Facturation"
         description="Suivi simple des prestations"

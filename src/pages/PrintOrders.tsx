@@ -124,7 +124,7 @@ export default function PrintOrders() {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Impressions"
         description={`${bats.length} BAT validé${bats.length > 1 ? "s" : ""} · ${orders.length} commande${orders.length > 1 ? "s" : ""} manuelle${orders.length > 1 ? "s" : ""}`}

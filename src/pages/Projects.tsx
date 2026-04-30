@@ -102,7 +102,7 @@ export default function Projects() {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Projets"
         description={`${visibleProjects.length} projet${visibleProjects.length > 1 ? "s" : ""}${showArchived ? " archivé(s)" : ""}`}

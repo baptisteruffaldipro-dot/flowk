@@ -55,7 +55,7 @@ export default function Clients() {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Clients"
         description={`${clients.length} client${clients.length > 1 ? "s" : ""}`}

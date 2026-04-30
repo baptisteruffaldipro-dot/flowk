@@ -93,7 +93,7 @@ export default function ProjectDetail() {
   if (!project) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
   return (
-    <div className="p-8 max-w-[1200px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1200px] mx-auto">
       <Link to="/projets" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4">
         <ArrowLeft className="h-3 w-3" /> Projets
       </Link>

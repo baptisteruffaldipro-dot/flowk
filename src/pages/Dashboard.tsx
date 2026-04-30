@@ -65,7 +65,7 @@ export default function Dashboard() {
   useEffect(() => { load(); }, []);
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader title="Dashboard" description="Vue d'ensemble de ton activité" />
 
       <div className="mb-6">

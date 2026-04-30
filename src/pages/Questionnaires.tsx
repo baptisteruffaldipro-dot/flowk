@@ -76,7 +76,7 @@ export default function Questionnaires() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <PageHeader
         title="Questionnaires"
         description="Briefs clients structurés avec synthèse IA"

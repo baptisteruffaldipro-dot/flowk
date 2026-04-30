@@ -76,7 +76,7 @@ export default function BatDetail() {
   if (!bat) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <Button variant="ghost" size="sm" onClick={() => navigate("/bats")} className="mb-4">
         <ArrowLeft className="h-4 w-4 mr-1" /> Retour
       </Button>
