@@ -75,10 +75,8 @@ export const PRESTATION_LABEL: Record<string, string> = {
 };
 
 export const PRINT_STATUS_LABEL: Record<string, string> = {
-  bat_en_attente: "BAT en attente",
-  bat_valide: "BAT validé",
+  a_commander: "À commander",
   en_impression: "En impression",
-  expedie: "Expédié",
   livre: "Livré",
 };
 

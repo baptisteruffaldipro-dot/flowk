@@ -42,7 +42,7 @@ export default function Dashboard() {
       const doneCount = all.filter((x: any) => x.status === "envoye" || x.status === "a_facturer").length;
       const todoCount = totalCount - doneCount;
       const pendingRev = ((i.data as any) ?? []).filter((x: Inv) => x.status === "a_facturer" || x.status === "facturee").reduce((s: number, x: Inv) => s + Number(x.amount), 0);
-      const awaitBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "bat_en_attente").length;
+      const awaitBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "a_commander").length;
       setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, awaitingBat: awaitBat });
   };
   useEffect(() => { load(); }, []);

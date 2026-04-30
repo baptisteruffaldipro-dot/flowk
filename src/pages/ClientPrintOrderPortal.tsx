@@ -26,7 +26,7 @@ export default function ClientPrintOrderPortal() {
   const validate = async () => {
     const { error } = await supabase.from("print_orders").update({
       bat_validated_at: new Date().toISOString(),
-      status: "bat_valide",
+      status: "a_commander",
       bat_rejected_at: null,
       bat_rejection_reason: null,
     }).eq("id", id);

@@ -20,7 +20,7 @@ export default function PrintOrders() {
   const [open, setOpen] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [form, setForm] = useState<any>({
-    description: "", client_id: "", amount: "", status: "bat_en_attente",
+    description: "", client_id: "", amount: "", status: "a_commander",
     reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "",
   });
 
@@ -68,7 +68,7 @@ export default function PrintOrders() {
     if (error) return toast.error(error.message);
     toast.success("Commande créée");
     setOpen(false);
-    setForm({ description: "", client_id: "", amount: "", status: "bat_en_attente", reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "" });
+    setForm({ description: "", client_id: "", amount: "", status: "a_commander", reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "" });
     load();
   };
 
