@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Calendar, Tag, GripVertical, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes } from "@/lib/format";
+import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
+import { computeTaskBilling } from "@/lib/billing";
 import {
   DndContext,
   DragEndEvent,
@@ -289,6 +290,15 @@ function KanbanCard({
               />
             )}
             <AddStickerMenu task={task} onUpdate={onUpdate} />
+            {(() => {
+              const billing = computeTaskBilling(task);
+              const amount = task.billing_type === "forfait" ? (task.flat_amount ?? 0) : billing.total;
+              return amount > 0 ? (
+                <Badge variant="outline" className="text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums text-emerald-700 dark:text-emerald-400 border-emerald-300/50">
+                  {fmtMoney(amount)}
+                </Badge>
+              ) : null;
+            })()}
           </div>
       </Card>
     </div>
