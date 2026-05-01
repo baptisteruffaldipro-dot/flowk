@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL } from "@/lib/format";
-import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays } from "lucide-react";
+import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
 
 type Task = { id: string; title: string; status: string; deadline: string | null; clients?: { name: string } | null };
@@ -78,7 +78,7 @@ export default function Dashboard() {
         <QuickCreate onCreated={load} />
       </div>
 
-      <TodayBoard tasks={tasks} />
+      <TodayBoard tasks={tasks} printOrders={orders} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <ProgressStatCard
@@ -168,13 +168,14 @@ function ProgressStatCard({ label, value, done, total }: { label: string; value:
   );
 }
 
-function TodayBoard({ tasks }: { tasks: Task[] }) {
+function TodayBoard({ tasks, printOrders }: { tasks: Task[]; printOrders: Order[] }) {
   const today = new Date().toISOString().slice(0, 10);
   const isToday = (t: Task) => t.status === "aujourdhui" || t.deadline === today;
   const isOverdue = (t: Task) => !!t.deadline && t.deadline < today && t.status !== "envoye" && t.status !== "archive";
 
   const todayTasks = tasks.filter(isToday);
   const overdueTasks = tasks.filter((t) => isOverdue(t) && !isToday(t));
+  const toOrderPrints = printOrders.filter((o) => o.status === "a_commander");
 
   return (
     <Card className="p-5 mb-6 border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
@@ -188,6 +189,7 @@ function TodayBoard({ tasks }: { tasks: Task[] }) {
             <p className="text-xs text-muted-foreground">
               {todayTasks.length} tâche{todayTasks.length > 1 ? "s" : ""} à faire
               {overdueTasks.length > 0 && ` • ${overdueTasks.length} en retard`}
+              {toOrderPrints.length > 0 && ` • ${toOrderPrints.length} impression${toOrderPrints.length > 1 ? "s" : ""} à commander`}
             </p>
           </div>
         </div>
@@ -196,7 +198,7 @@ function TodayBoard({ tasks }: { tasks: Task[] }) {
         </Link>
       </div>
 
-      {todayTasks.length === 0 && overdueTasks.length === 0 ? (
+      {todayTasks.length === 0 && overdueTasks.length === 0 && toOrderPrints.length === 0 ? (
         <div className="text-center py-8 text-sm text-muted-foreground">
           🎉 Rien de prévu pour aujourd'hui
         </div>
@@ -221,6 +223,28 @@ function TodayBoard({ tasks }: { tasks: Task[] }) {
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {todayTasks.map((t) => <TodayCard key={t.id} task={t} variant="today" />)}
+              </div>
+            </div>
+          )}
+          {toOrderPrints.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-orange-600 dark:text-orange-400 uppercase tracking-wider">
+                <Printer className="h-3.5 w-3.5" /> Impressions à commander
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {toOrderPrints.map((o) => (
+                  <Link
+                    key={o.id}
+                    to={`/impressions/${o.id}`}
+                    className="block p-3 rounded-md border border-orange-300/40 bg-card hover:bg-secondary/60 transition"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="text-sm font-medium leading-snug truncate">{o.description}</div>
+                      <Badge variant="outline" className="shrink-0 text-[10px]">{PRINT_STATUS_LABEL[o.status]}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1 truncate">{o.clients?.name ?? "—"}</div>
+                  </Link>
+                ))}
               </div>
             </div>
           )}
