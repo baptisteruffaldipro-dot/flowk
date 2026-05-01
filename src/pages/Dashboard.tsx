@@ -40,7 +40,6 @@ export default function Dashboard() {
         if (x.payment_status === "acompte_50") return s + amt * 0.5;
         return s;
       }, 0);
-      setTasks((t.data as any) ?? []);
       // Merge today tasks that might have been cut off by the limit
       const allTasks = (t.data as any) ?? [];
       const todayTasks = (todayT.data as any) ?? [];
