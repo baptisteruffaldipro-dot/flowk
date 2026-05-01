@@ -24,8 +24,9 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, awaitingBat: 0 });
 
   const load = async () => {
-      const [t, o, i, a, paid] = await Promise.all([
+      const [t, todayT, o, i, a, paid] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
+        supabase.from("tasks").select("id,title,status,deadline,clients(name)").eq("status", "aujourdhui" as any),
         supabase.from("print_orders").select("id,description,status,payment_status,amount,clients(name)").not("status", "in", "(livre,livre_paye)").order("created_at", { ascending: false }).limit(50),
         supabase.from("invoices").select("id,label,amount,status,clients(name)").neq("status", "payee").order("created_at", { ascending: false }).limit(50),
         supabase.from("appointments").select("id,title,start_at,type,location,clients(name)").gte("start_at", new Date().toISOString()).neq("status", "annule").order("start_at", { ascending: true }).limit(8),
@@ -40,6 +41,12 @@ export default function Dashboard() {
         return s;
       }, 0);
       setTasks((t.data as any) ?? []);
+      // Merge today tasks that might have been cut off by the limit
+      const allTasks = (t.data as any) ?? [];
+      const todayTasks = (todayT.data as any) ?? [];
+      const taskIds = new Set(allTasks.map((x: any) => x.id));
+      const merged = [...allTasks, ...todayTasks.filter((x: any) => !taskIds.has(x.id))];
+      setTasks(merged);
       setOrders((o.data as any) ?? []);
       setInvoices((i.data as any) ?? []);
       setAppointments((a.data as any) ?? []);
