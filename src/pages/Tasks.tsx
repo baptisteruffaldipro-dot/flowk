@@ -663,6 +663,7 @@ export default function Tasks() {
       client_id: form.client_id || null,
       project_id: form.project_id || null,
       prestation: form.prestation,
+      prestations: form.prestation ? [form.prestation] : [],
       priority: form.priority,
       deadline: form.deadline || null,
       billing_type: form.billing_type,
