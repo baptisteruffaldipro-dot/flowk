@@ -9,9 +9,10 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, Merge, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { detectDuplicatePlan, executeMergePlan, type MergePlan } from "@/lib/mergeDuplicates";
 
 type Client = { id: string; name: string; company: string | null; email: string | null; phone: string | null };
 
@@ -31,6 +32,9 @@ export default function Clients() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [mergePlan, setMergePlan] = useState<MergePlan | null>(null);
+  const [merging, setMerging] = useState(false);
+  const [scanningMerge, setScanningMerge] = useState(false);
   const navigate = useNavigate();
 
   const load = async () => {
@@ -111,12 +115,48 @@ export default function Clients() {
     }
   };
 
+  const scanDuplicates = async () => {
+    setScanningMerge(true);
+    try {
+      const plan = await detectDuplicatePlan();
+      if (plan.length === 0) {
+        toast.success("Aucun doublon détecté 🎉");
+      } else {
+        setMergePlan(plan);
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur de détection");
+    } finally {
+      setScanningMerge(false);
+    }
+  };
+
+  const runMerge = async () => {
+    if (!mergePlan) return;
+    setMerging(true);
+    try {
+      const { merged, reassigned } = await executeMergePlan(mergePlan);
+      toast.success(`${merged} doublon${merged > 1 ? "s" : ""} fusionné${merged > 1 ? "s" : ""} · ${reassigned} liaison${reassigned > 1 ? "s" : ""} réassignée${reassigned > 1 ? "s" : ""}`);
+      setMergePlan(null);
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur de fusion");
+    } finally {
+      setMerging(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Clients"
         description={`${clients.length} client${clients.length > 1 ? "s" : ""}`}
         actions={
+          <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={scanDuplicates} disabled={scanningMerge}>
+            {scanningMerge ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Merge className="h-4 w-4 mr-1" />}
+            Fusionner doublons
+          </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Nouveau client</Button>
@@ -135,6 +175,7 @@ export default function Clients() {
               <DialogFooter><Button onClick={create}>Créer</Button></DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         }
       />
 
@@ -206,6 +247,37 @@ export default function Clients() {
             <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={deleteSelected} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {deleting ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!mergePlan} onOpenChange={(o) => !o && setMergePlan(null)}>
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {mergePlan?.length ?? 0} groupe{(mergePlan?.length ?? 0) > 1 ? "s" : ""} de doublons détecté{(mergePlan?.length ?? 0) > 1 ? "s" : ""}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              La fiche la plus complète sera <strong>conservée</strong>. Les autres seront supprimées et leurs projets / tâches / commandes / factures / BAT / RDV / questionnaires seront transférés sur la fiche conservée.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 my-2">
+            {mergePlan?.map((g, i) => (
+              <div key={i} className="rounded-md border p-3 text-sm">
+                <div className="font-medium text-primary mb-1">✓ Conservé : {g.keep.name} {g.keep.email ? `· ${g.keep.email}` : ""}</div>
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  {g.drop.map((d) => (
+                    <div key={d.id}>✗ Supprimé : {d.name} {d.email ? `· ${d.email}` : ""} {d.phone ? `· ${d.phone}` : ""}</div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={merging}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={runMerge} disabled={merging}>
+              {merging ? "Fusion en cours..." : "Confirmer la fusion"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
