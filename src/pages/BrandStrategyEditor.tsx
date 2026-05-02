@@ -43,6 +43,21 @@ const buildStrategy = (row: DBRow): BrandStrategy => ({
   ...(row.content || {}),
 });
 
+// S'assure que les nouveaux blocs existent même sur d'anciens enregistrements
+const ensureContent = (raw: any) => {
+  const c = { ...emptyBrandStrategyContent, ...(raw || {}) };
+  // merge profond pour les blocs optionnels qui pourraient être absents
+  c.visualTerritory = { ...emptyBrandStrategyContent.visualTerritory!, ...(c.visualTerritory || {}) };
+  c.persona = { ...emptyBrandStrategyContent.persona!, ...(c.persona || {}) };
+  c.launchPlan = { ...emptyBrandStrategyContent.launchPlan!, ...(c.launchPlan || {}) };
+  c.moodboard = { ...emptyBrandStrategyContent.moodboard!, ...(c.moodboard || {}) };
+  c.logoSystem = { ...emptyBrandStrategyContent.logoSystem!, ...(c.logoSystem || {}) };
+  c.typography = { ...emptyBrandStrategyContent.typography!, ...(c.typography || {}) };
+  c.colorPalette = { ...emptyBrandStrategyContent.colorPalette!, ...(c.colorPalette || {}) };
+  c.inSitu = { ...emptyBrandStrategyContent.inSitu!, ...(c.inSitu || {}) };
+  return c;
+};
+
 // ========== Petits helpers UI ==========
 const SectionCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <Card className="p-5 space-y-4">
@@ -81,7 +96,7 @@ export default function BrandStrategyEditor() {
       if (error || !data) { toast.error("Introuvable"); navigate("/strategies"); return; }
       const r = data as any;
       // garantit la présence de toutes les clés
-      r.content = { ...emptyBrandStrategyContent, ...(r.content || {}) };
+      r.content = ensureContent(r.content);
       setRow(r);
     });
   }, [id, navigate]);
@@ -206,6 +221,14 @@ export default function BrandStrategyEditor() {
           <TabsTrigger value="swot">SWOT</TabsTrigger>
           <TabsTrigger value="naming">Naming</TabsTrigger>
           <TabsTrigger value="todo">À construire</TabsTrigger>
+          <TabsTrigger value="visual">Territoire visuel</TabsTrigger>
+          <TabsTrigger value="persona">Persona</TabsTrigger>
+          <TabsTrigger value="launch">Plan com.</TabsTrigger>
+          <TabsTrigger value="moodboard">Moodboard</TabsTrigger>
+          <TabsTrigger value="logos">Logos</TabsTrigger>
+          <TabsTrigger value="typo">Typographie</TabsTrigger>
+          <TabsTrigger value="colors">Palette</TabsTrigger>
+          <TabsTrigger value="insitu">In situ</TabsTrigger>
         </TabsList>
 
         <TabsContent value="meta" className="space-y-4">
