@@ -369,39 +369,51 @@ export type Database = {
       invoices: {
         Row: {
           amount: number
+          billing_type: Database["public"]["Enums"]["invoice_billing_type"]
           client_id: string
           created_at: string
+          hourly_rate: number | null
+          hours: number | null
           id: string
           invoiced_at: string | null
           label: string
           paid_at: string | null
           print_order_id: string | null
+          questionnaire_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           task_id: string | null
           updated_at: string
         }
         Insert: {
           amount: number
+          billing_type?: Database["public"]["Enums"]["invoice_billing_type"]
           client_id: string
           created_at?: string
+          hourly_rate?: number | null
+          hours?: number | null
           id?: string
           invoiced_at?: string | null
           label: string
           paid_at?: string | null
           print_order_id?: string | null
+          questionnaire_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           task_id?: string | null
           updated_at?: string
         }
         Update: {
           amount?: number
+          billing_type?: Database["public"]["Enums"]["invoice_billing_type"]
           client_id?: string
           created_at?: string
+          hourly_rate?: number | null
+          hours?: number | null
           id?: string
           invoiced_at?: string | null
           label?: string
           paid_at?: string | null
           print_order_id?: string | null
+          questionnaire_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           task_id?: string | null
           updated_at?: string
@@ -1117,6 +1129,7 @@ export type Database = {
         | "telephone"
         | "autre"
       capture_status: "a_traiter" | "traite" | "archive"
+      invoice_billing_type: "forfait" | "horaire"
       invoice_status: "a_facturer" | "facturee" | "payee"
       prestation_type:
         | "mise_en_page"
@@ -1337,6 +1350,7 @@ export const Constants = {
         "autre",
       ],
       capture_status: ["a_traiter", "traite", "archive"],
+      invoice_billing_type: ["forfait", "horaire"],
       invoice_status: ["a_facturer", "facturee", "payee"],
       prestation_type: [
         "mise_en_page",
