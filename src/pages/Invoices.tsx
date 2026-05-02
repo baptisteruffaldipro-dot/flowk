@@ -24,11 +24,16 @@ export default function Invoices() {
 
   const load = async () => {
     const [i, c, q] = await Promise.all([
-      supabase.from("invoices").select("*, clients(name), questionnaires:questionnaire_id(id,title)").order("created_at", { ascending: false }),
+      supabase.from("invoices").select("*, clients(name)").order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("questionnaires").select("id,title,client_id").order("created_at", { ascending: false }),
     ]);
-    setInvoices(i.data ?? []);
+    const qById = new Map(((q.data as any[]) ?? []).map((x) => [x.id, x]));
+    const enriched = ((i.data as any[]) ?? []).map((row) => ({
+      ...row,
+      questionnaire: row.questionnaire_id ? qById.get(row.questionnaire_id) ?? null : null,
+    }));
+    setInvoices(enriched);
     setClients(c.data ?? []);
     setQuestionnaires((q.data as any) ?? []);
   };
@@ -186,9 +191,9 @@ export default function Invoices() {
                   <div className="font-medium truncate">{i.label}</div>
                   <div className="text-xs text-muted-foreground inline-flex items-center gap-2 flex-wrap">
                     <span>{i.clients?.name}</span>
-                    {i.questionnaires?.title && (
+                    {i.questionnaire?.title && (
                       <Badge variant="outline" className="text-[10px] gap-1">
-                        <FileText className="h-2.5 w-2.5" /> {i.questionnaires.title}
+                        <FileText className="h-2.5 w-2.5" /> {i.questionnaire.title}
                       </Badge>
                     )}
                   </div>
