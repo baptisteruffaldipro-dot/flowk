@@ -475,7 +475,7 @@ export default function TaskDetail() {
           </div>
         </div>
 
-        {/* Type / Heures travaillées / Taux — côte à côte dans cet ordre */}
+        {/* Type de facturation + champs conditionnels */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="space-y-1.5">
             <Label className="text-xs">Type de facturation</Label>
@@ -483,37 +483,38 @@ export default function TaskDetail() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="horaire">Horaire</SelectItem>
-                <SelectItem value="forfait">Forfait (+ dépassement horaire)</SelectItem>
+                <SelectItem value="forfait">Forfait</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">
-              Heures travaillées
-              {Number(task.hourly_rate) > 0 && (
-                <span className="text-muted-foreground"> — {fmtMoney(((task.total_minutes ?? 0) / 60) * Number(task.hourly_rate))}</span>
-              )}
-            </Label>
-            <Input
-              type="number" step="0.25" min="0"
-              value={task.total_minutes != null ? (task.total_minutes / 60).toString() : ""}
-              onChange={(e) => setTask({ ...task, total_minutes: e.target.value === "" ? 0 : Math.round(Number(e.target.value) * 60) })}
-              onBlur={() => updateField({ total_minutes: task.total_minutes ?? 0 })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Taux horaire (€) {task.billing_type === "forfait" && <span className="text-muted-foreground">— dépassement</span>}</Label>
-            <Input
-              type="number" step="0.01"
-              value={task.hourly_rate ?? ""}
-              onChange={(e) => setTask({ ...task, hourly_rate: e.target.value })}
-              onBlur={() => updateField({ hourly_rate: task.hourly_rate === "" ? null : Number(task.hourly_rate) })}
-            />
-          </div>
-        </div>
 
-        {task.billing_type === "forfait" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          {task.billing_type === "horaire" ? (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Heures travaillées
+                  {Number(task.hourly_rate) > 0 && (
+                    <span className="text-muted-foreground"> — {fmtMoney(((task.total_minutes ?? 0) / 60) * Number(task.hourly_rate))}</span>
+                  )}
+                </Label>
+                <Input
+                  type="number" step="0.25" min="0"
+                  value={task.total_minutes != null ? (task.total_minutes / 60).toString() : ""}
+                  onChange={(e) => setTask({ ...task, total_minutes: e.target.value === "" ? 0 : Math.round(Number(e.target.value) * 60) })}
+                  onBlur={() => updateField({ total_minutes: task.total_minutes ?? 0 })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Taux horaire (€)</Label>
+                <Input
+                  type="number" step="0.01"
+                  value={task.hourly_rate ?? ""}
+                  onChange={(e) => setTask({ ...task, hourly_rate: e.target.value })}
+                  onBlur={() => updateField({ hourly_rate: task.hourly_rate === "" ? null : Number(task.hourly_rate) })}
+                />
+              </div>
+            </>
+          ) : (
             <div className="space-y-1.5">
               <Label className="text-xs">Forfait (€)</Label>
               <Input
@@ -523,8 +524,8 @@ export default function TaskDetail() {
                 onBlur={() => updateField({ flat_amount: task.flat_amount === "" ? null : Number(task.flat_amount) })}
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="space-y-1.5">
