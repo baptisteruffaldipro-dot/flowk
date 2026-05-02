@@ -714,6 +714,21 @@ export default function Tasks() {
     load();
   };
 
+  const quickAddTask = async (status: Status, title: string) => {
+    const position = maxPositionFor(status) + 10;
+    const { error } = await supabase.from("tasks").insert({
+      title,
+      status,
+      position,
+      prestation: "creation",
+      prestations: ["creation"],
+      priority: "secondaire",
+      billing_type: "horaire",
+    } as any);
+    if (error) return toast.error(error.message);
+    await load();
+  };
+
   const filteredProjects = projects.filter((p) => !form.client_id || p.client_id === form.client_id);
 
   return (
@@ -873,6 +888,7 @@ export default function Tasks() {
                   onUpdateDivider={updateDivider}
                   onDeleteDivider={deleteDivider}
                   paidTaskIds={paidTaskIds}
+                  onQuickAdd={quickAddTask}
                 />
               ))}
             </div>
