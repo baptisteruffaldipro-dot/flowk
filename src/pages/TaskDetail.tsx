@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
+import PrestationPicker from "@/components/PrestationPicker";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -33,6 +34,7 @@ export default function TaskDetail() {
   const [tick, setTick] = useState(0);
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
+  const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [newClientDialog, setNewClientDialog] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
@@ -41,18 +43,20 @@ export default function TaskDetail() {
 
   const load = async () => {
     if (!id) return;
-    const [t, s, e, c, p] = await Promise.all([
+    const [t, s, e, c, p, q] = await Promise.all([
       supabase.from("tasks").select("*, clients(id,name), projects(id,name)").eq("id", id).maybeSingle(),
       supabase.from("subtasks").select("*").eq("task_id", id).order("position"),
       supabase.from("time_entries").select("*").eq("task_id", id).order("started_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id").order("name"),
+      supabase.from("questionnaires").select("id,title,client_id,project_id,template").order("updated_at", { ascending: false }),
     ]);
     setTask(t.data);
     setSubtasks(s.data ?? []);
     setEntries(e.data ?? []);
     setClients(c.data ?? []);
     setProjects(p.data ?? []);
+    setQuestionnaires(q.data ?? []);
   };
   useEffect(() => { load(); }, [id]);
 
@@ -248,6 +252,13 @@ export default function TaskDetail() {
 
   const running = !!task.timer_started_at;
   const filteredProjects = projects.filter((p) => !task.client_id || p.client_id === task.client_id);
+  const filteredQuestionnaires = questionnaires.filter((q) =>
+    (!task.client_id || q.client_id === task.client_id) &&
+    (!task.project_id || !q.project_id || q.project_id === task.project_id)
+  );
+  const prestations: string[] = (task.prestations && task.prestations.length > 0)
+    ? task.prestations
+    : (task.prestation ? [task.prestation] : []);
 
   return (
     <div className="p-4 md:p-8 max-w-[1200px] mx-auto">
@@ -361,19 +372,51 @@ export default function TaskDetail() {
           </Select>
         </Card>
         <Card className="p-4 min-w-0">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Prestation</div>
-          <Select value={task.prestation} onValueChange={(v) => updateField({ prestation: v })}>
-            <SelectTrigger className="mt-2 w-full min-w-0"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(PRESTATION_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Prestations</div>
+          <PrestationPicker
+            value={prestations}
+            onChange={(next) => updateField({
+              prestations: next,
+              prestation: next[0] ?? task.prestation, // garder la principale en sync pour rétro-compat
+            })}
+          />
         </Card>
         <Card className="p-4 min-w-0">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Deadline</div>
           <Input type="date" value={task.deadline ?? ""} onChange={(e) => updateField({ deadline: e.target.value || null })} className="mt-2 w-full min-w-0" />
         </Card>
       </div>
+
+      <Card className="p-4 mb-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Brief / questionnaire rattaché</Label>
+          <div className="flex items-center gap-2">
+            <Select
+              value={task.questionnaire_id ?? ""}
+              onValueChange={(v) => updateField({ questionnaire_id: v || null })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={filteredQuestionnaires.length === 0 ? "Aucun questionnaire disponible" : "Sélectionner un brief / questionnaire"} />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredQuestionnaires.map((q) => (
+                  <SelectItem key={q.id} value={q.id}>{q.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {task.questionnaire_id && (
+              <>
+                <Button asChild variant="outline" size="sm">
+                  <Link to={`/questionnaires/${task.questionnaire_id}`}>Ouvrir</Link>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => updateField({ questionnaire_id: null })}>
+                  Détacher
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <Card className="p-4 sm:p-5 min-w-0">
@@ -432,6 +475,7 @@ export default function TaskDetail() {
           </div>
         </div>
 
+        {/* Type / Heures travaillées / Taux — côte à côte dans cet ordre */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="space-y-1.5">
             <Label className="text-xs">Type de facturation</Label>
@@ -443,29 +487,6 @@ export default function TaskDetail() {
               </SelectContent>
             </Select>
           </div>
-          {task.billing_type === "forfait" && (
-            <div className="space-y-1.5">
-              <Label className="text-xs">Forfait (€)</Label>
-              <Input
-                type="number" step="0.01"
-                value={task.flat_amount ?? ""}
-                onChange={(e) => setTask({ ...task, flat_amount: e.target.value })}
-                onBlur={() => updateField({ flat_amount: task.flat_amount === "" ? null : Number(task.flat_amount) })}
-              />
-            </div>
-          )}
-          <div className="space-y-1.5">
-            <Label className="text-xs">Taux horaire (€) {task.billing_type === "forfait" && <span className="text-muted-foreground">— dépassement</span>}</Label>
-            <Input
-              type="number" step="0.01"
-              value={task.hourly_rate ?? ""}
-              onChange={(e) => setTask({ ...task, hourly_rate: e.target.value })}
-              onBlur={() => updateField({ hourly_rate: task.hourly_rate === "" ? null : Number(task.hourly_rate) })}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="space-y-1.5">
             <Label className="text-xs">
               Heures travaillées
@@ -480,7 +501,30 @@ export default function TaskDetail() {
               onBlur={() => updateField({ total_minutes: task.total_minutes ?? 0 })}
             />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Taux horaire (€) {task.billing_type === "forfait" && <span className="text-muted-foreground">— dépassement</span>}</Label>
+            <Input
+              type="number" step="0.01"
+              value={task.hourly_rate ?? ""}
+              onChange={(e) => setTask({ ...task, hourly_rate: e.target.value })}
+              onBlur={() => updateField({ hourly_rate: task.hourly_rate === "" ? null : Number(task.hourly_rate) })}
+            />
+          </div>
         </div>
+
+        {task.billing_type === "forfait" && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Forfait (€)</Label>
+              <Input
+                type="number" step="0.01"
+                value={task.flat_amount ?? ""}
+                onChange={(e) => setTask({ ...task, flat_amount: e.target.value })}
+                onBlur={() => updateField({ flat_amount: task.flat_amount === "" ? null : Number(task.flat_amount) })}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="space-y-1.5">
