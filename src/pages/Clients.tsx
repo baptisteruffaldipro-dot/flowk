@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -26,10 +28,15 @@ export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", company: "", email: "", phone: "", address: "", notes: "" });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const navigate = useNavigate();
 
   const load = async () => {
     const { data } = await supabase.from("clients").select("id,name,company,email,phone").order("name");
     setClients((data as any) ?? []);
+    setSelected(new Set());
   };
   useEffect(() => { load(); }, []);
 
@@ -52,6 +59,56 @@ export default function Clients() {
     setForm({ name: "", company: "", email: "", phone: "", address: "", notes: "" });
     setOpen(false);
     load();
+  };
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    setSelected((prev) => (prev.size === clients.length ? new Set() : new Set(clients.map((c) => c.id))));
+  };
+
+  const deleteSelected = async () => {
+    setDeleting(true);
+    const ids = Array.from(selected);
+    try {
+      // Vérifier rattachements (projets, tâches, commandes, factures, BAT, RDV, questionnaires)
+      const checks = await Promise.all([
+        supabase.from("projects").select("client_id").in("client_id", ids),
+        supabase.from("tasks").select("client_id").in("client_id", ids),
+        supabase.from("print_orders").select("client_id").in("client_id", ids),
+        supabase.from("invoices").select("client_id").in("client_id", ids),
+        supabase.from("bats").select("client_id").in("client_id", ids),
+        supabase.from("appointments").select("client_id").in("client_id", ids),
+        supabase.from("questionnaires").select("client_id").in("client_id", ids),
+      ]);
+      const blocked = new Set<string>();
+      checks.forEach((r) => (r.data ?? []).forEach((row: any) => row.client_id && blocked.add(row.client_id)));
+      const deletable = ids.filter((id) => !blocked.has(id));
+      if (deletable.length === 0) {
+        toast.error("Impossible : ces clients ont des projets, tâches ou commandes associés.");
+        setConfirmDelete(false);
+        setDeleting(false);
+        return;
+      }
+      const { error } = await supabase.from("clients").delete().in("id", deletable);
+      if (error) throw error;
+      const skipped = ids.length - deletable.length;
+      toast.success(
+        `${deletable.length} client${deletable.length > 1 ? "s" : ""} supprimé${deletable.length > 1 ? "s" : ""}` +
+          (skipped > 0 ? ` · ${skipped} ignoré${skipped > 1 ? "s" : ""} (rattachements)` : "")
+      );
+      setConfirmDelete(false);
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -81,23 +138,78 @@ export default function Clients() {
         }
       />
 
+      {selected.size > 0 && (
+        <div className="mb-3 flex items-center justify-between rounded-md border bg-secondary/40 px-4 py-2">
+          <div className="text-sm">
+            <strong>{selected.size}</strong> sélectionné{selected.size > 1 ? "s" : ""}
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+              <X className="h-4 w-4 mr-1" /> Annuler
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
+              <Trash2 className="h-4 w-4 mr-1" /> Supprimer
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Card className="overflow-hidden">
         {clients.length === 0 ? (
           <div className="p-12 text-center text-sm text-muted-foreground">Aucun client. Crée ton premier client.</div>
         ) : (
           <div className="divide-y">
+            <div className="flex items-center gap-3 px-5 py-2 bg-muted/30 text-xs text-muted-foreground">
+              <Checkbox
+                checked={selected.size > 0 && selected.size === clients.length}
+                onCheckedChange={toggleAll}
+                aria-label="Tout sélectionner"
+              />
+              <span>Tout sélectionner</span>
+            </div>
             {clients.map((c) => (
-              <Link key={c.id} to={`/clients/${c.id}`} className="flex items-center justify-between px-5 py-4 hover:bg-secondary/40 transition">
-                <div>
-                  <div className="font-medium">{c.name}</div>
-                  {c.company && <div className="text-xs text-muted-foreground">{c.company}</div>}
+              <div
+                key={c.id}
+                className="flex items-center gap-3 px-5 py-4 hover:bg-secondary/40 transition cursor-pointer"
+                onClick={() => navigate(`/clients/${c.id}`)}
+              >
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selected.has(c.id)}
+                    onCheckedChange={() => toggle(c.id)}
+                    aria-label={`Sélectionner ${c.name}`}
+                  />
                 </div>
-                <div className="text-sm text-muted-foreground">{c.email}</div>
-              </Link>
+                <div className="flex-1 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{c.name}</div>
+                    {c.company && <div className="text-xs text-muted-foreground">{c.company}</div>}
+                  </div>
+                  <div className="text-sm text-muted-foreground">{c.email}</div>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </Card>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer {selected.size} client{selected.size > 1 ? "s" : ""} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Les clients ayant des projets, tâches, commandes ou factures associés seront ignorés.
+              Cette action est irréversible pour les autres.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteSelected} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
