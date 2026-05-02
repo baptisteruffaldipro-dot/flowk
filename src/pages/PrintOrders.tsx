@@ -12,6 +12,7 @@ import { Plus, Upload, Loader2, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
+import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
 
 export default function PrintOrders() {
   const [bats, setBats] = useState<any[]>([]);
@@ -25,6 +26,7 @@ export default function PrintOrders() {
     reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "",
     estimated_delivery_date: "",
   });
+  const [products, setProducts] = useState<PrintProduct[]>([]);
 
   const load = async () => {
     const [b, o, c, inv] = await Promise.all([
@@ -74,11 +76,13 @@ export default function PrintOrders() {
       finitions: form.finitions.trim() || null,
       observations: form.observations.trim() || null,
       estimated_delivery_date: form.estimated_delivery_date || null,
+      products: products as any,
     });
     if (error) return toast.error(error.message);
     toast.success("Commande créée");
     setOpen(false);
     setForm({ description: "", client_id: "", amount: "", status: "a_commander", reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "", estimated_delivery_date: "" });
+    setProducts([]);
     load();
   };
 
@@ -211,6 +215,15 @@ export default function PrintOrders() {
                   <Label className="text-xs">Observations</Label>
                   <Input value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} maxLength={500} />
                 </div>
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
+                  Produits additionnels
+                </Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Ajoutez d'autres produits regroupés dans cette même commande (ex : flyers + cartes + affiches).
+                </p>
+                <PrintProductsEditor value={products} onChange={setProducts} />
               </div>
               <DialogFooter><Button onClick={createOrder}>Créer</Button></DialogFooter>
             </DialogContent>
