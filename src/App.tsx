@@ -21,6 +21,7 @@ import BatDetail from "./pages/BatDetail";
 import Invoices from "./pages/Invoices";
 import Inbox from "./pages/Inbox";
 import Appointments from "./pages/Appointments";
+import Realizations from "./pages/Realizations";
 import Questionnaires from "./pages/Questionnaires";
 import QuestionnaireDetail from "./pages/QuestionnaireDetail";
 import QuestionnairePublic from "./pages/QuestionnairePublic";
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/facturation" element={<Invoices />} />
               <Route path="/inbox" element={<Inbox />} />
               <Route path="/rdv" element={<Appointments />} />
+              <Route path="/agenda" element={<Realizations />} />
               <Route path="/questionnaires" element={<Questionnaires />} />
               <Route path="/questionnaires/:id" element={<QuestionnaireDetail />} />
               <Route path="/telegram" element={<TelegramSettings />} />
