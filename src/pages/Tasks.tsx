@@ -321,6 +321,7 @@ function KanbanColumn({
   onUpdateDivider,
   onDeleteDivider,
   paidTaskIds,
+  onQuickAdd,
 }: {
   status: Status;
   tasks: any[];
@@ -331,9 +332,19 @@ function KanbanColumn({
   onUpdateDivider: (id: string, label: string) => void;
   onDeleteDivider: (id: string) => void;
   paidTaskIds: Set<string>;
+  onQuickAdd: (status: Status, title: string) => Promise<void>;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+  const submitDraft = async () => {
+    const t = draft.trim();
+    if (!t) { setAdding(false); return; }
+    await onQuickAdd(status, t);
+    setDraft("");
+    setAdding(false);
+  };
 
   // Merge tasks and dividers by position
   const items: Array<{ kind: "task"; data: any; pos: number } | { kind: "divider"; data: any; pos: number }> = [
@@ -369,6 +380,30 @@ function KanbanColumn({
               <DropSlot id={`slot:${status}:${idx + 1}`} />
             </div>
           ))}
+          {adding ? (
+            <div className="rounded-md border bg-card p-2">
+              <Input
+                autoFocus
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={submitDraft}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.preventDefault(); submitDraft(); }
+                  if (e.key === "Escape") { setDraft(""); setAdding(false); }
+                }}
+                placeholder="Titre de la tâche…"
+                className="h-8 text-sm"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="w-full mt-1 py-1.5 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/40 rounded inline-flex items-center justify-center gap-1 border border-dashed border-border/40"
+            >
+              <Plus className="h-3 w-3" /> Ajouter une tâche
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onAddDivider(status)}
