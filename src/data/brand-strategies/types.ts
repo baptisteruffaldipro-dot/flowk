@@ -62,4 +62,81 @@ export interface BrandStrategy {
   };
 
   todo: string[];
+
+  // Sections « next steps » — toutes optionnelles pour rester compatibles
+  visualTerritory?: {
+    intro: string;
+    keywords: string[];
+    references: string[];
+    notes: string;
+  };
+
+  persona?: {
+    intro: string;
+    profiles: {
+      firstName: string;
+      age: string;
+      role: string;
+      bio: string;
+      lifestyle: string;
+      needs: string;
+      quote: string;
+    }[];
+  };
+
+  launchPlan?: {
+    intro: string;
+    phases: {
+      title: string;
+      timing: string;
+      objective: string;
+      actions: string[];
+      channels: string[];
+    }[];
+  };
+
+  moodboard?: {
+    intro: string;
+    universes: {
+      name: string;
+      description: string;
+      keywords: string[];
+      references: string[];
+    }[];
+  };
+
+  logoSystem?: {
+    intro: string;
+    items: {
+      type: string;        // Logo principal / secondaire / submark
+      name: string;
+      usage: string;
+      description: string;
+    }[];
+  };
+
+  typography?: {
+    intro: string;
+    fonts: {
+      role: string;        // Primaire / Secondaire / Soutien
+      name: string;
+      usage: string;
+      sample: string;
+    }[];
+  };
+
+  colorPalette?: {
+    intro: string;
+    primary: { name: string; hex: string; usage: string }[];
+    neutrals: { name: string; hex: string; usage: string }[];
+  };
+
+  inSitu?: {
+    intro: string;
+    items: {
+      title: string;
+      context: string;
+      description: string;
+    }[];
+  };
 }
