@@ -15,20 +15,20 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Copy, Archive, ArchiveRestore, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { PROJECT_TYPE_LABEL } from "@/lib/format";
+import { PROJECT_TYPE_LABEL, fmtDate } from "@/lib/format";
 
 export default function Projects() {
   const [projects, setProjects] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", client_id: "", type: "autre", description: "" });
+  const [form, setForm] = useState({ name: "", client_id: "", type: "autre", description: "", deadline: "" });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showArchived, setShowArchived] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const load = async () => {
     const [p, c] = await Promise.all([
-      supabase.from("projects").select("id,name,type,description,client_id,archived,clients(name)").order("created_at", { ascending: false }),
+      supabase.from("projects").select("id,name,type,description,client_id,archived,deadline,created_at,clients(name)").order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
     ]);
     setProjects(p.data ?? []);
@@ -45,10 +45,11 @@ export default function Projects() {
       client_id: form.client_id,
       type: form.type as any,
       description: form.description || null,
+      deadline: form.deadline || null,
     });
     if (error) return toast.error(error.message);
     toast.success("Projet créé");
-    setForm({ name: "", client_id: "", type: "autre", description: "" });
+    setForm({ name: "", client_id: "", type: "autre", description: "", deadline: "" });
     setOpen(false);
     load();
   };
@@ -84,6 +85,7 @@ export default function Projects() {
       client_id: p.client_id,
       type: p.type,
       description: p.description ?? null,
+      deadline: p.deadline ?? null,
     }));
     const { error } = await supabase.from("projects").insert(rows);
     if (error) return toast.error(error.message);
@@ -140,6 +142,10 @@ export default function Projects() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Date de livraison annoncée</Label>
+                  <Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+                </div>
               </div>
               <DialogFooter><Button onClick={create}>Créer</Button></DialogFooter>
             </DialogContent>
@@ -182,12 +188,14 @@ export default function Projects() {
           ) : (
             <div className="divide-y">
               <div className="grid grid-cols-12 gap-3 px-5 py-2 items-center text-xs text-muted-foreground bg-secondary/30">
-                <div className="col-span-6 flex items-center gap-3">
+                <div className="col-span-5 flex items-center gap-3">
                   <Checkbox checked={allVisibleSelected} onCheckedChange={toggleAll} />
                   <span>Nom</span>
                 </div>
-                <div className="col-span-4">Client</div>
+                <div className="col-span-3">Client</div>
                 <div className="col-span-2">Type</div>
+                <div className="col-span-1">Créé</div>
+                <div className="col-span-1">Livraison</div>
               </div>
               {visibleProjects.map((p) => {
                 const checked = selected.has(p.id);
@@ -196,7 +204,7 @@ export default function Projects() {
                     key={p.id}
                     className={`grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm hover:bg-secondary/40 ${checked ? "bg-secondary/30" : ""}`}
                   >
-                    <div className="col-span-6 flex items-center gap-3 min-w-0">
+                    <div className="col-span-5 flex items-center gap-3 min-w-0">
                       <Checkbox
                         checked={checked}
                         onCheckedChange={() => toggleOne(p.id)}
@@ -206,8 +214,10 @@ export default function Projects() {
                         {p.name}
                       </Link>
                     </div>
-                    <div className="col-span-4 text-muted-foreground truncate">{p.clients?.name ?? "—"}</div>
+                    <div className="col-span-3 text-muted-foreground truncate">{p.clients?.name ?? "—"}</div>
                     <div className="col-span-2 text-xs text-muted-foreground truncate">{PROJECT_TYPE_LABEL[p.type]}</div>
+                    <div className="col-span-1 text-xs text-muted-foreground">{fmtDate(p.created_at)}</div>
+                    <div className="col-span-1 text-xs text-muted-foreground">{fmtDate(p.deadline)}</div>
                   </div>
                 );
               })}
