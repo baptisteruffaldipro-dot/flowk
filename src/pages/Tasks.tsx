@@ -265,14 +265,20 @@ function KanbanCard({
             >
               {task.clients?.name ?? "Sans client"}
             </QuickEditBadge>
-            <QuickEditBadge
-              className={tagColor(task.prestation)}
-              options={Object.entries(PRESTATION_LABEL).map(([value, label]) => ({ value, label: label as string }))}
-              value={task.prestation}
-              onChange={(v) => onUpdate(task.id, { prestation: v })}
-            >
-              {PRESTATION_LABEL[task.prestation] ?? "Autre"}
-            </QuickEditBadge>
+            {(() => {
+              const list: string[] = (task.prestations && task.prestations.length > 0)
+                ? task.prestations
+                : (task.prestation ? [task.prestation] : []);
+              return list.map((k) => (
+                <Badge
+                  key={k}
+                  variant="outline"
+                  className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(k)}`}
+                >
+                  {PRESTATION_LABEL[k] ?? k}
+                </Badge>
+              ));
+            })()}
             {task.priority && task.priority !== "secondaire" && (
               <QuickEditBadge
                 className={PRIORITY_COLOR[task.priority] ?? ""}
@@ -657,6 +663,7 @@ export default function Tasks() {
       client_id: form.client_id || null,
       project_id: form.project_id || null,
       prestation: form.prestation,
+      prestations: form.prestation ? [form.prestation] : [],
       priority: form.priority,
       deadline: form.deadline || null,
       billing_type: form.billing_type,
@@ -785,7 +792,14 @@ export default function Tasks() {
                   <Link key={t.id} to={`/taches/${t.id}`} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-secondary/40 items-center text-sm">
                     <div className="col-span-5 truncate font-medium">{t.projects?.name ?? t.title}</div>
                     <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
-                    <div className="col-span-1 text-muted-foreground text-xs">{PRESTATION_LABEL[t.prestation]}</div>
+                    <div className="col-span-1 text-muted-foreground text-xs truncate">
+                      {(() => {
+                        const list: string[] = (t.prestations && t.prestations.length > 0)
+                          ? t.prestations
+                          : (t.prestation ? [t.prestation] : []);
+                        return list.map((k) => PRESTATION_LABEL[k] ?? k).join(" · ") || "—";
+                      })()}
+                    </div>
                     <div className="col-span-2">
                       {t.priority && t.priority !== "secondaire" && (
                         <Badge variant="outline" className={`text-[10px] ${PRIORITY_COLOR[t.priority]}`}>
