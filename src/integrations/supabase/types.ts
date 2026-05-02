@@ -1184,6 +1184,7 @@ export type Database = {
         | "archive"
         | "facturee"
         | "payee"
+        | "facture_envoyee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1407,6 +1408,7 @@ export const Constants = {
         "archive",
         "facturee",
         "payee",
+        "facture_envoyee",
       ],
     },
   },
