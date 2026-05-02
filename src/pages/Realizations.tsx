@@ -5,7 +5,6 @@ import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CheckCircle2, CalendarClock, FolderKanban, ListChecks, ChevronLeft, ChevronRight } from "lucide-react";
 import { fmtDate } from "@/lib/format";
 
@@ -23,7 +22,6 @@ type Item = {
 export default function Realizations() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"list" | "week">("list");
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
 
   useEffect(() => {
@@ -192,17 +190,11 @@ export default function Realizations() {
       {loading ? (
         <div className="text-sm text-muted-foreground p-8">Chargement…</div>
       ) : (
-        <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-          <TabsList>
-            <TabsTrigger value="list">Liste</TabsTrigger>
-            <TabsTrigger value="week">Semaine</TabsTrigger>
-          </TabsList>
-          <TabsContent value="list" className="mt-4">
-            {renderGroup("À venir", upcoming, "Aucune livraison à venir")}
-            {renderGroup("Réalisations passées", past, "Aucune réalisation pour l'instant")}
-          </TabsContent>
-          <TabsContent value="week" className="mt-4">
-            <Card className="p-5">
+        <>
+          <Card className="p-5 mb-4">
+            <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+              <CalendarClock className="h-4 w-4" /> Vue semaine
+            </h2>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Button size="icon" variant="outline" onClick={() => shiftWeek(-1)}>
@@ -259,9 +251,10 @@ export default function Realizations() {
                 <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-primary/40" /> À venir</div>
                 <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-sm bg-secondary border border-border" /> Passé / livré</div>
               </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </Card>
+          {renderGroup("À venir", upcoming, "Aucune livraison à venir")}
+          {renderGroup("Réalisations passées", past, "Aucune réalisation pour l'instant")}
+        </>
       )}
     </div>
   );
