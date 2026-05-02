@@ -854,8 +854,10 @@ export type Database = {
           notes: string | null
           position: number
           prestation: Database["public"]["Enums"]["prestation_type"]
+          prestations: string[]
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
+          questionnaire_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           timer_started_at: string | null
           title: string
@@ -880,8 +882,10 @@ export type Database = {
           notes?: string | null
           position?: number
           prestation?: Database["public"]["Enums"]["prestation_type"]
+          prestations?: string[]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
+          questionnaire_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           timer_started_at?: string | null
           title: string
@@ -906,8 +910,10 @@ export type Database = {
           notes?: string | null
           position?: number
           prestation?: Database["public"]["Enums"]["prestation_type"]
+          prestations?: string[]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
+          questionnaire_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           timer_started_at?: string | null
           title?: string
