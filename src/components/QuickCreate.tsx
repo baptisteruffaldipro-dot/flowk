@@ -7,12 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList, Sparkles, Loader2, Upload, X } from "lucide-react";
+import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList, Sparkles, Loader2, Upload, X, UserPlus, CalendarPlus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PRESTATION_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
 
-type Mode = null | "task" | "project" | "order";
+type Mode = null | "task" | "project" | "order" | "client" | "appointment";
 
 export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
   const navigate = useNavigate();
@@ -32,6 +32,8 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
   const [importText, setImportText] = useState("");
   const [importFiles, setImportFiles] = useState<File[]>([]);
   const [importing, setImporting] = useState(false);
+  const [client, setClient] = useState<any>({ name: "", company: "", email: "", phone: "" });
+  const [appt, setAppt] = useState<any>({ title: "", client_id: "", project_id: "", start_at: "", duration_minutes: 60, type: "presentiel", location: "" });
 
   useEffect(() => {
     if (mode) {
@@ -111,6 +113,42 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
     if (data?.id) navigate(`/impressions/${data.id}`);
   };
 
+  const createClient = async () => {
+    if (!client.name.trim()) return toast.error("Nom requis");
+    const { data, error } = await supabase.from("clients").insert({
+      name: client.name.trim(),
+      company: client.company?.trim() || null,
+      email: client.email?.trim() || null,
+      phone: client.phone?.trim() || null,
+    }).select("id").single();
+    if (error) return toast.error(error.message);
+    toast.success("Client créé");
+    close();
+    setClient({ name: "", company: "", email: "", phone: "" });
+    onCreated?.();
+    if (data?.id) navigate(`/clients/${data.id}`);
+  };
+
+  const createAppointment = async () => {
+    if (!appt.title.trim()) return toast.error("Titre requis");
+    if (!appt.start_at) return toast.error("Date/heure requise");
+    const { error } = await supabase.from("appointments").insert({
+      title: appt.title.trim(),
+      client_id: appt.client_id || null,
+      project_id: appt.project_id || null,
+      start_at: new Date(appt.start_at).toISOString(),
+      duration_minutes: Number(appt.duration_minutes) || 60,
+      type: appt.type,
+      location: appt.location?.trim() || null,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Rendez-vous créé");
+    close();
+    setAppt({ title: "", client_id: "", project_id: "", start_at: "", duration_minutes: 60, type: "presentiel", location: "" });
+    onCreated?.();
+    navigate("/rdv");
+  };
+
   const fileToDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
@@ -178,7 +216,10 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
             <div className="text-xs text-muted-foreground mt-0.5">Une tâche, un projet, une commande ou un questionnaire client</div>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <Button variant="outline" size="sm" onClick={() => setMode("client")} className="justify-start min-w-0 px-2.5">
+            <UserPlus className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouveau client</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setMode("task")} className="justify-start min-w-0 px-2.5">
             <CheckSquare className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouvelle tâche</span>
           </Button>
@@ -187,6 +228,9 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
           </Button>
           <Button variant="outline" size="sm" onClick={() => setMode("order")} className="justify-start min-w-0 px-2.5">
             <Printer className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouvelle commande</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setMode("appointment")} className="justify-start min-w-0 px-2.5">
+            <CalendarPlus className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouveau RDV</span>
           </Button>
           <Button variant="outline" size="sm" onClick={() => navigate("/questionnaires")} className="justify-start min-w-0 px-2.5">
             <ClipboardList className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Questionnaire client</span>
