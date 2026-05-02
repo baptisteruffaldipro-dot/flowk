@@ -435,6 +435,92 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
           <DialogFooter><Button onClick={createOrder}><Plus className="h-4 w-4 mr-1" />Créer</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* CLIENT */}
+      <Dialog open={mode === "client"} onOpenChange={(o) => !o && close()}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+          <DialogHeader><DialogTitle>Nouveau client</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Nom *</Label>
+              <Input autoFocus value={client.name} onChange={(e) => setClient({ ...client, name: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Société</Label>
+              <Input value={client.company} onChange={(e) => setClient({ ...client, company: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Email</Label>
+                <Input type="email" value={client.email} onChange={(e) => setClient({ ...client, email: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Téléphone</Label>
+                <Input value={client.phone} onChange={(e) => setClient({ ...client, phone: e.target.value })} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter><Button onClick={createClient}><Plus className="h-4 w-4 mr-1" />Créer</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* APPOINTMENT */}
+      <Dialog open={mode === "appointment"} onOpenChange={(o) => !o && close()}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg max-h-[90dvh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Nouveau rendez-vous</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Titre *</Label>
+              <Input autoFocus value={appt.title} onChange={(e) => setAppt({ ...appt, title: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Client</Label>
+                <Select value={appt.client_id} onValueChange={(v) => setAppt({ ...appt, client_id: v, project_id: "" })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Projet</Label>
+                <Select value={appt.project_id} onValueChange={(v) => setAppt({ ...appt, project_id: v })} disabled={!appt.client_id}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>{projects.filter((p) => !appt.client_id || p.client_id === appt.client_id).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Date / heure *</Label>
+                <Input type="datetime-local" value={appt.start_at} onChange={(e) => setAppt({ ...appt, start_at: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Durée (min)</Label>
+                <Input type="number" value={appt.duration_minutes} onChange={(e) => setAppt({ ...appt, duration_minutes: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Type</Label>
+                <Select value={appt.type} onValueChange={(v) => setAppt({ ...appt, type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="presentiel">Présentiel</SelectItem>
+                    <SelectItem value="visio">Visio</SelectItem>
+                    <SelectItem value="telephone">Téléphone</SelectItem>
+                    <SelectItem value="autre">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Lieu / lien</Label>
+                <Input value={appt.location} onChange={(e) => setAppt({ ...appt, location: e.target.value })} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter><Button onClick={createAppointment}><Plus className="h-4 w-4 mr-1" />Créer</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
