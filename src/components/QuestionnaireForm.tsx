@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { X } from "lucide-react";
 import { QSection, QField } from "@/lib/questionnaireTemplates";
 
@@ -65,6 +66,29 @@ function FieldRender({ field, value, onChange, disabled }: { field: QField; valu
   }
   if (field.type === "tags") {
     return <TagInput value={Array.isArray(value) ? value : []} onChange={onChange} max={field.max} disabled={disabled} />;
+  }
+  if (field.type === "multiselect") {
+    const selected: string[] = Array.isArray(value) ? value : [];
+    const toggle = (opt: string) => {
+      if (selected.includes(opt)) onChange(selected.filter((s) => s !== opt));
+      else onChange([...selected, opt]);
+    };
+    return (
+      <div className="grid sm:grid-cols-2 gap-2">
+        {field.options?.map((o) => {
+          const checked = selected.includes(o);
+          return (
+            <label
+              key={o}
+              className={`flex items-center gap-2 rounded-md border p-2.5 cursor-pointer transition ${checked ? "border-primary bg-primary/5" : "hover:bg-secondary/50"} ${disabled ? "opacity-60 pointer-events-none" : ""}`}
+            >
+              <Checkbox checked={checked} onCheckedChange={() => toggle(o)} disabled={disabled} />
+              <span className="text-sm">{o}</span>
+            </label>
+          );
+        })}
+      </div>
+    );
   }
   if (field.type === "select") {
     return (

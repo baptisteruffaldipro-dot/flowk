@@ -99,9 +99,21 @@ export const QUESTIONNAIRE_TEMPLATES: Record<string, QTemplate> = {
         fields: [
           {
             key: "logotype_interest",
-            label: "Êtes-vous intéressé(e) par un logotype ?",
-            type: "select",
-            options: ["Oui, uniquement typographique", "Oui, avec symbole", "Symbole seul", "Indifférent"],
+            label: "Êtes-vous intéressé(e) par un style de logotype ? (plusieurs choix possibles)",
+            help: "Inspiré des 9 grandes familles de logos (Tailor Brands)",
+            type: "multiselect",
+            options: [
+              "Pictogramme",
+              "Logo abstrait",
+              "Mascotte",
+              "Mot-symbole / logotype",
+              "Monogramme",
+              "Logo-lettre",
+              "Marque de combinaison",
+              "Emblème",
+              "Marque dynamique",
+              "Indifférent",
+            ],
           },
           {
             key: "avoid_aspects",

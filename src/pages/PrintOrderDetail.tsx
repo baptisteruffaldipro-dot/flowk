@@ -12,6 +12,7 @@ import { PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtMoney, fmtDateTime } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BatViewer from "@/components/BatViewer";
+import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
 
 export default function PrintOrderDetail() {
   const { id } = useParams();
@@ -19,6 +20,8 @@ export default function PrintOrderDetail() {
   const batInput = useRef<HTMLInputElement>(null);
   const livInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [products, setProducts] = useState<PrintProduct[]>([]);
+  const [savingProducts, setSavingProducts] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -28,6 +31,7 @@ export default function PrintOrderDetail() {
       .eq("id", id)
       .maybeSingle();
     setOrder(data);
+    setProducts(((data as any)?.products as PrintProduct[]) ?? []);
   };
 
   useEffect(() => { load(); }, [id]);
@@ -90,6 +94,15 @@ export default function PrintOrderDetail() {
 
   const updateEstimatedDelivery = async (value: string) => {
     await supabase.from("print_orders").update({ estimated_delivery_date: value || null }).eq("id", id);
+    load();
+  };
+
+  const saveProducts = async () => {
+    setSavingProducts(true);
+    const { error } = await supabase.from("print_orders").update({ products: products as any }).eq("id", id);
+    setSavingProducts(false);
+    if (error) return toast.error(error.message);
+    toast.success("Produits enregistrés");
     load();
   };
 
@@ -224,6 +237,19 @@ export default function PrintOrderDetail() {
             />
           </div>
         </div>
+      </Card>
+
+      <Card className="p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-sm font-semibold">Produits additionnels</h2>
+            <p className="text-xs text-muted-foreground">Plusieurs produits regroupés dans cette commande</p>
+          </div>
+          <Button size="sm" onClick={saveProducts} disabled={savingProducts}>
+            {savingProducts ? "Enregistrement…" : "Enregistrer"}
+          </Button>
+        </div>
+        <PrintProductsEditor value={products} onChange={setProducts} />
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">

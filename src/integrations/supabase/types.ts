@@ -477,6 +477,7 @@ export type Database = {
           id: string
           observations: string | null
           payment_status: Database["public"]["Enums"]["print_payment_status"]
+          products: Json
           project_id: string | null
           quantity: number | null
           reference: string | null
@@ -504,6 +505,7 @@ export type Database = {
           id?: string
           observations?: string | null
           payment_status?: Database["public"]["Enums"]["print_payment_status"]
+          products?: Json
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
@@ -531,6 +533,7 @@ export type Database = {
           id?: string
           observations?: string | null
           payment_status?: Database["public"]["Enums"]["print_payment_status"]
+          products?: Json
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
