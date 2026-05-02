@@ -95,7 +95,7 @@ export async function executeMergePlan(plan: MergePlan): Promise<{ merged: numbe
     }
 
     // 2) Compléter les champs manquants sur le client gardé
-    const patch: Record<string, any> = {};
+    const patch: any = {};
     for (const k of ["company", "email", "phone", "address"] as const) {
       if (!keep[k]) {
         const found = drop.find((d) => d[k]);
@@ -106,7 +106,7 @@ export async function executeMergePlan(plan: MergePlan): Promise<{ merged: numbe
     const allNotes = [keep.notes, ...drop.map((d) => d.notes)].filter(Boolean);
     if (allNotes.length > 1) patch.notes = allNotes.join("\n\n— fusion —\n");
     if (Object.keys(patch).length > 0) {
-      await supabase.from("clients").update(patch).eq("id", keep.id);
+      await supabase.from("clients").update(patch as any).eq("id", keep.id);
     }
 
     // 3) Supprimer les doublons
