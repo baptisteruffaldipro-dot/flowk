@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { CheckCircle2, CalendarClock, FolderKanban, ListChecks } from "lucide-react";
 import { fmtDate } from "@/lib/format";
 import WeekAgenda from "@/components/WeekAgenda";
