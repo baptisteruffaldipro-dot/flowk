@@ -251,7 +251,10 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
             client_id: clientId, project_id: projectId || null,
             notes: noteText(), deadline: a.deadline || null,
           };
-          if (a.prestation) insertPayload.prestation = a.prestation;
+          if (a.prestation) {
+            insertPayload.prestation = a.prestation;
+            insertPayload.prestations = [a.prestation];
+          }
           const { data: nt, error: tErr } = await supabase.from("tasks").insert(insertPayload).select("id").single();
           if (tErr) toast.error(`Création tâche: ${tErr.message}`);
           else {
