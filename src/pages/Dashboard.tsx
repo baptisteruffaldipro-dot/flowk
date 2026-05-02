@@ -5,14 +5,15 @@ import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL } from "@/lib/format";
-import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer } from "lucide-react";
+import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
+import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
 
 type Task = { id: string; title: string; status: string; deadline: string | null; clients?: { name: string } | null };
 type Order = { id: string; description: string; status: string; clients?: { name: string } | null };
 type Inv = { id: string; label: string; amount: number; status: string; clients?: { name: string } | null };
 type Appt = { id: string; title: string; start_at: string; type: string; location: string | null; clients?: { name: string } | null };
+type Project = { id: string; name: string; type: string; clients?: { name: string } | null };
 
 const APPT_TYPE_ICON: Record<string, any> = { visio: Video, presentiel: MapPin, telephone: Phone, autre: CalendarDays };
 
@@ -21,16 +22,19 @@ export default function Dashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [invoices, setInvoices] = useState<Inv[]>([]);
   const [appointments, setAppointments] = useState<Appt[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, awaitingBat: 0 });
 
   const load = async () => {
-      const [t, todayT, o, i, a, paid] = await Promise.all([
+      const [t, todayT, o, i, a, paid, p, batsRelecture] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").eq("status", "aujourdhui" as any),
         supabase.from("print_orders").select("id,description,status,payment_status,amount,clients(name)").not("status", "in", "(livre,livre_paye)").order("created_at", { ascending: false }).limit(50),
         supabase.from("invoices").select("id,label,amount,status,clients(name)").neq("status", "payee").order("created_at", { ascending: false }).limit(50),
         supabase.from("appointments").select("id,title,start_at,type,location,clients(name)").gte("start_at", new Date().toISOString()).neq("status", "annule").order("start_at", { ascending: true }).limit(8),
         supabase.from("invoices").select("amount").eq("status", "payee"),
+        supabase.from("projects").select("id,name,type,clients(name)").eq("archived", false).order("updated_at", { ascending: false }).limit(8),
+        supabase.from("bats").select("id").eq("status", "en_relecture" as any),
       ]);
       const allPrint = await supabase.from("print_orders").select("amount,payment_status,status");
       const allPrintData = (allPrint.data as any[]) ?? [];
@@ -49,6 +53,7 @@ export default function Dashboard() {
       setOrders((o.data as any) ?? []);
       setInvoices((i.data as any) ?? []);
       setAppointments((a.data as any) ?? []);
+      setProjects((p.data as any) ?? []);
 
       // Compteurs globaux pour la barre de progression
       const allTasksRes = await supabase.from("tasks").select("status", { count: "exact" });
@@ -65,7 +70,9 @@ export default function Dashboard() {
       }, 0);
       const pendingRev = invoicesRev + printRev;
       const paidRev = ((paid.data as any) ?? []).reduce((s: number, x: any) => s + Number(x.amount ?? 0), 0);
-      const awaitBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "a_commander").length;
+      const awaitPrintBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "validation_bat").length;
+      const awaitBatRows = ((batsRelecture.data as any) ?? []).length;
+      const awaitBat = awaitPrintBat + awaitBatRows;
       setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, paidRevenue: paidRev + paidPrintRev, awaitingBat: awaitBat });
   };
   useEffect(() => { load(); }, []);
@@ -93,14 +100,17 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Column title="Tâches à faire" href="/taches" empty="Aucune tâche en cours">
-          {tasks.slice(0, 8).map((t) => (
-            <Link key={t.id} to={`/taches/${t.id}`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
+        <Column title="Projets en cours" href="/projets" empty="Aucun projet en cours">
+          {projects.slice(0, 8).map((p) => (
+            <Link key={p.id} to={`/projets/${p.id}`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
               <div className="flex items-start justify-between gap-2">
-                <div className="text-sm font-medium leading-snug truncate">{t.title}</div>
-                <Badge variant="outline" className="shrink-0 text-[10px]">{STATUS_LABEL[t.status]}</Badge>
+                <div className="text-sm font-medium leading-snug truncate inline-flex items-center gap-1.5">
+                  <FolderKanban className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  {p.name}
+                </div>
+                <Badge variant="outline" className="shrink-0 text-[10px]">{PROJECT_TYPE_LABEL[p.type] ?? p.type}</Badge>
               </div>
-              <div className="text-xs text-muted-foreground mt-1 truncate">{t.clients?.name ?? "—"}</div>
+              <div className="text-xs text-muted-foreground mt-1 truncate">{p.clients?.name ?? "—"}</div>
             </Link>
           ))}
         </Column>
