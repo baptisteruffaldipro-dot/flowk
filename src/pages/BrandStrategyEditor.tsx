@@ -443,6 +443,209 @@ export default function BrandStrategyEditor() {
             <StringList value={c.todo} onChange={(v) => updateContent(["todo"], v)} placeholder="Naming final" />
           </SectionCard>
         </TabsContent>
+
+        {/* 11 — Territoire visuel */}
+        <TabsContent value="visual">
+          <SectionCard title="11 — Territoire visuel">
+            <div><Label>Intro</Label><Textarea rows={3} value={c.visualTerritory.intro} onChange={(e) => updateContent(["visualTerritory", "intro"], e.target.value)} /></div>
+            <div><Label>Mots-clés</Label><StringList value={c.visualTerritory.keywords} onChange={(v) => updateContent(["visualTerritory", "keywords"], v)} placeholder="Lumineux" /></div>
+            <div><Label>Références</Label><StringList value={c.visualTerritory.references} onChange={(v) => updateContent(["visualTerritory", "references"], v)} placeholder="Aesop, Monocle…" /></div>
+            <div><Label>Notes</Label><Textarea rows={3} value={c.visualTerritory.notes} onChange={(e) => updateContent(["visualTerritory", "notes"], e.target.value)} /></div>
+          </SectionCard>
+        </TabsContent>
+
+        {/* 12 — Persona */}
+        <TabsContent value="persona">
+          <SectionCard title="12 — Persona affiné">
+            <div><Label>Intro</Label><Textarea rows={2} value={c.persona.intro} onChange={(e) => updateContent(["persona", "intro"], e.target.value)} /></div>
+            {c.persona.profiles.map((p: any, i: number) => (
+              <Card key={i} className="p-4 space-y-2 bg-muted/30">
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Profil {i + 1}</span>
+                  <Button size="icon" variant="ghost" onClick={() => updateContent(["persona", "profiles"], c.persona.profiles.filter((_: any, j: number) => j !== i))}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input placeholder="Prénom" value={p.firstName} onChange={(e) => { const n = [...c.persona.profiles]; n[i] = { ...n[i], firstName: e.target.value }; updateContent(["persona", "profiles"], n); }} />
+                  <Input placeholder="Âge" value={p.age} onChange={(e) => { const n = [...c.persona.profiles]; n[i] = { ...n[i], age: e.target.value }; updateContent(["persona", "profiles"], n); }} />
+                  <Input placeholder="Rôle / métier" value={p.role} onChange={(e) => { const n = [...c.persona.profiles]; n[i] = { ...n[i], role: e.target.value }; updateContent(["persona", "profiles"], n); }} />
+                </div>
+                <Textarea rows={2} placeholder="Bio courte" value={p.bio} onChange={(e) => { const n = [...c.persona.profiles]; n[i] = { ...n[i], bio: e.target.value }; updateContent(["persona", "profiles"], n); }} />
+                <Textarea rows={2} placeholder="Mode de vie" value={p.lifestyle} onChange={(e) => { const n = [...c.persona.profiles]; n[i] = { ...n[i], lifestyle: e.target.value }; updateContent(["persona", "profiles"], n); }} />
+                <Textarea rows={2} placeholder="Attentes & besoins" value={p.needs} onChange={(e) => { const n = [...c.persona.profiles]; n[i] = { ...n[i], needs: e.target.value }; updateContent(["persona", "profiles"], n); }} />
+                <Input placeholder="Citation" value={p.quote} onChange={(e) => { const n = [...c.persona.profiles]; n[i] = { ...n[i], quote: e.target.value }; updateContent(["persona", "profiles"], n); }} />
+              </Card>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => updateContent(["persona", "profiles"], [...c.persona.profiles, { firstName: "", age: "", role: "", bio: "", lifestyle: "", needs: "", quote: "" }])}>
+              <Plus className="h-4 w-4 mr-1" /> Persona
+            </Button>
+          </SectionCard>
+        </TabsContent>
+
+        {/* 13 — Plan de communication */}
+        <TabsContent value="launch">
+          <SectionCard title="13 — Plan de communication lancement">
+            <div><Label>Intro</Label><Textarea rows={2} value={c.launchPlan.intro} onChange={(e) => updateContent(["launchPlan", "intro"], e.target.value)} /></div>
+            {c.launchPlan.phases.map((ph: any, i: number) => (
+              <Card key={i} className="p-4 space-y-2 bg-muted/30">
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Phase {i + 1}</span>
+                  <Button size="icon" variant="ghost" onClick={() => updateContent(["launchPlan", "phases"], c.launchPlan.phases.filter((_: any, j: number) => j !== i))}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="Titre (Pré-lancement…)" value={ph.title} onChange={(e) => { const n = [...c.launchPlan.phases]; n[i] = { ...n[i], title: e.target.value }; updateContent(["launchPlan", "phases"], n); }} />
+                  <Input placeholder="Timing (J-30…)" value={ph.timing} onChange={(e) => { const n = [...c.launchPlan.phases]; n[i] = { ...n[i], timing: e.target.value }; updateContent(["launchPlan", "phases"], n); }} />
+                </div>
+                <Textarea rows={2} placeholder="Objectif" value={ph.objective} onChange={(e) => { const n = [...c.launchPlan.phases]; n[i] = { ...n[i], objective: e.target.value }; updateContent(["launchPlan", "phases"], n); }} />
+                <div><Label className="text-xs">Actions</Label>
+                  <StringList value={ph.actions} onChange={(v) => { const n = [...c.launchPlan.phases]; n[i] = { ...n[i], actions: v }; updateContent(["launchPlan", "phases"], n); }} placeholder="Teasing Instagram" />
+                </div>
+                <div><Label className="text-xs">Canaux</Label>
+                  <StringList value={ph.channels} onChange={(v) => { const n = [...c.launchPlan.phases]; n[i] = { ...n[i], channels: v }; updateContent(["launchPlan", "phases"], n); }} placeholder="Instagram, presse locale…" />
+                </div>
+              </Card>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => updateContent(["launchPlan", "phases"], [...c.launchPlan.phases, { title: "", timing: "", objective: "", actions: [], channels: [] }])}>
+              <Plus className="h-4 w-4 mr-1" /> Phase
+            </Button>
+          </SectionCard>
+        </TabsContent>
+
+        {/* 14 — Moodboard */}
+        <TabsContent value="moodboard">
+          <SectionCard title="14 — Moodboard (univers à explorer)">
+            <div><Label>Intro</Label><Textarea rows={2} value={c.moodboard.intro} onChange={(e) => updateContent(["moodboard", "intro"], e.target.value)} /></div>
+            {c.moodboard.universes.map((u: any, i: number) => (
+              <Card key={i} className="p-4 space-y-2 bg-muted/30">
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Univers {i + 1}</span>
+                  <Button size="icon" variant="ghost" onClick={() => updateContent(["moodboard", "universes"], c.moodboard.universes.filter((_: any, j: number) => j !== i))}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Input placeholder="Nom de l'univers" value={u.name} onChange={(e) => { const n = [...c.moodboard.universes]; n[i] = { ...n[i], name: e.target.value }; updateContent(["moodboard", "universes"], n); }} />
+                <Textarea rows={2} placeholder="Description" value={u.description} onChange={(e) => { const n = [...c.moodboard.universes]; n[i] = { ...n[i], description: e.target.value }; updateContent(["moodboard", "universes"], n); }} />
+                <div><Label className="text-xs">Mots-clés</Label>
+                  <StringList value={u.keywords} onChange={(v) => { const n = [...c.moodboard.universes]; n[i] = { ...n[i], keywords: v }; updateContent(["moodboard", "universes"], n); }} placeholder="Iodé" />
+                </div>
+                <div><Label className="text-xs">Références</Label>
+                  <StringList value={u.references} onChange={(v) => { const n = [...c.moodboard.universes]; n[i] = { ...n[i], references: v }; updateContent(["moodboard", "universes"], n); }} placeholder="Hôtel du Cap, Sézane…" />
+                </div>
+              </Card>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => updateContent(["moodboard", "universes"], [...c.moodboard.universes, { name: "", description: "", keywords: [], references: [] }])}>
+              <Plus className="h-4 w-4 mr-1" /> Univers
+            </Button>
+          </SectionCard>
+        </TabsContent>
+
+        {/* 15 — Logos */}
+        <TabsContent value="logos">
+          <SectionCard title="15 — Système de logos">
+            <div><Label>Intro</Label><Textarea rows={2} value={c.logoSystem.intro} onChange={(e) => updateContent(["logoSystem", "intro"], e.target.value)} /></div>
+            {c.logoSystem.items.map((it: any, i: number) => (
+              <Card key={i} className="p-4 space-y-2 bg-muted/30">
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Logo {i + 1}</span>
+                  <Button size="icon" variant="ghost" onClick={() => updateContent(["logoSystem", "items"], c.logoSystem.items.filter((_: any, j: number) => j !== i))}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="Type (Principal / Secondaire / Submark)" value={it.type} onChange={(e) => { const n = [...c.logoSystem.items]; n[i] = { ...n[i], type: e.target.value }; updateContent(["logoSystem", "items"], n); }} />
+                  <Input placeholder="Nom" value={it.name} onChange={(e) => { const n = [...c.logoSystem.items]; n[i] = { ...n[i], name: e.target.value }; updateContent(["logoSystem", "items"], n); }} />
+                </div>
+                <Input placeholder="Usage" value={it.usage} onChange={(e) => { const n = [...c.logoSystem.items]; n[i] = { ...n[i], usage: e.target.value }; updateContent(["logoSystem", "items"], n); }} />
+                <Textarea rows={2} placeholder="Description" value={it.description} onChange={(e) => { const n = [...c.logoSystem.items]; n[i] = { ...n[i], description: e.target.value }; updateContent(["logoSystem", "items"], n); }} />
+              </Card>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => updateContent(["logoSystem", "items"], [...c.logoSystem.items, { type: "", name: "", usage: "", description: "" }])}>
+              <Plus className="h-4 w-4 mr-1" /> Logo
+            </Button>
+          </SectionCard>
+        </TabsContent>
+
+        {/* 16 — Typographie */}
+        <TabsContent value="typo">
+          <SectionCard title="16 — Système typographique">
+            <div><Label>Intro</Label><Textarea rows={2} value={c.typography.intro} onChange={(e) => updateContent(["typography", "intro"], e.target.value)} /></div>
+            {c.typography.fonts.map((f: any, i: number) => (
+              <Card key={i} className="p-4 space-y-2 bg-muted/30">
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Police {i + 1}</span>
+                  <Button size="icon" variant="ghost" onClick={() => updateContent(["typography", "fonts"], c.typography.fonts.filter((_: any, j: number) => j !== i))}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="Rôle (Primaire / Secondaire / Soutien)" value={f.role} onChange={(e) => { const n = [...c.typography.fonts]; n[i] = { ...n[i], role: e.target.value }; updateContent(["typography", "fonts"], n); }} />
+                  <Input placeholder="Nom (Cormorant Garamond)" value={f.name} onChange={(e) => { const n = [...c.typography.fonts]; n[i] = { ...n[i], name: e.target.value }; updateContent(["typography", "fonts"], n); }} />
+                </div>
+                <Input placeholder="Usage" value={f.usage} onChange={(e) => { const n = [...c.typography.fonts]; n[i] = { ...n[i], usage: e.target.value }; updateContent(["typography", "fonts"], n); }} />
+                <Input placeholder="Échantillon affiché (Aa Bb)" value={f.sample} onChange={(e) => { const n = [...c.typography.fonts]; n[i] = { ...n[i], sample: e.target.value }; updateContent(["typography", "fonts"], n); }} />
+              </Card>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => updateContent(["typography", "fonts"], [...c.typography.fonts, { role: "", name: "", usage: "", sample: "" }])}>
+              <Plus className="h-4 w-4 mr-1" /> Police
+            </Button>
+          </SectionCard>
+        </TabsContent>
+
+        {/* 17 — Palette chromatique */}
+        <TabsContent value="colors">
+          <SectionCard title="17 — Palette chromatique">
+            <div><Label>Intro</Label><Textarea rows={2} value={c.colorPalette.intro} onChange={(e) => updateContent(["colorPalette", "intro"], e.target.value)} /></div>
+            {(["primary", "neutrals"] as const).map((kind) => (
+              <div key={kind} className="space-y-2">
+                <Label className="text-xs uppercase tracking-wider">{kind === "primary" ? "Couleurs primaires" : "Neutres"}</Label>
+                {c.colorPalette[kind].map((col: any, i: number) => (
+                  <Card key={i} className="p-3 space-y-2 bg-muted/30">
+                    <div className="flex justify-between items-center gap-2">
+                      <div className="h-8 w-8 rounded border" style={{ backgroundColor: col.hex || "#fff" }} />
+                      <Input placeholder="Nom" value={col.name} onChange={(e) => { const n = [...c.colorPalette[kind]]; n[i] = { ...n[i], name: e.target.value }; updateContent(["colorPalette", kind], n); }} />
+                      <Input placeholder="#000000" value={col.hex} onChange={(e) => { const n = [...c.colorPalette[kind]]; n[i] = { ...n[i], hex: e.target.value }; updateContent(["colorPalette", kind], n); }} className="w-32" />
+                      <Button size="icon" variant="ghost" onClick={() => updateContent(["colorPalette", kind], c.colorPalette[kind].filter((_: any, j: number) => j !== i))}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Input placeholder="Usage" value={col.usage} onChange={(e) => { const n = [...c.colorPalette[kind]]; n[i] = { ...n[i], usage: e.target.value }; updateContent(["colorPalette", kind], n); }} />
+                  </Card>
+                ))}
+                <Button size="sm" variant="outline" onClick={() => updateContent(["colorPalette", kind], [...c.colorPalette[kind], { name: "", hex: "#000000", usage: "" }])}>
+                  <Plus className="h-4 w-4 mr-1" /> Couleur
+                </Button>
+              </div>
+            ))}
+          </SectionCard>
+        </TabsContent>
+
+        {/* 18 — In situ */}
+        <TabsContent value="insitu">
+          <SectionCard title="18 — Mises en situation (in situ)">
+            <div><Label>Intro</Label><Textarea rows={2} value={c.inSitu.intro} onChange={(e) => updateContent(["inSitu", "intro"], e.target.value)} /></div>
+            {c.inSitu.items.map((it: any, i: number) => (
+              <Card key={i} className="p-4 space-y-2 bg-muted/30">
+                <div className="flex justify-between">
+                  <span className="text-xs text-muted-foreground">Mise en situation {i + 1}</span>
+                  <Button size="icon" variant="ghost" onClick={() => updateContent(["inSitu", "items"], c.inSitu.items.filter((_: any, j: number) => j !== i))}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="Titre" value={it.title} onChange={(e) => { const n = [...c.inSitu.items]; n[i] = { ...n[i], title: e.target.value }; updateContent(["inSitu", "items"], n); }} />
+                  <Input placeholder="Contexte (Vitrine, packaging…)" value={it.context} onChange={(e) => { const n = [...c.inSitu.items]; n[i] = { ...n[i], context: e.target.value }; updateContent(["inSitu", "items"], n); }} />
+                </div>
+                <Textarea rows={3} placeholder="Description" value={it.description} onChange={(e) => { const n = [...c.inSitu.items]; n[i] = { ...n[i], description: e.target.value }; updateContent(["inSitu", "items"], n); }} />
+              </Card>
+            ))}
+            <Button size="sm" variant="outline" onClick={() => updateContent(["inSitu", "items"], [...c.inSitu.items, { title: "", context: "", description: "" }])}>
+              <Plus className="h-4 w-4 mr-1" /> Mise en situation
+            </Button>
+          </SectionCard>
+        </TabsContent>
       </Tabs>
     </div>
   );
