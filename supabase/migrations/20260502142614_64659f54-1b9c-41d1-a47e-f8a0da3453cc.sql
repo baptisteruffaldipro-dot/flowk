@@ -1,0 +1,1 @@
+ALTER TABLE public.print_orders ADD COLUMN IF NOT EXISTS products jsonb NOT NULL DEFAULT '[]'::jsonb;
