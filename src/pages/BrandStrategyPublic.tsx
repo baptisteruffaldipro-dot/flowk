@@ -16,6 +16,7 @@ export default function BrandStrategyPublic() {
       if (err || !data) { setError("Stratégie introuvable ou non publiée."); return; }
       const row: any = Array.isArray(data) ? data[0] : data;
       if (!row) { setError("Stratégie introuvable ou non publiée."); return; }
+      const content = row.content || {};
       setStrategy({
         slug: row.id,
         client: row.client_name,
@@ -23,7 +24,16 @@ export default function BrandStrategyPublic() {
         version: row.version,
         tagline: row.tagline,
         ...emptyBrandStrategyContent,
-        ...(row.content || {}),
+        ...content,
+        // merge profond pour les blocs optionnels ajoutés après coup
+        visualTerritory: { ...emptyBrandStrategyContent.visualTerritory!, ...(content.visualTerritory || {}) },
+        persona: { ...emptyBrandStrategyContent.persona!, ...(content.persona || {}) },
+        launchPlan: { ...emptyBrandStrategyContent.launchPlan!, ...(content.launchPlan || {}) },
+        moodboard: { ...emptyBrandStrategyContent.moodboard!, ...(content.moodboard || {}) },
+        logoSystem: { ...emptyBrandStrategyContent.logoSystem!, ...(content.logoSystem || {}) },
+        typography: { ...emptyBrandStrategyContent.typography!, ...(content.typography || {}) },
+        colorPalette: { ...emptyBrandStrategyContent.colorPalette!, ...(content.colorPalette || {}) },
+        inSitu: { ...emptyBrandStrategyContent.inSitu!, ...(content.inSitu || {}) },
       });
     });
   }, [token]);
