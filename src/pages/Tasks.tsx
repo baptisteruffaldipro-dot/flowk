@@ -265,14 +265,20 @@ function KanbanCard({
             >
               {task.clients?.name ?? "Sans client"}
             </QuickEditBadge>
-            <QuickEditBadge
-              className={tagColor(task.prestation)}
-              options={Object.entries(PRESTATION_LABEL).map(([value, label]) => ({ value, label: label as string }))}
-              value={task.prestation}
-              onChange={(v) => onUpdate(task.id, { prestation: v })}
-            >
-              {PRESTATION_LABEL[task.prestation] ?? "Autre"}
-            </QuickEditBadge>
+            {(() => {
+              const list: string[] = (task.prestations && task.prestations.length > 0)
+                ? task.prestations
+                : (task.prestation ? [task.prestation] : []);
+              return list.map((k) => (
+                <Badge
+                  key={k}
+                  variant="outline"
+                  className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(k)}`}
+                >
+                  {PRESTATION_LABEL[k] ?? k}
+                </Badge>
+              ));
+            })()}
             {task.priority && task.priority !== "secondaire" && (
               <QuickEditBadge
                 className={PRIORITY_COLOR[task.priority] ?? ""}
