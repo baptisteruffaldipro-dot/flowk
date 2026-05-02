@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +33,8 @@ export default function QuestionnaireDetail() {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [summaryDraft, setSummaryDraft] = useState<string>("");
+  const [savingSummary, setSavingSummary] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -43,6 +46,7 @@ export default function QuestionnaireDetail() {
     if (q.data) {
       setItem(q.data);
       setAnswers(((q.data as any).answers as Record<string, any>) || {});
+      setSummaryDraft(((q.data as any).ai_summary as string) || "");
     }
     if (c.data) setClients(c.data);
     if (p.data) setProjects(p.data);
@@ -100,6 +104,18 @@ export default function QuestionnaireDetail() {
     } finally {
       setGenerating(false);
     }
+  };
+
+  const saveSummary = async () => {
+    setSavingSummary(true);
+    const { error } = await supabase
+      .from("questionnaires" as any)
+      .update({ ai_summary: summaryDraft })
+      .eq("id", item.id);
+    setSavingSummary(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Résumé enregistré");
+    await load();
   };
 
   const filteredProjects = item.client_id ? projects.filter((p) => p.client_id === item.client_id) : projects;
@@ -188,19 +204,45 @@ export default function QuestionnaireDetail() {
                   {item.ai_summary_generated_at
                     ? `Généré le ${new Date(item.ai_summary_generated_at).toLocaleString("fr-FR")}`
                     : "Pas encore généré"}
+                  {item.ai_summary && summaryDraft !== (item.ai_summary || "") && (
+                    <span className="ml-2 text-amber-600">· modifications non enregistrées</span>
+                  )}
                 </p>
               </div>
-              <Button onClick={generateSummary} disabled={generating}>
-                {generating ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1.5" />}
-                {item.ai_summary ? "Régénérer" : "Générer"}
-              </Button>
+              <div className="flex gap-2">
+                {item.ai_summary && (
+                  <Button
+                    variant="outline"
+                    onClick={saveSummary}
+                    disabled={savingSummary || summaryDraft === (item.ai_summary || "")}
+                  >
+                    {savingSummary && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
+                    Enregistrer
+                  </Button>
+                )}
+                <Button onClick={generateSummary} disabled={generating}>
+                  {generating ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1.5" />}
+                  {item.ai_summary ? "Régénérer" : "Générer"}
+                </Button>
+              </div>
             </div>
             {item.ai_summary ? (
-              <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm">{item.ai_summary}</div>
+              <Textarea
+                value={summaryDraft}
+                onChange={(e) => setSummaryDraft(e.target.value)}
+                rows={20}
+                className="font-mono text-sm leading-relaxed"
+                placeholder="Synthèse créative…"
+              />
             ) : (
               <div className="text-sm text-muted-foreground py-8 text-center border-2 border-dashed rounded-lg">
                 Remplissez le questionnaire puis cliquez sur "Générer" pour obtenir une synthèse exploitable.
               </div>
+            )}
+            {item.ai_summary && (
+              <p className="text-xs text-muted-foreground">
+                Astuce : ajustez la synthèse manuellement après génération. Le format markdown léger est conservé.
+              </p>
             )}
           </Card>
         </TabsContent>
