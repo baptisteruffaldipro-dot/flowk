@@ -725,7 +725,10 @@ export default function Tasks() {
       priority: "secondaire",
       billing_type: "horaire",
     } as any);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     await load();
   };
 
