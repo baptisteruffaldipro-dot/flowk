@@ -17,7 +17,7 @@ const nav = [
   { to: "/rdv", icon: CalendarDays, label: "Rendez-vous" },
   { to: "/agenda", icon: CalendarCheck, label: "Agenda réalisations" },
   { to: "/questionnaires", icon: ClipboardList, label: "Questionnaires" },
-  { to: "/strategie", icon: Sparkle, label: "Stratégie de marque" },
+  { to: "/strategies", icon: Sparkle, label: "Stratégies de marque" },
   { to: "/impressions", icon: Printer, label: "Impressions" },
   { to: "/bats", icon: FileCheck2, label: "BAT" },
   { to: "/facturation", icon: Receipt, label: "Facturation" },

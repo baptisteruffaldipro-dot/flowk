@@ -240,6 +240,59 @@ export type Database = {
           },
         ]
       }
+      brand_strategies: {
+        Row: {
+          client_id: string | null
+          client_name: string
+          content: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean
+          project_name: string
+          share_token: string | null
+          tagline: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          client_id?: string | null
+          client_name: string
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          project_name: string
+          share_token?: string | null
+          tagline?: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          client_id?: string | null
+          client_name?: string
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          project_name?: string
+          share_token?: string | null
+          tagline?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_strategies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -1089,6 +1142,29 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_brand_strategy_by_token: {
+        Args: { _token: string }
+        Returns: {
+          client_id: string | null
+          client_name: string
+          content: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean
+          project_name: string
+          share_token: string | null
+          tagline: string
+          updated_at: string
+          version: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "brand_strategies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       has_role: {
         Args: {

@@ -27,6 +27,8 @@ import QuestionnaireDetail from "./pages/QuestionnaireDetail";
 import QuestionnairePublic from "./pages/QuestionnairePublic";
 import TelegramSettings from "./pages/TelegramSettings";
 import BrandStrategy from "./pages/BrandStrategy";
+import BrandStrategies from "./pages/BrandStrategies";
+import BrandStrategyPublic from "./pages/BrandStrategyPublic";
 import ClientPortal from "./pages/ClientPortal";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
 import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
@@ -45,6 +47,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/q/:token" element={<QuestionnairePublic />} />
+            <Route path="/p/strategie/:token" element={<BrandStrategyPublic />} />
             <Route path="/portail" element={<ProtectedRoute requireRole="client"><ClientPortal /></ProtectedRoute>} />
             <Route path="/portail/projet/:id" element={<ProtectedRoute requireRole="client"><ClientProjectPortal /></ProtectedRoute>} />
             <Route path="/portail/impression/:id" element={<ProtectedRoute requireRole="client"><ClientPrintOrderPortal /></ProtectedRoute>} />
@@ -68,8 +71,8 @@ const App = () => (
               <Route path="/questionnaires" element={<Questionnaires />} />
               <Route path="/questionnaires/:id" element={<QuestionnaireDetail />} />
               <Route path="/telegram" element={<TelegramSettings />} />
-              <Route path="/strategie" element={<BrandStrategy />} />
-              <Route path="/strategie/:slug" element={<BrandStrategy />} />
+              <Route path="/strategies" element={<BrandStrategies />} />
+              <Route path="/strategie/:id" element={<BrandStrategy />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
