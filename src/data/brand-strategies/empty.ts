@@ -34,4 +34,13 @@ export const emptyBrandStrategyContent: Omit<BrandStrategy, "slug" | "client" | 
     ],
   },
   todo: [],
+
+  visualTerritory: { intro: "", keywords: [], references: [], notes: "" },
+  persona: { intro: "", profiles: [] },
+  launchPlan: { intro: "", phases: [] },
+  moodboard: { intro: "", universes: [] },
+  logoSystem: { intro: "", items: [] },
+  typography: { intro: "", fonts: [] },
+  colorPalette: { intro: "", primary: [], neutrals: [] },
+  inSitu: { intro: "", items: [] },
 };

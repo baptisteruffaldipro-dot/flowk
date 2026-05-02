@@ -353,6 +353,358 @@ export default function BrandStrategyView({ strategy }: Props) {
             </ul>
           </section>
 
+          {/* 11 — Territoire visuel */}
+          {strategy.visualTerritory && (strategy.visualTerritory.intro || strategy.visualTerritory.keywords.length > 0 || strategy.visualTerritory.references.length > 0 || strategy.visualTerritory.notes) && (
+            <>
+              <Divider />
+              <section>
+                <SectionLabel number="11" title="Territoire visuel" />
+                {strategy.visualTerritory.intro && (
+                  <p className="text-2xl md:text-3xl font-light italic max-w-4xl mb-12 leading-relaxed">
+                    {strategy.visualTerritory.intro}
+                  </p>
+                )}
+                <div className="grid md:grid-cols-2 gap-12">
+                  {strategy.visualTerritory.keywords.length > 0 && (
+                    <div>
+                      <div className="text-xs tracking-[0.3em] uppercase text-accent mb-6 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                        Mots-clés
+                      </div>
+                      <ul className="space-y-2">
+                        {strategy.visualTerritory.keywords.map((k) => (
+                          <li key={k} className="text-2xl md:text-3xl italic font-light">{k}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {strategy.visualTerritory.references.length > 0 && (
+                    <div>
+                      <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground mb-6 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                        Références
+                      </div>
+                      <ul className="space-y-2">
+                        {strategy.visualTerritory.references.map((r) => (
+                          <li key={r} className="text-lg font-light text-muted-foreground italic border-l border-accent/40 pl-4">
+                            {r}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                {strategy.visualTerritory.notes && (
+                  <p className="mt-12 text-lg font-light leading-relaxed text-muted-foreground max-w-4xl">
+                    {strategy.visualTerritory.notes}
+                  </p>
+                )}
+              </section>
+            </>
+          )}
+
+          {/* 12 — Persona */}
+          {strategy.persona && (strategy.persona.intro || strategy.persona.profiles.length > 0) && (
+            <>
+              <Divider />
+              <section>
+                <SectionLabel number="12" title="Persona affiné" />
+                {strategy.persona.intro && (
+                  <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16">
+                    {strategy.persona.intro}
+                  </p>
+                )}
+                <div className="space-y-20">
+                  {strategy.persona.profiles.map((p, i) => (
+                    <article key={i} className="grid md:grid-cols-12 gap-8 md:gap-12">
+                      <div className="md:col-span-3">
+                        <div className="text-5xl md:text-6xl italic font-light text-accent leading-none mb-3">
+                          {p.firstName}
+                        </div>
+                        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                          {[p.age, p.role].filter(Boolean).join(" · ")}
+                        </div>
+                      </div>
+                      <div className="md:col-span-9 space-y-6">
+                        {p.bio && <p className="text-xl md:text-2xl font-light leading-relaxed">{p.bio}</p>}
+                        {p.quote && (
+                          <blockquote className="text-2xl md:text-3xl italic font-light leading-snug border-l-2 border-accent pl-6">
+                            « {p.quote} »
+                          </blockquote>
+                        )}
+                        <div className="grid md:grid-cols-2 gap-8 pt-4 border-t border-foreground/10">
+                          {p.lifestyle && (
+                            <div>
+                              <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-3 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                                Mode de vie
+                              </div>
+                              <p className="text-base font-light leading-relaxed">{p.lifestyle}</p>
+                            </div>
+                          )}
+                          {p.needs && (
+                            <div>
+                              <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-3 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                                Attentes & besoins
+                              </div>
+                              <p className="text-base font-light leading-relaxed">{p.needs}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* 13 — Plan de communication */}
+          {strategy.launchPlan && (strategy.launchPlan.intro || strategy.launchPlan.phases.length > 0) && (
+            <>
+              <Divider />
+              <section>
+                <SectionLabel number="13" title="Plan de communication — lancement" />
+                {strategy.launchPlan.intro && (
+                  <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16">
+                    {strategy.launchPlan.intro}
+                  </p>
+                )}
+                <div className="space-y-16">
+                  {strategy.launchPlan.phases.map((ph, i) => (
+                    <article key={i} className="grid md:grid-cols-12 gap-8">
+                      <div className="md:col-span-3">
+                        <div className="text-6xl italic font-light text-accent leading-none mb-3">
+                          {String(i + 1).padStart(2, "0")}
+                        </div>
+                        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                          {ph.timing}
+                        </div>
+                      </div>
+                      <div className="md:col-span-9 space-y-6">
+                        <h3 className="text-3xl md:text-4xl italic font-light">{ph.title}</h3>
+                        {ph.objective && <p className="text-lg font-light italic text-muted-foreground">{ph.objective}</p>}
+                        <div className="grid md:grid-cols-2 gap-8 pt-4 border-t border-foreground/10">
+                          {ph.actions.length > 0 && (
+                            <div>
+                              <div className="text-[10px] tracking-[0.3em] uppercase text-accent mb-3 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>Actions</div>
+                              <ul className="space-y-2">
+                                {ph.actions.map((a) => (
+                                  <li key={a} className="text-base font-light leading-relaxed">— {a}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {ph.channels.length > 0 && (
+                            <div>
+                              <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-3 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>Canaux</div>
+                              <ul className="space-y-2">
+                                {ph.channels.map((c) => (
+                                  <li key={c} className="text-base font-light italic leading-relaxed">{c}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* 14 — Moodboard */}
+          {strategy.moodboard && (strategy.moodboard.intro || strategy.moodboard.universes.length > 0) && (
+            <>
+              <Divider />
+              <section>
+                <SectionLabel number="14" title="Moodboard — univers à explorer" />
+                {strategy.moodboard.intro && (
+                  <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16">
+                    {strategy.moodboard.intro}
+                  </p>
+                )}
+                <div className="grid md:grid-cols-2 gap-px bg-foreground/10 border border-foreground/10">
+                  {strategy.moodboard.universes.map((u, i) => (
+                    <div key={i} className="bg-background p-10 md:p-14">
+                      <div className="text-xs tracking-[0.3em] uppercase text-accent mb-6 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                        Univers 0{i + 1}
+                      </div>
+                      <h3 className="text-3xl md:text-4xl italic font-light mb-4">{u.name}</h3>
+                      <p className="text-lg font-light text-muted-foreground leading-relaxed mb-6">{u.description}</p>
+                      {u.keywords.length > 0 && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-base font-light italic mb-6">
+                          {u.keywords.map((k, j) => (
+                            <span key={k}>
+                              {k}
+                              {j < u.keywords.length - 1 && <span className="text-foreground/20 ml-4">·</span>}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {u.references.length > 0 && (
+                        <ul className="space-y-2">
+                          {u.references.map((r) => (
+                            <li key={r} className="text-sm font-light text-muted-foreground italic border-l border-accent/40 pl-4">
+                              {r}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* 15 — Système de logos */}
+          {strategy.logoSystem && (strategy.logoSystem.intro || strategy.logoSystem.items.length > 0) && (
+            <>
+              <Divider />
+              <section>
+                <SectionLabel number="15" title="Système de logos" />
+                {strategy.logoSystem.intro && (
+                  <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16">
+                    {strategy.logoSystem.intro}
+                  </p>
+                )}
+                <div className="grid md:grid-cols-3 gap-px bg-foreground/10 border border-foreground/10">
+                  {strategy.logoSystem.items.map((it, i) => (
+                    <div key={i} className="bg-background p-8 md:p-10">
+                      <div className="text-xs tracking-[0.3em] uppercase text-accent mb-4 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                        {it.type}
+                      </div>
+                      <h3 className="text-2xl md:text-3xl italic font-light mb-3">{it.name}</h3>
+                      {it.usage && <div className="text-sm font-light text-muted-foreground italic mb-3">{it.usage}</div>}
+                      {it.description && <p className="text-base font-light leading-relaxed">{it.description}</p>}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* 16 — Typographie */}
+          {strategy.typography && (strategy.typography.intro || strategy.typography.fonts.length > 0) && (
+            <>
+              <Divider />
+              <section>
+                <SectionLabel number="16" title="Système typographique" />
+                {strategy.typography.intro && (
+                  <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16">
+                    {strategy.typography.intro}
+                  </p>
+                )}
+                <div className="space-y-12">
+                  {strategy.typography.fonts.map((f, i) => (
+                    <div key={i} className="grid md:grid-cols-12 gap-8 border-t border-foreground/10 pt-8">
+                      <div className="md:col-span-3">
+                        <div className="text-xs tracking-[0.3em] uppercase text-accent mb-2 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                          {f.role}
+                        </div>
+                        <div className="text-2xl italic font-light">{f.name}</div>
+                        {f.usage && <div className="text-sm text-muted-foreground italic mt-2">{f.usage}</div>}
+                      </div>
+                      <div className="md:col-span-9">
+                        <p className="text-4xl md:text-6xl font-light leading-tight" style={{ fontFamily: f.name }}>
+                          {f.sample || "Aa Bb Cc — 0123"}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* 17 — Palette chromatique */}
+          {strategy.colorPalette && (strategy.colorPalette.intro || strategy.colorPalette.primary.length > 0 || strategy.colorPalette.neutrals.length > 0) && (
+            <>
+              <Divider />
+              <section>
+                <SectionLabel number="17" title="Palette chromatique" />
+                {strategy.colorPalette.intro && (
+                  <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16">
+                    {strategy.colorPalette.intro}
+                  </p>
+                )}
+                {strategy.colorPalette.primary.length > 0 && (
+                  <div className="mb-16">
+                    <div className="text-xs tracking-[0.3em] uppercase text-accent mb-6 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                      Couleurs primaires
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-foreground/10 border border-foreground/10">
+                      {strategy.colorPalette.primary.map((c, i) => (
+                        <div key={i} className="bg-background">
+                          <div className="aspect-[4/3]" style={{ backgroundColor: c.hex }} />
+                          <div className="p-5">
+                            <div className="text-lg italic font-light">{c.name}</div>
+                            <div className="text-xs text-muted-foreground bs-mono mt-1" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                              {c.hex}
+                            </div>
+                            {c.usage && <div className="text-sm font-light text-muted-foreground italic mt-2">{c.usage}</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {strategy.colorPalette.neutrals.length > 0 && (
+                  <div>
+                    <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground mb-6 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                      Neutres
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-foreground/10 border border-foreground/10">
+                      {strategy.colorPalette.neutrals.map((c, i) => (
+                        <div key={i} className="bg-background">
+                          <div className="aspect-square" style={{ backgroundColor: c.hex }} />
+                          <div className="p-4">
+                            <div className="text-base italic font-light">{c.name}</div>
+                            <div className="text-[10px] text-muted-foreground bs-mono mt-1" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                              {c.hex}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            </>
+          )}
+
+          {/* 18 — In situ */}
+          {strategy.inSitu && (strategy.inSitu.intro || strategy.inSitu.items.length > 0) && (
+            <>
+              <Divider />
+              <section>
+                <SectionLabel number="18" title="Mises en situation — in situ" />
+                {strategy.inSitu.intro && (
+                  <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16">
+                    {strategy.inSitu.intro}
+                  </p>
+                )}
+                <div className="space-y-16">
+                  {strategy.inSitu.items.map((it, i) => (
+                    <article key={i} className="grid md:grid-cols-12 gap-8 border-t border-foreground/10 pt-12">
+                      <div className="md:col-span-3">
+                        <div className="text-5xl italic font-light text-accent leading-none mb-3">
+                          {String(i + 1).padStart(2, "0")}
+                        </div>
+                        <div className="text-xs tracking-[0.3em] uppercase text-muted-foreground bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                          {it.context}
+                        </div>
+                      </div>
+                      <div className="md:col-span-9 space-y-4">
+                        <h3 className="text-3xl md:text-4xl italic font-light">{it.title}</h3>
+                        <p className="text-lg font-light leading-relaxed text-muted-foreground">{it.description}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
           <footer className="pt-16 mt-16 border-t border-foreground/10 flex justify-between text-xs tracking-widest uppercase text-muted-foreground bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
             <span>{strategy.client}</span>
             <span>{strategy.version}</span>
