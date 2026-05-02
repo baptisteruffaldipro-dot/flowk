@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { PROJECT_TYPE_LABEL, STATUS_LABEL } from "@/lib/format";
+import { PROJECT_TYPE_LABEL, STATUS_LABEL, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 
 export default function ProjectDetail() {
@@ -99,7 +99,7 @@ export default function ProjectDetail() {
       </Link>
       <PageHeader
         title="Projet"
-        description={project.clients?.name ?? ""}
+        description={`${project.clients?.name ?? ""}${project.created_at ? ` · Créé le ${fmtDate(project.created_at)}` : ""}`}
         actions={
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -126,7 +126,7 @@ export default function ProjectDetail() {
       />
 
       <Card className="p-5 mb-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs">Nom</Label>
             <Input
@@ -152,6 +152,14 @@ export default function ProjectDetail() {
                 {Object.entries(PROJECT_TYPE_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Date de livraison annoncée</Label>
+            <Input
+              type="date"
+              value={project.deadline ?? ""}
+              onChange={(e) => updateField({ deadline: e.target.value || null })}
+            />
           </div>
         </div>
       </Card>
