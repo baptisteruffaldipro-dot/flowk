@@ -97,15 +97,6 @@ Vu la taille, je propose de construire en 3 vagues après approbation :
 
 Tu pourras tester chaque vague avant de passer à la suivante.
 
-## Backlog (à intégrer dans les prochains lots)
+## Backlog
 
-- **Projets / Tâches** : afficher la **date de création** et la **date de livraison client** (deadline annoncée) sur les fiches et les listes.
-- **Page Agenda des réalisations** : vue chronologique transversale liant tâches livrées + projets terminés (ligne du temps des livraisons passées et à venir).
-- **Page onboarding client par projet** : page récap accessible au client depuis son portail, regroupant pour chaque projet :
-  - montant estimé
-  - nombre de retours / révisions inclus & utilisés
-  - délais de livraison commande impression
-  - date de livraison projet
-  - deadline annoncée
-  - BAT disponible (lien direct)
-  - temps réel passé (timers cumulés)
+(Lot 6 livré : deadline + date de création projets, page Agenda des réalisations, récap onboarding client par projet)
