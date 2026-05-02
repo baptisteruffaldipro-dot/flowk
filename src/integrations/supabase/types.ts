@@ -599,6 +599,7 @@ export type Database = {
           brief_submitted_at: string | null
           client_id: string
           created_at: string
+          deadline: string | null
           description: string | null
           id: string
           name: string
@@ -612,6 +613,7 @@ export type Database = {
           brief_submitted_at?: string | null
           client_id: string
           created_at?: string
+          deadline?: string | null
           description?: string | null
           id?: string
           name: string
@@ -625,6 +627,7 @@ export type Database = {
           brief_submitted_at?: string | null
           client_id?: string
           created_at?: string
+          deadline?: string | null
           description?: string | null
           id?: string
           name?: string
