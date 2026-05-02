@@ -96,7 +96,7 @@ export default function Dashboard() {
         />
         <StatCard label="CA en attente" value={fmtMoney(stats.pendingRevenue)} />
         <StatCard label="Chiffre d'affaires HT" value={fmtMoney(stats.paidRevenue)} />
-        <StatCard label="BAT à valider" value={String(stats.awaitingBat)} />
+        <StatCard label="BAT à valider" value={String(stats.awaitingBat)} href="/bats" highlight={stats.awaitingBat > 0} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -153,13 +153,17 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <Card className="p-5">
-      <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className="text-2xl font-semibold mt-2">{value}</div>
+function StatCard({ label, value, href, highlight }: { label: string; value: string; href?: string; highlight?: boolean }) {
+  const inner = (
+    <Card className={`p-5 transition ${href ? "hover:bg-secondary/40 cursor-pointer" : ""} ${highlight ? "border-primary/40 bg-primary/5" : ""}`}>
+      <div className="text-xs text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+        <span>{label}</span>
+        {href && <ArrowRight className="h-3 w-3 opacity-60" />}
+      </div>
+      <div className={`text-2xl font-semibold mt-2 ${highlight ? "text-primary" : ""}`}>{value}</div>
     </Card>
   );
+  return href ? <Link to={href}>{inner}</Link> : inner;
 }
 
 function ProgressStatCard({ label, value, done, total }: { label: string; value: number; done: number; total: number }) {
