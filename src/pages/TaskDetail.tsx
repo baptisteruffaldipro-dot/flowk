@@ -15,7 +15,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Play, Pause, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Play, Pause, Plus, Trash2, Paperclip, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
@@ -428,6 +428,7 @@ export default function TaskDetail() {
             rows={8}
             placeholder="Notes, brief, références…"
           />
+          <NoteAttachments task={task} onChange={load} />
         </Card>
 
         <Card className="p-4 sm:p-5 min-w-0">
@@ -659,6 +660,83 @@ function BillingRow({ label, value, muted }: { label: string; value: string; mut
     <div className={`flex items-center justify-between ${muted ? "text-muted-foreground" : ""}`}>
       <span>{label}</span>
       <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function NoteAttachments({ task, onChange }: { task: any; onChange: () => void }) {
+  const [uploading, setUploading] = useState(false);
+  const attachments: { name: string; path: string; size?: number }[] = task.note_attachments ?? [];
+
+  const upload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const next = [...attachments];
+      for (const file of Array.from(files)) {
+        const path = `task-notes/${task.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+        const { error } = await supabase.storage.from("livrables").upload(path, file);
+        if (error) {
+          toast.error(`Erreur upload ${file.name}: ${error.message}`);
+          continue;
+        }
+        next.push({ name: file.name, path, size: file.size });
+      }
+      const { error: upErr } = await supabase.from("tasks").update({ note_attachments: next }).eq("id", task.id);
+      if (upErr) toast.error(upErr.message);
+      else { toast.success("Fichier(s) ajouté(s)"); onChange(); }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const download = async (path: string) => {
+    const { data, error } = await supabase.storage.from("livrables").createSignedUrl(path, 60 * 5);
+    if (error || !data) return toast.error("Erreur lien");
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const remove = async (path: string) => {
+    await supabase.storage.from("livrables").remove([path]);
+    const next = attachments.filter((a) => a.path !== path);
+    const { error } = await supabase.from("tasks").update({ note_attachments: next }).eq("id", task.id);
+    if (error) return toast.error(error.message);
+    toast.success("Fichier supprimé");
+    onChange();
+  };
+
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs flex items-center gap-1.5"><Paperclip className="h-3 w-3" /> Pièces jointes</Label>
+        <label className="cursor-pointer">
+          <input
+            type="file"
+            multiple
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => { upload(e.target.files); e.target.value = ""; }}
+          />
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border hover:bg-secondary">
+            <Upload className="h-3 w-3" /> {uploading ? "Envoi…" : "Ajouter"}
+          </span>
+        </label>
+      </div>
+      {attachments.length > 0 && (
+        <div className="space-y-1">
+          {attachments.map((a) => (
+            <div key={a.path} className="flex items-center justify-between gap-2 text-sm p-2 rounded border bg-muted/30">
+              <button onClick={() => download(a.path)} className="flex items-center gap-2 min-w-0 flex-1 text-left hover:underline">
+                <Download className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">{a.name}</span>
+              </button>
+              <button onClick={() => remove(a.path)} className="text-muted-foreground hover:text-destructive">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
