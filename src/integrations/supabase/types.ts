@@ -922,6 +922,7 @@ export type Database = {
           free_revisions: number
           hourly_rate: number | null
           id: string
+          note_attachments: Json
           notes: string | null
           position: number
           prestation: Database["public"]["Enums"]["prestation_type"]
@@ -950,6 +951,7 @@ export type Database = {
           free_revisions?: number
           hourly_rate?: number | null
           id?: string
+          note_attachments?: Json
           notes?: string | null
           position?: number
           prestation?: Database["public"]["Enums"]["prestation_type"]
@@ -978,6 +980,7 @@ export type Database = {
           free_revisions?: number
           hourly_rate?: number | null
           id?: string
+          note_attachments?: Json
           notes?: string | null
           position?: number
           prestation?: Database["public"]["Enums"]["prestation_type"]

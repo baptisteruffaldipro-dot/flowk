@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS note_attachments jsonb NOT NULL DEFAULT '[]'::jsonb;
