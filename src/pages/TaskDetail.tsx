@@ -15,7 +15,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Play, Pause, Plus, Trash2, Paperclip, Download, Upload } from "lucide-react";
+import { ArrowLeft, Play, Pause, Plus, Trash2, Paperclip, Download, Upload, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
@@ -667,6 +667,7 @@ function BillingRow({ label, value, muted }: { label: string; value: string; mut
 function NoteAttachments({ task, onChange }: { task: any; onChange: () => void }) {
   const [uploading, setUploading] = useState(false);
   const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const attachments: { name: string; path: string; size?: number }[] = task.note_attachments ?? [];
 
   useEffect(() => {
@@ -748,30 +749,41 @@ function NoteAttachments({ task, onChange }: { task: any; onChange: () => void }
       </div>
       {attachments.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {attachments.map((a) => {
+          {attachments.map((a, i) => {
             const url = previews[a.path];
             const k = kind(a.name);
             return (
               <div key={a.path} className="rounded border bg-muted/20 overflow-hidden flex flex-col">
-                <div className="bg-background/40 flex items-center justify-center" style={{ minHeight: 120 }}>
+                <button
+                  type="button"
+                  onClick={() => setViewerIndex(i)}
+                  className="bg-background/40 flex items-center justify-center group relative cursor-zoom-in"
+                  style={{ minHeight: 120 }}
+                  title="Ouvrir"
+                >
                   {url && k === "image" && (
                     <img src={url} alt={a.name} className="max-h-48 w-full object-contain" />
                   )}
                   {url && k === "pdf" && (
-                    <iframe src={url} title={a.name} className="w-full h-48" />
+                    <iframe src={url} title={a.name} className="w-full h-48 pointer-events-none" />
                   )}
                   {url && k === "video" && (
-                    <video src={url} controls className="w-full max-h-48" />
+                    <video src={url} className="w-full max-h-48" />
                   )}
                   {url && k === "audio" && (
-                    <audio src={url} controls className="w-full px-2" />
+                    <div className="flex items-center justify-center h-28 w-full text-muted-foreground gap-2">
+                      <Paperclip className="h-5 w-5" /> Audio
+                    </div>
                   )}
                   {(!url || k === "other") && (
                     <div className="flex items-center justify-center h-28 w-full text-muted-foreground">
                       <Paperclip className="h-6 w-6" />
                     </div>
                   )}
-                </div>
+                  <span className="absolute top-1 right-1 bg-background/80 rounded p-1 opacity-0 group-hover:opacity-100 transition">
+                    <Maximize2 className="h-3 w-3" />
+                  </span>
+                </button>
                 <div className="flex items-center justify-between gap-2 text-xs p-2 border-t">
                   <span className="truncate flex-1" title={a.name}>{a.name}</span>
                   <button onClick={() => download(a.path)} className="text-muted-foreground hover:text-foreground" title="Télécharger">
@@ -785,6 +797,64 @@ function NoteAttachments({ task, onChange }: { task: any; onChange: () => void }
             );
           })}
         </div>
+      )}
+      {viewerIndex !== null && attachments[viewerIndex] && (
+        <Dialog open onOpenChange={(o) => !o && setViewerIndex(null)}>
+          <DialogContent className="max-w-5xl w-[95vw] p-0 gap-0 bg-background">
+            <DialogHeader className="px-4 py-3 border-b">
+              <DialogTitle className="text-sm truncate pr-8">
+                {attachments[viewerIndex].name}
+                <span className="text-muted-foreground font-normal ml-2">
+                  {viewerIndex + 1} / {attachments.length}
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="relative bg-black/5 flex items-center justify-center" style={{ minHeight: "70vh" }}>
+              {(() => {
+                const a = attachments[viewerIndex];
+                const url = previews[a.path];
+                const k = kind(a.name);
+                if (!url) return <div className="text-sm text-muted-foreground">Chargement…</div>;
+                if (k === "image") return <img src={url} alt={a.name} className="max-h-[80vh] max-w-full object-contain" />;
+                if (k === "pdf") return <iframe src={url} title={a.name} className="w-full" style={{ height: "80vh" }} />;
+                if (k === "video") return <video src={url} controls autoPlay className="max-h-[80vh] max-w-full" />;
+                if (k === "audio") return <audio src={url} controls className="w-full max-w-md" />;
+                return (
+                  <div className="text-center space-y-3 p-8">
+                    <Paperclip className="h-10 w-10 mx-auto text-muted-foreground" />
+                    <div className="text-sm text-muted-foreground">Aperçu indisponible pour ce type de fichier.</div>
+                    <Button size="sm" onClick={() => download(a.path)}>
+                      <Download className="h-4 w-4 mr-1" /> Télécharger
+                    </Button>
+                  </div>
+                );
+              })()}
+              {attachments.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setViewerIndex((i) => (i! - 1 + attachments.length) % attachments.length)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background border rounded-full p-2"
+                    title="Précédent"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => setViewerIndex((i) => (i! + 1) % attachments.length)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background border rounded-full p-2"
+                    title="Suivant"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </>
+              )}
+            </div>
+            <DialogFooter className="px-4 py-3 border-t sm:justify-end">
+              <Button variant="outline" size="sm" onClick={() => download(attachments[viewerIndex].path)}>
+                <Download className="h-4 w-4 mr-1" /> Télécharger
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
