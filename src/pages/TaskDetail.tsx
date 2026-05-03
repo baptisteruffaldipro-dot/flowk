@@ -666,7 +666,31 @@ function BillingRow({ label, value, muted }: { label: string; value: string; mut
 
 function NoteAttachments({ task, onChange }: { task: any; onChange: () => void }) {
   const [uploading, setUploading] = useState(false);
+  const [previews, setPreviews] = useState<Record<string, string>>({});
   const attachments: { name: string; path: string; size?: number }[] = task.note_attachments ?? [];
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const entries: Record<string, string> = {};
+      for (const a of attachments) {
+        const { data } = await supabase.storage.from("livrables").createSignedUrl(a.path, 60 * 60);
+        if (data?.signedUrl) entries[a.path] = data.signedUrl;
+      }
+      if (!cancelled) setPreviews(entries);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(attachments.map((a) => a.path))]);
+
+  const kind = (name: string): "image" | "pdf" | "video" | "audio" | "other" => {
+    const ext = name.toLowerCase().split(".").pop() || "";
+    if (["png", "jpg", "jpeg", "gif", "webp", "svg", "avif"].includes(ext)) return "image";
+    if (ext === "pdf") return "pdf";
+    if (["mp4", "webm", "mov"].includes(ext)) return "video";
+    if (["mp3", "wav", "m4a", "ogg"].includes(ext)) return "audio";
+    return "other";
+  };
 
   const upload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -723,18 +747,43 @@ function NoteAttachments({ task, onChange }: { task: any; onChange: () => void }
         </label>
       </div>
       {attachments.length > 0 && (
-        <div className="space-y-1">
-          {attachments.map((a) => (
-            <div key={a.path} className="flex items-center justify-between gap-2 text-sm p-2 rounded border bg-muted/30">
-              <button onClick={() => download(a.path)} className="flex items-center gap-2 min-w-0 flex-1 text-left hover:underline">
-                <Download className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate">{a.name}</span>
-              </button>
-              <button onClick={() => remove(a.path)} className="text-muted-foreground hover:text-destructive">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {attachments.map((a) => {
+            const url = previews[a.path];
+            const k = kind(a.name);
+            return (
+              <div key={a.path} className="rounded border bg-muted/20 overflow-hidden flex flex-col">
+                <div className="bg-background/40 flex items-center justify-center" style={{ minHeight: 120 }}>
+                  {url && k === "image" && (
+                    <img src={url} alt={a.name} className="max-h-48 w-full object-contain" />
+                  )}
+                  {url && k === "pdf" && (
+                    <iframe src={url} title={a.name} className="w-full h-48" />
+                  )}
+                  {url && k === "video" && (
+                    <video src={url} controls className="w-full max-h-48" />
+                  )}
+                  {url && k === "audio" && (
+                    <audio src={url} controls className="w-full px-2" />
+                  )}
+                  {(!url || k === "other") && (
+                    <div className="flex items-center justify-center h-28 w-full text-muted-foreground">
+                      <Paperclip className="h-6 w-6" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs p-2 border-t">
+                  <span className="truncate flex-1" title={a.name}>{a.name}</span>
+                  <button onClick={() => download(a.path)} className="text-muted-foreground hover:text-foreground" title="Télécharger">
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={() => remove(a.path)} className="text-muted-foreground hover:text-destructive" title="Supprimer">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
