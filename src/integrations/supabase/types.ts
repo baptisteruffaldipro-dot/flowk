@@ -700,6 +700,7 @@ export type Database = {
       }
       questionnaires: {
         Row: {
+          ai_suggested_tasks: Json
           ai_summary: string | null
           ai_summary_generated_at: string | null
           answers: Json
@@ -717,6 +718,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_suggested_tasks?: Json
           ai_summary?: string | null
           ai_summary_generated_at?: string | null
           answers?: Json
@@ -734,6 +736,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_suggested_tasks?: Json
           ai_summary?: string | null
           ai_summary_generated_at?: string | null
           answers?: Json
