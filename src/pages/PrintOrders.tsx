@@ -4,6 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -21,6 +22,8 @@ export default function PrintOrders() {
   const [paidPrintIds, setPaidPrintIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [parsing, setParsing] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [parsingNote, setParsingNote] = useState(false);
   const [form, setForm] = useState<any>({
     description: "", client_id: "", amount: "", status: "a_commander",
     reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "",
@@ -83,6 +86,7 @@ export default function PrintOrders() {
     setOpen(false);
     setForm({ description: "", client_id: "", amount: "", status: "a_commander", reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "", estimated_delivery_date: "" });
     setProducts([]);
+    setNoteText("");
     load();
   };
 
@@ -127,6 +131,35 @@ export default function PrintOrders() {
     }
   };
 
+  const parseNote = async () => {
+    const text = noteText.trim();
+    if (!text) return toast.error("Saisis une note d'abord");
+    setParsingNote(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("parse-print-order", { body: { text } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setForm((prev: any) => ({
+        ...prev,
+        description: data.description ?? prev.description,
+        reference: data.reference ?? prev.reference,
+        quantity: data.quantity != null ? String(data.quantity) : prev.quantity,
+        format: data.format ?? prev.format,
+        grammage: data.grammage ?? prev.grammage,
+        support: data.support ?? prev.support,
+        colors: data.colors ?? prev.colors,
+        finitions: data.finitions ?? prev.finitions,
+        observations: data.observations ?? prev.observations,
+        amount: data.amount != null ? String(data.amount) : prev.amount,
+      }));
+      toast.success("Champs remplis depuis la note");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Analyse impossible");
+    } finally {
+      setParsingNote(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
@@ -163,6 +196,22 @@ export default function PrintOrders() {
                   </div>
                 </div>
               </label>
+              <div className="mb-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Note libre</Label>
+                  <Button type="button" size="sm" variant="outline" onClick={parseNote} disabled={parsingNote || !noteText.trim()}>
+                    {parsingNote ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+                    Générer
+                  </Button>
+                </div>
+                <Textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Décris la commande en quelques mots (ex : 500 cartes de visite 85x55mm quadri R°/V°, couché mat 350g, pelliculage soft touch, livraison sous 7j, 120€)…"
+                  className="min-h-[80px]"
+                />
+                <p className="text-xs text-muted-foreground">L'IA analyse ta note et remplit automatiquement les champs ci-dessous.</p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">Description *</Label>
