@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Copy, Archive, ArchiveRestore, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PROJECT_TYPE_LABEL, fmtDate } from "@/lib/format";
+import ClientSelectField from "@/components/ClientSelectField";
 
 export default function Projects() {
   const [projects, setProjects] = useState<any[]>([]);
@@ -115,7 +116,7 @@ export default function Projects() {
             </Button>
             <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" disabled={clients.length === 0}><Plus className="h-4 w-4 mr-1" /> Nouveau projet</Button>
+              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Nouveau projet</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Nouveau projet</DialogTitle></DialogHeader>
@@ -126,12 +127,16 @@ export default function Projects() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Client *</Label>
-                  <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                    <SelectContent>
-                      {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <ClientSelectField
+                    value={form.client_id}
+                    onChange={(client_id) => setForm({ ...form, client_id })}
+                    clients={clients}
+                    placeholder="Sélectionner"
+                    onClientCreated={(client) => {
+                      setClients((current) => [client, ...current]);
+                      setForm((current) => ({ ...current, client_id: client.id }));
+                    }}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Type</Label>
