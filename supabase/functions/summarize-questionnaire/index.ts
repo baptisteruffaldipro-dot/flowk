@@ -10,6 +10,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
   print: "Projet d'impression",
   web: "Projet web",
   rapide: "Brief express",
+  note: "Note libre",
 };
 
 Deno.serve(async (req) => {
@@ -50,20 +51,20 @@ Deno.serve(async (req) => {
     if (qErr || !q) throw new Error(qErr?.message || "Questionnaire introuvable");
 
     const tmpl = TEMPLATE_LABELS[q.template] || q.template;
+    const isNote = q.template === "note";
     const answersText = Object.entries(q.answers || {})
       .map(([k, v]) => `- ${k}: ${Array.isArray(v) ? v.join(", ") : v || "(non renseigné)"}`)
       .join("\n");
 
-    const systemPrompt = `Tu es un directeur de création expérimenté. À partir des réponses brutes d'un client à un questionnaire de brief, tu produis une synthèse claire, structurée et actionnable pour l'équipe créative.
+    const systemPrompt = isNote
+      ? `Tu es un chef de projet créatif. À partir d'une note brute écrite par le designer, tu produis :
+1) Un mini-brief structuré clair et actionnable (markdown léger, sections courtes : Contexte, Objectif, Livrable(s), Contraintes/Deadlines, Points à clarifier).
+2) Une liste de 3 à 7 tâches concrètes à réaliser, dans l'ordre logique, formulées avec un verbe d'action.
 
-Format attendu (en français, en markdown léger sans titres trop gros) :
-1. **Le client en une phrase** — qui, quoi, pour qui.
-2. **Objectifs du projet** — 2-4 points clés.
-3. **Positionnement & ton** — personnalité à transmettre, mots-clés positifs/négatifs.
-4. **Cible** — public visé.
-5. **Contraintes & écueils à éviter**.
-6. **Pistes créatives suggérées** — 2-3 directions à explorer.
-7. **Points à clarifier** — questions ouvertes si des infos manquent.
+Sois concis, concret, sans remplissage. Si une info manque, mentionne-le brièvement dans "Points à clarifier".`
+      : `Tu es un directeur de création expérimenté. À partir des réponses brutes d'un client à un questionnaire de brief, tu produis :
+1) Une synthèse claire et actionnable pour l'équipe créative (markdown léger, sections : Le client en une phrase, Objectifs, Positionnement & ton, Cible, Contraintes, Pistes créatives, Points à clarifier).
+2) Une liste de 3 à 7 tâches concrètes à réaliser pour avancer sur ce brief, formulées avec un verbe d'action.
 
 Sois concis, concret, sans bla-bla. Si une info manque, mentionne-le brièvement.`;
 
@@ -87,6 +88,40 @@ ${answersText}`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "produce_brief",
+              description: "Renvoie le mini-brief structuré et la liste de tâches suggérées.",
+              parameters: {
+                type: "object",
+                properties: {
+                  summary: {
+                    type: "string",
+                    description: "Mini-brief structuré en markdown léger.",
+                  },
+                  suggested_tasks: {
+                    type: "array",
+                    description: "3 à 7 tâches actionnables, verbe d'action en tête.",
+                    items: {
+                      type: "object",
+                      properties: {
+                        title: { type: "string" },
+                        priority: { type: "string", enum: ["principale", "secondaire"] },
+                      },
+                      required: ["title", "priority"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["summary", "suggested_tasks"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "produce_brief" } },
       }),
     });
 
@@ -98,15 +133,32 @@ ${answersText}`;
     }
 
     const aiJson = await aiResp.json();
-    const summary = aiJson.choices?.[0]?.message?.content || "";
+    const msg = aiJson.choices?.[0]?.message;
+    let summary = "";
+    let suggestedTasks: Array<{ title: string; priority: string }> = [];
+    const toolCall = msg?.tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      try {
+        const args = JSON.parse(toolCall.function.arguments);
+        summary = args.summary || "";
+        suggestedTasks = Array.isArray(args.suggested_tasks) ? args.suggested_tasks : [];
+      } catch (e) {
+        console.error("tool args parse error", e);
+      }
+    }
+    if (!summary) summary = msg?.content || "";
 
     const { error: upErr } = await supabase
       .from("questionnaires")
-      .update({ ai_summary: summary, ai_summary_generated_at: new Date().toISOString() })
+      .update({
+        ai_summary: summary,
+        ai_summary_generated_at: new Date().toISOString(),
+        ai_suggested_tasks: suggestedTasks,
+      })
       .eq("id", id);
     if (upErr) throw upErr;
 
-    return new Response(JSON.stringify({ summary }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ summary, suggested_tasks: suggestedTasks }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erreur" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
