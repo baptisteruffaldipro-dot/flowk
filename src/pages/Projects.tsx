@@ -182,12 +182,7 @@ export default function Projects() {
           </Button>
         </div>
       )}
-      {clients.length === 0 ? (
-        <Card className="p-12 text-center text-sm text-muted-foreground">
-          Crée d'abord un client pour pouvoir créer un projet.
-        </Card>
-      ) : (
-        <Card className="overflow-hidden">
+      <Card className="overflow-hidden">
           {visibleProjects.length === 0 ? (
             <div className="p-12 text-center text-sm text-muted-foreground">Aucun projet</div>
           ) : (
@@ -228,8 +223,7 @@ export default function Projects() {
               })}
             </div>
           )}
-        </Card>
-      )}
+      </Card>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
