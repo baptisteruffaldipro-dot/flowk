@@ -64,6 +64,29 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   const [printOrderId, setPrintOrderId] = useState<string>("");
   const [selectedActions, setSelectedActions] = useState<Set<number>>(new Set());
 
+  // new client modal
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "" });
+  const [newClientBusy, setNewClientBusy] = useState(false);
+  const createNewClient = async () => {
+    if (!newClient.name.trim()) return toast.error("Nom requis");
+    setNewClientBusy(true);
+    const { data, error } = await supabase.from("clients").insert({
+      name: newClient.name.trim(),
+      company: newClient.company.trim() || null,
+      email: newClient.email.trim() || null,
+      phone: newClient.phone.trim() || null,
+    }).select("id,name,company").single();
+    setNewClientBusy(false);
+    if (error || !data) return toast.error(error?.message || "Erreur");
+    toast.success("Client créé");
+    setClients((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+    setClientId(data.id);
+    setProjectId(""); setTaskId(""); setPrintOrderId("");
+    setNewClient({ name: "", company: "", email: "", phone: "" });
+    setNewClientOpen(false);
+  };
+
   // lists
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
@@ -430,9 +453,15 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Client</Label>
-                  <Select value={clientId || "__none"} onValueChange={(v) => { setClientId(v === "__none" ? "" : v); setProjectId(""); setTaskId(""); setPrintOrderId(""); }}>
+                  <Select value={clientId || "__none"} onValueChange={(v) => {
+                    if (v === "__new__") { setNewClientOpen(true); return; }
+                    setClientId(v === "__none" ? "" : v); setProjectId(""); setTaskId(""); setPrintOrderId("");
+                  }}>
                     <SelectTrigger className="h-8 w-full min-w-0"><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="__new__" className="text-primary font-medium">
+                        <span className="inline-flex items-center gap-1.5"><UserPlus className="h-3.5 w-3.5" /> Nouveau client…</span>
+                      </SelectItem>
                       <SelectItem value="__none">— Aucun</SelectItem>
                       {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}{c.company ? ` — ${c.company}` : ""}</SelectItem>)}
                     </SelectContent>
