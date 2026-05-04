@@ -889,3 +889,87 @@ function NoteAttachments({ task, onChange }: { task: any; onChange: () => void }
     </div>
   );
 }
+
+function SubtaskList({
+  subtasks, onToggle, onRemove, onRename, onReorder,
+}: {
+  subtasks: any[];
+  onToggle: (s: any) => void;
+  onRemove: (id: string) => void;
+  onRename: (s: any, title: string) => void;
+  onReorder: (e: DragEndEvent) => void;
+}) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  return (
+    <div className="space-y-1.5 mb-3">
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onReorder}>
+        <SortableContext items={subtasks.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+          {subtasks.map((s) => (
+            <SortableSubtask key={s.id} s={s} onToggle={onToggle} onRemove={onRemove} onRename={onRename} />
+          ))}
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+}
+
+function SortableSubtask({
+  s, onToggle, onRemove, onRename,
+}: {
+  s: any;
+  onToggle: (s: any) => void;
+  onRemove: (id: string) => void;
+  onRename: (s: any, title: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: s.id });
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(s.title);
+  useEffect(() => { setValue(s.title); }, [s.title]);
+
+  const commit = () => {
+    setEditing(false);
+    if (value.trim() && value !== s.title) onRename(s, value);
+    else setValue(s.title);
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-center gap-2 group rounded ${isDragging ? "bg-muted/50" : ""}`}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground opacity-0 group-hover:opacity-100 touch-none"
+        title="Réordonner"
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
+      <Checkbox checked={s.done} onCheckedChange={() => onToggle(s)} />
+      {editing ? (
+        <Input
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") { setValue(s.title); setEditing(false); }
+          }}
+          className="h-7 text-sm flex-1 min-w-0"
+        />
+      ) : (
+        <span
+          onClick={() => setEditing(true)}
+          className={`flex-1 min-w-0 break-words text-sm cursor-text ${s.done ? "line-through text-muted-foreground" : ""}`}
+        >
+          {s.title}
+        </span>
+      )}
+      <button onClick={() => onRemove(s.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
