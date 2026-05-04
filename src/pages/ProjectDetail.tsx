@@ -282,7 +282,7 @@ export default function ProjectDetail() {
               {strategies.length === 0 ? (
                 <div className="text-xs text-muted-foreground py-2">Aucune</div>
               ) : strategies.map((s) => (
-                <Link key={s.id} to={`/strategie-marque/${s.id}`} className="flex items-center justify-between p-2 rounded hover:bg-secondary/60 text-sm gap-2">
+                <Link key={s.id} to={`/strategie/${s.id}`} className="flex items-center justify-between p-2 rounded hover:bg-secondary/60 text-sm gap-2">
                   <span className="truncate">{s.project_name}</span>
                   <span className="text-[10px] text-muted-foreground shrink-0">{fmtDate(s.updated_at)}</span>
                 </Link>
@@ -310,7 +310,7 @@ export default function ProjectDetail() {
               {appointments.length === 0 ? (
                 <div className="text-xs text-muted-foreground py-2">Aucun</div>
               ) : appointments.map((a) => (
-                <Link key={a.id} to={`/rendez-vous`} className="flex items-center justify-between p-2 rounded hover:bg-secondary/60 text-sm gap-2">
+                <Link key={a.id} to={`/agenda`} className="flex items-center justify-between p-2 rounded hover:bg-secondary/60 text-sm gap-2">
                   <span className="truncate">{a.title}</span>
                   <span className="text-[10px] text-muted-foreground shrink-0">{fmtDateTime(a.start_at)}</span>
                 </Link>
