@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, Copy, Send, ArrowLeft, Loader2, CheckCircle2, Trash2 } from "lucide-react";
+import { Sparkles, Copy, Send, ArrowLeft, Loader2, CheckCircle2, Trash2, Plus, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -35,6 +35,8 @@ export default function QuestionnaireDetail() {
   const [deleting, setDeleting] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState<string>("");
   const [savingSummary, setSavingSummary] = useState(false);
+  const [creatingTaskIdx, setCreatingTaskIdx] = useState<number | null>(null);
+  const [createdTaskKeys, setCreatedTaskKeys] = useState<Set<string>>(new Set());
 
   const load = async () => {
     if (!id) return;
@@ -97,7 +99,8 @@ export default function QuestionnaireDetail() {
       await save();
       const { data, error } = await supabase.functions.invoke("summarize-questionnaire", { body: { id: item.id } });
       if (error) throw error;
-      toast.success("Résumé généré");
+      toast.success("Brief généré");
+      setCreatedTaskKeys(new Set());
       await load();
     } catch (e: any) {
       toast.error(e?.message || "Erreur génération résumé");
@@ -127,6 +130,37 @@ export default function QuestionnaireDetail() {
     if (error) { toast.error(error.message); return; }
     toast.success("Questionnaire supprimé");
     navigate("/questionnaires");
+  };
+
+  const suggestedTasks: Array<{ title: string; priority?: string }> =
+    Array.isArray(item.ai_suggested_tasks) ? item.ai_suggested_tasks : [];
+
+  const createTaskFromSuggestion = async (idx: number, t: { title: string; priority?: string }) => {
+    setCreatingTaskIdx(idx);
+    const payload: any = {
+      title: t.title,
+      status: "todo",
+      prestation: "creation",
+      prestations: ["creation"],
+      priority: t.priority === "principale" ? "principale" : "secondaire",
+      billing_type: "horaire",
+      client_id: item.client_id || null,
+      project_id: item.project_id || null,
+    };
+    const { error } = await supabase.from("tasks").insert(payload);
+    setCreatingTaskIdx(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Tâche créée");
+    setCreatedTaskKeys((prev) => new Set(prev).add(`${idx}:${t.title}`));
+  };
+
+  const createAllTasks = async () => {
+    for (let i = 0; i < suggestedTasks.length; i++) {
+      const t = suggestedTasks[i];
+      const key = `${i}:${t.title}`;
+      if (createdTaskKeys.has(key)) continue;
+      await createTaskFromSuggestion(i, t);
+    }
   };
 
   return (
@@ -199,7 +233,7 @@ export default function QuestionnaireDetail() {
           <Card className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold">Synthèse créative</h3>
+                <h3 className="font-semibold">{item.template === "note" ? "Mini-brief" : "Synthèse créative"}</h3>
                 <p className="text-xs text-muted-foreground">
                   {item.ai_summary_generated_at
                     ? `Généré le ${new Date(item.ai_summary_generated_at).toLocaleString("fr-FR")}`
@@ -243,6 +277,55 @@ export default function QuestionnaireDetail() {
               <p className="text-xs text-muted-foreground">
                 Astuce : ajustez la synthèse manuellement après génération. Le format markdown léger est conservé.
               </p>
+            )}
+
+            {suggestedTasks.length > 0 && (
+              <div className="pt-4 border-t space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ListChecks className="h-4 w-4 text-muted-foreground" />
+                    <h4 className="font-semibold text-sm">Tâches suggérées ({suggestedTasks.length})</h4>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={createAllTasks}>
+                    <Plus className="h-4 w-4 mr-1.5" /> Tout créer
+                  </Button>
+                </div>
+                <ul className="space-y-2">
+                  {suggestedTasks.map((t, i) => {
+                    const key = `${i}:${t.title}`;
+                    const created = createdTaskKeys.has(key);
+                    return (
+                      <li key={i} className="flex items-center gap-2 p-2.5 rounded-md border bg-secondary/30">
+                        <Badge
+                          variant={t.priority === "principale" ? "default" : "outline"}
+                          className="shrink-0"
+                        >
+                          {t.priority === "principale" ? "Principale" : "Secondaire"}
+                        </Badge>
+                        <span className="flex-1 text-sm">{t.title}</span>
+                        {created ? (
+                          <Badge variant="secondary" className="gap-1">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Créée
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => createTaskFromSuggestion(i, t)}
+                            disabled={creatingTaskIdx === i}
+                          >
+                            {creatingTaskIdx === i ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <><Plus className="h-4 w-4 mr-1" /> Créer</>
+                            )}
+                          </Button>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             )}
           </Card>
         </TabsContent>
