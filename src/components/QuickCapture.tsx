@@ -362,6 +362,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-2xl max-h-[calc(100dvh-3rem)] flex flex-col overflow-hidden p-0 md:left-[calc(50%+120px)]"
@@ -636,5 +637,36 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
         </div>
       </DialogContent>
     </Dialog>
+    <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+        <DialogHeader><DialogTitle>Nouveau client</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Nom *</Label>
+            <Input autoFocus value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Société</Label>
+            <Input value={newClient.company} onChange={(e) => setNewClient({ ...newClient, company: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Email</Label>
+              <Input type="email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Téléphone</Label>
+              <Input value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={createNewClient} disabled={newClientBusy}>
+            <Plus className="h-4 w-4 mr-1" />Créer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
