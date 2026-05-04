@@ -1280,7 +1280,7 @@ export type Database = {
         | "strategie_marque"
         | "logotype"
       questionnaire_status: "brouillon" | "envoye" | "complete" | "archive"
-      questionnaire_template: "logo" | "print" | "web" | "rapide"
+      questionnaire_template: "logo" | "print" | "web" | "rapide" | "note"
       task_priority:
         | "en_priorite"
         | "secondaire"
@@ -1508,7 +1508,7 @@ export const Constants = {
         "logotype",
       ],
       questionnaire_status: ["brouillon", "envoye", "complete", "archive"],
-      questionnaire_template: ["logo", "print", "web", "rapide"],
+      questionnaire_template: ["logo", "print", "web", "rapide", "note"],
       task_priority: [
         "en_priorite",
         "secondaire",

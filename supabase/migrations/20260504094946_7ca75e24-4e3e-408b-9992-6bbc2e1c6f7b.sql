@@ -1,0 +1,1 @@
+ALTER TYPE public.questionnaire_template ADD VALUE IF NOT EXISTS 'note';
