@@ -11,6 +11,7 @@ import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList, Sparkles, Load
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PRESTATION_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
+import ClientSelectField from "@/components/ClientSelectField";
 
 type Mode = null | "task" | "project" | "order" | "client" | "appointment";
 
@@ -250,10 +251,12 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Client</Label>
-                <Select value={task.client_id} onValueChange={(v) => setTask({ ...task, client_id: v, project_id: "" })}>
-                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <ClientSelectField
+                  value={task.client_id}
+                  onChange={(v) => setTask({ ...task, client_id: v, project_id: "" })}
+                  clients={clients}
+                  onClientCreated={(c) => setClients((prev) => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)))}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Projet</Label>
@@ -319,10 +322,13 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Client *</Label>
-              <Select value={project.client_id} onValueChange={(v) => setProject({ ...project, client_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-              </Select>
+              <ClientSelectField
+                value={project.client_id}
+                onChange={(v) => setProject({ ...project, client_id: v })}
+                clients={clients}
+                onClientCreated={(c) => setClients((prev) => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)))}
+                placeholder="Sélectionner"
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Type</Label>
@@ -389,10 +395,12 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Client *</Label>
-                <Select value={order.client_id} onValueChange={(v) => setOrder({ ...order, client_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <ClientSelectField
+                  value={order.client_id}
+                  onChange={(v) => setOrder({ ...order, client_id: v })}
+                  clients={clients}
+                  onClientCreated={(c) => setClients((prev) => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)))}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Référence</Label>
@@ -476,10 +484,12 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Client</Label>
-                <Select value={appt.client_id} onValueChange={(v) => setAppt({ ...appt, client_id: v, project_id: "" })}>
-                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <ClientSelectField
+                  value={appt.client_id}
+                  onChange={(v) => setAppt({ ...appt, client_id: v, project_id: "" })}
+                  clients={clients}
+                  onClientCreated={(c) => setClients((prev) => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)))}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Projet</Label>
