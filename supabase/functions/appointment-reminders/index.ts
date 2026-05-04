@@ -16,6 +16,19 @@ Deno.serve(async (req) => {
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
   const TELEGRAM_API_KEY = Deno.env.get('TELEGRAM_API_KEY')
 
+  // AuthZ: only the service role (cron / internal callers) may invoke this
+  // function. It triggers reminder dispatch and stamps reminder_sent_at,
+  // so allowing arbitrary authenticated users would let any portal client
+  // suppress all future reminders.
+  const authHeader = req.headers.get('Authorization') || ''
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim()
+  if (token !== SERVICE_KEY) {
+    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+      status: 403,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY)
 
   // Find appointments that need a reminder NOW
