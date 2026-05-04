@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { PROJECT_TYPE_LABEL, STATUS_LABEL, fmtDate } from "@/lib/format";
+import { PROJECT_TYPE_LABEL, STATUS_LABEL, PRINT_STATUS_LABEL, BAT_STATUS_LABEL, fmtDate, fmtDateTime } from "@/lib/format";
 import { toast } from "sonner";
 
 export default function ProjectDetail() {
@@ -26,6 +26,11 @@ export default function ProjectDetail() {
   const [clients, setClients] = useState<any[]>([]);
   const [availableTasks, setAvailableTasks] = useState<any[]>([]);
   const [linkValue, setLinkValue] = useState<string>("");
+  const [printOrders, setPrintOrders] = useState<any[]>([]);
+  const [bats, setBats] = useState<any[]>([]);
+  const [strategies, setStrategies] = useState<any[]>([]);
+  const [questionnaires, setQuestionnaires] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
 
   const load = async () => {
     if (!id) return;
@@ -40,6 +45,24 @@ export default function ProjectDetail() {
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
     setAvailableTasks(all.data ?? []);
+
+    const clientId = p.data?.client_id;
+    if (clientId) {
+      const [po, ba, st, qs, ap] = await Promise.all([
+        supabase.from("print_orders").select("id,description,status,created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("bats").select("id,title,status,created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("brand_strategies").select("id,project_name,version,updated_at").eq("client_id", clientId).order("updated_at", { ascending: false }),
+        supabase.from("questionnaires").select("id,title,template,status,created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("appointments").select("id,title,start_at,status").eq("client_id", clientId).order("start_at", { ascending: false }),
+      ]);
+      setPrintOrders(po.data ?? []);
+      setBats(ba.data ?? []);
+      setStrategies(st.data ?? []);
+      setQuestionnaires(qs.data ?? []);
+      setAppointments(ap.data ?? []);
+    } else {
+      setPrintOrders([]); setBats([]); setStrategies([]); setQuestionnaires([]); setAppointments([]);
+    }
   };
   useEffect(() => { load(); }, [id]);
 
@@ -218,6 +241,84 @@ export default function ProjectDetail() {
           </div>
         </Card>
       </div>
+
+      <Card className="p-5 mt-4">
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-sm font-semibold">Activité du client</h2>
+          <span className="text-xs text-muted-foreground">{project.clients?.name}</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Impressions ({printOrders.length})</h3>
+            <div className="space-y-1">
+              {printOrders.length === 0 ? (
+                <div className="text-xs text-muted-foreground py-2">Aucune</div>
+              ) : printOrders.map((o) => (
+                <Link key={o.id} to={`/impressions/${o.id}`} className="flex items-center justify-between p-2 rounded hover:bg-secondary/60 text-sm gap-2">
+                  <span className="truncate">{o.description}</span>
+                  <Badge variant="outline" className="text-[10px] shrink-0">{PRINT_STATUS_LABEL[o.status] ?? o.status}</Badge>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2">BAT ({bats.length})</h3>
+            <div className="space-y-1">
+              {bats.length === 0 ? (
+                <div className="text-xs text-muted-foreground py-2">Aucun</div>
+              ) : bats.map((b) => (
+                <Link key={b.id} to={`/bats/${b.id}`} className="flex items-center justify-between p-2 rounded hover:bg-secondary/60 text-sm gap-2">
+                  <span className="truncate">{b.title}</span>
+                  <Badge variant="outline" className="text-[10px] shrink-0">{BAT_STATUS_LABEL[b.status] ?? b.status}</Badge>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Stratégies de marque ({strategies.length})</h3>
+            <div className="space-y-1">
+              {strategies.length === 0 ? (
+                <div className="text-xs text-muted-foreground py-2">Aucune</div>
+              ) : strategies.map((s) => (
+                <Link key={s.id} to={`/strategie/${s.id}`} className="flex items-center justify-between p-2 rounded hover:bg-secondary/60 text-sm gap-2">
+                  <span className="truncate">{s.project_name}</span>
+                  <span className="text-[10px] text-muted-foreground shrink-0">{fmtDate(s.updated_at)}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Briefs / Questionnaires ({questionnaires.length})</h3>
+            <div className="space-y-1">
+              {questionnaires.length === 0 ? (
+                <div className="text-xs text-muted-foreground py-2">Aucun</div>
+              ) : questionnaires.map((q) => (
+                <Link key={q.id} to={`/questionnaires/${q.id}`} className="flex items-center justify-between p-2 rounded hover:bg-secondary/60 text-sm gap-2">
+                  <span className="truncate">{q.title}</span>
+                  <Badge variant="outline" className="text-[10px] shrink-0">{q.status}</Badge>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Rendez-vous ({appointments.length})</h3>
+            <div className="space-y-1">
+              {appointments.length === 0 ? (
+                <div className="text-xs text-muted-foreground py-2">Aucun</div>
+              ) : appointments.map((a) => (
+                <Link key={a.id} to={`/agenda`} className="flex items-center justify-between p-2 rounded hover:bg-secondary/60 text-sm gap-2">
+                  <span className="truncate">{a.title}</span>
+                  <span className="text-[10px] text-muted-foreground shrink-0">{fmtDateTime(a.start_at)}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
