@@ -17,7 +17,7 @@ export interface QSection {
 }
 
 export interface QTemplate {
-  key: "logo" | "print" | "web" | "rapide";
+  key: "logo" | "print" | "web" | "rapide" | "note";
   label: string;
   description: string;
   sections: QSection[];
@@ -267,6 +267,27 @@ export const QUESTIONNAIRE_TEMPLATES: Record<string, QTemplate> = {
       },
     ],
   },
+};
+
+QUESTIONNAIRE_TEMPLATES.note = {
+  key: "note",
+  label: "Note libre",
+  description: "Écrivez une note brute, l'IA en extrait un mini-brief + tâches suggérées",
+  sections: [
+    {
+      title: "Votre note",
+      description:
+        "Décrivez librement la demande, l'idée ou le projet. L'IA structurera un mini-brief et proposera des tâches actionnables.",
+      fields: [
+        {
+          key: "note",
+          label: "Note",
+          type: "textarea",
+          placeholder: "Ex: Le client X veut refondre son site, doit être prêt fin juin, ton premium, ils ont déjà une charte. Penser à demander les accès hébergement…",
+        },
+      ],
+    },
+  ],
 };
 
 export const TEMPLATE_OPTIONS = Object.values(QUESTIONNAIRE_TEMPLATES).map((t) => ({
