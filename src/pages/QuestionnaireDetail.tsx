@@ -139,10 +139,10 @@ export default function QuestionnaireDetail() {
     setCreatingTaskIdx(idx);
     const payload: any = {
       title: t.title,
-      status: "todo",
+      status: "a_faire",
       prestation: "creation",
       prestations: ["creation"],
-      priority: t.priority === "principale" ? "principale" : "secondaire",
+      priority: t.priority === "principale" ? "en_priorite" : "secondaire",
       billing_type: "horaire",
       client_id: item.client_id || null,
       project_id: item.project_id || null,
