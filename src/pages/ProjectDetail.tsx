@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { PROJECT_TYPE_LABEL, STATUS_LABEL, fmtDate } from "@/lib/format";
+import { PROJECT_TYPE_LABEL, STATUS_LABEL, PRINT_STATUS_LABEL, BAT_STATUS_LABEL, fmtDate, fmtDateTime } from "@/lib/format";
 import { toast } from "sonner";
 
 export default function ProjectDetail() {
@@ -26,6 +26,11 @@ export default function ProjectDetail() {
   const [clients, setClients] = useState<any[]>([]);
   const [availableTasks, setAvailableTasks] = useState<any[]>([]);
   const [linkValue, setLinkValue] = useState<string>("");
+  const [printOrders, setPrintOrders] = useState<any[]>([]);
+  const [bats, setBats] = useState<any[]>([]);
+  const [strategies, setStrategies] = useState<any[]>([]);
+  const [questionnaires, setQuestionnaires] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
 
   const load = async () => {
     if (!id) return;
@@ -40,6 +45,24 @@ export default function ProjectDetail() {
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
     setAvailableTasks(all.data ?? []);
+
+    const clientId = p.data?.client_id;
+    if (clientId) {
+      const [po, ba, st, qs, ap] = await Promise.all([
+        supabase.from("print_orders").select("id,description,status,created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("bats").select("id,title,status,created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("brand_strategies").select("id,project_name,version,updated_at").eq("client_id", clientId).order("updated_at", { ascending: false }),
+        supabase.from("questionnaires").select("id,title,template,status,created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("appointments").select("id,title,start_at,status").eq("client_id", clientId).order("start_at", { ascending: false }),
+      ]);
+      setPrintOrders(po.data ?? []);
+      setBats(ba.data ?? []);
+      setStrategies(st.data ?? []);
+      setQuestionnaires(qs.data ?? []);
+      setAppointments(ap.data ?? []);
+    } else {
+      setPrintOrders([]); setBats([]); setStrategies([]); setQuestionnaires([]); setAppointments([]);
+    }
   };
   useEffect(() => { load(); }, [id]);
 
