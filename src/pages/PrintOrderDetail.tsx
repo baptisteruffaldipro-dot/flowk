@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtMoney, fmtDateTime } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import BatViewer from "@/components/BatViewer";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
 
@@ -22,6 +23,9 @@ export default function PrintOrderDetail() {
   const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState<PrintProduct[]>([]);
   const [savingProducts, setSavingProducts] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<any>({});
+  const [savingForm, setSavingForm] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -32,6 +36,18 @@ export default function PrintOrderDetail() {
       .maybeSingle();
     setOrder(data);
     setProducts(((data as any)?.products as PrintProduct[]) ?? []);
+    setForm({
+      description: data?.description ?? "",
+      reference: data?.reference ?? "",
+      quantity: data?.quantity ?? "",
+      format: data?.format ?? "",
+      grammage: data?.grammage ?? "",
+      support: data?.support ?? "",
+      colors: data?.colors ?? "",
+      finitions: data?.finitions ?? "",
+      observations: data?.observations ?? "",
+      amount: data?.amount ?? "",
+    });
   };
 
   useEffect(() => { load(); }, [id]);
@@ -103,6 +119,28 @@ export default function PrintOrderDetail() {
     setSavingProducts(false);
     if (error) return toast.error(error.message);
     toast.success("Produits enregistrés");
+    load();
+  };
+
+  const saveForm = async () => {
+    setSavingForm(true);
+    const payload: any = {
+      description: form.description?.trim() || order.description,
+      reference: form.reference || null,
+      quantity: form.quantity === "" || form.quantity === null ? null : Number(form.quantity),
+      format: form.format || null,
+      grammage: form.grammage || null,
+      support: form.support || null,
+      colors: form.colors || null,
+      finitions: form.finitions || null,
+      observations: form.observations || null,
+      amount: form.amount === "" || form.amount === null ? null : Number(form.amount),
+    };
+    const { error } = await supabase.from("print_orders").update(payload).eq("id", id);
+    setSavingForm(false);
+    if (error) return toast.error(error.message);
+    toast.success("Commande mise à jour");
+    setEditing(false);
     load();
   };
 
@@ -189,7 +227,72 @@ export default function PrintOrderDetail() {
       </div>
 
       <Card className="p-5 mb-6">
-        <h2 className="text-sm font-semibold mb-4">Détails de la commande</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold">Détails de la commande</h2>
+          {editing ? (
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); load(); }}>Annuler</Button>
+              <Button size="sm" onClick={saveForm} disabled={savingForm}>
+                {savingForm ? "Enregistrement…" : "Enregistrer"}
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Modifier</Button>
+          )}
+        </div>
+        {editing ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="md:col-span-3">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Description</Label>
+              <Input className="mt-1" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Référence</Label>
+              <Input className="mt-1" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Quantité</Label>
+              <Input className="mt-1" type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Format</Label>
+              <Input className="mt-1" value={form.format} onChange={(e) => setForm({ ...form, format: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Grammage</Label>
+              <Input className="mt-1" value={form.grammage} onChange={(e) => setForm({ ...form, grammage: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Support</Label>
+              <Input className="mt-1" value={form.support} onChange={(e) => setForm({ ...form, support: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Couleurs</Label>
+              <Input className="mt-1" value={form.colors} onChange={(e) => setForm({ ...form, colors: e.target.value })} />
+            </div>
+            <div className="md:col-span-3">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Finitions</Label>
+              <Input className="mt-1" value={form.finitions} onChange={(e) => setForm({ ...form, finitions: e.target.value })} />
+            </div>
+            <div className="md:col-span-3">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Observations</Label>
+              <Textarea className="mt-1" rows={3} value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Montant €</Label>
+              <Input className="mt-1" type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+            </div>
+            <div className="md:col-span-2">
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date de livraison estimée</Label>
+              <Input
+                type="date"
+                className="mt-1 max-w-xs"
+                value={order.estimated_delivery_date ?? ""}
+                onChange={(e) => updateEstimatedDelivery(e.target.value)}
+              />
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Référence</div>
@@ -237,6 +340,7 @@ export default function PrintOrderDetail() {
             />
           </div>
         </div>
+        )}
       </Card>
 
       <Card className="p-5 mb-6">
