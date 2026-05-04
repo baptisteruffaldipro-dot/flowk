@@ -16,6 +16,15 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Play, Pause, Plus, Trash2, Paperclip, Download, Upload, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { GripVertical } from "lucide-react";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, arrayMove, useSortable, verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
@@ -162,6 +171,31 @@ export default function TaskDetail() {
   const removeSub = async (id2: string) => {
     await supabase.from("subtasks").delete().eq("id", id2);
     load();
+  };
+
+  const renameSub = async (s: any, title: string) => {
+    const next = title.trim();
+    if (!next || next === s.title) return;
+    setSubtasks((prev) => prev.map((x) => (x.id === s.id ? { ...x, title: next } : x)));
+    const { error } = await supabase.from("subtasks").update({ title: next }).eq("id", s.id);
+    if (error) toast.error(error.message);
+  };
+
+  const reorderSubs = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = subtasks.findIndex((s) => s.id === active.id);
+    const newIndex = subtasks.findIndex((s) => s.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = arrayMove(subtasks, oldIndex, newIndex);
+    setSubtasks(reordered);
+    await Promise.all(
+      reordered.map((s, idx) =>
+        s.position === idx
+          ? Promise.resolve()
+          : supabase.from("subtasks").update({ position: idx }).eq("id", s.id)
+      )
+    );
   };
 
   const deleteTask = async () => {
@@ -433,17 +467,13 @@ export default function TaskDetail() {
 
         <Card className="p-4 sm:p-5 min-w-0">
           <h2 className="text-sm font-semibold mb-3">Sous-tâches</h2>
-          <div className="space-y-1.5 mb-3">
-            {subtasks.map((s) => (
-              <div key={s.id} className="flex items-center gap-2 group">
-                <Checkbox checked={s.done} onCheckedChange={() => toggleSub(s)} />
-                <span className={`flex-1 min-w-0 break-words text-sm ${s.done ? "line-through text-muted-foreground" : ""}`}>{s.title}</span>
-                <button onClick={() => removeSub(s.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
+          <SubtaskList
+            subtasks={subtasks}
+            onToggle={toggleSub}
+            onRemove={removeSub}
+            onRename={renameSub}
+            onReorder={reorderSubs}
+          />
           <div className="flex gap-2 min-w-0">
             <Input
               placeholder="Ajouter une sous-tâche"
