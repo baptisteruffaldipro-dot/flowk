@@ -109,7 +109,10 @@ export const INVOICE_STATUS_LABEL: Record<string, string> = {
 };
 
 export const PROJECT_TYPE_LABEL: Record<string, string> = {
-  identite_graphique: "Identité graphique",
+  identite_visuelle: "Identité visuelle",
+  rebranding: "Rebranding",
+  strategie_marque: "Stratégie de marque",
+  logotype: "Logotype",
   support_communication: "Support de communication",
   web: "Web",
   impression: "Impression",
