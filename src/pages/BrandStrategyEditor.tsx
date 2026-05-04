@@ -122,7 +122,18 @@ export default function BrandStrategyEditor() {
     if (!row) return;
     const next: Partial<DBRow> = { is_published: publish };
     if (publish && !row.share_token) next.share_token = genToken();
-    setRow({ ...row, ...next });
+    const updated = { ...row, ...next };
+    setRow(updated);
+    // Persist immediately so the share link is live without needing an extra Save click
+    const { error } = await supabase.from("brand_strategies" as any).update({
+      is_published: updated.is_published,
+      share_token: updated.share_token,
+    }).eq("id", updated.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(publish ? "Publié — lien actif" : "Dépublié");
   };
 
   const copyShareLink = () => {
