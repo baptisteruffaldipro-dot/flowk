@@ -57,31 +57,41 @@ export default function ClientSelectField({
 
   return (
     <>
-      <Select
-        value={value || undefined}
-        onValueChange={(v) => {
-          if (v === NEW_VALUE) {
-            setOpen(true);
-            return;
-          }
-          onChange(v);
-        }}
-        disabled={disabled}
-      >
-        <SelectTrigger><SelectValue placeholder={placeholder} /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value={NEW_VALUE} className="text-primary font-medium">
-            <span className="inline-flex items-center gap-1.5">
-              <UserPlus className="h-3.5 w-3.5" /> Nouveau client…
-            </span>
-          </SelectItem>
-          {clients.map((c) => (
-            <SelectItem key={c.id} value={c.id}>
-              {c.name}{showCompany && c.company ? ` — ${c.company}` : ""}
+      <div className="flex gap-1.5">
+        <Select
+          value={value || undefined}
+          onValueChange={(v) => {
+            if (v === NEW_VALUE) { setOpen(true); return; }
+            onChange(v);
+          }}
+          disabled={disabled}
+        >
+          <SelectTrigger className="flex-1 min-w-0"><SelectValue placeholder={placeholder} /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NEW_VALUE} className="text-primary font-medium">
+              <span className="inline-flex items-center gap-1.5">
+                <UserPlus className="h-3.5 w-3.5" /> Nouveau client…
+              </span>
             </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+            {clients.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}{showCompany && c.company ? ` — ${c.company}` : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="shrink-0"
+          onClick={() => setOpen(true)}
+          disabled={disabled}
+          title="Créer un nouveau client"
+        >
+          <UserPlus className="h-4 w-4" />
+        </Button>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
