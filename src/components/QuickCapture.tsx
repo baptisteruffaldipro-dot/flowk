@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2, Inbox, ImagePlus, X, Plus, StickyNote, ListPlus } from "lucide-react";
+import { Sparkles, Loader2, Inbox, ImagePlus, X, Plus, StickyNote, ListPlus, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -63,6 +63,29 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   const [taskId, setTaskId] = useState<string>("");
   const [printOrderId, setPrintOrderId] = useState<string>("");
   const [selectedActions, setSelectedActions] = useState<Set<number>>(new Set());
+
+  // new client modal
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "" });
+  const [newClientBusy, setNewClientBusy] = useState(false);
+  const createNewClient = async () => {
+    if (!newClient.name.trim()) return toast.error("Nom requis");
+    setNewClientBusy(true);
+    const { data, error } = await supabase.from("clients").insert({
+      name: newClient.name.trim(),
+      company: newClient.company.trim() || null,
+      email: newClient.email.trim() || null,
+      phone: newClient.phone.trim() || null,
+    }).select("id,name,company").single();
+    setNewClientBusy(false);
+    if (error || !data) return toast.error(error?.message || "Erreur");
+    toast.success("Client créé");
+    setClients((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+    setClientId(data.id);
+    setProjectId(""); setTaskId(""); setPrintOrderId("");
+    setNewClient({ name: "", company: "", email: "", phone: "" });
+    setNewClientOpen(false);
+  };
 
   // lists
   const [clients, setClients] = useState<any[]>([]);
@@ -339,6 +362,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-2xl max-h-[calc(100dvh-3rem)] flex flex-col overflow-hidden p-0 md:left-[calc(50%+120px)]"
@@ -430,9 +454,15 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Client</Label>
-                  <Select value={clientId || "__none"} onValueChange={(v) => { setClientId(v === "__none" ? "" : v); setProjectId(""); setTaskId(""); setPrintOrderId(""); }}>
+                  <Select value={clientId || "__none"} onValueChange={(v) => {
+                    if (v === "__new__") { setNewClientOpen(true); return; }
+                    setClientId(v === "__none" ? "" : v); setProjectId(""); setTaskId(""); setPrintOrderId("");
+                  }}>
                     <SelectTrigger className="h-8 w-full min-w-0"><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="__new__" className="text-primary font-medium">
+                        <span className="inline-flex items-center gap-1.5"><UserPlus className="h-3.5 w-3.5" /> Nouveau client…</span>
+                      </SelectItem>
                       <SelectItem value="__none">— Aucun</SelectItem>
                       {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}{c.company ? ` — ${c.company}` : ""}</SelectItem>)}
                     </SelectContent>
@@ -607,5 +637,36 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
         </div>
       </DialogContent>
     </Dialog>
+    <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+        <DialogHeader><DialogTitle>Nouveau client</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Nom *</Label>
+            <Input autoFocus value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Société</Label>
+            <Input value={newClient.company} onChange={(e) => setNewClient({ ...newClient, company: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Email</Label>
+              <Input type="email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Téléphone</Label>
+              <Input value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={createNewClient} disabled={newClientBusy}>
+            <Plus className="h-4 w-4 mr-1" />Créer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
