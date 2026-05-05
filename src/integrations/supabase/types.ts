@@ -1269,6 +1269,7 @@ export type Database = {
         | "en_impression"
         | "livre"
         | "livre_paye"
+        | "sav_en_cours"
       project_type:
         | "identite_graphique"
         | "support_communication"
@@ -1495,6 +1496,7 @@ export const Constants = {
         "en_impression",
         "livre",
         "livre_paye",
+        "sav_en_cours",
       ],
       project_type: [
         "identite_graphique",
