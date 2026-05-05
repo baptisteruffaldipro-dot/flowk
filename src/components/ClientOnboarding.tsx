@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle } from "lucide-react";
+import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink } from "lucide-react";
 import {
   fmtMoney,
   fmtDate,
@@ -38,7 +38,19 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
         supabase.from("tasks").select("id,title,status,deadline,project_id,delivered_at,priority").eq("client_id", clientId).order("deadline", { ascending: true, nullsFirst: false }),
         supabase.from("print_orders").select("id,description,status,amount,estimated_delivery_date,bat_file_path,bat_validated_at,bat_rejected_at").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("bats").select("id,title,status,validated_at,project_id").eq("client_id", clientId).order("created_at", { ascending: false }),
-        supabase.from("invoices").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+        supabase.from("invoices").select("*, tasks(id, project_id)").eq("client_id", clientId).order("created_at", { ascending: false }),
+  const invoiceHref = (i: any): string | null => {
+    if (i.task_id) {
+      if (mode === "admin") return `/taches/${i.task_id}`;
+      const pid = i.tasks?.project_id;
+      return pid ? `/portail/projet/${pid}` : null;
+    }
+    if (i.print_order_id) {
+      return mode === "admin" ? `/impressions/${i.print_order_id}` : `/portail/impression/${i.print_order_id}`;
+    }
+    return null;
+  };
+
         supabase.from("appointments").select("id,title,start_at,duration_minutes,location,type,status").eq("client_id", clientId).gte("start_at", nowIso).order("start_at", { ascending: true }),
       ]);
       setProjects(p.data ?? []);
@@ -231,17 +243,34 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
           )
         }
       >
-        {invoices.length === 0 ? <Empty text="Aucune facture" /> : invoices.map((i) => (
+        {invoices.length === 0 ? <Empty text="Aucune facture" /> : invoices.map((i) => {
+          const href = invoiceHref(i);
+          return (
           <div key={i.id} className="flex items-center justify-between gap-3 p-3">
-            <div className="min-w-0 flex-1">
-              <div className="text-sm truncate">{i.label}</div>
-              <div className="text-[11px] text-muted-foreground">
-                {i.billing_type === "horaire" && i.hours
-                  ? `${i.hours}h × ${fmtMoney(Number(i.hourly_rate ?? 0))}`
-                  : "Forfait"}
-                {i.invoiced_at && ` · ${fmtDate(i.invoiced_at)}`}
+            {href ? (
+              <Link to={href} className="min-w-0 flex-1 group">
+                <div className="text-sm truncate group-hover:underline inline-flex items-center gap-1.5">
+                  {i.label}
+                  <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {i.billing_type === "horaire" && i.hours
+                    ? `${i.hours}h × ${fmtMoney(Number(i.hourly_rate ?? 0))}`
+                    : "Forfait"}
+                  {i.invoiced_at && ` · ${fmtDate(i.invoiced_at)}`}
+                </div>
+              </Link>
+            ) : (
+              <div className="min-w-0 flex-1">
+                <div className="text-sm truncate">{i.label}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {i.billing_type === "horaire" && i.hours
+                    ? `${i.hours}h × ${fmtMoney(Number(i.hourly_rate ?? 0))}`
+                    : "Forfait"}
+                  {i.invoiced_at && ` · ${fmtDate(i.invoiced_at)}`}
+                </div>
               </div>
-            </div>
+            )}
             <span className="text-sm font-semibold tabular-nums shrink-0">{fmtMoney(Number(i.amount))}</span>
             {mode === "admin" ? (
               <Select value={i.status} onValueChange={(v) => updateInvoiceStatus(i.id, v)}>
@@ -256,7 +285,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
               <Badge variant="outline" className="text-[10px]">{INVOICE_STATUS_LABEL[i.status]}</Badge>
             )}
           </div>
-        ))}
+          );
+        })}
       </Section>
 
       <Section icon={<CalendarClock className="h-4 w-4" />} title="Rendez-vous prévus" count={appointments.length}>
