@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, FileText, Download, Trash2, Send } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtMoney, fmtDateTime } from "@/lib/format";
 import { Input } from "@/components/ui/input";
@@ -17,6 +21,7 @@ import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEdi
 
 export default function PrintOrderDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [order, setOrder] = useState<any>(null);
   const batInput = useRef<HTMLInputElement>(null);
   const livInput = useRef<HTMLInputElement>(null);
@@ -162,6 +167,30 @@ export default function PrintOrderDetail() {
     else toast.success("Notification envoyée au client");
   };
 
+  const deleteOrder = async () => {
+    if (!id) return;
+    try {
+      const { data: invs } = await supabase.from("invoices").select("id").eq("print_order_id", id).limit(1);
+      if (invs && invs.length > 0) {
+        return toast.error("Impossible : des factures sont liées à cette commande.");
+      }
+      // Nettoyage best-effort des annotations & fichiers
+      await supabase.from("bat_annotations").delete().eq("print_order_id", id);
+      const paths = [
+        ...(order?.bat_file_path ? [order.bat_file_path] : []),
+      ];
+      if (paths.length) await supabase.storage.from("bat").remove(paths);
+      const livPaths = (order?.deliverables ?? []).map((d: any) => d.path).filter(Boolean);
+      if (livPaths.length) await supabase.storage.from("livrables").remove(livPaths);
+      const { error } = await supabase.from("print_orders").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Commande supprimée");
+      navigate("/impressions");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur lors de la suppression");
+    }
+  };
+
   if (!order) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
   return (
@@ -186,6 +215,27 @@ export default function PrintOrderDetail() {
                 {Object.entries(PRINT_PAYMENT_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
               </SelectContent>
             </Select>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
+                  <Trash2 className="h-4 w-4" /> Supprimer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer cette commande ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Action définitive. BAT, livrables et annotations seront supprimés. Les factures liées doivent être supprimées au préalable.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={deleteOrder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         }
       />
