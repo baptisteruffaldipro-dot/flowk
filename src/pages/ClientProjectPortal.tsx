@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle2, FileCheck2, Clock, Euro, Repeat, Truck, CalendarClock } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { ArrowLeft, CheckCircle2, FileCheck2, Clock, Euro, Repeat, Truck, CalendarClock, ClipboardList, Sparkles, Package, AlertTriangle, Circle } from "lucide-react";
 import { toast } from "sonner";
-import { PROJECT_TYPE_LABEL, fmtDate, fmtDateTime } from "@/lib/format";
+import { PROJECT_TYPE_LABEL, fmtDate, fmtDateTime, STATUS_LABEL } from "@/lib/format";
 
 const BRIEF_FIELDS: { key: string; label: string; type: "text" | "textarea" }[] = [
   { key: "objectif", label: "Quel est l'objectif principal du projet ?", type: "textarea" },
@@ -28,12 +29,13 @@ export default function ClientProjectPortal() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
   const [bats, setBats] = useState<any[]>([]);
+  const [subtasks, setSubtasks] = useState<any[]>([]);
 
   const load = async () => {
     if (!id) return;
     const [p, t, po, b] = await Promise.all([
       supabase.from("projects").select("*").eq("id", id).maybeSingle(),
-      supabase.from("tasks").select("id,title,status,deadline,total_minutes,flat_amount,hourly_rate,billing_type,client_revisions_count,free_revisions,delivered_at").eq("project_id", id),
+      supabase.from("tasks").select("id,title,status,deadline,total_minutes,flat_amount,hourly_rate,billing_type,client_revisions_count,free_revisions,delivered_at,position").eq("project_id", id).order("position", { ascending: true }),
       supabase.from("print_orders").select("id,description,status,amount,estimated_delivery_date").eq("project_id", id),
       supabase.from("bats").select("id,title,status,validated_at").eq("project_id", id),
     ]);
@@ -42,6 +44,13 @@ export default function ClientProjectPortal() {
     setTasks(t.data ?? []);
     setPrintOrders(po.data ?? []);
     setBats(b.data ?? []);
+    const taskIds = (t.data ?? []).map((x: any) => x.id);
+    if (taskIds.length) {
+      const { data: st } = await supabase.from("subtasks").select("id,task_id,done").in("task_id", taskIds);
+      setSubtasks(st ?? []);
+    } else {
+      setSubtasks([]);
+    }
   };
   useEffect(() => { load(); }, [id]);
 
@@ -81,6 +90,25 @@ export default function ClientProjectPortal() {
   const hours = Math.floor(recap.totalMinutes / 60);
   const mins = recap.totalMinutes % 60;
 
+  // Progression globale du projet (basée sur tâches livrées)
+  const totalTasks = tasks.length;
+  const deliveredTasks = tasks.filter((t) => t.delivered_at || t.status === "payee" || t.status === "facturee" || t.status === "facture_envoyee").length;
+  const overallProgress = totalTasks ? Math.round((deliveredTasks / totalTasks) * 100) : (submitted ? 10 : 0);
+
+  // Jalons
+  const hasInProgress = tasks.some((t) => t.status !== "a_faire" && !t.delivered_at);
+  const hasBat = bats.length > 0 || printOrders.some((o) => o.status === "validation_bat");
+  const allDelivered = totalTasks > 0 && deliveredTasks === totalTasks;
+  const milestones = [
+    { key: "brief", label: "Brief", icon: ClipboardList, done: submitted },
+    { key: "prod", label: "En production", icon: Sparkles, done: hasInProgress || allDelivered },
+    { key: "bat", label: "BAT", icon: FileCheck2, done: hasBat || allDelivered },
+    { key: "delivery", label: "Livré", icon: Package, done: allDelivered },
+  ];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto">
@@ -89,6 +117,82 @@ export default function ClientProjectPortal() {
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight">{project.name}</h1>
         <p className="text-sm text-muted-foreground mt-1 mb-6">{PROJECT_TYPE_LABEL[project.type]}</p>
+
+        {/* Avancement global + jalons */}
+        <Card className="p-6 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold">Avancement du projet</h2>
+            <span className="text-xs text-muted-foreground">{deliveredTasks} / {totalTasks} tâches livrées</span>
+          </div>
+          <Progress value={overallProgress} className="h-2 mb-6" />
+          <div className="grid grid-cols-4 gap-2 relative">
+            {milestones.map((m, i) => {
+              const Icon = m.icon;
+              return (
+                <div key={m.key} className="flex flex-col items-center text-center gap-2 relative">
+                  {i < milestones.length - 1 && (
+                    <div className={`absolute top-4 left-1/2 w-full h-0.5 ${milestones[i + 1].done ? "bg-emerald-500" : "bg-border"}`} />
+                  )}
+                  <div className={`relative z-10 h-8 w-8 rounded-full flex items-center justify-center border-2 ${m.done ? "bg-emerald-500 border-emerald-500 text-white" : "bg-background border-border text-muted-foreground"}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className={`text-[11px] ${m.done ? "font-medium" : "text-muted-foreground"}`}>{m.label}</div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Détail des tâches */}
+        {tasks.length > 0 && (
+          <Card className="p-6 mb-4">
+            <h2 className="text-sm font-semibold mb-4">Étapes détaillées</h2>
+            <div className="space-y-2">
+              {tasks.map((t) => {
+                const taskSubs = subtasks.filter((s) => s.task_id === t.id);
+                const subDone = taskSubs.filter((s) => s.done).length;
+                const subPct = taskSubs.length ? Math.round((subDone / taskSubs.length) * 100) : null;
+                const isDelivered = !!t.delivered_at || ["payee", "facturee", "facture_envoyee"].includes(t.status);
+                const dl = t.deadline ? new Date(t.deadline) : null;
+                const isLate = dl && !isDelivered && dl < today;
+                return (
+                  <div key={t.id} className="flex items-start gap-3 p-3 rounded-lg border border-border">
+                    <div className="mt-0.5">
+                      {isDelivered ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      ) : isLate ? (
+                        <AlertTriangle className="h-4 w-4 text-rose-500" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="text-sm font-medium truncate">{t.title}</div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status] ?? t.status}</Badge>
+                          {isLate && <Badge className="bg-rose-500 hover:bg-rose-500 text-[10px]">En retard</Badge>}
+                          {isDelivered && <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Livré</Badge>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1">
+                        {t.deadline && (
+                          <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {fmtDate(t.deadline)}</span>
+                        )}
+                        {taskSubs.length > 0 && (
+                          <span>{subDone}/{taskSubs.length} sous-étapes</span>
+                        )}
+                      </div>
+                      {subPct !== null && (
+                        <Progress value={subPct} className="h-1 mt-2" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
 
         {/* Récap onboarding projet */}
         <Card className="p-6 mb-4">
