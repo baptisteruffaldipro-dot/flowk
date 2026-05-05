@@ -1284,6 +1284,7 @@ export type Database = {
         | "rebranding"
         | "strategie_marque"
         | "logotype"
+        | "multi_projets"
       questionnaire_status: "brouillon" | "envoye" | "complete" | "archive"
       questionnaire_template: "logo" | "print" | "web" | "rapide" | "note"
       task_priority:
@@ -1513,6 +1514,7 @@ export const Constants = {
         "rebranding",
         "strategie_marque",
         "logotype",
+        "multi_projets",
       ],
       questionnaire_status: ["brouillon", "envoye", "complete", "archive"],
       questionnaire_template: ["logo", "print", "web", "rapide", "note"],
