@@ -42,7 +42,8 @@ export default function ClientDetail() {
     if (!editing) return;
     setSaving(true);
     const value = draft.trim() === "" ? null : draft.trim();
-    const { error } = await supabase.from("clients").update({ [editing]: value }).eq("id", client.id);
+    const payload: any = { [editing]: value };
+    const { error } = await supabase.from("clients").update(payload).eq("id", client.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     setClient({ ...client, [editing]: value });
