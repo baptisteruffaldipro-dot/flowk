@@ -256,6 +256,21 @@ export default function Invoices() {
                       {Object.entries(INVOICE_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 relative"
+                    onClick={() => setInstallmentsFor(i)}
+                    aria-label="Échéancier"
+                    title="Échéancier"
+                  >
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    {i.installments?.length > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 text-[9px] bg-primary text-primary-foreground rounded-full h-3.5 min-w-3.5 px-1 leading-none flex items-center justify-center">
+                        {i.installments.length}
+                      </span>
+                    )}
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setEditing({
                     ...i,
                     amount: i.amount ?? "",
