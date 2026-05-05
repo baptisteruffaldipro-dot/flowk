@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
-import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban } from "lucide-react";
+import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban, CalendarClock } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
 import WeekAgenda from "@/components/WeekAgenda";
 
@@ -15,6 +15,16 @@ type Order = { id: string; description: string; status: string; clients?: { name
 type Inv = { id: string; label: string; amount: number; status: string; clients?: { name: string } | null };
 type Appt = { id: string; title: string; start_at: string; type: string; location: string | null; clients?: { name: string } | null };
 type Project = { id: string; name: string; type: string; clients?: { name: string } | null };
+type Installment = {
+  id: string;
+  invoice_id: string;
+  label: string | null;
+  amount: number;
+  paid_amount: number;
+  due_date: string;
+  paid_at: string | null;
+  invoices?: { id: string; label: string; clients?: { name: string } | null } | null;
+};
 
 const APPT_TYPE_ICON: Record<string, any> = { visio: Video, presentiel: MapPin, telephone: Phone, autre: CalendarDays };
 
@@ -24,6 +34,7 @@ export default function Dashboard() {
   const [invoices, setInvoices] = useState<Inv[]>([]);
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [upcomingInstallments, setUpcomingInstallments] = useState<Installment[]>([]);
   const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, awaitingBat: 0 });
 
   const load = async () => {
@@ -37,6 +48,16 @@ export default function Dashboard() {
         supabase.from("projects").select("id,name,type,clients(name)").eq("archived", false).order("updated_at", { ascending: false }).limit(8),
         supabase.from("bats").select("id").eq("status", "en_relecture" as any),
       ]);
+      const horizon = new Date();
+      horizon.setDate(horizon.getDate() + 60);
+      const ins = await supabase
+        .from("invoice_installments")
+        .select("id,invoice_id,label,amount,paid_amount,due_date,paid_at,invoices(id,label,clients(name))")
+        .is("paid_at", null)
+        .lte("due_date", horizon.toISOString().slice(0, 10))
+        .order("due_date", { ascending: true })
+        .limit(10);
+      setUpcomingInstallments((ins.data as any) ?? []);
       const allPrint = await supabase.from("print_orders").select("amount,payment_status,status");
       const allPrintData = (allPrint.data as any[]) ?? [];
       const paidPrintRev = allPrintData.reduce((s: number, x: any) => {
@@ -87,6 +108,8 @@ export default function Dashboard() {
       </div>
 
       <TodayBoard tasks={tasks} printOrders={orders} />
+
+      {upcomingInstallments.length > 0 && <InstallmentsWidget items={upcomingInstallments} />}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <ProgressStatCard
@@ -307,6 +330,54 @@ function Column({ title, href, children, empty }: { title: string; href: string;
       </div>
       <div className="space-y-1">
         {isEmpty ? <div className="text-sm text-muted-foreground py-8 text-center">{empty}</div> : children}
+      </div>
+    </Card>
+  );
+}
+
+function InstallmentsWidget({ items }: { items: Installment[] }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const overdue = items.filter((x) => x.due_date < today);
+  const upcoming = items.filter((x) => x.due_date >= today);
+  return (
+    <Card className="p-5 mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <CalendarClock className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold tracking-tight">Prochaines échéances</h2>
+          {overdue.length > 0 && (
+            <Badge variant="destructive" className="text-[10px]">{overdue.length} en retard</Badge>
+          )}
+        </div>
+        <Link to="/facturation" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          Facturation <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {[...overdue, ...upcoming].slice(0, 8).map((x) => {
+          const isOverdue = x.due_date < today;
+          const remaining = Number(x.amount) - Number(x.paid_amount);
+          const d = new Date(x.due_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+          return (
+            <Link
+              key={x.id}
+              to="/facturation"
+              className={`block p-3 rounded-md border bg-card hover:bg-secondary/60 transition ${isOverdue ? "border-destructive/40" : "border-border"}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="text-sm font-medium leading-snug truncate">
+                  {x.invoices?.label ?? "Facture"}
+                  {x.label && <span className="text-muted-foreground font-normal"> · {x.label}</span>}
+                </div>
+                <Badge variant={isOverdue ? "destructive" : "outline"} className="shrink-0 text-[10px]">{d}</Badge>
+              </div>
+              <div className="text-xs text-muted-foreground mt-1 flex items-center justify-between gap-2">
+                <span className="truncate">{x.invoices?.clients?.name ?? "—"}</span>
+                <span className="tabular-nums font-medium text-foreground">{fmtMoney(remaining)}</span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </Card>
   );

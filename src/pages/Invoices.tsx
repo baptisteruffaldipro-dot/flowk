@@ -8,10 +8,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText, Link2, Pencil, Trash2 } from "lucide-react";
+import { Plus, FileText, Link2, Pencil, Trash2, CalendarClock } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { fmtMoney, INVOICE_STATUS_LABEL } from "@/lib/format";
+import InstallmentsManager from "@/components/InstallmentsManager";
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -19,21 +20,30 @@ export default function Invoices() {
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
+  const [installmentsFor, setInstallmentsFor] = useState<any | null>(null);
   const [form, setForm] = useState<any>({
     label: "", client_id: "", status: "a_facturer",
     billing_type: "forfait", amount: "", hours: "", hourly_rate: "", questionnaire_id: "",
   });
 
   const load = async () => {
-    const [i, c, q] = await Promise.all([
+    const [i, c, q, ins] = await Promise.all([
       supabase.from("invoices").select("*, clients(name)").order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("questionnaires").select("id,title,client_id").order("created_at", { ascending: false }),
+      supabase.from("invoice_installments").select("invoice_id,amount,paid_amount,paid_at,due_date"),
     ]);
     const qById = new Map(((q.data as any[]) ?? []).map((x) => [x.id, x]));
+    const insByInvoice = new Map<string, any[]>();
+    ((ins.data as any[]) ?? []).forEach((r) => {
+      const arr = insByInvoice.get(r.invoice_id) ?? [];
+      arr.push(r);
+      insByInvoice.set(r.invoice_id, arr);
+    });
     const enriched = ((i.data as any[]) ?? []).map((row) => ({
       ...row,
       questionnaire: row.questionnaire_id ? qById.get(row.questionnaire_id) ?? null : null,
+      installments: insByInvoice.get(row.id) ?? [],
     }));
     setInvoices(enriched);
     setClients(c.data ?? []);
@@ -231,6 +241,19 @@ export default function Invoices() {
                         <FileText className="h-2.5 w-2.5" /> {i.questionnaire.title}
                       </Badge>
                     )}
+                    {i.installments?.length > 0 && (() => {
+                      const paid = i.installments.reduce((s: number, x: any) => s + Number(x.paid_amount), 0);
+                      const total = Number(i.amount);
+                      const today = new Date().toISOString().slice(0,10);
+                      const overdue = i.installments.filter((x: any) => !x.paid_at && x.due_date < today).length;
+                      return (
+                        <Badge variant="outline" className="text-[10px] gap-1">
+                          <CalendarClock className="h-2.5 w-2.5" />
+                          {fmtMoney(paid)} / {fmtMoney(total)}
+                          {overdue > 0 && <span className="text-destructive">· {overdue} en retard</span>}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="col-span-2 text-xs text-muted-foreground">
@@ -246,6 +269,21 @@ export default function Invoices() {
                       {Object.entries(INVOICE_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 relative"
+                    onClick={() => setInstallmentsFor(i)}
+                    aria-label="Échéancier"
+                    title="Échéancier"
+                  >
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    {i.installments?.length > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 text-[9px] bg-primary text-primary-foreground rounded-full h-3.5 min-w-3.5 px-1 leading-none flex items-center justify-center">
+                        {i.installments.length}
+                      </span>
+                    )}
+                  </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setEditing({
                     ...i,
                     amount: i.amount ?? "",
@@ -349,6 +387,15 @@ export default function Invoices() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {installmentsFor && (
+        <InstallmentsManager
+          invoice={installmentsFor}
+          open={!!installmentsFor}
+          onOpenChange={(v) => { if (!v) setInstallmentsFor(null); }}
+          onChanged={load}
+        />
+      )}
     </div>
   );
 }
