@@ -52,9 +52,13 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tasksInProgress = tasks.filter((t) => !t.delivered_at && !["payee", "facturee", "facture_envoyee", "archive"].includes(t.status));
   const hasBriefContent = (p: any) => {
+    if (p.description && String(p.description).trim()) return true;
+    if (p.notes && String(p.notes).trim()) return true;
     const b = p.brief;
-    if (!b || typeof b !== "object") return false;
-    return Object.values(b).some((v) => typeof v === "string" ? v.trim().length > 0 : v != null && v !== "");
+    if (b && typeof b === "object") {
+      return Object.values(b).some((v) => typeof v === "string" ? v.trim().length > 0 : v != null && v !== "");
+    }
+    return false;
   };
   const isBriefDone = (p: any) => !!p.brief_submitted_at || hasBriefContent(p);
   const briefsToFill = projects.filter((p) => !isBriefDone(p));
