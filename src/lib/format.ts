@@ -82,6 +82,7 @@ export const PRINT_STATUS_LABEL: Record<string, string> = {
   livre: "Livré",
   livre_paye: "Livré — payé",
   sav_en_cours: "SAV en cours",
+  sav_a_faire: "SAV à faire",
 };
 
 export const PRINT_PAYMENT_LABEL: Record<string, string> = {
