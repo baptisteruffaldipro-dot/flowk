@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText, Link2 } from "lucide-react";
+import { Plus, FileText, Link2, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { fmtMoney, INVOICE_STATUS_LABEL } from "@/lib/format";
 
@@ -17,6 +18,7 @@ export default function Invoices() {
   const [clients, setClients] = useState<any[]>([]);
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<any>({
     label: "", client_id: "", status: "a_facturer",
     billing_type: "forfait", amount: "", hours: "", hourly_rate: "", questionnaire_id: "",
@@ -87,6 +89,39 @@ export default function Invoices() {
     await supabase.from("invoices").update(patch).eq("id", id);
     load();
   };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    if (!editing.label?.trim() || !editing.client_id) return toast.error("Libellé et client requis");
+    const amount = editing.billing_type === "horaire" && editing.hours && editing.hourly_rate
+      ? Number(editing.hours) * Number(editing.hourly_rate)
+      : Number(editing.amount);
+    if (!amount || amount <= 0) return toast.error("Montant invalide");
+    const { error } = await supabase.from("invoices").update({
+      label: editing.label.trim(),
+      client_id: editing.client_id,
+      billing_type: editing.billing_type,
+      amount,
+      hours: editing.billing_type === "horaire" && editing.hours ? Number(editing.hours) : null,
+      hourly_rate: editing.billing_type === "horaire" && editing.hourly_rate ? Number(editing.hourly_rate) : null,
+      questionnaire_id: editing.questionnaire_id || null,
+    }).eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    toast.success("Mis à jour");
+    setEditing(null);
+    load();
+  };
+
+  const removeInvoice = async (id: string) => {
+    const { error } = await supabase.from("invoices").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Supprimé");
+    load();
+  };
+
+  const editFilteredQuestionnaires = editing?.client_id
+    ? questionnaires.filter((q) => q.client_id === editing.client_id)
+    : questionnaires;
 
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
@@ -204,19 +239,116 @@ export default function Invoices() {
                     : <Badge variant="secondary" className="text-[10px]">Forfait</Badge>}
                 </div>
                 <div className="col-span-2 font-medium tabular-nums">{fmtMoney(Number(i.amount))}</div>
-                <div className="col-span-3">
+                <div className="col-span-3 flex items-center gap-1">
                   <Select value={i.status} onValueChange={(v) => updateStatus(i.id, v)}>
                     <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(INVOICE_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setEditing({
+                    ...i,
+                    amount: i.amount ?? "",
+                    hours: i.hours ?? "",
+                    hourly_rate: i.hourly_rate ?? "",
+                    questionnaire_id: i.questionnaire_id ?? "",
+                  })} aria-label="Modifier">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:text-destructive" aria-label="Supprimer">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer cette ligne ?</AlertDialogTitle>
+                        <AlertDialogDescription>« {i.label} » — {fmtMoney(Number(i.amount))}. Action irréversible.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => removeInvoice(i.id)}>Supprimer</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))}
           </div>
         )}
       </Card>
+
+      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader><DialogTitle>Modifier la ligne</DialogTitle></DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Libellé *</Label>
+                <Input value={editing.label ?? ""} onChange={(e) => setEditing({ ...editing, label: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Client *</Label>
+                <Select value={editing.client_id} onValueChange={(v) => setEditing({ ...editing, client_id: v, questionnaire_id: "" })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Type</Label>
+                  <Select value={editing.billing_type} onValueChange={(v) => setEditing({ ...editing, billing_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="forfait">Forfait</SelectItem>
+                      <SelectItem value="horaire">Horaire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {editing.billing_type === "horaire" ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Heures</Label>
+                      <Input type="number" step="0.25" value={editing.hours} onChange={(e) => setEditing({ ...editing, hours: e.target.value })} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Taux €/h</Label>
+                      <Input type="number" step="0.01" value={editing.hourly_rate} onChange={(e) => setEditing({ ...editing, hourly_rate: e.target.value })} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-1.5 col-span-2">
+                    <Label className="text-xs">Montant (€) *</Label>
+                    <Input type="number" step="0.01" value={editing.amount} onChange={(e) => setEditing({ ...editing, amount: e.target.value })} />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs inline-flex items-center gap-1.5">
+                  <Link2 className="h-3 w-3" /> Rattacher à un brief / questionnaire
+                </Label>
+                <Select
+                  value={editing.questionnaire_id || "none"}
+                  onValueChange={(v) => setEditing({ ...editing, questionnaire_id: v === "none" ? "" : v })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Aucun" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun</SelectItem>
+                    {editFilteredQuestionnaires.map((q) => (
+                      <SelectItem key={q.id} value={q.id}>{q.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Annuler</Button>
+            <Button onClick={saveEdit}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
