@@ -1,0 +1,1 @@
+ALTER TYPE public.print_status ADD VALUE IF NOT EXISTS 'sav_a_faire';
