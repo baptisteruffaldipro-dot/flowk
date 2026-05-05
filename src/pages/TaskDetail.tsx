@@ -409,10 +409,16 @@ export default function TaskDetail() {
           <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Prestations</div>
           <PrestationPicker
             value={prestations}
-            onChange={(next) => updateField({
-              prestations: next,
-              prestation: next[0] ?? task.prestation, // garder la principale en sync pour rétro-compat
-            })}
+            onChange={(next) => {
+              // La colonne legacy `prestation` est un ENUM Postgres ; on n'y écrit
+              // que des valeurs connues (sinon on garde l'ancienne ou on retombe sur "autre").
+              const known = Object.keys(PRESTATION_LABEL);
+              const firstKnown = next.find((k) => known.includes(k));
+              updateField({
+                prestations: next,
+                prestation: firstKnown ?? (known.includes(task.prestation) ? task.prestation : "autre"),
+              });
+            }}
           />
         </Card>
         <Card className="p-4 min-w-0">
