@@ -334,6 +334,37 @@ export default function ProjectDetail() {
           </div>
         </div>
       </Card>
+
+      <Card className="p-5 mt-4">
+        {(() => {
+          const total = invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0);
+          const paid = invoices.filter((i) => i.status === "payee").reduce((s, i) => s + Number(i.amount ?? 0), 0);
+          const pending = total - paid;
+          return (
+            <>
+              <div className="flex items-baseline justify-between mb-3">
+                <h2 className="text-sm font-semibold">Facturation ({invoices.length})</h2>
+                <span className="text-xs text-muted-foreground">
+                  Total {fmtMoney(total)} · Payé {fmtMoney(paid)} · Reste {fmtMoney(pending)}
+                </span>
+              </div>
+              <div className="space-y-1">
+                {invoices.length === 0 ? (
+                  <div className="text-sm text-muted-foreground py-4 text-center">Aucune facture</div>
+                ) : invoices.map((i) => (
+                  <Link key={i.id} to="/facturation" className="flex items-center justify-between p-2.5 rounded hover:bg-secondary/60 text-sm gap-2">
+                    <span className="truncate">{i.label}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-medium">{fmtMoney(Number(i.amount))}</span>
+                      <Badge variant="outline" className="text-[10px]">{INVOICE_STATUS_LABEL[i.status] ?? i.status}</Badge>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </>
+          );
+        })()}
+      </Card>
     </div>
   );
 }
