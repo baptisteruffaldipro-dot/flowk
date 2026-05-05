@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle } from "lucide-react";
 import {
   fmtMoney,
@@ -70,6 +72,19 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const totalInv = invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0);
   const paidInv = invoices.filter((i) => i.status === "payee").reduce((s, i) => s + Number(i.amount ?? 0), 0);
   const pendingInv = totalInv - paidInv;
+
+  const updateInvoiceStatus = async (id: string, status: string) => {
+    const patch: any = { status };
+    if (status === "facturee") patch.invoiced_at = new Date().toISOString().slice(0, 10);
+    if (status === "payee") patch.paid_at = new Date().toISOString().slice(0, 10);
+    const prev = invoices;
+    setInvoices((arr) => arr.map((x) => x.id === id ? { ...x, ...patch } : x));
+    const { error } = await supabase.from("invoices").update(patch).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setInvoices(prev);
+    }
+  };
 
   const taskHref = (t: any) => mode === "admin" ? `/taches/${t.id}` : (t.project_id ? `/portail/projet/${t.project_id}` : "#");
   const projHref = (p: any) => mode === "admin" ? `/projets/${p.id}` : `/portail/projet/${p.id}`;
@@ -217,15 +232,29 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
         }
       >
         {invoices.length === 0 ? <Empty text="Aucune facture" /> : invoices.map((i) => (
-          <div key={i.id} className="flex items-center justify-between p-3">
-            <div className="min-w-0">
+          <div key={i.id} className="flex items-center justify-between gap-3 p-3">
+            <div className="min-w-0 flex-1">
               <div className="text-sm truncate">{i.label}</div>
-              <div className="text-[11px] text-muted-foreground">{INVOICE_STATUS_LABEL[i.status]}{i.invoiced_at && ` · ${fmtDate(i.invoiced_at)}`}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {i.billing_type === "horaire" && i.hours
+                  ? `${i.hours}h × ${fmtMoney(Number(i.hourly_rate ?? 0))}`
+                  : "Forfait"}
+                {i.invoiced_at && ` · ${fmtDate(i.invoiced_at)}`}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold tabular-nums shrink-0">{fmtMoney(Number(i.amount))}</span>
+            {mode === "admin" ? (
+              <Select value={i.status} onValueChange={(v) => updateInvoiceStatus(i.id, v)}>
+                <SelectTrigger className="h-8 w-36 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(INVOICE_STATUS_LABEL).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
               <Badge variant="outline" className="text-[10px]">{INVOICE_STATUS_LABEL[i.status]}</Badge>
-              <span className="text-sm font-semibold tabular-nums">{fmtMoney(Number(i.amount))}</span>
-            </div>
+            )}
           </div>
         ))}
       </Section>
