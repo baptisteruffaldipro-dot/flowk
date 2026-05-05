@@ -119,6 +119,7 @@ export const PROJECT_TYPE_LABEL: Record<string, string> = {
   support_communication: "Support de communication",
   web: "Web",
   impression: "Impression",
+  multi_projets: "Multi-projets",
   autre: "Autre",
 };
 
