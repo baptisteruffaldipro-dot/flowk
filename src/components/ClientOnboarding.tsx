@@ -62,10 +62,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
     }
     return false;
   };
-  const isBriefRequired = (p: any) => p.brief_required !== false;
-  const isBriefDone = (p: any) => !isBriefRequired(p) || !!p.brief_submitted_at || hasBriefContent(p);
-  const briefsToFill = projects.filter((p) => isBriefRequired(p) && !isBriefDone(p));
-  const projectsWithBrief = projects.filter(isBriefRequired);
+  const isBriefDone = (p: any) => !!p.brief_submitted_at || hasBriefContent(p);
   const batsToValidate = [
     ...orders.filter((o) => o.bat_file_path && !o.bat_validated_at && !o.bat_rejected_at).map((o) => ({ id: o.id, title: o.description, kind: "order" as const, status: "À valider" })),
     ...bats.filter((b) => b.status === "en_relecture").map((b) => ({ id: b.id, title: b.title, kind: "bat" as const, status: BAT_STATUS_LABEL[b.status] })),
@@ -110,18 +107,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   return (
     <div className="space-y-6">
       {/* Bandeaux d'alerte */}
-      {(batsToValidate.length > 0 || briefsToFill.length > 0) && (
+      {batsToValidate.length > 0 && (
         <div className="grid gap-3 md:grid-cols-2">
-          {briefsToFill.length > 0 && (
-            <Card className="p-4 bg-sky-50 border-sky-200 dark:bg-sky-950/30 dark:border-sky-900 flex items-start gap-3">
-              <ClipboardList className="h-5 w-5 text-sky-600 shrink-0 mt-0.5" />
-              <div>
-                <div className="text-sm font-medium text-sky-900 dark:text-sky-200">{briefsToFill.length} brief{briefsToFill.length > 1 ? "s" : ""} à remplir</div>
-                <div className="text-xs text-sky-700 dark:text-sky-300 mt-0.5">Nécessaire pour démarrer le projet.</div>
-              </div>
-            </Card>
-          )}
-          {batsToValidate.length > 0 && (
             <Card className="p-4 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-900 flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
@@ -129,7 +116,6 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
                 <div className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">À visualiser et signer.</div>
               </div>
             </Card>
-          )}
         </div>
       )}
 
@@ -150,7 +136,6 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {!isBriefDone(p) && <Badge variant="outline" className="text-[10px]">Brief à remplir</Badge>}
                   {late && <Badge className="bg-rose-500 hover:bg-rose-500 text-[10px]">En retard</Badge>}
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -203,25 +188,28 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
         ))}
       </Section>
 
-      <Section icon={<ClipboardList className="h-4 w-4" />} title="Briefs" count={projectsWithBrief.length}>
-        {projectsWithBrief.length === 0 ? <Empty text="Aucun brief" /> : projectsWithBrief.map((p) => (
-          <Link key={p.id} to={projHref(p)} className="flex items-center justify-between p-3 hover:bg-secondary/60 transition">
-            <div className="min-w-0">
-              <div className="text-sm truncate">{p.name}</div>
-              <div className="text-[11px] text-muted-foreground">
+      {(() => {
+        const briefs = projects.filter((p) => isBriefDone(p));
+        return (
+          <Section icon={<ClipboardList className="h-4 w-4" />} title="Briefs" count={briefs.length}>
+            {briefs.length === 0 ? <Empty text="Aucun brief" /> : briefs.map((p) => (
+              <Link key={p.id} to={projHref(p)} className="flex items-center justify-between p-3 hover:bg-secondary/60 transition">
+                <div className="min-w-0">
+                  <div className="text-sm truncate">{p.name}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {p.brief_submitted_at
+                      ? `Soumis le ${fmtDateTime(p.brief_submitted_at)}`
+                      : "Rempli (non soumis)"}
+                  </div>
+                </div>
                 {p.brief_submitted_at
-                  ? `Soumis le ${fmtDateTime(p.brief_submitted_at)}`
-                  : hasBriefContent(p) ? "Rempli (non soumis)" : "À remplir"}
-              </div>
-            </div>
-            {p.brief_submitted_at
-              ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Reçu</Badge>
-              : hasBriefContent(p)
-                ? <Badge className="bg-emerald-500/80 hover:bg-emerald-500/80 text-[10px]">Rempli</Badge>
-                : <Badge variant="outline" className="text-[10px]">En attente</Badge>}
-          </Link>
-        ))}
-      </Section>
+                  ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Reçu</Badge>
+                  : <Badge className="bg-emerald-500/80 hover:bg-emerald-500/80 text-[10px]">Rempli</Badge>}
+              </Link>
+            ))}
+          </Section>
+        );
+      })()}
 
       <Section icon={<FileCheck2 className="h-4 w-4" />} title="Bons à tirer" count={bats.length}>
         {bats.length === 0 ? <Empty text="Aucun BAT" /> : bats.map((b) => (
