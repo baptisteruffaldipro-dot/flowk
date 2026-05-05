@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Trash2, X, Merge, Loader2 } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { detectDuplicatePlan, executeMergePlan, type MergePlan } from "@/lib/mergeDuplicates";
@@ -35,6 +36,7 @@ export default function Clients() {
   const [mergePlan, setMergePlan] = useState<MergePlan | null>(null);
   const [merging, setMerging] = useState(false);
   const [scanningMerge, setScanningMerge] = useState(false);
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
   const load = async () => {
@@ -195,20 +197,38 @@ export default function Clients() {
         </div>
       )}
 
+      <div className="mb-3 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher par nom, société, email ou téléphone…"
+          className="pl-9"
+        />
+      </div>
+
+      {(() => {
+        const q = search.trim().toLowerCase();
+        const filtered = q
+          ? clients.filter((c) =>
+              [c.name, c.company, c.email, c.phone].some((v) => v?.toLowerCase().includes(q))
+            )
+          : clients;
+        return (
       <Card className="overflow-hidden">
-        {clients.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="p-12 text-center text-sm text-muted-foreground">Aucun client. Crée ton premier client.</div>
         ) : (
           <div className="divide-y">
             <div className="flex items-center gap-3 px-5 py-2 bg-muted/30 text-xs text-muted-foreground">
               <Checkbox
-                checked={selected.size > 0 && selected.size === clients.length}
+                checked={selected.size > 0 && selected.size === filtered.length}
                 onCheckedChange={toggleAll}
                 aria-label="Tout sélectionner"
               />
               <span>Tout sélectionner</span>
             </div>
-            {clients.map((c) => (
+            {filtered.map((c) => (
               <div
                 key={c.id}
                 className="flex items-center gap-3 px-5 py-4 hover:bg-secondary/40 transition cursor-pointer"
@@ -233,6 +253,8 @@ export default function Clients() {
           </div>
         )}
       </Card>
+        );
+      })()}
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
