@@ -374,6 +374,15 @@ export default function Invoices() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {installmentsFor && (
+        <InstallmentsManager
+          invoice={installmentsFor}
+          open={!!installmentsFor}
+          onOpenChange={(v) => { if (!v) setInstallmentsFor(null); }}
+          onChanged={load}
+        />
+      )}
     </div>
   );
 }
