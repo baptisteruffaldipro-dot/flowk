@@ -62,8 +62,10 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
     }
     return false;
   };
-  const isBriefDone = (p: any) => !!p.brief_submitted_at || hasBriefContent(p);
-  const briefsToFill = projects.filter((p) => !isBriefDone(p));
+  const isBriefRequired = (p: any) => p.brief_required !== false;
+  const isBriefDone = (p: any) => !isBriefRequired(p) || !!p.brief_submitted_at || hasBriefContent(p);
+  const briefsToFill = projects.filter((p) => isBriefRequired(p) && !isBriefDone(p));
+  const projectsWithBrief = projects.filter(isBriefRequired);
   const batsToValidate = [
     ...orders.filter((o) => o.bat_file_path && !o.bat_validated_at && !o.bat_rejected_at).map((o) => ({ id: o.id, title: o.description, kind: "order" as const, status: "À valider" })),
     ...bats.filter((b) => b.status === "en_relecture").map((b) => ({ id: b.id, title: b.title, kind: "bat" as const, status: BAT_STATUS_LABEL[b.status] })),
@@ -201,8 +203,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
         ))}
       </Section>
 
-      <Section icon={<ClipboardList className="h-4 w-4" />} title="Briefs" count={projects.length}>
-        {projects.length === 0 ? <Empty text="Aucun brief" /> : projects.map((p) => (
+      <Section icon={<ClipboardList className="h-4 w-4" />} title="Briefs" count={projectsWithBrief.length}>
+        {projectsWithBrief.length === 0 ? <Empty text="Aucun brief" /> : projectsWithBrief.map((p) => (
           <Link key={p.id} to={projHref(p)} className="flex items-center justify-between p-3 hover:bg-secondary/60 transition">
             <div className="min-w-0">
               <div className="text-sm truncate">{p.name}</div>
