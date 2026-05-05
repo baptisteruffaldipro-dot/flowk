@@ -8,10 +8,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText, Link2, Pencil, Trash2 } from "lucide-react";
+import { Plus, FileText, Link2, Pencil, Trash2, CalendarClock } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { fmtMoney, INVOICE_STATUS_LABEL } from "@/lib/format";
+import InstallmentsManager from "@/components/InstallmentsManager";
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -19,21 +20,30 @@ export default function Invoices() {
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
+  const [installmentsFor, setInstallmentsFor] = useState<any | null>(null);
   const [form, setForm] = useState<any>({
     label: "", client_id: "", status: "a_facturer",
     billing_type: "forfait", amount: "", hours: "", hourly_rate: "", questionnaire_id: "",
   });
 
   const load = async () => {
-    const [i, c, q] = await Promise.all([
+    const [i, c, q, ins] = await Promise.all([
       supabase.from("invoices").select("*, clients(name)").order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("questionnaires").select("id,title,client_id").order("created_at", { ascending: false }),
+      supabase.from("invoice_installments").select("invoice_id,amount,paid_amount,paid_at,due_date"),
     ]);
     const qById = new Map(((q.data as any[]) ?? []).map((x) => [x.id, x]));
+    const insByInvoice = new Map<string, any[]>();
+    ((ins.data as any[]) ?? []).forEach((r) => {
+      const arr = insByInvoice.get(r.invoice_id) ?? [];
+      arr.push(r);
+      insByInvoice.set(r.invoice_id, arr);
+    });
     const enriched = ((i.data as any[]) ?? []).map((row) => ({
       ...row,
       questionnaire: row.questionnaire_id ? qById.get(row.questionnaire_id) ?? null : null,
+      installments: insByInvoice.get(row.id) ?? [],
     }));
     setInvoices(enriched);
     setClients(c.data ?? []);
