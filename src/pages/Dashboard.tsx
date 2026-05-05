@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
-import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban } from "lucide-react";
+import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban, CalendarClock } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
 import WeekAgenda from "@/components/WeekAgenda";
 
@@ -15,6 +15,16 @@ type Order = { id: string; description: string; status: string; clients?: { name
 type Inv = { id: string; label: string; amount: number; status: string; clients?: { name: string } | null };
 type Appt = { id: string; title: string; start_at: string; type: string; location: string | null; clients?: { name: string } | null };
 type Project = { id: string; name: string; type: string; clients?: { name: string } | null };
+type Installment = {
+  id: string;
+  invoice_id: string;
+  label: string | null;
+  amount: number;
+  paid_amount: number;
+  due_date: string;
+  paid_at: string | null;
+  invoices?: { id: string; label: string; clients?: { name: string } | null } | null;
+};
 
 const APPT_TYPE_ICON: Record<string, any> = { visio: Video, presentiel: MapPin, telephone: Phone, autre: CalendarDays };
 
@@ -24,6 +34,7 @@ export default function Dashboard() {
   const [invoices, setInvoices] = useState<Inv[]>([]);
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [upcomingInstallments, setUpcomingInstallments] = useState<Installment[]>([]);
   const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, awaitingBat: 0 });
 
   const load = async () => {
@@ -37,6 +48,16 @@ export default function Dashboard() {
         supabase.from("projects").select("id,name,type,clients(name)").eq("archived", false).order("updated_at", { ascending: false }).limit(8),
         supabase.from("bats").select("id").eq("status", "en_relecture" as any),
       ]);
+      const horizon = new Date();
+      horizon.setDate(horizon.getDate() + 60);
+      const ins = await supabase
+        .from("invoice_installments")
+        .select("id,invoice_id,label,amount,paid_amount,due_date,paid_at,invoices(id,label,clients(name))")
+        .is("paid_at", null)
+        .lte("due_date", horizon.toISOString().slice(0, 10))
+        .order("due_date", { ascending: true })
+        .limit(10);
+      setUpcomingInstallments((ins.data as any) ?? []);
       const allPrint = await supabase.from("print_orders").select("amount,payment_status,status");
       const allPrintData = (allPrint.data as any[]) ?? [];
       const paidPrintRev = allPrintData.reduce((s: number, x: any) => {
@@ -87,6 +108,8 @@ export default function Dashboard() {
       </div>
 
       <TodayBoard tasks={tasks} printOrders={orders} />
+
+      {upcomingInstallments.length > 0 && <InstallmentsWidget items={upcomingInstallments} />}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <ProgressStatCard
