@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Calendar, Tag, GripVertical, Trash2 } from "lucide-react";
+import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
@@ -488,6 +488,7 @@ export default function Tasks() {
   const [paidTaskIds, setPaidTaskIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
     title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire",
@@ -734,11 +735,42 @@ export default function Tasks() {
 
   const filteredProjects = projects.filter((p) => !form.client_id || p.client_id === form.client_id);
 
+  const q = search.trim().toLowerCase();
+  const filteredTasks = q
+    ? tasks.filter((t) => {
+        const prestList: string[] = (t.prestations && t.prestations.length > 0)
+          ? t.prestations
+          : (t.prestation ? [t.prestation] : []);
+        const prestLabels = prestList.map((k) => PRESTATION_LABEL[k] ?? k).join(" ");
+        const haystack = [
+          t.title,
+          t.notes,
+          t.clients?.name,
+          t.projects?.name,
+          prestList.join(" "),
+          prestLabels,
+          t.status,
+          STATUS_LABEL[t.status],
+          t.priority,
+          PRIORITY_LABEL[t.priority],
+          t.deadline,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(q);
+      })
+    : tasks;
+
   return (
     <div className="p-4 md:p-8">
       <PageHeader
         title="Tâches"
-        description={`${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`}
+        description={
+          q
+            ? `${filteredTasks.length} / ${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`
+            : `${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`
+        }
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -829,6 +861,26 @@ export default function Tasks() {
         }
       />
 
+      <div className="relative mb-4 max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher (client, projet, prestation, titre, statut…)"
+          className="pl-9 pr-9"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-accent text-muted-foreground"
+            aria-label="Effacer la recherche"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+
       <Tabs defaultValue="kanban">
         <TabsList>
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
@@ -837,11 +889,11 @@ export default function Tasks() {
 
         <TabsContent value="list" className="mt-4">
           <Card className="overflow-hidden">
-            {tasks.length === 0 ? (
+            {filteredTasks.length === 0 ? (
               <div className="p-12 text-center text-sm text-muted-foreground">Aucune tâche</div>
             ) : (
               <div className="divide-y">
-                {tasks.map((t) => (
+                {filteredTasks.map((t) => (
                   <Link key={t.id} to={`/taches/${t.id}`} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-secondary/40 items-center text-sm">
                     <div className="col-span-5 truncate font-medium">{t.projects?.name ?? t.title}</div>
                     <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
@@ -883,7 +935,7 @@ export default function Tasks() {
                 <KanbanColumn
                   key={s}
                   status={s}
-                  tasks={tasks.filter((t) => t.status === s)}
+                  tasks={filteredTasks.filter((t) => t.status === s)}
                   clients={clients}
                   onUpdate={updateTask}
                   dividers={dividers.filter((d) => d.status === s)}
