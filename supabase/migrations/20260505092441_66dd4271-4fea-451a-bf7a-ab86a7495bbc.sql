@@ -1,0 +1,1 @@
+ALTER TYPE public.print_status ADD VALUE 'sav_en_cours';
