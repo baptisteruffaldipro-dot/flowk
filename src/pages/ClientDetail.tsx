@@ -5,6 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Mail, CheckCircle2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -18,6 +19,9 @@ export default function ClientDetail() {
   const [client, setClient] = useState<any>(null);
   const [inviting, setInviting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState<null | "email" | "phone" | "address">(null);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -28,6 +32,24 @@ export default function ClientDetail() {
   }, [id]);
 
   if (!client) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
+
+  const startEdit = (field: "email" | "phone" | "address") => {
+    setEditing(field);
+    setDraft(client[field] ?? "");
+  };
+
+  const saveField = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const value = draft.trim() === "" ? null : draft.trim();
+    const payload: any = { [editing]: value };
+    const { error } = await supabase.from("clients").update(payload).eq("id", client.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    setClient({ ...client, [editing]: value });
+    setEditing(null);
+    toast.success("Mis à jour");
+  };
 
   const invite = async () => {
     if (!client.email) return toast.error("Ajoutez d'abord un email au client");
@@ -117,9 +139,15 @@ export default function ClientDetail() {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <InfoCard label="Email" value={client.email ?? "—"} />
-        <InfoCard label="Téléphone" value={client.phone ?? "—"} />
-        <InfoCard label="Adresse" value={client.address ?? "—"} />
+        <EditableCard label="Email" field="email" value={client.email}
+          editing={editing === "email"} draft={draft} setDraft={setDraft} saving={saving}
+          onStart={() => startEdit("email")} onSave={saveField} onCancel={() => setEditing(null)} type="email" />
+        <EditableCard label="Téléphone" field="phone" value={client.phone}
+          editing={editing === "phone"} draft={draft} setDraft={setDraft} saving={saving}
+          onStart={() => startEdit("phone")} onSave={saveField} onCancel={() => setEditing(null)} type="tel" />
+        <EditableCard label="Adresse" field="address" value={client.address}
+          editing={editing === "address"} draft={draft} setDraft={setDraft} saving={saving}
+          onStart={() => startEdit("address")} onSave={saveField} onCancel={() => setEditing(null)} />
       </div>
 
       <ClientOnboarding clientId={client.id} mode="admin" />
@@ -127,11 +155,35 @@ export default function ClientDetail() {
   );
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function EditableCard({
+  label, value, editing, draft, setDraft, saving, onStart, onSave, onCancel, type,
+}: {
+  label: string; field: string; value: string | null;
+  editing: boolean; draft: string; setDraft: (s: string) => void; saving: boolean;
+  onStart: () => void; onSave: () => void; onCancel: () => void; type?: string;
+}) {
   return (
-    <Card className="p-4">
+    <Card className="p-4 cursor-pointer" onClick={() => { if (!editing) onStart(); }}>
       <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className="text-sm mt-1">{value}</div>
+      {editing ? (
+        <div className="flex items-center gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+          <Input
+            autoFocus
+            type={type ?? "text"}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onSave();
+              if (e.key === "Escape") onCancel();
+            }}
+            className="h-8 text-sm"
+          />
+          <Button size="sm" onClick={onSave} disabled={saving}>OK</Button>
+          <Button size="sm" variant="ghost" onClick={onCancel} disabled={saving}>×</Button>
+        </div>
+      ) : (
+        <div className="text-sm mt-1">{value || "—"}</div>
+      )}
     </Card>
   );
 }
