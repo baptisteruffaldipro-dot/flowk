@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { PROJECT_TYPE_LABEL, STATUS_LABEL, PRINT_STATUS_LABEL, BAT_STATUS_LABEL, fmtDate, fmtDateTime } from "@/lib/format";
+import { PROJECT_TYPE_LABEL, STATUS_LABEL, PRINT_STATUS_LABEL, BAT_STATUS_LABEL, INVOICE_STATUS_LABEL, fmtDate, fmtDateTime, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 
 export default function ProjectDetail() {
@@ -31,6 +31,7 @@ export default function ProjectDetail() {
   const [strategies, setStrategies] = useState<any[]>([]);
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
 
   const load = async () => {
     if (!id) return;
@@ -48,6 +49,7 @@ export default function ProjectDetail() {
 
     const clientId = p.data?.client_id;
     if (clientId) {
+      const taskIds = (t.data ?? []).map((x: any) => x.id);
       const [po, ba, st, qs, ap] = await Promise.all([
         supabase.from("print_orders").select("id,description,status,created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("bats").select("id,title,status,created_at").eq("client_id", clientId).order("created_at", { ascending: false }),
@@ -60,8 +62,21 @@ export default function ProjectDetail() {
       setStrategies(st.data ?? []);
       setQuestionnaires(qs.data ?? []);
       setAppointments(ap.data ?? []);
+
+      const printIds = (po.data ?? []).map((x: any) => x.id);
+      const invQueries: any[] = [];
+      if (taskIds.length) invQueries.push(supabase.from("invoices").select("*").in("task_id", taskIds));
+      if (printIds.length) invQueries.push(supabase.from("invoices").select("*").in("print_order_id", printIds));
+      const invResults = await Promise.all(invQueries);
+      const merged: any[] = [];
+      const seen = new Set<string>();
+      invResults.forEach((r: any) => (r.data ?? []).forEach((row: any) => {
+        if (!seen.has(row.id)) { seen.add(row.id); merged.push(row); }
+      }));
+      merged.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+      setInvoices(merged);
     } else {
-      setPrintOrders([]); setBats([]); setStrategies([]); setQuestionnaires([]); setAppointments([]);
+      setPrintOrders([]); setBats([]); setStrategies([]); setQuestionnaires([]); setAppointments([]); setInvoices([]);
     }
   };
   useEffect(() => { load(); }, [id]);
