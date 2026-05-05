@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -204,7 +205,16 @@ export default function ProjectDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
-          <h2 className="text-sm font-semibold mb-3">Brief & notes</h2>
+          <div className="flex items-center justify-between mb-3 gap-3">
+            <h2 className="text-sm font-semibold">Brief & notes</h2>
+            <label className="inline-flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <Switch
+                checked={project.brief_required !== false}
+                onCheckedChange={(v) => updateField({ brief_required: v })}
+              />
+              Brief requis
+            </label>
+          </div>
           <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
