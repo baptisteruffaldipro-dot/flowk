@@ -39,18 +39,6 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
         supabase.from("print_orders").select("id,description,status,amount,estimated_delivery_date,bat_file_path,bat_validated_at,bat_rejected_at").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("bats").select("id,title,status,validated_at,project_id").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*, tasks(id, project_id)").eq("client_id", clientId).order("created_at", { ascending: false }),
-  const invoiceHref = (i: any): string | null => {
-    if (i.task_id) {
-      if (mode === "admin") return `/taches/${i.task_id}`;
-      const pid = i.tasks?.project_id;
-      return pid ? `/portail/projet/${pid}` : null;
-    }
-    if (i.print_order_id) {
-      return mode === "admin" ? `/impressions/${i.print_order_id}` : `/portail/impression/${i.print_order_id}`;
-    }
-    return null;
-  };
-
         supabase.from("appointments").select("id,title,start_at,duration_minutes,location,type,status").eq("client_id", clientId).gte("start_at", nowIso).order("start_at", { ascending: true }),
       ]);
       setProjects(p.data ?? []);
@@ -84,6 +72,18 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const totalInv = invoices.reduce((s, i) => s + Number(i.amount ?? 0), 0);
   const paidInv = invoices.filter((i) => i.status === "payee").reduce((s, i) => s + Number(i.amount ?? 0), 0);
   const pendingInv = totalInv - paidInv;
+
+  const invoiceHref = (i: any): string | null => {
+    if (i.task_id) {
+      if (mode === "admin") return `/taches/${i.task_id}`;
+      const pid = i.tasks?.project_id;
+      return pid ? `/portail/projet/${pid}` : null;
+    }
+    if (i.print_order_id) {
+      return mode === "admin" ? `/impressions/${i.print_order_id}` : `/portail/impression/${i.print_order_id}`;
+    }
+    return null;
+  };
 
   const updateInvoiceStatus = async (id: string, status: string) => {
     const patch: any = { status };
