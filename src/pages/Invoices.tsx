@@ -241,6 +241,19 @@ export default function Invoices() {
                         <FileText className="h-2.5 w-2.5" /> {i.questionnaire.title}
                       </Badge>
                     )}
+                    {i.installments?.length > 0 && (() => {
+                      const paid = i.installments.reduce((s: number, x: any) => s + Number(x.paid_amount), 0);
+                      const total = Number(i.amount);
+                      const today = new Date().toISOString().slice(0,10);
+                      const overdue = i.installments.filter((x: any) => !x.paid_at && x.due_date < today).length;
+                      return (
+                        <Badge variant="outline" className="text-[10px] gap-1">
+                          <CalendarClock className="h-2.5 w-2.5" />
+                          {fmtMoney(paid)} / {fmtMoney(total)}
+                          {overdue > 0 && <span className="text-destructive">· {overdue} en retard</span>}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="col-span-2 text-xs text-muted-foreground">
