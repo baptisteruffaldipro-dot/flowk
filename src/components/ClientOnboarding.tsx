@@ -51,7 +51,13 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tasksInProgress = tasks.filter((t) => !t.delivered_at && !["payee", "facturee", "facture_envoyee", "archive"].includes(t.status));
-  const briefsToFill = projects.filter((p) => !p.brief_submitted_at);
+  const hasBriefContent = (p: any) => {
+    const b = p.brief;
+    if (!b || typeof b !== "object") return false;
+    return Object.values(b).some((v) => typeof v === "string" ? v.trim().length > 0 : v != null && v !== "");
+  };
+  const isBriefDone = (p: any) => !!p.brief_submitted_at || hasBriefContent(p);
+  const briefsToFill = projects.filter((p) => !isBriefDone(p));
   const batsToValidate = [
     ...orders.filter((o) => o.bat_file_path && !o.bat_validated_at && !o.bat_rejected_at).map((o) => ({ id: o.id, title: o.description, kind: "order" as const, status: "À valider" })),
     ...bats.filter((b) => b.status === "en_relecture").map((b) => ({ id: b.id, title: b.title, kind: "bat" as const, status: BAT_STATUS_LABEL[b.status] })),
@@ -98,7 +104,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
         {projects.length === 0 ? <Empty text="Aucun projet" /> : projects.map((p) => {
           const pTasks = tasks.filter((t) => t.project_id === p.id);
           const done = pTasks.filter((t) => t.delivered_at || ["payee", "facturee", "facture_envoyee"].includes(t.status)).length;
-          const pct = pTasks.length ? Math.round((done / pTasks.length) * 100) : (p.brief_submitted_at ? 10 : 0);
+          const pct = pTasks.length ? Math.round((done / pTasks.length) * 100) : (isBriefDone(p) ? 10 : 0);
           const late = pTasks.some((t) => t.deadline && !t.delivered_at && new Date(t.deadline) < today);
           return (
             <Link key={p.id} to={projHref(p)} className="block p-3 hover:bg-secondary/60 transition">
@@ -111,7 +117,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {!p.brief_submitted_at && <Badge variant="outline" className="text-[10px]">Brief à remplir</Badge>}
+                  {!isBriefDone(p) && <Badge variant="outline" className="text-[10px]">Brief à remplir</Badge>}
                   {late && <Badge className="bg-rose-500 hover:bg-rose-500 text-[10px]">En retard</Badge>}
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -170,12 +176,16 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
             <div className="min-w-0">
               <div className="text-sm truncate">{p.name}</div>
               <div className="text-[11px] text-muted-foreground">
-                {p.brief_submitted_at ? `Soumis le ${fmtDateTime(p.brief_submitted_at)}` : "À remplir"}
+                {p.brief_submitted_at
+                  ? `Soumis le ${fmtDateTime(p.brief_submitted_at)}`
+                  : hasBriefContent(p) ? "Rempli (non soumis)" : "À remplir"}
               </div>
             </div>
             {p.brief_submitted_at
               ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Reçu</Badge>
-              : <Badge variant="outline" className="text-[10px]">En attente</Badge>}
+              : hasBriefContent(p)
+                ? <Badge className="bg-emerald-500/80 hover:bg-emerald-500/80 text-[10px]">Rempli</Badge>
+                : <Badge variant="outline" className="text-[10px]">En attente</Badge>}
           </Link>
         ))}
       </Section>
