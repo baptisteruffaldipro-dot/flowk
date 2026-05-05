@@ -649,6 +649,7 @@ export type Database = {
         Row: {
           archived: boolean
           brief: Json | null
+          brief_required: boolean
           brief_submitted_at: string | null
           client_id: string
           created_at: string
@@ -663,6 +664,7 @@ export type Database = {
         Insert: {
           archived?: boolean
           brief?: Json | null
+          brief_required?: boolean
           brief_submitted_at?: string | null
           client_id: string
           created_at?: string
@@ -677,6 +679,7 @@ export type Database = {
         Update: {
           archived?: boolean
           brief?: Json | null
+          brief_required?: boolean
           brief_submitted_at?: string | null
           client_id?: string
           created_at?: string

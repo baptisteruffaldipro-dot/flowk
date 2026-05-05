@@ -1,0 +1,1 @@
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS brief_required boolean NOT NULL DEFAULT true;
