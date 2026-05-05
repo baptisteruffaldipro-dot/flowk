@@ -26,6 +26,21 @@ export default function PrestationPicker({
     ? entries.filter(([, label]) => (label as string).toLowerCase().includes(q.toLowerCase()))
     : entries;
 
+  const qTrim = q.trim();
+  const existsInList = entries.some(
+    ([key, label]) =>
+      (label as string).toLowerCase() === qTrim.toLowerCase() ||
+      key.toLowerCase() === qTrim.toLowerCase()
+  );
+  const alreadySelected = (value ?? []).some((k) => k.toLowerCase() === qTrim.toLowerCase());
+  const canAddCustom = qTrim.length > 0 && !existsInList && !alreadySelected;
+
+  const addCustom = () => {
+    if (!canAddCustom) return;
+    onChange([...(value ?? []), qTrim]);
+    setQ("");
+  };
+
   const toggle = (key: string) => {
     const next = selected.has(key)
       ? (value ?? []).filter((k) => k !== key)
@@ -69,7 +84,13 @@ export default function PrestationPicker({
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher…"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && canAddCustom) {
+                e.preventDefault();
+                addCustom();
+              }
+            }}
+            placeholder="Rechercher ou ajouter…"
             className="h-8 mb-1 text-xs"
             autoFocus
           />
@@ -88,8 +109,17 @@ export default function PrestationPicker({
                 </button>
               );
             })}
-            {filtered.length === 0 && (
+            {filtered.length === 0 && !canAddCustom && (
               <div className="px-2 py-1.5 text-xs text-muted-foreground">Aucun résultat</div>
+            )}
+            {canAddCustom && (
+              <button
+                type="button"
+                onClick={addCustom}
+                className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-accent inline-flex items-center gap-2 border-t mt-1 pt-2 text-primary"
+              >
+                <Plus className="h-3 w-3" /> Ajouter « {qTrim} »
+              </button>
             )}
           </div>
         </PopoverContent>
