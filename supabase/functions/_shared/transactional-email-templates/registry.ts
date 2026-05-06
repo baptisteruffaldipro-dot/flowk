@@ -11,8 +11,10 @@ export interface TemplateEntry {
 
 import { template as batReady } from './bat-ready.tsx'
 import { template as filesDelivered } from './files-delivered.tsx'
+import { template as onboardingReady } from './onboarding-ready.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'bat-ready': batReady,
   'files-delivered': filesDelivered,
+  'onboarding-ready': onboardingReady,
 }
