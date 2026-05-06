@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json()
     const clientId: string = body?.client_id
+    const resend: boolean = !!body?.resend
     if (!clientId) return json({ error: 'client_id required' }, 400)
 
     const admin = createClient(supabaseUrl, serviceKey)
@@ -40,13 +41,25 @@ Deno.serve(async (req) => {
       .maybeSingle()
     if (cErr || !client) return json({ error: 'Client introuvable' }, 404)
     if (!client.email) return json({ error: 'Email du client manquant' }, 400)
-    if (client.portal_user_id) return json({ error: 'Client déjà invité' }, 400)
+    if (client.portal_user_id && !resend) return json({ error: 'Client déjà invité' }, 400)
 
     const origin = req.headers.get('origin') ?? ''
     const redirectTo = `${origin}/portail`
 
-    // Try invite first; if email already registered, fall back to magic link
     let userId: string | null = null
+
+    if (client.portal_user_id && resend) {
+      // Resend: generate a magic link for an existing portal user
+      const { data: link, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: client.email,
+        options: { redirectTo },
+      })
+      if (linkErr || !link?.user) return json({ error: linkErr?.message ?? 'Renvoi impossible' }, 400)
+      return json({ ok: true, user_id: link.user.id, resent: true })
+    }
+
+    // Try invite first; if email already registered, fall back to magic link
     const { data: invite, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(client.email, {
       redirectTo,
       data: { full_name: client.name },
