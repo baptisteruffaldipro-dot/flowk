@@ -1,102 +1,43 @@
-# Plan — App de gestion projets graphiques
+## Contexte
 
-Une application web minimaliste (style Notion/Linear) pour gérer ton activité de graphiste de bout en bout, avec un portail dédié à tes clients.
+Diagnostic effectué :
+- Domaine `notify.atelier-rufo.fr` ✅ vérifié
+- Dernière invitation portail à `pierrealexandre@leothemis.fr` → statut **`sent`** sans erreur. Le système marche, le mail est probablement en spam ou filtré.
+- La création d'un onboarding **n'envoie actuellement aucun email**.
 
-## Authentification & rôles
+## Ce qu'on va ajouter
 
-- Connexion par email/mot de passe + Google.
-- Deux rôles : **admin** (toi) et **client**.
-- Tu invites un client par email depuis sa fiche → il reçoit un lien pour  accéder uniquement à ses projets sans mot de passe ou inscription.
+### 1. Email automatique à la création/envoi d'un onboarding
+- Nouveau template transactionnel `onboarding-ready.tsx` (branding identique au mail d'invitation portail).
+- Sujet : « Votre espace onboarding est prêt »
+- Contenu : nom du client, lien direct vers son portail (`/portail`) ou page dédiée onboarding, message court invitant à compléter les infos.
+- Déclencheur : dans `ClientOnboarding.tsx` (mode admin), à la création de l'onboarding (ou via un bouton « Envoyer au client » à côté), on appelle `send-transactional-email` avec `templateName: "onboarding-ready"` et `recipientEmail: client.email`.
+- Garde-fous : ne s'envoie que si le client a un email ; idempotency key = `onboarding-ready-<client_id>` pour éviter les doublons.
+- Toast UI confirmant l'envoi.
 
-## Espace admin (toi)
+### 2. Bouton « Renvoyer l'invitation portail »
+- Dans `ClientDetail.tsx`, quand `portal_user_id` existe (donc déjà invité), afficher en plus du badge « Portail activé » un bouton secondaire **« Renvoyer l'invitation »**.
+- Modifier la fonction edge `invite-client` : accepter un flag `resend: true` qui, au lieu de bloquer si déjà invité, génère un nouveau magic link via `admin.auth.admin.generateLink({ type: 'magiclink' })` et déclenche l'envoi (le hook `auth-email-hook` existant rend le template `invite.tsx`).
+- Toast UI « Invitation renvoyée ».
 
-### 1. Dashboard principal
-
-Trois vues côte à côte (cartes/colonnes) :
-
-- **Tâches à faire** — regroupées par statut (À faire, Aujourd'hui, En attente).
-- **Impressions en cours** — commandes avec statut actif (en attente BAT, en impression, expédiée).
-- **Gestion budgétaire** — tâches "À facturer" + factures à envoyer, avec montants cumulés.
-- Un bouton Nouveau + (Client, projet, client, impression,...)
-
-Compteurs en haut : nb tâches du jour, CA en attente de facturation, BAT en attente de validation client.
-
-### 2. Clients
-
-- Liste + fiche client : coordonnées, projets liés, tâches, commandes impression, historique factures.
-- Bouton "Inviter au portail" 
-
-### 3. Projets
-
-Rattachés à un client. Contiennent :
-
-- Mini Brief / questionnaire (réponses du client) / Notes / indications clients / ...
-- Type (identité graphique, support com, etc.) + supports liés.
-- Tâches associées, fichiers, commandes impression.
-
-### 4. Tâches
-
-- Statuts : À faire / En attente / Aujourd'hui / Envoyé / À facturer / Archivé.
-- Champs : client, projet, prestation (Mise en page, Création, Logo, Impression, Devis, Moodboard, Ajustements…), deadline, montant (taux horaire ou forfait), notes, sous-tâches (checklist), nb retours clients.
-- **Timer intégré** : démarrer / mettre en pause / arrêter. À chaque démarrage ou reprise, une petite popup demande de **valider le temps estimé** ; à l'arrêt, comparaison estimé vs réel affichée pour ajuster la facturation.
-- Vue liste filtrable + vue Kanban par statut.
-- **Envoi automatique des fichiers finaux par email** au client possible
-
-### 5. Commandes impression
-
-- Client, projet, description, statut (BAT en attente, Validé, En impression, Expédié, Livré), montant prestation, temps passé global, fichiers.
-- **Système de validation BAT** : tu uploades le BAT, le client le valide depuis son portail (avec annotations possibles).
-- **Envoi automatique des fichiers finaux par email** au client une fois la commande marquée "prête".
-
-### 6. Gestion budgétaire (suivi simple)
-
-- Liste des prestations à facturer (issues des tâches "À facturer") avec montants.
-- Statuts manuels : À facturer / Facturée / Payée.
-- Pas de génération PDF — juste suivi et totaux (CA mois, en attente, payé).
-
-## Portail client
-
-Vue épurée, uniquement ses données :
-
-- **Mes projets** : avancement, fichiers livrés à télécharger.
-- **Brief / questionnaire** à remplir pour chaque nouveau projet.
-- **BAT à valider** : visionneuse de documents (PDF/images) avec **annotations** (clics-commentaires sur le document) + bouton "Valider le BAT" ou "Demander modification".
-- **Factures & devis** : liste consultable avec statut.
-- Notifications email à chaque BAT à valider ou fichier livré.
-- Upload fichiers vers graphiste, 
-- Demande de prise de rdv ou contact
-
-## Système de retours / annotations BAT
-
-- Visionneuse intégrée affichant le document.
-- Le client clique sur une zone → ajoute un commentaire épinglé.
-- Tu vois les annotations dans ta fiche tâche/commande, tu réponds, le compteur "nb retours clients" s'incrémente.
-- Validation finale en un clic = statut "BAT validé" + notification email pour toi.
-
-## Style & UX
-
-- Design minimaliste clair (blanc, typo soignée, beaucoup d'espace, accents discrets).
-- Navigation sidebar gauche : Dashboard · Clients · Projets · Tâches · Impressions · Facturation.
-- Responsive (utilisable depuis mobile pour consulter et démarrer un timer).
+### 3. Préalable email transactionnel
+- L'infrastructure `send-transactional-email` est déjà déployée (templates `bat-ready` et `files-delivered` existent).
+- Il suffit d'ajouter le nouveau template dans `_shared/transactional-email-templates/onboarding-ready.tsx` et de le référencer dans `registry.ts`, puis redéployer `send-transactional-email`.
 
 ## Détails techniques
 
-- React + Tailwind + shadcn/ui.
-- **Lovable Cloud** pour l'auth, la base de données (clients, projets, tâches, commandes, time entries, annotations, factures), le stockage de fichiers (BAT, livrables) et l'envoi des emails (invitations portail, livraison fichiers, notifications BAT).
-- Rôles stockés dans une table dédiée `user_roles` avec RLS pour cloisonner strictement chaque client à ses propres données.
-- Timer persisté côté base (résiste au refresh / changement d'appareil).
-- Visionneuse PDF via `react-pdf`, annotations stockées en base avec coordonnées x/y + page.
+**Fichiers créés**
+- `supabase/functions/_shared/transactional-email-templates/onboarding-ready.tsx`
 
-## Approche de livraison
+**Fichiers modifiés**
+- `supabase/functions/_shared/transactional-email-templates/registry.ts` (enregistrer template)
+- `supabase/functions/invite-client/index.ts` (support `resend`)
+- `src/components/ClientOnboarding.tsx` (envoi à la création, mode admin)
+- `src/pages/ClientDetail.tsx` (bouton « Renvoyer l'invitation »)
 
-Vu la taille, je propose de construire en 3 vagues après approbation :
+**Déploiements**
+- `send-transactional-email`, `invite-client`
 
-1. **Fondations** : auth + rôles, schéma BDD, clients, projets, tâches avec timer, dashboard.
-2. **Impressions & facturation** : commandes impression, suivi facturation, emails automatiques.
-3. **Portail client & BAT** : accès client, brief, visionneuse + annotations, validation BAT.
+## Vérification après implémentation
 
-Tu pourras tester chaque vague avant de passer à la suivante.
-
-## Backlog
-
-(Lot 6 livré : deadline + date de création projets, page Agenda des réalisations, récap onboarding client par projet)
+Je relancerai un envoi de test et vérifierai dans `email_send_log` que le statut passe à `sent`. Pour la non-réception du mail précédent, je te recommande de vérifier le dossier spam/promotions de `pierrealexandre@leothemis.fr` — le système a bien envoyé, c'est très probablement un filtre côté destinataire.

@@ -18,6 +18,7 @@ export default function ClientDetail() {
   const navigate = useNavigate();
   const [client, setClient] = useState<any>(null);
   const [inviting, setInviting] = useState(false);
+  const [resending, setResending] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState<null | "email" | "phone" | "address">(null);
   const [draft, setDraft] = useState("");
@@ -65,6 +66,18 @@ export default function ClientDetail() {
     setClient(c);
   };
 
+  const resendInvite = async () => {
+    if (!client.email) return toast.error("Email manquant");
+    setResending(true);
+    const { data, error } = await supabase.functions.invoke("invite-client", { body: { client_id: client.id, resend: true } });
+    setResending(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error ?? error?.message ?? "Échec du renvoi");
+      return;
+    }
+    toast.success("Invitation renvoyée par email");
+  };
+
   const deleteClient = async () => {
     if (!id) return;
     setDeleting(true);
@@ -105,9 +118,14 @@ export default function ClientDetail() {
         actions={
           <div className="flex items-center gap-2">
             {client.portal_user_id ? (
-              <span className="text-xs inline-flex items-center gap-1 text-emerald-600">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Portail activé
-              </span>
+              <>
+                <span className="text-xs inline-flex items-center gap-1 text-emerald-600">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Portail activé
+                </span>
+                <Button size="sm" variant="outline" onClick={resendInvite} disabled={resending}>
+                  <Mail className="h-4 w-4 mr-1" /> {resending ? "Envoi…" : "Renvoyer l'invitation"}
+                </Button>
+              </>
             ) : (
               <Button size="sm" variant="outline" onClick={invite} disabled={inviting || !client.email}>
                 <Mail className="h-4 w-4 mr-1" /> {inviting ? "Envoi…" : "Inviter au portail"}

@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink } from "lucide-react";
+import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   fmtMoney,
   fmtDate,
@@ -27,6 +28,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const [bats, setBats] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [sendingOnboarding, setSendingOnboarding] = useState(false);
+  const [clientInfo, setClientInfo] = useState<{ name: string | null; email: string | null } | null>(null);
 
   useEffect(() => {
     if (!clientId) return;
@@ -50,6 +53,34 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       setLoading(false);
     })();
   }, [clientId]);
+
+  useEffect(() => {
+    if (!clientId || mode !== "admin") return;
+    (async () => {
+      const { data } = await supabase.from("clients").select("name,email").eq("id", clientId).maybeSingle();
+      if (data) setClientInfo({ name: data.name, email: data.email });
+    })();
+  }, [clientId, mode]);
+
+  const sendOnboardingEmail = async () => {
+    if (!clientInfo?.email) return toast.error("Le client n'a pas d'email enregistré");
+    setSendingOnboarding(true);
+    const portalUrl = `${window.location.origin}/portail`;
+    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "onboarding-ready",
+        recipientEmail: clientInfo.email,
+        idempotencyKey: `onboarding-ready-${clientId}-${Date.now()}`,
+        templateData: { name: clientInfo.name ?? undefined, portalUrl },
+      },
+    });
+    setSendingOnboarding(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error ?? error?.message ?? "Échec de l'envoi");
+      return;
+    }
+    toast.success(`Email envoyé à ${clientInfo.email}`);
+  };
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tasksInProgress = tasks.filter((t) => !t.delivered_at && !["payee", "facturee", "facture_envoyee", "archive"].includes(t.status));
@@ -106,6 +137,14 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
 
   return (
     <div className="space-y-6">
+      {mode === "admin" && (
+        <div className="flex items-center justify-end">
+          <Button size="sm" variant="outline" onClick={sendOnboardingEmail} disabled={sendingOnboarding || !clientInfo?.email}>
+            <Mail className="h-4 w-4 mr-1" />
+            {sendingOnboarding ? "Envoi…" : "Envoyer l'onboarding par email"}
+          </Button>
+        </div>
+      )}
       {/* Bandeaux d'alerte */}
       {batsToValidate.length > 0 && (
         <div className="grid gap-3 md:grid-cols-2">
