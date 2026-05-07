@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Trash2, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import {
@@ -41,7 +42,7 @@ export default function ProjectDetail() {
     if (!id) return;
     const [p, t, c, all] = await Promise.all([
       supabase.from("projects").select("*, clients(id,name)").eq("id", id).maybeSingle(),
-      supabase.from("tasks").select("id,title,status").eq("project_id", id).order("created_at", { ascending: false }),
+      supabase.from("tasks").select("id,title,status,delivered_at,position,created_at").eq("project_id", id).order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("tasks").select("id,title,status,client_id,project_id,clients(name)").is("project_id", null).order("created_at", { ascending: false }),
     ]);
@@ -152,6 +153,9 @@ export default function ProjectDetail() {
 
   if (!project) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
+  const doneTasks = tasks.filter((t) => t.delivered_at || ["payee", "facturee", "facture_envoyee"].includes(t.status));
+  const progressPct = tasks.length ? Math.round((doneTasks.length / tasks.length) * 100) : 0;
+
   return (
     <div className="p-4 md:p-8 max-w-[1200px] mx-auto">
       <Link to="/projets" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4">
@@ -223,6 +227,21 @@ export default function ProjectDetail() {
           </div>
         </div>
       </Card>
+
+      {tasks.length > 0 && (
+        <Card className="p-5 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold">Progression</h2>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {doneTasks.length}/{tasks.length} · {progressPct}%
+            </span>
+          </div>
+          <Progress value={progressPct} className="h-2" />
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Une tâche compte comme faite dès qu'elle est livrée ou facturée.
+          </p>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
