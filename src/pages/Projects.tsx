@@ -17,6 +17,7 @@ import { Plus, Copy, Archive, ArchiveRestore, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PROJECT_TYPE_LABEL, fmtDate } from "@/lib/format";
 import ClientSelectField from "@/components/ClientSelectField";
+import { PROJECT_TASK_TEMPLATES } from "@/lib/projectTaskTemplates";
 
 export default function Projects() {
   const [projects, setProjects] = useState<any[]>([]);
@@ -41,14 +42,26 @@ export default function Projects() {
   const create = async () => {
     if (!form.name.trim()) return toast.error("Nom requis");
     if (!form.client_id) return toast.error("Client requis");
-    const { error } = await supabase.from("projects").insert({
+    const { data: created, error } = await supabase.from("projects").insert({
       name: form.name.trim(),
       client_id: form.client_id,
       type: form.type as any,
       description: form.description || null,
       deadline: form.deadline || null,
-    });
+    }).select("id").single();
     if (error) return toast.error(error.message);
+    // Auto-créer les sous-tâches selon le type de projet
+    const template = PROJECT_TASK_TEMPLATES[form.type];
+    if (created?.id && template) {
+      const rows = template.map((title, idx) => ({
+        title,
+        project_id: created.id,
+        client_id: form.client_id,
+        status: "a_faire" as const,
+        position: idx,
+      }));
+      await supabase.from("tasks").insert(rows);
+    }
     toast.success("Projet créé");
     setForm({ name: "", client_id: "", type: "autre", description: "", deadline: "" });
     setOpen(false);
