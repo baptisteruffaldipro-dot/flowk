@@ -229,7 +229,7 @@ function KanbanCard({
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   const navigate = useNavigate();
-  const projectName = task.projects?.name ?? task.title;
+  const projectName = task.title?.trim() ? task.title : (task.projects?.name ?? "Sans titre");
   const showPrestation = !!task.projects?.name;
   return (
     <div
