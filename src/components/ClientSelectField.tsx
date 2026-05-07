@@ -34,13 +34,16 @@ export default function ClientSelectField({
   const [busy, setBusy] = useState(false);
 
   const create = async () => {
-    if (!form.name.trim()) return toast.error("Nom requis");
+    const company = form.company.trim();
+    const name = form.name.trim();
+    if (!company && !name) return toast.error("Société ou contact requis");
+    const finalName = name || company;
     setBusy(true);
     const { data, error } = await supabase
       .from("clients")
       .insert({
-        name: form.name.trim(),
-        company: form.company.trim() || null,
+        name: finalName,
+        company: company || null,
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
       })
@@ -98,12 +101,12 @@ export default function ClientSelectField({
           <DialogHeader><DialogTitle>Nouveau client</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nom *</Label>
-              <Input autoFocus value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Label className="text-xs">Société *</Label>
+              <Input autoFocus value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Société</Label>
-              <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+              <Label className="text-xs">Contact</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
