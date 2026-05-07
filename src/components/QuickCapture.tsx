@@ -69,11 +69,13 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "" });
   const [newClientBusy, setNewClientBusy] = useState(false);
   const createNewClient = async () => {
-    if (!newClient.name.trim()) return toast.error("Nom requis");
+    const company = newClient.company.trim();
+    const name = newClient.name.trim();
+    if (!company && !name) return toast.error("Société ou contact requis");
     setNewClientBusy(true);
     const { data, error } = await supabase.from("clients").insert({
-      name: newClient.name.trim(),
-      company: newClient.company.trim() || null,
+      name: name || company,
+      company: company || null,
       email: newClient.email.trim() || null,
       phone: newClient.phone.trim() || null,
     }).select("id,name,company").single();
@@ -642,12 +644,12 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
         <DialogHeader><DialogTitle>Nouveau client</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label className="text-xs">Nom *</Label>
-            <Input autoFocus value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} />
+            <Label className="text-xs">Société *</Label>
+            <Input autoFocus value={newClient.company} onChange={(e) => setNewClient({ ...newClient, company: e.target.value })} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Société</Label>
-            <Input value={newClient.company} onChange={(e) => setNewClient({ ...newClient, company: e.target.value })} />
+            <Label className="text-xs">Contact</Label>
+            <Input value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
