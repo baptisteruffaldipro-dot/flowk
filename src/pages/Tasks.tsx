@@ -895,7 +895,7 @@ export default function Tasks() {
               <div className="divide-y">
                 {filteredTasks.map((t) => (
                   <Link key={t.id} to={`/taches/${t.id}`} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-secondary/40 items-center text-sm">
-                    <div className="col-span-5 truncate font-medium">{t.projects?.name ?? t.title}</div>
+                    <div className="col-span-5 truncate font-medium">{t.title?.trim() ? t.title : (t.projects?.name ?? "Sans titre")}</div>
                     <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
                     <div className="col-span-1 text-muted-foreground text-xs truncate">
                       {(() => {
@@ -951,7 +951,7 @@ export default function Tasks() {
               {activeTask ? (
                 <Card className="p-4 shadow-2xl cursor-grabbing rotate-2 border border-border">
                   <div className="text-[15px] font-semibold leading-snug mb-2">
-                    {activeTask.projects?.name ?? activeTask.title}
+                    {activeTask.title?.trim() ? activeTask.title : (activeTask.projects?.name ?? "Sans titre")}
                   </div>
                   {activeTask.clients?.name && (
                     <Badge variant="outline" className={`text-[11px] ${tagColor(activeTask.clients.name)}`}>
