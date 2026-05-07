@@ -440,13 +440,31 @@ function DividerRow({
   const [value, setValue] = useState(divider.label);
   useEffect(() => setValue(divider.label), [divider.label]);
   const { setNodeRef, isOver } = useDroppable({ id: `divider:${divider.id}` });
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    isDragging,
+  } = useDraggable({ id: `divider-drag:${divider.id}` });
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => { setNodeRef(node); setDragRef(node); }}
       className={`group rounded-md bg-background/40 border px-2 py-1.5 flex items-center gap-1 transition ${
         isOver ? "border-primary ring-1 ring-primary" : "border-border/40"
-      }`}
+      } ${isDragging ? "opacity-40" : ""}`}
     >
+      {!editing && (
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground/60 hover:text-muted-foreground touch-none"
+          aria-label="Déplacer le séparateur"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="h-3 w-3" />
+        </button>
+      )}
       {editing ? (
         <Input
           autoFocus
