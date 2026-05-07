@@ -535,6 +535,57 @@ export default function Tasks() {
     const { active, over } = e;
     if (!over) return;
     const overId = String(over.id);
+    const activeIdStr = String(active.id);
+
+    // === DIVIDER being dragged ===
+    if (activeIdStr.startsWith("divider-drag:")) {
+      const dividerId = activeIdStr.slice("divider-drag:".length);
+      const divider = dividers.find((d) => d.id === dividerId);
+      if (!divider) return;
+
+      let newStatus: Status = divider.status as Status;
+      let newPosition: number;
+
+      if (overId.startsWith("slot:")) {
+        const [, statusStr, idxStr] = overId.split(":");
+        newStatus = statusStr as Status;
+        const slotIndex = Number(idxStr);
+        const colTasks = tasks.filter((t) => t.status === newStatus);
+        const colDividers = dividers.filter((d) => d.status === newStatus && d.id !== dividerId);
+        const sorted = [
+          ...colTasks.map((t) => ({ pos: t.position ?? 0 })),
+          ...colDividers.map((d) => ({ pos: d.position ?? 0 })),
+        ].sort((a, b) => a.pos - b.pos);
+        const before = sorted[slotIndex - 1];
+        const after = sorted[slotIndex];
+        if (!before && !after) newPosition = 10;
+        else if (!before) newPosition = (after!.pos) - 5;
+        else if (!after) newPosition = before.pos + 10;
+        else newPosition = (before.pos + after.pos) / 2;
+      } else if (STATUSES.includes(overId as Status)) {
+        newStatus = overId as Status;
+        newPosition = maxPositionFor(newStatus) + 10;
+      } else {
+        return;
+      }
+
+      if (divider.status === newStatus && divider.position === newPosition) return;
+
+      const prev = dividers;
+      setDividers((ds) =>
+        ds.map((d) => (d.id === dividerId ? { ...d, status: newStatus, position: newPosition } : d))
+      );
+      const { error } = await supabase
+        .from("kanban_dividers")
+        .update({ status: newStatus, position: newPosition })
+        .eq("id", dividerId);
+      if (error) {
+        toast.error(error.message);
+        setDividers(prev);
+      }
+      return;
+    }
+
     const task = tasks.find((t) => t.id === String(active.id));
     if (!task) return;
 
