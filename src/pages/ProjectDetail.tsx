@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -26,6 +27,9 @@ export default function ProjectDetail() {
   const [clients, setClients] = useState<any[]>([]);
   const [availableTasks, setAvailableTasks] = useState<any[]>([]);
   const [linkValue, setLinkValue] = useState<string>("");
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [creatingTask, setCreatingTask] = useState(false);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
   const [bats, setBats] = useState<any[]>([]);
   const [strategies, setStrategies] = useState<any[]>([]);
@@ -93,6 +97,24 @@ export default function ProjectDetail() {
     if (error) return toast.error(error.message);
     toast.success("Tâche liée au projet");
     setLinkValue("");
+    load();
+  };
+
+  const createTask = async () => {
+    const title = newTaskTitle.trim();
+    if (!title) return toast.error("Titre requis");
+    if (!id) return;
+    setCreatingTask(true);
+    const { error } = await supabase.from("tasks").insert({
+      title,
+      project_id: id,
+      client_id: project?.client_id ?? null,
+    });
+    setCreatingTask(false);
+    if (error) return toast.error(error.message);
+    toast.success("Tâche créée");
+    setNewTaskTitle("");
+    setNewTaskOpen(false);
     load();
   };
 
@@ -215,7 +237,31 @@ export default function ProjectDetail() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="text-sm font-semibold mb-3">Tâches du projet</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold">Tâches du projet</h2>
+            <Dialog open={newTaskOpen} onOpenChange={setNewTaskOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Nouvelle tâche</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nouvelle tâche</DialogTitle></DialogHeader>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Titre *</Label>
+                  <Input
+                    autoFocus
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") createTask(); }}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button onClick={createTask} disabled={creatingTask}>
+                    {creatingTask ? "Création…" : "Créer"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
           <div className="mb-3">
             <Label className="text-xs">Lier une tâche existante</Label>
             <Select value={linkValue} onValueChange={linkTask}>

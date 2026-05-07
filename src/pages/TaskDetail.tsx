@@ -70,14 +70,16 @@ export default function TaskDetail() {
   useEffect(() => { load(); }, [id]);
 
   const createClient = async () => {
-    if (!newClientName.trim()) return;
+    const company = newClientCompany.trim();
+    const name = newClientName.trim();
+    if (!company && !name) { toast.error("Société ou contact requis"); return; }
     setCreatingClient(true);
     const { data, error } = await supabase
       .from("clients")
       .insert({
-        name: newClientName.trim(),
+        name: name || company,
         email: newClientEmail.trim() || null,
-        company: newClientCompany.trim() || null,
+        company: company || null,
       })
       .select("id,name")
       .single();
@@ -658,12 +660,12 @@ export default function TaskDetail() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nom *</Label>
-              <Input value={newClientName} onChange={(e) => setNewClientName(e.target.value)} autoFocus />
+              <Label className="text-xs">Société *</Label>
+              <Input value={newClientCompany} onChange={(e) => setNewClientCompany(e.target.value)} autoFocus />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Société</Label>
-              <Input value={newClientCompany} onChange={(e) => setNewClientCompany(e.target.value)} />
+              <Label className="text-xs">Contact</Label>
+              <Input value={newClientName} onChange={(e) => setNewClientName(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Email</Label>
@@ -672,7 +674,7 @@ export default function TaskDetail() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewClientDialog(false)}>Annuler</Button>
-            <Button onClick={createClient} disabled={!newClientName.trim() || creatingClient}>
+            <Button onClick={createClient} disabled={(!newClientName.trim() && !newClientCompany.trim()) || creatingClient}>
               {creatingClient ? "Création…" : "Créer"}
             </Button>
           </DialogFooter>

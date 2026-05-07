@@ -115,10 +115,12 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
   };
 
   const createClient = async () => {
-    if (!client.name.trim()) return toast.error("Nom requis");
+    const company = client.company?.trim() || "";
+    const name = client.name?.trim() || "";
+    if (!company && !name) return toast.error("Société ou contact requis");
     const { data, error } = await supabase.from("clients").insert({
-      name: client.name.trim(),
-      company: client.company?.trim() || null,
+      name: name || company,
+      company: company || null,
       email: client.email?.trim() || null,
       phone: client.phone?.trim() || null,
     }).select("id").single();
@@ -450,12 +452,12 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
           <DialogHeader><DialogTitle>Nouveau client</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Nom *</Label>
-              <Input autoFocus value={client.name} onChange={(e) => setClient({ ...client, name: e.target.value })} />
+              <Label className="text-xs">Société *</Label>
+              <Input autoFocus value={client.company} onChange={(e) => setClient({ ...client, company: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Société</Label>
-              <Input value={client.company} onChange={(e) => setClient({ ...client, company: e.target.value })} />
+              <Label className="text-xs">Contact</Label>
+              <Input value={client.name} onChange={(e) => setClient({ ...client, name: e.target.value })} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">

@@ -18,12 +18,15 @@ import { detectDuplicatePlan, executeMergePlan, type MergePlan } from "@/lib/mer
 type Client = { id: string; name: string; company: string | null; email: string | null; phone: string | null };
 
 const schema = z.object({
-  name: z.string().trim().min(1, "Nom requis").max(120),
+  name: z.string().trim().max(120).optional().or(z.literal("")),
   company: z.string().trim().max(120).optional().or(z.literal("")),
   email: z.string().trim().email("Email invalide").max(255).optional().or(z.literal("")),
   phone: z.string().trim().max(40).optional().or(z.literal("")),
   address: z.string().trim().max(500).optional().or(z.literal("")),
   notes: z.string().trim().max(2000).optional().or(z.literal("")),
+}).refine((d) => (d.name && d.name.length > 0) || (d.company && d.company.length > 0), {
+  message: "Société ou contact requis",
+  path: ["company"],
 });
 
 export default function Clients() {
@@ -52,8 +55,9 @@ export default function Clients() {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+    const finalName = (parsed.data.name && parsed.data.name.trim()) || (parsed.data.company as string).trim();
     const { error } = await supabase.from("clients").insert({
-      name: parsed.data.name,
+      name: finalName,
       company: parsed.data.company || null,
       email: parsed.data.email || null,
       phone: parsed.data.phone || null,
@@ -166,8 +170,8 @@ export default function Clients() {
             <DialogContent>
               <DialogHeader><DialogTitle>Nouveau client</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <Field label="Nom *"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-                <Field label="Société"><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></Field>
+                <Field label="Société *"><Input autoFocus value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></Field>
+                <Field label="Contact"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Email"><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
                   <Field label="Téléphone"><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
