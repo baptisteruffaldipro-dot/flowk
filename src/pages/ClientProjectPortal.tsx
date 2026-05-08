@@ -92,11 +92,12 @@ export default function ClientProjectPortal() {
 
   // Progression globale du projet (basée sur tâches livrées)
   const totalTasks = tasks.length;
-  const deliveredTasks = tasks.filter((t) => t.delivered_at || t.status === "payee" || t.status === "facturee" || t.status === "facture_envoyee").length;
+  const DONE = ["envoye", "a_facturer", "facture_envoyee", "payee", "archive"];
+  const deliveredTasks = tasks.filter((t) => DONE.includes(t.status)).length;
   const overallProgress = totalTasks ? Math.round((deliveredTasks / totalTasks) * 100) : (submitted ? 10 : 0);
 
   // Jalons
-  const hasInProgress = tasks.some((t) => t.status !== "a_faire" && !t.delivered_at);
+  const hasInProgress = tasks.some((t) => t.status !== "a_faire" && !DONE.includes(t.status));
   const hasBat = bats.length > 0 || printOrders.some((o) => o.status === "validation_bat");
   const allDelivered = totalTasks > 0 && deliveredTasks === totalTasks;
   const milestones = [
@@ -152,7 +153,7 @@ export default function ClientProjectPortal() {
                 const taskSubs = subtasks.filter((s) => s.task_id === t.id);
                 const subDone = taskSubs.filter((s) => s.done).length;
                 const subPct = taskSubs.length ? Math.round((subDone / taskSubs.length) * 100) : null;
-                const isDelivered = !!t.delivered_at || ["payee", "facturee", "facture_envoyee"].includes(t.status);
+                const isDelivered = DONE.includes(t.status);
                 const dl = t.deadline ? new Date(t.deadline) : null;
                 const isLate = dl && !isDelivered && dl < today;
                 return (
