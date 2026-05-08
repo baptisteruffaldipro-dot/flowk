@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, CalendarCheck, ClipboardList, Send, Menu, Sparkle } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, CalendarCheck, ClipboardList, Send, Menu, Sparkle, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,14 @@ import { cn } from "@/lib/utils";
 import QuickCapture from "@/components/QuickCapture";
 import GlobalTimer from "@/components/GlobalTimer";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const nav = [
+type NavItem = { to: string; icon: any; label: string; end?: boolean; badgeKey?: "leads" };
+const nav: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/inbox", icon: Inbox, label: "Inbox" },
+  { to: "/leads", icon: UserPlus, label: "Leads", badgeKey: "leads" },
   { to: "/clients", icon: Users, label: "Clients" },
   { to: "/projets", icon: FolderKanban, label: "Projets" },
   { to: "/taches", icon: ListChecks, label: "Tâches" },
@@ -29,6 +33,32 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const [captureOpen, setCaptureOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [unreadLeads, setUnreadLeads] = useState(0);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      const { count } = await supabase
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .is("read_at", null);
+      setUnreadLeads(count ?? 0);
+    };
+    loadCount();
+    const channel = supabase
+      .channel("leads-sidebar")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "leads" }, (payload: any) => {
+        loadCount();
+        const l = payload.new;
+        toast.success("Nouveau lead reçu", {
+          description: l?.name || l?.email || l?.phone || "Nouveau contact",
+          action: { label: "Voir", onClick: () => navigate("/leads") },
+        });
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "leads" }, () => loadCount())
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "leads" }, () => loadCount())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [navigate]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -75,7 +105,12 @@ export default function AdminLayout() {
             }
           >
             <item.icon className="h-4 w-4" />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.badgeKey === "leads" && unreadLeads > 0 && (
+              <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-sky-500 text-white text-[10px] font-semibold">
+                {unreadLeads}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

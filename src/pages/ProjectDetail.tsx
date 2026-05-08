@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PROJECT_TYPE_LABEL, STATUS_LABEL, PRINT_STATUS_LABEL, BAT_STATUS_LABEL, INVOICE_STATUS_LABEL, fmtDate, fmtDateTime, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { computeTaskBilling } from "@/lib/billing";
+
+const DONE_STATUSES = new Set(["envoye", "a_facturer", "facture_envoyee", "payee", "archive"]);
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -42,7 +45,7 @@ export default function ProjectDetail() {
     if (!id) return;
     const [p, t, c, all] = await Promise.all([
       supabase.from("projects").select("*, clients(id,name)").eq("id", id).maybeSingle(),
-      supabase.from("tasks").select("id,title,status,delivered_at,position,created_at").eq("project_id", id).order("position", { ascending: true }),
+      supabase.from("tasks").select("*").eq("project_id", id).order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("tasks").select("id,title,status,client_id,project_id,clients(name)").is("project_id", null).order("created_at", { ascending: false }),
     ]);
@@ -153,8 +156,9 @@ export default function ProjectDetail() {
 
   if (!project) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
-  const doneTasks = tasks.filter((t) => t.delivered_at || ["payee", "facturee", "facture_envoyee"].includes(t.status));
+  const doneTasks = tasks.filter((t) => DONE_STATUSES.has(t.status));
   const progressPct = tasks.length ? Math.round((doneTasks.length / tasks.length) * 100) : 0;
+  const projectTotalHT = tasks.reduce((sum, t) => sum + computeTaskBilling(t).total, 0);
 
   return (
     <div className="p-4 md:p-8 max-w-[1200px] mx-auto">
@@ -237,8 +241,12 @@ export default function ProjectDetail() {
             </span>
           </div>
           <Progress value={progressPct} className="h-2" />
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+            <span className="text-xs text-muted-foreground">Total CA HT (toutes tâches)</span>
+            <span className="text-sm font-semibold tabular-nums">{fmtMoney(projectTotalHT)}</span>
+          </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Une tâche compte comme faite dès qu'elle est livrée ou facturée.
+            Une tâche compte comme faite dès qu'elle est envoyée, à facturer, facturée, payée ou archivée.
           </p>
         </Card>
       )}

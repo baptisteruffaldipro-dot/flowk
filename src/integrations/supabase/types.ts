@@ -569,6 +569,51 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          message: string | null
+          metadata: Json
+          name: string | null
+          phone: string | null
+          read_at: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          metadata?: Json
+          name?: string | null
+          phone?: string | null
+          read_at?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          metadata?: Json
+          name?: string | null
+          phone?: string | null
+          read_at?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       print_orders: {
         Row: {
           amount: number | null
@@ -1266,6 +1311,7 @@ export type Database = {
       capture_status: "a_traiter" | "traite" | "archive"
       invoice_billing_type: "forfait" | "horaire"
       invoice_status: "a_facturer" | "facturee" | "payee"
+      lead_status: "nouveau" | "contacte" | "qualifie" | "perdu" | "converti"
       prestation_type:
         | "mise_en_page"
         | "creation"
@@ -1494,6 +1540,7 @@ export const Constants = {
       capture_status: ["a_traiter", "traite", "archive"],
       invoice_billing_type: ["forfait", "horaire"],
       invoice_status: ["a_facturer", "facturee", "payee"],
+      lead_status: ["nouveau", "contacte", "qualifie", "perdu", "converti"],
       prestation_type: [
         "mise_en_page",
         "creation",

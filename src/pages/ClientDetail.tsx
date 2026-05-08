@@ -12,11 +12,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import ClientOnboarding from "@/components/ClientOnboarding";
+import { computeTaskBilling } from "@/lib/billing";
+import { fmtMoney } from "@/lib/format";
 
 export default function ClientDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [client, setClient] = useState<any>(null);
+  const [totalHT, setTotalHT] = useState(0);
+  const [taskCount, setTaskCount] = useState(0);
   const [inviting, setInviting] = useState(false);
   const [resending, setResending] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -29,6 +33,10 @@ export default function ClientDetail() {
     (async () => {
       const { data: c } = await supabase.from("clients").select("*").eq("id", id).maybeSingle();
       setClient(c);
+      const { data: tasks } = await supabase.from("tasks").select("*").eq("client_id", id);
+      const list = tasks ?? [];
+      setTaskCount(list.length);
+      setTotalHT(list.reduce((s, t) => s + computeTaskBilling(t).total, 0));
     })();
   }, [id]);
 
@@ -167,6 +175,16 @@ export default function ClientDetail() {
           editing={editing === "address"} draft={draft} setDraft={setDraft} saving={saving}
           onStart={() => startEdit("address")} onSave={saveField} onCancel={() => setEditing(null)} />
       </div>
+
+      <Card className="p-5 mb-6 bg-gradient-to-br from-primary/5 to-transparent">
+        <div className="flex items-baseline justify-between">
+          <div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">Solde total CA HT</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">{taskCount} tâche(s) · estimé toutes tâches confondues</div>
+          </div>
+          <div className="text-2xl font-semibold tabular-nums">{fmtMoney(totalHT)}</div>
+        </div>
+      </Card>
 
       <ClientOnboarding clientId={client.id} mode="admin" />
     </div>
