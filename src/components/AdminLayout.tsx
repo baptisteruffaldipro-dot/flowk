@@ -10,10 +10,11 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const nav = [
+type NavItem = { to: string; icon: any; label: string; end?: boolean; badgeKey?: "leads" };
+const nav: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/inbox", icon: Inbox, label: "Inbox" },
-  { to: "/leads", icon: UserPlus, label: "Leads", badgeKey: "leads" as const },
+  { to: "/leads", icon: UserPlus, label: "Leads", badgeKey: "leads" },
   { to: "/clients", icon: Users, label: "Clients" },
   { to: "/projets", icon: FolderKanban, label: "Projets" },
   { to: "/taches", icon: ListChecks, label: "Tâches" },
