@@ -73,6 +73,13 @@ Deno.serve(async (req) => {
     const source = clean(body.source, 100) ?? "site_web";
 
     if (!name && !email && !phone) {
+      // Fillout envoie un payload de test vide via le bouton "Test" : on répond OK sans rien insérer
+      // pour que la validation du webhook passe côté Fillout.
+      if (isFillout) {
+        return new Response(JSON.stringify({ ok: true, skipped: "empty_test_payload" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       return new Response(JSON.stringify({ error: "Au moins un champ (nom, email ou téléphone) est requis" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
