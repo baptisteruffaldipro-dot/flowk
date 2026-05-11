@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmtDateTime } from "@/lib/format";
 import { toast } from "sonner";
-import { Mail, Phone, Trash2, Copy } from "lucide-react";
+import { Mail, Phone, Trash2, Copy, Reply } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   nouveau: "Nouveau",
@@ -65,9 +65,28 @@ export default function Leads() {
   };
 
   const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-lead`;
-  const copyEndpoint = () => {
-    navigator.clipboard.writeText(endpoint);
-    toast.success("URL copiée");
+  const copyEndpoint = async () => {
+    try {
+      await navigator.clipboard.writeText(endpoint);
+      toast.success("URL copiée");
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = endpoint;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); toast.success("URL copiée"); } catch { toast.error("Impossible de copier"); }
+      document.body.removeChild(ta);
+    }
+  };
+
+  const replyTo = (lead: any) => {
+    if (!lead.email) { toast.error("Pas d'email pour ce lead"); return; }
+    const subject = `Re: votre demande${lead.company ? ` – ${lead.company}` : ""}`;
+    const greet = lead.name ? `Bonjour ${lead.name},` : "Bonjour,";
+    const quoted = lead.message ? `\n\n---\nVotre message :\n${lead.message.split("\n").map((l: string) => `> ${l}`).join("\n")}` : "";
+    const body = `${greet}\n\nMerci pour votre message, je reviens vers vous rapidement.\n\nBien à vous,${quoted}`;
+    window.location.href = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    if (!lead.read_at) markRead(lead.id);
   };
 
   const unread = leads.filter((l) => !l.read_at).length;
@@ -122,6 +141,11 @@ export default function Leads() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {l.email && (
+                    <Button size="sm" variant="default" onClick={() => replyTo(l)} className="h-8 text-xs gap-1.5">
+                      <Reply className="h-3.5 w-3.5" /> Répondre
+                    </Button>
+                  )}
                   <Select value={l.status} onValueChange={(v) => updateStatus(l.id, v)}>
                     <SelectTrigger className="h-8 text-xs w-32"><SelectValue /></SelectTrigger>
                     <SelectContent>
