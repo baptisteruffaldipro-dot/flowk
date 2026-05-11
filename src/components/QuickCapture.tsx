@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Loader2, Inbox, ImagePlus, X, Plus, StickyNote, ListPlus, UserPlus } from "lucide-react";
+import { Sparkles, Loader2, Inbox, ImagePlus, X, Plus, StickyNote, ListPlus, UserPlus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -63,6 +63,44 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   const [taskId, setTaskId] = useState<string>("");
   const [printOrderId, setPrintOrderId] = useState<string>("");
   const [selectedActions, setSelectedActions] = useState<Set<number>>(new Set());
+
+  // helpers to edit AI-proposed actions inline
+  const updateAction = (idx: number, patch: Partial<Action>) => {
+    if (!ai) return;
+    const next = ai.actions.map((a, i) => (i === idx ? { ...a, ...patch } : a));
+    setAi({ ...ai, actions: next });
+  };
+  const updateSubtaskAt = (idx: number, subIdx: number, value: string) => {
+    if (!ai) return;
+    const a = ai.actions[idx];
+    const subs = [...(a.subtasks ?? [])];
+    subs[subIdx] = value;
+    updateAction(idx, { subtasks: subs });
+  };
+  const addSubtaskTo = (idx: number) => {
+    if (!ai) return;
+    const a = ai.actions[idx];
+    const subs = [...(a.subtasks ?? []), ""];
+    updateAction(idx, { subtasks: subs });
+  };
+  const removeSubtaskAt = (idx: number, subIdx: number) => {
+    if (!ai) return;
+    const a = ai.actions[idx];
+    const subs = (a.subtasks ?? []).filter((_, k) => k !== subIdx);
+    updateAction(idx, { subtasks: subs });
+  };
+  const removeAction = (idx: number) => {
+    if (!ai) return;
+    const next = ai.actions.filter((_, i) => i !== idx);
+    setAi({ ...ai, actions: next });
+    // rebuild selection indexes
+    const s = new Set<number>();
+    selectedActions.forEach((i) => {
+      if (i < idx) s.add(i);
+      else if (i > idx) s.add(i - 1);
+    });
+    setSelectedActions(s);
+  };
 
   // new client modal
   const [newClientOpen, setNewClientOpen] = useState(false);
