@@ -560,35 +560,90 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
                           setSelectedActions(s);
                         }}
                       />
-                      <div className="flex-1">
-                        <div className="font-medium">{a.label}</div>
-                        {a.type === "create_task" && a.task_title && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            Titre : <span className="text-foreground">{a.task_title}</span>
-                            {a.prestation && <> · Prestation : <span className="text-foreground">{a.prestation}</span></>}
-                          </div>
+                      <div className="flex-1 space-y-1.5" onClick={(e) => e.preventDefault()}>
+                        {a.type === "create_task" ? (
+                          <>
+                            <Input
+                              value={a.task_title ?? ""}
+                              onChange={(e) => updateAction(i, { task_title: e.target.value, label: `Créer une tâche : ${e.target.value}` })}
+                              placeholder="Titre de la tâche"
+                              className="h-8 text-sm font-medium"
+                            />
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Input
+                                value={a.prestation ?? ""}
+                                onChange={(e) => updateAction(i, { prestation: e.target.value || null })}
+                                placeholder="Prestation (ex: ajustements)"
+                                className="h-7 text-xs flex-1 min-w-[140px]"
+                              />
+                              <Input
+                                type="date"
+                                value={a.deadline ?? ""}
+                                onChange={(e) => updateAction(i, { deadline: e.target.value || null })}
+                                className="h-7 text-xs w-[150px]"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              {(a.subtasks ?? []).map((s, k) => (
+                                <div key={k} className="flex items-center gap-1">
+                                  <Input
+                                    value={s}
+                                    onChange={(e) => updateSubtaskAt(i, k, e.target.value)}
+                                    placeholder="Sous-tâche"
+                                    className="h-7 text-xs"
+                                  />
+                                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => removeSubtaskAt(i, k)}>
+                                    <X className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => addSubtaskTo(i)}>
+                                <Plus className="h-3 w-3" /> Ajouter une sous-tâche
+                              </Button>
+                            </div>
+                          </>
+                        ) : a.type === "create_subtask" ? (
+                          <Input
+                            value={a.subtask_title ?? ""}
+                            onChange={(e) => updateAction(i, { subtask_title: e.target.value, label: `Ajouter une sous-tâche : ${e.target.value}` })}
+                            placeholder="Titre de la sous-tâche"
+                            className="h-8 text-sm"
+                          />
+                        ) : a.type === "create_project" ? (
+                          <>
+                            <Input
+                              value={a.project_name ?? ""}
+                              onChange={(e) => updateAction(i, { project_name: e.target.value, label: `Créer un projet : ${e.target.value}` })}
+                              placeholder="Nom du projet"
+                              className="h-8 text-sm font-medium"
+                            />
+                            <Input
+                              value={a.project_type ?? ""}
+                              onChange={(e) => updateAction(i, { project_type: e.target.value || null })}
+                              placeholder="Type (ex: identite_graphique)"
+                              className="h-7 text-xs"
+                            />
+                          </>
+                        ) : a.type === "set_deadline" ? (
+                          <>
+                            <div className="font-medium text-sm">{a.label}</div>
+                            <Input
+                              type="date"
+                              value={a.deadline ?? ""}
+                              onChange={(e) => updateAction(i, { deadline: e.target.value || null })}
+                              className="h-7 text-xs w-[150px]"
+                            />
+                          </>
+                        ) : (
+                          <div className="font-medium text-sm">{a.label}</div>
                         )}
-                        {a.type === "create_task" && Array.isArray(a.subtasks) && a.subtasks.length > 0 && (
-                          <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4 space-y-0.5">
-                            {a.subtasks.map((s, k) => (
-                              <li key={k}><span className="text-foreground">{s}</span></li>
-                            ))}
-                          </ul>
-                        )}
-                        {a.type === "create_subtask" && a.subtask_title && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            Sous-tâche : <span className="text-foreground">{a.subtask_title}</span>
-                          </div>
-                        )}
-                        {a.type === "create_project" && a.project_name && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            Nom : <span className="text-foreground">{a.project_name}</span>
-                            {a.project_type && <> · Type : <span className="text-foreground">{a.project_type}</span></>}
-                          </div>
-                        )}
-                        {a.deadline && <div className="text-xs text-muted-foreground">Deadline : {a.deadline}</div>}
                       </div>
-                      <Badge variant="outline" className="text-[10px]">{a.type}</Badge>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <Badge variant="outline" className="text-[10px]">{a.type}</Badge>
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.preventDefault(); removeAction(i); }}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </label>
                   ))}
                 </div>
