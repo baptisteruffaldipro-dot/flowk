@@ -18,6 +18,45 @@ const SOURCE_LABEL: Record<Source,string> = {
   messenger:"Messenger", telephone:"Téléphone", autre:"Autre",
 };
 
+const VALID_PRESTATIONS = new Set([
+  "mise_en_page", "creation", "logo", "impression", "devis", "moodboard", "ajustements", "autre",
+  "illustration", "crea", "logotype", "a_commander", "recherche_graphique", "post_insta", "affiche",
+  "motion", "projet", "shooting", "vecto", "reel", "sideprojet", "en_attente_client", "livrables",
+  "gestion", "prospect", "developpement", "conception_graphique", "rendez_vous", "croquis", "test",
+  "programmer", "maj_carte", "rappeler", "refonte", "vectorisation", "covering", "impaye",
+  "prevoir_rdv", "organiser", "etiquette", "acompte", "facture_a_payer", "facture_a_faire",
+  "strategie", "traduction",
+]);
+
+const VALID_PROJECT_TYPES = new Set(["identite_graphique", "support_communication", "web", "impression", "autre"]);
+
+const normalizePrestation = (value?: string | null) => {
+  const clean = value?.trim();
+  return clean && VALID_PRESTATIONS.has(clean) ? clean : "autre";
+};
+
+const normalizeProjectType = (value?: string | null) => {
+  const clean = value?.trim();
+  return clean && VALID_PROJECT_TYPES.has(clean) ? clean : "autre";
+};
+
+const buildFallbackResult = (text: string, imageCount: number): AiResult => {
+  const base = text.trim() || `${imageCount} image${imageCount > 1 ? "s" : ""} à traiter`;
+  const title = base.replace(/\s+/g, " ").slice(0, 90) || "Nouvelle tâche";
+  return {
+    summary: `Traiter la demande client : ${title}`,
+    link: { client_id: null, project_id: null, task_id: null, print_order_id: null, confidence: "low" },
+    actions: [{
+      type: "create_task",
+      label: `Créer une tâche : ${title}`,
+      target: "task",
+      target_id: null,
+      task_title: title,
+      prestation: "autre",
+    }],
+  };
+};
+
 type Action = {
   type: "add_note"|"create_task"|"create_project"|"create_subtask"|"count_revision"|"set_deadline"|"create_client"|"create_print_order";
   label: string;
@@ -224,6 +263,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   const analyze = async () => {
     if (!content.trim() && imageFiles.length === 0) return;
     setAnalyzing(true); setAi(null); setCaptureId(null);
+    let savedCaptureId: string | null = null;
     try {
       const { data: u } = await supabase.auth.getUser();
       // 0) Upload images first if present
@@ -247,6 +287,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
         content: content || (paths.length > 0 ? `[${paths.length} image${paths.length > 1 ? "s" : ""}]` : ""), source, created_by: u.user!.id,
       }).select("id").single();
       if (capErr) throw capErr;
+      savedCaptureId = cap.id;
       setCaptureId(cap.id);
 
       // 2) Ask the AI
@@ -275,7 +316,22 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
         ai_suggestions: result as any,
       }).eq("id", cap.id);
     } catch (e: any) {
-      toast.error(e?.message ?? "Analyse impossible");
+      if (savedCaptureId) {
+        const fallback = buildFallbackResult(content, imageFiles.length);
+        setAi(fallback);
+        setClientId("");
+        setProjectId("");
+        setTaskId("");
+        setPrintOrderId("");
+        setSelectedActions(new Set([0]));
+        await supabase.from("quick_captures").update({
+          ai_summary: fallback.summary,
+          ai_suggestions: fallback as any,
+        }).eq("id", savedCaptureId);
+        toast.error("Analyse IA indisponible, une tâche simple est prête à créer.");
+      } else {
+        toast.error(e?.message ?? "Analyse impossible");
+      }
     } finally {
       setAnalyzing(false);
     }
@@ -290,95 +346,133 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
     if (!captureId) return;
     setSaving(true);
     try {
+      let currentClientId = clientId;
+      let currentProjectId = projectId;
+      let currentTaskId = taskId;
+      let currentPrintOrderId = printOrderId;
+      let appliedCount = 0;
+      const failures: string[] = [];
+      const ensureClientFromProject = () => {
+        if (!currentClientId && currentProjectId) {
+          currentClientId = projects.find((p) => p.id === currentProjectId)?.client_id ?? "";
+        }
+      };
       // Apply selected actions
       const acts = (ai?.actions ?? []).filter((_, i) => selectedActions.has(i));
       for (const a of acts) {
         if (a.type === "add_note") {
-          if (taskId) {
-            const { data: cur } = await supabase.from("tasks").select("notes").eq("id", taskId).single();
-            await supabase.from("tasks").update({ notes: (cur?.notes ?? "") + noteText() }).eq("id", taskId);
-          } else if (projectId) {
-            const { data: cur } = await supabase.from("projects").select("notes").eq("id", projectId).single();
-            await supabase.from("projects").update({ notes: (cur?.notes ?? "") + noteText() }).eq("id", projectId);
-          } else if (clientId) {
-            const { data: cur } = await supabase.from("clients").select("notes").eq("id", clientId).single();
-            await supabase.from("clients").update({ notes: (cur?.notes ?? "") + noteText() }).eq("id", clientId);
+          if (currentTaskId) {
+            const { data: cur, error } = await supabase.from("tasks").select("notes").eq("id", currentTaskId).single();
+            if (error) { failures.push(error.message); continue; }
+            const { error: upErr } = await supabase.from("tasks").update({ notes: (cur?.notes ?? "") + noteText() }).eq("id", currentTaskId);
+            if (upErr) { failures.push(upErr.message); continue; }
+            appliedCount++;
+          } else if (currentProjectId) {
+            const { data: cur, error } = await supabase.from("projects").select("notes").eq("id", currentProjectId).single();
+            if (error) { failures.push(error.message); continue; }
+            const { error: upErr } = await supabase.from("projects").update({ notes: (cur?.notes ?? "") + noteText() }).eq("id", currentProjectId);
+            if (upErr) { failures.push(upErr.message); continue; }
+            appliedCount++;
+          } else if (currentClientId) {
+            const { data: cur, error } = await supabase.from("clients").select("notes").eq("id", currentClientId).single();
+            if (error) { failures.push(error.message); continue; }
+            const { error: upErr } = await supabase.from("clients").update({ notes: (cur?.notes ?? "") + noteText() }).eq("id", currentClientId);
+            if (upErr) { failures.push(upErr.message); continue; }
+            appliedCount++;
           } else {
-            toast.error("Choisissez une cible pour la note");
+            failures.push("Choisissez une cible pour la note");
             continue;
           }
         } else if (a.type === "create_task") {
-          if (!clientId) { toast.error("Client requis pour créer une tâche"); continue; }
+          ensureClientFromProject();
+          const prestation = normalizePrestation(a.prestation);
           const insertPayload: any = {
-            title: a.task_title || ai?.summary?.slice(0, 80) || "Nouvelle tâche",
-            client_id: clientId, project_id: projectId || null,
+            title: (a.task_title || ai?.summary?.slice(0, 80) || "Nouvelle tâche").trim(),
+            client_id: currentClientId || null, project_id: currentProjectId || null,
             notes: noteText(), deadline: a.deadline || null,
+            prestation,
+            prestations: [prestation],
           };
-          if (a.prestation) {
-            insertPayload.prestation = a.prestation;
-            insertPayload.prestations = [a.prestation];
-          }
           const { data: nt, error: tErr } = await supabase.from("tasks").insert(insertPayload).select("id").single();
-          if (tErr) toast.error(`Création tâche: ${tErr.message}`);
+          if (tErr) failures.push(`Création tâche: ${tErr.message}`);
           else {
+            currentTaskId = nt.id;
+            setTaskId(nt.id);
+            window.dispatchEvent(new CustomEvent("tasks:changed"));
             toast.success(`Tâche créée : ${insertPayload.title}`);
+            appliedCount++;
             const subs = (a.subtasks ?? []).filter((s) => typeof s === "string" && s.trim().length > 0);
             if (nt?.id && subs.length > 0) {
               const rows = subs.slice(0, 10).map((title, i) => ({
                 task_id: nt.id, title: title.trim().slice(0, 200), position: i,
               }));
               const { error: sErr } = await supabase.from("subtasks").insert(rows);
-              if (sErr) toast.error(`Sous-tâches: ${sErr.message}`);
+              if (sErr) failures.push(`Sous-tâches: ${sErr.message}`);
               else toast.success(`${rows.length} sous-tâche${rows.length > 1 ? "s" : ""} ajoutée${rows.length > 1 ? "s" : ""}`);
             }
           }
         } else if (a.type === "create_project") {
-          if (!clientId) { toast.error("Client requis pour créer un projet"); continue; }
+          if (!currentClientId) { failures.push("Client requis pour créer un projet"); continue; }
           const insertPayload: any = {
             name: a.project_name || ai?.summary?.slice(0, 80) || "Nouveau projet",
-            client_id: clientId,
+            client_id: currentClientId,
             notes: noteText(),
+            type: normalizeProjectType(a.project_type),
           };
-          if (a.project_type) insertPayload.type = a.project_type;
           const { data: np, error: pErr } = await supabase.from("projects").insert(insertPayload).select("id").single();
-          if (pErr) toast.error(`Création projet: ${pErr.message}`);
+          if (pErr) failures.push(`Création projet: ${pErr.message}`);
           else {
             toast.success(`Projet créé : ${insertPayload.name}`);
-            if (np?.id) setProjectId(np.id);
+            appliedCount++;
+            if (np?.id) { currentProjectId = np.id; setProjectId(np.id); }
           }
         } else if (a.type === "create_subtask") {
-          if (!taskId) { toast.error("Tâche requise pour la sous-tâche"); continue; }
-          await supabase.from("subtasks").insert({ task_id: taskId, title: a.subtask_title || a.label });
+          if (!currentTaskId) { failures.push("Tâche requise pour la sous-tâche"); continue; }
+          const { error } = await supabase.from("subtasks").insert({ task_id: currentTaskId, title: a.subtask_title || a.label });
+          if (error) failures.push(error.message); else appliedCount++;
         } else if (a.type === "count_revision") {
-          if (!taskId) { toast.error("Tâche requise pour le compteur de retours"); continue; }
-          const { data: cur } = await supabase.from("tasks").select("client_revisions_count,notes").eq("id", taskId).single();
-          await supabase.from("tasks").update({
+          if (!currentTaskId) { failures.push("Tâche requise pour le compteur de retours"); continue; }
+          const { data: cur, error } = await supabase.from("tasks").select("client_revisions_count,notes").eq("id", currentTaskId).single();
+          if (error) { failures.push(error.message); continue; }
+          const { error: upErr } = await supabase.from("tasks").update({
             client_revisions_count: (cur?.client_revisions_count ?? 0) + 1,
             notes: (cur?.notes ?? "") + noteText(),
-          }).eq("id", taskId);
+          }).eq("id", currentTaskId);
+          if (upErr) failures.push(upErr.message); else appliedCount++;
         } else if (a.type === "set_deadline") {
-          if (!taskId || !a.deadline) { toast.error("Tâche + date requises"); continue; }
-          await supabase.from("tasks").update({ deadline: a.deadline }).eq("id", taskId);
+          if (!currentTaskId || !a.deadline) { failures.push("Tâche + date requises"); continue; }
+          const { error } = await supabase.from("tasks").update({ deadline: a.deadline }).eq("id", currentTaskId);
+          if (error) failures.push(error.message); else appliedCount++;
         } else if (a.type === "create_client") {
-          const { data: nc } = await supabase.from("clients").insert({
+          const { data: nc, error } = await supabase.from("clients").insert({
             name: a.client_name || "Nouveau client", email: a.client_email || null,
           }).select("id").single();
-          if (nc?.id) setClientId(nc.id);
+          if (error) failures.push(error.message);
+          else if (nc?.id) { currentClientId = nc.id; setClientId(nc.id); appliedCount++; }
         } else if (a.type === "create_print_order") {
-          if (!clientId) { toast.error("Client requis pour la commande"); continue; }
-          await supabase.from("print_orders").insert({
-            client_id: clientId, project_id: projectId || null,
+          ensureClientFromProject();
+          if (!currentClientId) { failures.push("Client requis pour la commande"); continue; }
+          const { data: po, error } = await supabase.from("print_orders").insert({
+            client_id: currentClientId, project_id: currentProjectId || null,
             description: a.print_description || ai?.summary?.slice(0, 80) || "Nouvelle commande",
-          });
+          }).select("id").single();
+          if (error) failures.push(error.message);
+          else { currentPrintOrderId = po.id; setPrintOrderId(po.id); appliedCount++; }
         }
       }
 
+      if (failures.length > 0 && appliedCount === 0) {
+        toast.error(failures[0]);
+        return;
+      }
+      if (failures.length > 0) toast.error(failures[0]);
+
       await supabase.from("quick_captures").update({
         status: archive ? "archive" : "traite",
-        client_id: clientId || null,
-        project_id: projectId || null,
-        task_id: taskId || null,
-        print_order_id: printOrderId || null,
+        client_id: currentClientId || null,
+        project_id: currentProjectId || null,
+        task_id: currentTaskId || null,
+        print_order_id: currentPrintOrderId || null,
         processed_at: new Date().toISOString(),
       }).eq("id", captureId);
 

@@ -73,19 +73,25 @@ Deno.serve(async (req) => {
         imageDataUrls.push(`data:${mime};base64,${b64}`)
       }
 
-      // First call: extract text + visual description from the images
-      const visionResult = await generateText({
-        model: gateway('google/gemini-2.5-flash'),
-        system: "Tu es un OCR + analyste visuel. Pour CHAQUE image fournie, extrais TOUT le texte visible (mails, SMS, devis, captures…) puis ajoute une courte description visuelle (1 phrase). Si plusieurs images, numérote-les (Image 1, Image 2…). Réponds en français, format global:\nTEXTE:\n<texte brut tel quel, concaténé>\n\nVISUEL:\n<description courte par image>",
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'text', text: content ? `Contexte fourni par l'utilisateur: ${content}` : `Analyse ${imageDataUrls.length > 1 ? 'ces images' : 'cette image'}.` },
-            ...imageDataUrls.map((url) => ({ type: 'image', image: url })),
-          ],
-        }],
-      })
-      ocrText = visionResult.text ?? ''
+      // First call: extract text + visual description from the images. If the vision call fails,
+      // keep the capture usable and let the downstream fallback still propose a task.
+      try {
+        const visionResult = await generateText({
+          model: gateway('google/gemini-2.5-flash'),
+          system: "Tu es un OCR + analyste visuel. Pour CHAQUE image fournie, extrais TOUT le texte visible (mails, SMS, devis, captures…) puis ajoute une courte description visuelle (1 phrase). Si plusieurs images, numérote-les (Image 1, Image 2…). Réponds en français, format global:\nTEXTE:\n<texte brut tel quel, concaténé>\n\nVISUEL:\n<description courte par image>",
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: content ? `Contexte fourni par l'utilisateur: ${content}` : `Analyse ${imageDataUrls.length > 1 ? 'ces images' : 'cette image'}.` },
+              ...imageDataUrls.map((url) => ({ type: 'image', image: url })),
+            ],
+          }],
+        })
+        ocrText = visionResult.text ?? ''
+      } catch (e: any) {
+        console.error('Vision OCR fallback', e?.statusCode ?? e?.status ?? '', e?.responseBody ?? e?.message ?? e)
+        ocrText = `Image${imagePaths.length > 1 ? 's' : ''} jointe${imagePaths.length > 1 ? 's' : ''} à traiter.`
+      }
       // Merge into content for downstream analysis
       content = (content ? content + '\n\n' : '') + `[Contenu image]\n${ocrText}`
     }
@@ -151,8 +157,8 @@ Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la 
     let parsed: any
     try { parsed = JSON.parse(raw) } catch {
       const match = raw.match(/\{[\s\S]*\}/)
-      if (!match) return json({ error: 'JSON invalide' }, 500)
-      try { parsed = JSON.parse(match[0]) } catch { return json({ error: 'JSON invalide' }, 500) }
+      if (!match) return json({ ok: true, ...fallbackAnalysis(content), ocr_text: ocrText || undefined, content_used: content })
+      try { parsed = JSON.parse(match[0]) } catch { return json({ ok: true, ...fallbackAnalysis(content), ocr_text: ocrText || undefined, content_used: content }) }
     }
 
     return json({ ok: true, ...parsed, ocr_text: ocrText || undefined, content_used: content })
