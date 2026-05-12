@@ -45,7 +45,7 @@ export const FontSize = Extension.create({
 export const LineHeight = Extension.create({
   name: "lineHeight",
   addOptions() {
-    return { types: ["textStyle"] };
+    return { types: ["paragraph", "heading"] };
   },
   addGlobalAttributes() {
     return [
@@ -69,16 +69,17 @@ export const LineHeight = Extension.create({
     return {
       setLineHeight:
         (lineHeight: string) =>
-        ({ chain }: any) => {
-          return chain().setMark("textStyle", { lineHeight }).run();
+        ({ commands }: any) => {
+          return ["paragraph", "heading"].every((type) =>
+            commands.updateAttributes(type, { lineHeight })
+          );
         },
       unsetLineHeight:
         () =>
-        ({ chain }: any) => {
-          return chain()
-            .setMark("textStyle", { lineHeight: null })
-            .removeEmptyTextStyle()
-            .run();
+        ({ commands }: any) => {
+          return ["paragraph", "heading"].every((type) =>
+            commands.resetAttributes(type, "lineHeight")
+          );
         },
     } as any;
   },
