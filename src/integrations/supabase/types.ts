@@ -614,6 +614,59 @@ export type Database = {
         }
         Relationships: []
       }
+      logo_presentations: {
+        Row: {
+          client_id: string | null
+          client_name: string
+          content: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean
+          project_name: string
+          share_token: string | null
+          tagline: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          client_id?: string | null
+          client_name: string
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          project_name: string
+          share_token?: string | null
+          tagline?: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          client_id?: string | null
+          client_name?: string
+          content?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          project_name?: string
+          share_token?: string | null
+          tagline?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logo_presentations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       print_orders: {
         Row: {
           amount: number | null
@@ -1263,6 +1316,29 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "brand_strategies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_logo_presentation_by_token: {
+        Args: { _token: string }
+        Returns: {
+          client_id: string | null
+          client_name: string
+          content: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean
+          project_name: string
+          share_token: string | null
+          tagline: string
+          updated_at: string
+          version: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "logo_presentations"
           isOneToOne: true
           isSetofReturn: false
         }
