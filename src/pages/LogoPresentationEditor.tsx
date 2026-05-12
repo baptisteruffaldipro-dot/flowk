@@ -15,8 +15,8 @@ import { toast } from "sonner";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import ImageUpload from "@/components/logo-presentation/ImageUpload";
 import RichTextEditor from "@/components/logo-presentation/RichTextEditor";
-import type { LogoPresentation, LogoVariant } from "@/data/logo-presentations/types";
-import { emptyLogoPresentationContent } from "@/data/logo-presentations/empty";
+import type { LogoPresentation, LogoVariant, LogoTrack } from "@/data/logo-presentations/types";
+import { emptyLogoPresentationContent, emptyTrack } from "@/data/logo-presentations/empty";
 
 type DBRow = {
   id: string;
@@ -40,13 +40,21 @@ const ensureContent = (raw: any) => {
   const c = { ...emptyLogoPresentationContent, ...(raw || {}) };
   c.brief = { ...emptyLogoPresentationContent.brief, ...(c.brief || {}) };
   c.moodboard = { ...emptyLogoPresentationContent.moodboard, ...(c.moodboard || {}) };
-  c.logos = {
-    ...emptyLogoPresentationContent.logos,
-    ...(c.logos || {}),
-    primary: { ...emptyLogoPresentationContent.logos.primary, ...((c.logos || {}).primary || {}) },
-    secondary: { ...emptyLogoPresentationContent.logos.secondary, ...((c.logos || {}).secondary || {}) },
-    submark: { ...emptyLogoPresentationContent.logos.submark, ...((c.logos || {}).submark || {}) },
-  };
+  const lg: any = c.logos || {};
+  if (Array.isArray(lg.tracks) && lg.tracks.length > 0) {
+    c.logos = { tracks: lg.tracks.map((t: any, i: number) => ({ ...emptyTrack(`Piste ${i + 1}`), ...t })) };
+  } else if (lg.primary || lg.secondary || lg.submark || lg.intro) {
+    const t0 = emptyTrack("Piste 1");
+    c.logos = { tracks: [{
+      ...t0,
+      intro: lg.intro || "",
+      primary: { ...t0.primary, ...(lg.primary || {}) },
+      secondary: { ...t0.secondary, ...(lg.secondary || {}) },
+      submark: { ...t0.submark, ...(lg.submark || {}) },
+    }] };
+  } else {
+    c.logos = { tracks: [emptyTrack("Piste 1")] };
+  }
   c.colors = { ...emptyLogoPresentationContent.colors, ...(c.colors || {}) };
   c.typography = { ...emptyLogoPresentationContent.typography, ...(c.typography || {}) };
   c.inSitu = { ...emptyLogoPresentationContent.inSitu, ...(c.inSitu || {}) };
@@ -194,13 +202,13 @@ export default function LogoPresentationEditor() {
     setRow((r) => r ? { ...r, [key]: value } : r);
   }, []);
 
-  const updateContent = useCallback((path: string[], value: any) => {
+  const updateContent = useCallback((path: (string | number)[], value: any) => {
     setRow((r) => {
       if (!r) return r;
       const content = JSON.parse(JSON.stringify(r.content));
       let cur = content;
-      for (let i = 0; i < path.length - 1; i++) cur = cur[path[i]];
-      cur[path[path.length - 1]] = value;
+      for (let i = 0; i < path.length - 1; i++) cur = cur[path[i] as any];
+      cur[path[path.length - 1] as any] = value;
       return { ...r, content };
     });
   }, []);
@@ -341,30 +349,57 @@ export default function LogoPresentationEditor() {
         </TabsContent>
 
         <TabsContent value="logos" className="space-y-4">
-          <SectionCard title="03 — Pistes de logo (intro)">
-            <RichTextEditor value={c.logos.intro} onChange={(html) => updateContent(["logos", "intro"], html)} />
-          </SectionCard>
-          <SectionCard title="Logo principal (primaire)">
-            <VariantEditor
-              variant={c.logos.primary}
-              onChange={(v) => updateContent(["logos", "primary"], v)}
-              folder={`${folder}/logos/primary`}
-            />
-          </SectionCard>
-          <SectionCard title="Logo secondaire">
-            <VariantEditor
-              variant={c.logos.secondary}
-              onChange={(v) => updateContent(["logos", "secondary"], v)}
-              folder={`${folder}/logos/secondary`}
-            />
-          </SectionCard>
-          <SectionCard title="Submark (tertiaire)">
-            <VariantEditor
-              variant={c.logos.submark}
-              onChange={(v) => updateContent(["logos", "submark"], v)}
-              folder={`${folder}/logos/submark`}
-            />
-          </SectionCard>
+          {(c.logos.tracks as LogoTrack[]).map((track, ti) => (
+            <Card key={ti} className="p-5 space-y-4 border-2">
+              <div className="flex items-center gap-3">
+                <Input
+                  className="flex-1 font-semibold"
+                  value={track.name}
+                  onChange={(e) => updateContent(["logos", "tracks", ti, "name"], e.target.value)}
+                  placeholder={`Piste ${ti + 1}`}
+                />
+                {c.logos.tracks.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => updateContent(["logos", "tracks"], c.logos.tracks.filter((_: any, j: number) => j !== ti))}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Retirer cette piste
+                  </Button>
+                )}
+              </div>
+              <SectionCard title="Intro de la piste">
+                <RichTextEditor value={track.intro} onChange={(html) => updateContent(["logos", "tracks", ti, "intro"], html)} />
+              </SectionCard>
+              <SectionCard title="Logo principal (primaire)">
+                <VariantEditor
+                  variant={track.primary}
+                  onChange={(v) => updateContent(["logos", "tracks", ti, "primary"], v)}
+                  folder={`${folder}/logos/track-${ti}/primary`}
+                />
+              </SectionCard>
+              <SectionCard title="Logo secondaire">
+                <VariantEditor
+                  variant={track.secondary}
+                  onChange={(v) => updateContent(["logos", "tracks", ti, "secondary"], v)}
+                  folder={`${folder}/logos/track-${ti}/secondary`}
+                />
+              </SectionCard>
+              <SectionCard title="Submark (tertiaire)">
+                <VariantEditor
+                  variant={track.submark}
+                  onChange={(v) => updateContent(["logos", "tracks", ti, "submark"], v)}
+                  folder={`${folder}/logos/track-${ti}/submark`}
+                />
+              </SectionCard>
+            </Card>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => updateContent(["logos", "tracks"], [...c.logos.tracks, emptyTrack(`Piste ${c.logos.tracks.length + 1}`)])}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Ajouter une piste de logo
+          </Button>
         </TabsContent>
 
         <TabsContent value="colors">

@@ -3,7 +3,27 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import type { LogoPresentation } from "@/data/logo-presentations/types";
-import { emptyLogoPresentationContent } from "@/data/logo-presentations/empty";
+import { emptyLogoPresentationContent, emptyTrack } from "@/data/logo-presentations/empty";
+
+function migrateLogos(raw: any) {
+  const base = emptyLogoPresentationContent.logos;
+  const src = raw || {};
+  if (Array.isArray(src.tracks) && src.tracks.length > 0) {
+    return { tracks: src.tracks.map((t: any, i: number) => ({ ...emptyTrack(`Piste ${i + 1}`), ...t })) };
+  }
+  // Legacy: single track stored directly on logos
+  if (src.primary || src.secondary || src.submark || src.intro) {
+    const t0 = emptyTrack("Piste 1");
+    return { tracks: [{
+      ...t0,
+      intro: src.intro || "",
+      primary: { ...t0.primary, ...(src.primary || {}) },
+      secondary: { ...t0.secondary, ...(src.secondary || {}) },
+      submark: { ...t0.submark, ...(src.submark || {}) },
+    }] };
+  }
+  return base;
+}
 
 export default function LogoPresentationPublic() {
   const { token } = useParams<{ token: string }>();
@@ -27,13 +47,7 @@ export default function LogoPresentationPublic() {
         ...content,
         brief: { ...emptyLogoPresentationContent.brief, ...(content.brief || {}) },
         moodboard: { ...emptyLogoPresentationContent.moodboard, ...(content.moodboard || {}) },
-        logos: {
-          ...emptyLogoPresentationContent.logos,
-          ...(content.logos || {}),
-          primary: { ...emptyLogoPresentationContent.logos.primary, ...((content.logos || {}).primary || {}) },
-          secondary: { ...emptyLogoPresentationContent.logos.secondary, ...((content.logos || {}).secondary || {}) },
-          submark: { ...emptyLogoPresentationContent.logos.submark, ...((content.logos || {}).submark || {}) },
-        },
+        logos: migrateLogos(content.logos),
         colors: { ...emptyLogoPresentationContent.colors, ...(content.colors || {}) },
         typography: { ...emptyLogoPresentationContent.typography, ...(content.typography || {}) },
         inSitu: { ...emptyLogoPresentationContent.inSitu, ...(content.inSitu || {}) },

@@ -6,6 +6,14 @@ export interface LogoVariant {
   shots: { background: "light" | "dark" | "color"; bgColor?: string; imageUrl: string; caption?: string }[];
 }
 
+export interface LogoTrack {
+  name: string;           // "Piste 1", "Piste 2", etc. (libre)
+  intro: string;
+  primary: LogoVariant;
+  secondary: LogoVariant;
+  submark: LogoVariant;
+}
+
 export interface LogoPresentation {
   slug: string;
   client: string;
@@ -29,10 +37,7 @@ export interface LogoPresentation {
 
   // 3 — Logos (3 formes)
   logos: {
-    intro: string;
-    primary: LogoVariant;
-    secondary: LogoVariant;
-    submark: LogoVariant;
+    tracks: LogoTrack[];
   };
 
   // 4 — Couleurs
