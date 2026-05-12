@@ -9,6 +9,7 @@ import {
   Heading1, Heading2, Heading3, List, ListOrdered, Quote, Undo, Redo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FontSize, LineHeight } from "./tiptap-extensions";
 
 interface Props {
   value: string;
