@@ -15,8 +15,8 @@ import { toast } from "sonner";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import ImageUpload from "@/components/logo-presentation/ImageUpload";
 import RichTextEditor from "@/components/logo-presentation/RichTextEditor";
-import type { LogoPresentation, LogoVariant } from "@/data/logo-presentations/types";
-import { emptyLogoPresentationContent } from "@/data/logo-presentations/empty";
+import type { LogoPresentation, LogoVariant, LogoTrack } from "@/data/logo-presentations/types";
+import { emptyLogoPresentationContent, emptyTrack } from "@/data/logo-presentations/empty";
 
 type DBRow = {
   id: string;
@@ -40,13 +40,21 @@ const ensureContent = (raw: any) => {
   const c = { ...emptyLogoPresentationContent, ...(raw || {}) };
   c.brief = { ...emptyLogoPresentationContent.brief, ...(c.brief || {}) };
   c.moodboard = { ...emptyLogoPresentationContent.moodboard, ...(c.moodboard || {}) };
-  c.logos = {
-    ...emptyLogoPresentationContent.logos,
-    ...(c.logos || {}),
-    primary: { ...emptyLogoPresentationContent.logos.primary, ...((c.logos || {}).primary || {}) },
-    secondary: { ...emptyLogoPresentationContent.logos.secondary, ...((c.logos || {}).secondary || {}) },
-    submark: { ...emptyLogoPresentationContent.logos.submark, ...((c.logos || {}).submark || {}) },
-  };
+  const lg: any = c.logos || {};
+  if (Array.isArray(lg.tracks) && lg.tracks.length > 0) {
+    c.logos = { tracks: lg.tracks.map((t: any, i: number) => ({ ...emptyTrack(`Piste ${i + 1}`), ...t })) };
+  } else if (lg.primary || lg.secondary || lg.submark || lg.intro) {
+    const t0 = emptyTrack("Piste 1");
+    c.logos = { tracks: [{
+      ...t0,
+      intro: lg.intro || "",
+      primary: { ...t0.primary, ...(lg.primary || {}) },
+      secondary: { ...t0.secondary, ...(lg.secondary || {}) },
+      submark: { ...t0.submark, ...(lg.submark || {}) },
+    }] };
+  } else {
+    c.logos = { tracks: [emptyTrack("Piste 1")] };
+  }
   c.colors = { ...emptyLogoPresentationContent.colors, ...(c.colors || {}) };
   c.typography = { ...emptyLogoPresentationContent.typography, ...(c.typography || {}) };
   c.inSitu = { ...emptyLogoPresentationContent.inSitu, ...(c.inSitu || {}) };
