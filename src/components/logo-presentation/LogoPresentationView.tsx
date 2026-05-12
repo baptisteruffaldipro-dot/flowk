@@ -4,6 +4,16 @@ interface Props {
   presentation: LogoPresentation;
 }
 
+// Render rich-text HTML if present, otherwise fall back to plain text with line breaks preserved.
+const RichText = ({ html, className }: { html?: string; className?: string }) => {
+  if (!html) return null;
+  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(html);
+  if (looksLikeHtml) {
+    return <div className={`prose prose-neutral max-w-none ${className ?? ""}`} dangerouslySetInnerHTML={{ __html: html }} />;
+  }
+  return <div className={`whitespace-pre-line ${className ?? ""}`}>{html}</div>;
+};
+
 const SectionLabel = ({ number, title }: { number: string; title: string }) => (
   <div className="flex items-baseline gap-6 mb-12">
     <span className="font-serif text-5xl md:text-7xl text-accent leading-none">{number}</span>
@@ -26,7 +36,7 @@ const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => {
       <div className="text-7xl md:text-8xl italic font-light text-accent leading-none mb-4">{index}</div>
       <h3 className="text-3xl md:text-4xl italic font-light leading-tight mb-4">{v.label}</h3>
       {v.description && (
-        <p className="text-base font-light text-muted-foreground leading-relaxed mb-4 whitespace-pre-line">{v.description}</p>
+        <RichText html={v.description} className="text-base font-light text-muted-foreground leading-relaxed mb-4" />
       )}
       {v.usage && (
         <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-2 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
@@ -108,9 +118,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="01" title="Brief & contexte" />
           {p.brief.intro && (
-              <p className="text-2xl md:text-3xl font-light leading-relaxed max-w-4xl mb-12 italic whitespace-pre-line">
-                {p.brief.intro}
-              </p>
+              <RichText html={p.brief.intro} className="text-2xl md:text-3xl font-light leading-relaxed max-w-4xl mb-12 italic" />
             )}
             <div className="grid md:grid-cols-2 gap-12">
               {p.brief.objectives.length > 0 && (
@@ -146,9 +154,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="02" title="Moodboard" />
             {p.moodboard.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed whitespace-pre-line">
-                {p.moodboard.intro}
-              </p>
+              <RichText html={p.moodboard.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
             {p.moodboard.keywords.length > 0 && (
               <div className="flex flex-wrap gap-3 mb-12">
@@ -177,9 +183,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="03" title="Pistes de logo" />
             {p.logos.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16 leading-relaxed whitespace-pre-line">
-                {p.logos.intro}
-              </p>
+              <RichText html={p.logos.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16 leading-relaxed" />
             )}
             <div className="space-y-24">
               <VariantBlock v={p.logos.primary} index="01" />
@@ -194,9 +198,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="04" title="Palette de couleurs" />
             {p.colors.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed whitespace-pre-line">
-                {p.colors.intro}
-              </p>
+              <RichText html={p.colors.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
             {p.colors.palette.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-foreground/10 border border-foreground/10">
@@ -224,9 +226,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="05" title="Typographies" />
             {p.typography.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed whitespace-pre-line">
-                {p.typography.intro}
-              </p>
+              <RichText html={p.typography.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
             {p.typography.fonts.length > 0 ? (
               <div className="grid md:grid-cols-3 gap-px bg-foreground/10 border border-foreground/10">
@@ -254,9 +254,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section className="pb-16">
             <SectionLabel number="06" title="En action" />
             {p.inSitu.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed whitespace-pre-line">
-                {p.inSitu.intro}
-              </p>
+              <RichText html={p.inSitu.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
             {p.inSitu.items.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
