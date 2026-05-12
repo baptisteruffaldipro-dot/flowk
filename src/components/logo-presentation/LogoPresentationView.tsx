@@ -100,7 +100,9 @@ export default function LogoPresentationView({ presentation }: Props) {
         .rich-text h1 { font-size: 2.25em; font-weight: 600; line-height: 1.1; margin: 0.6em 0 0.4em; }
         .rich-text h2 { font-size: 1.6em; font-weight: 600; line-height: 1.2; margin: 0.6em 0 0.3em; }
         .rich-text h3 { font-size: 1.25em; font-weight: 600; line-height: 1.3; margin: 0.5em 0 0.25em; }
-        .rich-text p { margin: 0 0 0.75em; }
+        .rich-text p { margin: 0 0 0.4em !important; }
+        .rich-text p:last-child { margin-bottom: 0 !important; }
+        .rich-text > * + * { margin-top: 0 !important; }
         .rich-text ul { list-style: disc; padding-left: 1.4em; margin: 0.5em 0; }
         .rich-text ol { list-style: decimal; padding-left: 1.4em; margin: 0.5em 0; }
         .rich-text blockquote { border-left: 3px solid hsl(var(--accent)); padding-left: 1em; font-style: italic; margin: 0.75em 0; color: hsl(var(--muted-foreground)); }
