@@ -14,6 +14,13 @@ export interface LogoTrack {
   submark: LogoVariant;
 }
 
+export interface MoodboardUniverse {
+  name: string;           // "Univers 1", "Univers 2", etc. (libre)
+  intro: string;
+  keywords: string[];
+  images: { url: string; caption?: string }[];
+}
+
 export interface LogoPresentation {
   slug: string;
   client: string;
@@ -30,9 +37,7 @@ export interface LogoPresentation {
 
   // 2 — Moodboard
   moodboard: {
-    intro: string;
-    keywords: string[];
-    images: { url: string; caption?: string }[];
+    universes: MoodboardUniverse[];
   };
 
   // 3 — Logos (3 formes)
