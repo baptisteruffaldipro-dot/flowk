@@ -133,27 +133,13 @@ Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la 
 
     const userMsg = `Source: ${source}\nMessage:\n"""${content}"""\n\nContexte (json):\n${JSON.stringify(ctx).slice(0, 60000)}`
 
-    const aiResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: aiHeaders(lovableKey),
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: userMsg },
-        ],
-      }),
+    const aiResult = await generateText({
+      model: gateway('google/gemini-2.5-flash'),
+      system,
+      prompt: userMsg,
     })
 
-    if (aiResp.status === 429) return json({ error: 'Trop de requêtes IA, réessayez bientôt.' }, 429)
-    if (aiResp.status === 402) return json({ error: 'Crédits IA épuisés. Ajoutez-en dans Lovable.' }, 402)
-    if (!aiResp.ok) {
-      const t = await aiResp.text()
-      console.error('AI error', aiResp.status, t)
-      return json({ error: 'Analyse IA indisponible' }, 500)
-    }
-    const aiData = await aiResp.json()
-    const raw = aiData?.choices?.[0]?.message?.content ?? '{}'
+    const raw = aiResult.text ?? '{}'
     let parsed: any
     try { parsed = JSON.parse(raw) } catch {
       const match = raw.match(/\{[\s\S]*\}/)
