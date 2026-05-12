@@ -30,6 +30,9 @@ import Leads from "./pages/Leads";
 import BrandStrategy from "./pages/BrandStrategy";
 import BrandStrategies from "./pages/BrandStrategies";
 import BrandStrategyPublic from "./pages/BrandStrategyPublic";
+import LogoPresentations from "./pages/LogoPresentations";
+import LogoPresentation from "./pages/LogoPresentation";
+import LogoPresentationPublic from "./pages/LogoPresentationPublic";
 import ClientPortal from "./pages/ClientPortal";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
 import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
@@ -49,6 +52,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/q/:token" element={<QuestionnairePublic />} />
             <Route path="/p/strategie/:token" element={<BrandStrategyPublic />} />
+            <Route path="/p/logo/:token" element={<LogoPresentationPublic />} />
             <Route path="/portail" element={<ProtectedRoute requireRole="client"><ClientPortal /></ProtectedRoute>} />
             <Route path="/portail/projet/:id" element={<ProtectedRoute requireRole="client"><ClientProjectPortal /></ProtectedRoute>} />
             <Route path="/portail/impression/:id" element={<ProtectedRoute requireRole="client"><ClientPrintOrderPortal /></ProtectedRoute>} />
@@ -75,6 +79,8 @@ const App = () => (
               <Route path="/leads" element={<Leads />} />
               <Route path="/strategies" element={<BrandStrategies />} />
               <Route path="/strategie/:id" element={<BrandStrategy />} />
+              <Route path="/logos" element={<LogoPresentations />} />
+              <Route path="/logo/:id" element={<LogoPresentation />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
