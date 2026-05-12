@@ -5,6 +5,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const aiHeaders = (lovableKey: string) => ({
+  'Lovable-API-Key': lovableKey,
+  'X-Lovable-AIG-SDK': 'vercel-ai-sdk',
+  'Content-Type': 'application/json',
+})
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -60,7 +66,7 @@ Deno.serve(async (req) => {
       // First call: extract text + visual description from the images
       const visionResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${lovableKey}`, 'Content-Type': 'application/json' },
+        headers: aiHeaders(lovableKey),
         body: JSON.stringify({
           model: 'google/gemini-3-flash-preview',
           messages: [
@@ -122,75 +128,28 @@ Règles importantes :
 - Si tu proposes create_client (client inconnu), propose AUSSI create_task ou create_project pour le travail à effectuer (ou au minimum add_note si c'est juste une demande d'info / prise de contact). Le client seul ne suffit pas : il faut toujours une action concrète associée.
 - Sois concret : task_title et project_name doivent être courts, clairs, prêts à utiliser tels quels (pas de "Nouvelle tâche").
 
-Réponds STRICTEMENT via l'outil "propose_capture_actions". Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la liste.`
+Réponds STRICTEMENT avec un objet JSON valide, sans markdown ni texte autour, avec exactement cette structure:
+{
+  "summary": string,
+  "link": { "client_id": string|null, "project_id": string|null, "task_id": string|null, "print_order_id": string|null, "confidence": "low"|"medium"|"high" },
+  "actions": [
+    { "type": "add_note"|"create_task"|"create_project"|"create_subtask"|"count_revision"|"set_deadline"|"create_client"|"create_print_order", "label": string, "target": "task"|"project"|"print_order"|"client"|null, "target_id": string|null, "task_title": string|null, "prestation": string|null, "project_name": string|null, "project_type": string|null, "subtask_title": string|null, "subtasks": string[]|null, "deadline": string|null, "client_name": string|null, "client_email": string|null, "print_description": string|null }
+  ]
+}
+Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la liste.`
 
     const userMsg = `Source: ${source}\nMessage:\n"""${content}"""\n\nContexte (json):\n${JSON.stringify(ctx).slice(0, 60000)}`
 
-    const tool = {
-      type: 'function',
-      function: {
-        name: 'propose_capture_actions',
-        description: 'Retourne le résumé, le rattachement probable, et 1-3 actions suggérées.',
-        parameters: {
-          type: 'object',
-          required: ['summary', 'link', 'actions'],
-          properties: {
-            summary: { type: 'string' },
-            link: {
-              type: 'object',
-              required: ['confidence'],
-              properties: {
-                client_id: { type: 'string' },
-                project_id: { type: 'string' },
-                task_id: { type: 'string' },
-                print_order_id: { type: 'string' },
-                confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
-              },
-            },
-            actions: {
-              type: 'array',
-              minItems: 1,
-              maxItems: 3,
-              items: {
-                type: 'object',
-                required: ['type', 'label'],
-                properties: {
-                  type: { type: 'string', enum: ['add_note','create_task','create_project','create_subtask','count_revision','set_deadline','create_client','create_print_order'] },
-                  label: { type: 'string' },
-                  target: { type: 'string', enum: ['task','project','print_order','client'] },
-                  target_id: { type: 'string' },
-                  task_title: { type: 'string' },
-                  prestation: { type: 'string' },
-                  project_name: { type: 'string' },
-                  project_type: { type: 'string' },
-                  subtask_title: { type: 'string' },
-                  subtasks: { type: 'array', items: { type: 'string' } },
-                  deadline: { type: 'string' },
-                  client_name: { type: 'string' },
-                  client_email: { type: 'string' },
-                  print_description: { type: 'string' },
-                },
-              },
-            },
-          },
-        },
-      },
-    }
-
     const aiResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${lovableKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: aiHeaders(lovableKey),
       body: JSON.stringify({
         model: 'google/gemini-3-flash-preview',
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: userMsg },
         ],
-        tools: [tool],
-        tool_choice: { type: 'function', function: { name: 'propose_capture_actions' } },
+        response_format: { type: 'json_object' },
       }),
     })
 
@@ -202,10 +161,13 @@ Réponds STRICTEMENT via l'outil "propose_capture_actions". Choisis null pour le
       return json({ error: 'Analyse IA indisponible' }, 500)
     }
     const aiData = await aiResp.json()
-    const call = aiData?.choices?.[0]?.message?.tool_calls?.[0]
-    if (!call?.function?.arguments) return json({ error: 'Réponse IA invalide' }, 500)
+    const raw = aiData?.choices?.[0]?.message?.content ?? '{}'
     let parsed: any
-    try { parsed = JSON.parse(call.function.arguments) } catch { return json({ error: 'JSON invalide' }, 500) }
+    try { parsed = JSON.parse(raw) } catch {
+      const match = raw.match(/\{[\s\S]*\}/)
+      if (!match) return json({ error: 'JSON invalide' }, 500)
+      try { parsed = JSON.parse(match[0]) } catch { return json({ error: 'JSON invalide' }, 500) }
+    }
 
     return json({ ok: true, ...parsed, ocr_text: ocrText || undefined, content_used: content })
   } catch (e: any) {
