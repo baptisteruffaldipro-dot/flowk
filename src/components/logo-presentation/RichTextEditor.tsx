@@ -143,6 +143,8 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
       StarterKit,
       Underline,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
+      FontSize,
+      LineHeight,
     ],
     content: value || "",
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
