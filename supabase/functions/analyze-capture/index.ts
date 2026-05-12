@@ -17,6 +17,9 @@ const createLovableAiGatewayProvider = (lovableApiKey: string) =>
     },
   })
 
+const CONTEXT_ROW_LIMIT = 60
+const CONTEXT_CHAR_LIMIT = 16000
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -87,12 +90,12 @@ Deno.serve(async (req) => {
       content = (content ? content + '\n\n' : '') + `[Contenu image]\n${ocrText}`
     }
 
-    // Fetch lightweight context for matching (last 200 of each)
+    // Fetch lightweight context for matching. Keep the prompt compact so the AI gateway accepts it reliably.
     const [{ data: clients }, { data: projects }, { data: tasks }, { data: orders }] = await Promise.all([
-      userClient.from('clients').select('id,name,company,email').order('updated_at', { ascending: false }).limit(200),
-      userClient.from('projects').select('id,name,client_id,type').order('updated_at', { ascending: false }).limit(200),
-      userClient.from('tasks').select('id,title,client_id,project_id,status').neq('status', 'archive').order('updated_at', { ascending: false }).limit(200),
-      userClient.from('print_orders').select('id,description,client_id,project_id,status').order('updated_at', { ascending: false }).limit(200),
+      userClient.from('clients').select('id,name,company,email').order('updated_at', { ascending: false }).limit(CONTEXT_ROW_LIMIT),
+      userClient.from('projects').select('id,name,client_id,type').order('updated_at', { ascending: false }).limit(CONTEXT_ROW_LIMIT),
+      userClient.from('tasks').select('id,title,client_id,project_id,status').neq('status', 'archive').order('updated_at', { ascending: false }).limit(CONTEXT_ROW_LIMIT),
+      userClient.from('print_orders').select('id,description,client_id,project_id,status').order('updated_at', { ascending: false }).limit(CONTEXT_ROW_LIMIT),
     ])
 
     const ctx = {
@@ -131,7 +134,7 @@ Réponds STRICTEMENT avec un objet JSON valide, sans markdown ni texte autour, a
 }
 Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la liste.`
 
-    const userMsg = `Source: ${source}\nMessage:\n"""${content}"""\n\nContexte (json):\n${JSON.stringify(ctx).slice(0, 60000)}`
+    const userMsg = `Source: ${source}\nMessage:\n"""${content}"""\n\nContexte (json):\n${JSON.stringify(ctx).slice(0, CONTEXT_CHAR_LIMIT)}`
 
     const aiResult = await generateText({
       model: gateway('google/gemini-2.5-flash'),
