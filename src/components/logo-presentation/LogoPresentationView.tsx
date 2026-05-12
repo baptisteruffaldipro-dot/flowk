@@ -17,49 +17,57 @@ const Divider = () => (
   </div>
 );
 
-const shotBg = (s: { background: string; bgColor?: string }) => {
-  if (s.background === "color" && s.bgColor) return { backgroundColor: s.bgColor };
-  if (s.background === "dark") return { backgroundColor: "#1a1a1a" };
-  return { backgroundColor: "#ffffff" };
-};
-
-const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => (
+const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => {
+  const [hero, ...rest] = v.shots;
+  const squares = rest.slice(0, 2);
+  return (
   <article className="grid md:grid-cols-12 gap-8 md:gap-12">
     <div className="md:col-span-4">
       <div className="text-7xl md:text-8xl italic font-light text-accent leading-none mb-4">{index}</div>
       <h3 className="text-3xl md:text-4xl italic font-light leading-tight mb-4">{v.label}</h3>
       {v.description && (
-        <p className="text-base font-light text-muted-foreground leading-relaxed mb-4">{v.description}</p>
+        <p className="text-base font-light text-muted-foreground leading-relaxed mb-4 whitespace-pre-line">{v.description}</p>
       )}
       {v.usage && (
         <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-2 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
           Usage
         </div>
       )}
-      {v.usage && <p className="text-sm font-light italic">{v.usage}</p>}
+      {v.usage && <p className="text-sm font-light italic whitespace-pre-line">{v.usage}</p>}
     </div>
     <div className="md:col-span-8">
       {v.shots.length === 0 ? (
         <div className="border border-dashed border-foreground/20 aspect-video flex items-center justify-center text-sm text-muted-foreground">
-          Aucune visuel pour cette variante
+          Aucun visuel pour cette variante
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {v.shots.map((s, i) => (
-            <div key={i} className="space-y-2">
-              <div className="aspect-square flex items-center justify-center p-8 rounded" style={shotBg(s)}>
-                <img src={s.imageUrl} alt={s.caption ?? v.label} className="max-w-full max-h-full object-contain" />
+        <div className="space-y-4">
+          {hero && (
+            <div className="space-y-2">
+              <div className="aspect-[16/9] overflow-hidden rounded bg-muted/20">
+                <img src={hero.imageUrl} alt={hero.caption ?? v.label} className="w-full h-full object-cover" />
               </div>
-              {s.caption && (
-                <div className="text-xs text-muted-foreground italic">{s.caption}</div>
-              )}
+              {hero.caption && <div className="text-xs text-muted-foreground italic">{hero.caption}</div>}
             </div>
-          ))}
+          )}
+          {squares.length > 0 && (
+            <div className="grid grid-cols-2 gap-4">
+              {squares.map((s, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="aspect-square overflow-hidden rounded bg-muted/20">
+                    <img src={s.imageUrl} alt={s.caption ?? v.label} className="w-full h-full object-cover" />
+                  </div>
+                  {s.caption && <div className="text-xs text-muted-foreground italic">{s.caption}</div>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   </article>
-);
+  );
+};
 
 export default function LogoPresentationView({ presentation }: Props) {
   const p = presentation;
@@ -99,8 +107,8 @@ export default function LogoPresentationView({ presentation }: Props) {
           {/* 01 — Brief */}
           <section>
             <SectionLabel number="01" title="Brief & contexte" />
-            {p.brief.intro && (
-              <p className="text-2xl md:text-3xl font-light leading-relaxed max-w-4xl mb-12 italic">
+          {p.brief.intro && (
+              <p className="text-2xl md:text-3xl font-light leading-relaxed max-w-4xl mb-12 italic whitespace-pre-line">
                 {p.brief.intro}
               </p>
             )}
@@ -138,7 +146,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="02" title="Moodboard" />
             {p.moodboard.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed">
+              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed whitespace-pre-line">
                 {p.moodboard.intro}
               </p>
             )}
@@ -169,7 +177,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="03" title="Pistes de logo" />
             {p.logos.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16 leading-relaxed">
+              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16 leading-relaxed whitespace-pre-line">
                 {p.logos.intro}
               </p>
             )}
@@ -186,7 +194,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="04" title="Palette de couleurs" />
             {p.colors.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed">
+              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed whitespace-pre-line">
                 {p.colors.intro}
               </p>
             )}
@@ -216,7 +224,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="05" title="Typographies" />
             {p.typography.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed">
+              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed whitespace-pre-line">
                 {p.typography.intro}
               </p>
             )}
@@ -246,7 +254,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section className="pb-16">
             <SectionLabel number="06" title="En action" />
             {p.inSitu.intro && (
-              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed">
+              <p className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed whitespace-pre-line">
                 {p.inSitu.intro}
               </p>
             )}
