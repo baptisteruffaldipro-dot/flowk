@@ -5,10 +5,19 @@ import Underline from "@tiptap/extension-underline";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Bold, Italic, Underline as UnderlineIcon, AlignLeft, AlignCenter, AlignRight,
   Heading1, Heading2, Heading3, List, ListOrdered, Quote, Undo, Redo,
+  Type, StretchHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FontSize, LineHeight } from "./tiptap-extensions";
 
 interface Props {
   value: string;
@@ -32,7 +41,13 @@ const ToolbarBtn = ({
   </Button>
 );
 
+function getTextStyleAttrs(editor: Editor) {
+  const attrs = editor.getAttributes("textStyle") as Record<string, any>;
+  return attrs;
+}
+
 function Toolbar({ editor }: { editor: Editor }) {
+  const attrs = getTextStyleAttrs(editor);
   return (
     <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 px-1 py-1 rounded-t-md">
       <ToolbarBtn title="Gras" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
@@ -44,6 +59,43 @@ function Toolbar({ editor }: { editor: Editor }) {
       <ToolbarBtn title="Souligné" active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()}>
         <UnderlineIcon className="h-4 w-4" />
       </ToolbarBtn>
+      <span className="w-px h-5 bg-border mx-1" />
+      <Select
+        value={attrs.fontSize ?? ""}
+        onValueChange={(v) => {
+          if (!v) (editor.chain().focus() as any).unsetFontSize().run();
+          else (editor.chain().focus() as any).setFontSize(v).run();
+        }}
+      >
+        <SelectTrigger className="h-8 w-[72px] text-xs border-0 bg-transparent hover:bg-accent/30 focus:ring-0 px-2 gap-1">
+          <Type className="h-3.5 w-3.5 text-muted-foreground" />
+          <SelectValue placeholder="Taille" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">Normal</SelectItem>
+          {["12px","14px","16px","18px","20px","24px","28px","32px","36px","40px","48px","64px"].map((s) => (
+            <SelectItem key={s} value={s}>{s}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={attrs.lineHeight ?? ""}
+        onValueChange={(v) => {
+          if (!v) (editor.chain().focus() as any).unsetLineHeight().run();
+          else (editor.chain().focus() as any).setLineHeight(v).run();
+        }}
+      >
+        <SelectTrigger className="h-8 w-[76px] text-xs border-0 bg-transparent hover:bg-accent/30 focus:ring-0 px-2 gap-1">
+          <StretchHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+          <SelectValue placeholder="Interl." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">Normal</SelectItem>
+          {["1","1.2","1.4","1.5","1.6","1.8","2","2.5"].map((s) => (
+            <SelectItem key={s} value={s}>{s}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <span className="w-px h-5 bg-border mx-1" />
       <ToolbarBtn title="Titre 1" active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
         <Heading1 className="h-4 w-4" />
@@ -91,6 +143,8 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
       StarterKit,
       Underline,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
+      FontSize,
+      LineHeight,
     ],
     content: value || "",
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
