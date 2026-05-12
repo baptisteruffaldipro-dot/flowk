@@ -5,11 +5,17 @@ interface Props {
 }
 
 // Render rich-text HTML if present, otherwise fall back to plain text with line breaks preserved.
+// Wrapper forces normal weight/style so the user's own formatting (bold, italic, alignment, headings) is what shows.
 const RichText = ({ html, className }: { html?: string; className?: string }) => {
   if (!html) return null;
   const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(html);
   if (looksLikeHtml) {
-    return <div className={`prose prose-neutral max-w-none ${className ?? ""}`} dangerouslySetInnerHTML={{ __html: html }} />;
+    return (
+      <div
+        className={`rich-text prose prose-neutral max-w-none ${className ?? ""}`}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
   }
   return <div className={`whitespace-pre-line ${className ?? ""}`}>{html}</div>;
 };
@@ -86,6 +92,21 @@ export default function LogoPresentationView({ presentation }: Props) {
       <style>{`
         .bs-serif { font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif; }
         .bs-mono { font-family: "JetBrains Mono", ui-monospace, "SF Mono", monospace; }
+        /* Rich text — let user formatting drive style */
+        .rich-text, .rich-text p, .rich-text li { font-style: normal; font-weight: 400; }
+        .rich-text strong { font-weight: 700; }
+        .rich-text em { font-style: italic; }
+        .rich-text u { text-decoration: underline; }
+        .rich-text h1 { font-size: 2.25em; font-weight: 600; line-height: 1.1; margin: 0.6em 0 0.4em; }
+        .rich-text h2 { font-size: 1.6em; font-weight: 600; line-height: 1.2; margin: 0.6em 0 0.3em; }
+        .rich-text h3 { font-size: 1.25em; font-weight: 600; line-height: 1.3; margin: 0.5em 0 0.25em; }
+        .rich-text p { margin: 0 0 0.75em; }
+        .rich-text ul { list-style: disc; padding-left: 1.4em; margin: 0.5em 0; }
+        .rich-text ol { list-style: decimal; padding-left: 1.4em; margin: 0.5em 0; }
+        .rich-text blockquote { border-left: 3px solid hsl(var(--accent)); padding-left: 1em; font-style: italic; margin: 0.75em 0; color: hsl(var(--muted-foreground)); }
+        .rich-text [style*="text-align:center"], .rich-text [style*="text-align: center"] { text-align: center; }
+        .rich-text [style*="text-align:right"], .rich-text [style*="text-align: right"] { text-align: right; }
+        .rich-text [style*="text-align:left"], .rich-text [style*="text-align: left"] { text-align: left; }
       `}</style>
       <link
         rel="stylesheet"
