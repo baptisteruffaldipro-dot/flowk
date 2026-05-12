@@ -61,9 +61,9 @@ function Toolbar({ editor }: { editor: Editor }) {
       </ToolbarBtn>
       <span className="w-px h-5 bg-border mx-1" />
       <Select
-        value={attrs.fontSize ?? ""}
+        value={attrs.fontSize ?? "default"}
         onValueChange={(v) => {
-          if (!v) (editor.chain().focus() as any).unsetFontSize().run();
+          if (v === "default") (editor.chain().focus() as any).unsetFontSize().run();
           else (editor.chain().focus() as any).setFontSize(v).run();
         }}
       >
@@ -72,16 +72,16 @@ function Toolbar({ editor }: { editor: Editor }) {
           <SelectValue placeholder="Taille" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Normal</SelectItem>
+          <SelectItem value="default">Normal</SelectItem>
           {["12px","14px","16px","18px","20px","24px","28px","32px","36px","40px","48px","64px"].map((s) => (
             <SelectItem key={s} value={s}>{s}</SelectItem>
           ))}
         </SelectContent>
       </Select>
       <Select
-        value={attrs.lineHeight ?? ""}
+        value={attrs.lineHeight ?? "default"}
         onValueChange={(v) => {
-          if (!v) (editor.chain().focus() as any).unsetLineHeight().run();
+          if (v === "default") (editor.chain().focus() as any).unsetLineHeight().run();
           else (editor.chain().focus() as any).setLineHeight(v).run();
         }}
       >
@@ -90,7 +90,7 @@ function Toolbar({ editor }: { editor: Editor }) {
           <SelectValue placeholder="Interl." />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Normal</SelectItem>
+          <SelectItem value="default">Normal</SelectItem>
           {["1","1.2","1.4","1.5","1.6","1.8","2","2.5"].map((s) => (
             <SelectItem key={s} value={s}>{s}</SelectItem>
           ))}
