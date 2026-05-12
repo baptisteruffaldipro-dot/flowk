@@ -1,4 +1,4 @@
-import type { LogoPresentation, LogoVariant, LogoTrack } from "./types";
+import type { LogoPresentation, LogoVariant, LogoTrack, MoodboardUniverse } from "./types";
 
 const emptyVariant = (label: string, usage: string): LogoVariant => ({
   label,
@@ -15,6 +15,13 @@ export const emptyTrack = (name: string): LogoTrack => ({
   submark: emptyVariant("Submark", "Version simplifiée pour les très petits formats (avatar, favicon, badge)."),
 });
 
+export const emptyUniverse = (name: string): MoodboardUniverse => ({
+  name,
+  intro: "",
+  keywords: [],
+  images: [],
+});
+
 export const emptyLogoPresentationContent: Omit<
   LogoPresentation,
   "slug" | "client" | "projectName" | "version" | "tagline"
@@ -25,9 +32,7 @@ export const emptyLogoPresentationContent: Omit<
     deliverables: [],
   },
   moodboard: {
-    intro: "",
-    keywords: [],
-    images: [],
+    universes: [emptyUniverse("Univers 1")],
   },
   logos: {
     tracks: [emptyTrack("Piste 1")],
