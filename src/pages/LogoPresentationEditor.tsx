@@ -94,41 +94,21 @@ function VariantEditor({ variant, onChange, folder }: { variant: LogoVariant; on
       </div>
       <div><Label>Description</Label><Textarea rows={3} value={variant.description} onChange={(e) => update({ description: e.target.value })} /></div>
       <div>
-        <Label>Mises en situation (variations sur fonds)</Label>
+        <Label>Visuels (1er = grande image, 2 suivants = carrés)</Label>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
           {variant.shots.map((s, i) => (
             <Card key={i} className="p-3 space-y-2 bg-muted/20">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {i === 0 ? "Image principale (rectangle)" : i < 3 ? `Carré ${i}` : "Visuel supplémentaire"}
+              </div>
               <ImageUpload
                 value={s.imageUrl}
                 onChange={(url) => {
                   const n = [...variant.shots]; n[i] = { ...n[i], imageUrl: url }; update({ shots: n });
                 }}
                 folder={folder}
-                aspect="aspect-square"
+                aspect={i === 0 ? "aspect-[16/9]" : "aspect-square"}
               />
-              <Select
-                value={s.background}
-                onValueChange={(v: any) => {
-                  const n = [...variant.shots]; n[i] = { ...n[i], background: v }; update({ shots: n });
-                }}
-              >
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Fond clair</SelectItem>
-                  <SelectItem value="dark">Fond sombre</SelectItem>
-                  <SelectItem value="color">Fond couleur</SelectItem>
-                </SelectContent>
-              </Select>
-              {s.background === "color" && (
-                <Input
-                  type="color"
-                  value={s.bgColor || "#9bca3e"}
-                  onChange={(e) => {
-                    const n = [...variant.shots]; n[i] = { ...n[i], bgColor: e.target.value }; update({ shots: n });
-                  }}
-                  className="h-8 p-1"
-                />
-              )}
               <Input
                 placeholder="Légende (optionnel)"
                 value={s.caption || ""}
