@@ -527,7 +527,11 @@ export default function Tasks() {
     setDividers(d.data ?? []);
     setPaidTaskIds(new Set(((inv.data as any[]) ?? []).map((r) => r.task_id)));
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    window.addEventListener("tasks:changed", load);
+    return () => window.removeEventListener("tasks:changed", load);
+  }, []);
 
   const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
   const onDragEnd = async (e: DragEndEvent) => {
