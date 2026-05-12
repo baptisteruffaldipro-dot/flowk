@@ -205,20 +205,26 @@ export default function LogoPresentationView({ presentation }: Props) {
 
           <Divider />
 
-          {/* 03 — Logos */}
-          <section>
-            <SectionLabel number="03" title="Pistes de logo" />
-            {p.logos.intro && (
-              <RichText html={p.logos.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-16 leading-relaxed" />
-            )}
-            <div className="space-y-24">
-              <VariantBlock v={p.logos.primary} index="01" />
-              <VariantBlock v={p.logos.secondary} index="02" />
-              <VariantBlock v={p.logos.submark} index="03" />
-            </div>
-          </section>
-
-          <Divider />
+          {/* 03+ — Pistes de logo */}
+          {p.logos.tracks.map((track, ti) => {
+            const number = String(3 + ti).padStart(2, "0");
+            return (
+              <div key={ti}>
+                <section>
+                  <SectionLabel number={number} title={track.name || `Piste ${ti + 1}`} />
+                  {track.intro && (
+                    <RichText html={track.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-16 leading-relaxed" />
+                  )}
+                  <div className="space-y-24">
+                    <VariantBlock v={track.primary} index="01" />
+                    <VariantBlock v={track.secondary} index="02" />
+                    <VariantBlock v={track.submark} index="03" />
+                  </div>
+                </section>
+                <Divider />
+              </div>
+            );
+          })}
 
           {/* 04 — Couleurs */}
           <section>
