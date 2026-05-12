@@ -16,7 +16,7 @@ export const FontSize = Extension.create({
               element.style.fontSize?.replace(/['"]+/g, ""),
             renderHTML: (attributes: any) => {
               if (!attributes.fontSize) return {};
-              return { style: `font-size: ${attributes.fontSize}` };
+              return { style: `font-size: ${attributes.fontSize} !important` };
             },
           },
         },
@@ -58,7 +58,7 @@ export const LineHeight = Extension.create({
               element.style.lineHeight?.replace(/['"]+/g, ""),
             renderHTML: (attributes: any) => {
               if (!attributes.lineHeight) return {};
-              return { style: `line-height: ${attributes.lineHeight}` };
+              return { style: `line-height: ${attributes.lineHeight} !important` };
             },
           },
         },
