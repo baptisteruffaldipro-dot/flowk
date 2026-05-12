@@ -41,13 +41,12 @@ const ToolbarBtn = ({
   </Button>
 );
 
-function getTextStyleAttrs(editor: Editor) {
-  const attrs = editor.getAttributes("textStyle") as Record<string, any>;
-  return attrs;
-}
-
 function Toolbar({ editor }: { editor: Editor }) {
-  const attrs = getTextStyleAttrs(editor);
+  const textStyleAttrs = editor.getAttributes("textStyle") as Record<string, any>;
+  const blockAttrs = {
+    ...editor.getAttributes("paragraph"),
+    ...editor.getAttributes("heading"),
+  } as Record<string, any>;
   return (
     <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/30 px-1 py-1 rounded-t-md">
       <ToolbarBtn title="Gras" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
@@ -61,7 +60,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       </ToolbarBtn>
       <span className="w-px h-5 bg-border mx-1" />
       <Select
-        value={attrs.fontSize ?? "default"}
+        value={textStyleAttrs.fontSize ?? "default"}
         onValueChange={(v) => {
           if (v === "default") (editor.chain().focus() as any).unsetFontSize().run();
           else (editor.chain().focus() as any).setFontSize(v).run();
@@ -79,7 +78,7 @@ function Toolbar({ editor }: { editor: Editor }) {
         </SelectContent>
       </Select>
       <Select
-        value={attrs.lineHeight ?? "default"}
+        value={blockAttrs.lineHeight ?? "default"}
         onValueChange={(v) => {
           if (v === "default") (editor.chain().focus() as any).unsetLineHeight().run();
           else (editor.chain().focus() as any).setLineHeight(v).run();
