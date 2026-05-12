@@ -314,7 +314,6 @@ export default function LogoPresentationEditor() {
           </SectionCard>
         </TabsContent>
 
-        <TabsContent value="moodboard">
         <TabsContent value="moodboard" className="space-y-4">
           {(c.moodboard.universes as MoodboardUniverse[]).map((u, ui) => (
             <Card key={ui} className="p-5 space-y-4 border-2">
