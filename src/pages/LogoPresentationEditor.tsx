@@ -349,30 +349,57 @@ export default function LogoPresentationEditor() {
         </TabsContent>
 
         <TabsContent value="logos" className="space-y-4">
-          <SectionCard title="03 — Pistes de logo (intro)">
-            <RichTextEditor value={c.logos.intro} onChange={(html) => updateContent(["logos", "intro"], html)} />
-          </SectionCard>
-          <SectionCard title="Logo principal (primaire)">
-            <VariantEditor
-              variant={c.logos.primary}
-              onChange={(v) => updateContent(["logos", "primary"], v)}
-              folder={`${folder}/logos/primary`}
-            />
-          </SectionCard>
-          <SectionCard title="Logo secondaire">
-            <VariantEditor
-              variant={c.logos.secondary}
-              onChange={(v) => updateContent(["logos", "secondary"], v)}
-              folder={`${folder}/logos/secondary`}
-            />
-          </SectionCard>
-          <SectionCard title="Submark (tertiaire)">
-            <VariantEditor
-              variant={c.logos.submark}
-              onChange={(v) => updateContent(["logos", "submark"], v)}
-              folder={`${folder}/logos/submark`}
-            />
-          </SectionCard>
+          {(c.logos.tracks as LogoTrack[]).map((track, ti) => (
+            <Card key={ti} className="p-5 space-y-4 border-2">
+              <div className="flex items-center gap-3">
+                <Input
+                  className="flex-1 font-semibold"
+                  value={track.name}
+                  onChange={(e) => updateContent(["logos", "tracks", ti, "name"], e.target.value)}
+                  placeholder={`Piste ${ti + 1}`}
+                />
+                {c.logos.tracks.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => updateContent(["logos", "tracks"], c.logos.tracks.filter((_: any, j: number) => j !== ti))}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Retirer cette piste
+                  </Button>
+                )}
+              </div>
+              <SectionCard title="Intro de la piste">
+                <RichTextEditor value={track.intro} onChange={(html) => updateContent(["logos", "tracks", ti, "intro"], html)} />
+              </SectionCard>
+              <SectionCard title="Logo principal (primaire)">
+                <VariantEditor
+                  variant={track.primary}
+                  onChange={(v) => updateContent(["logos", "tracks", ti, "primary"], v)}
+                  folder={`${folder}/logos/track-${ti}/primary`}
+                />
+              </SectionCard>
+              <SectionCard title="Logo secondaire">
+                <VariantEditor
+                  variant={track.secondary}
+                  onChange={(v) => updateContent(["logos", "tracks", ti, "secondary"], v)}
+                  folder={`${folder}/logos/track-${ti}/secondary`}
+                />
+              </SectionCard>
+              <SectionCard title="Submark (tertiaire)">
+                <VariantEditor
+                  variant={track.submark}
+                  onChange={(v) => updateContent(["logos", "tracks", ti, "submark"], v)}
+                  folder={`${folder}/logos/track-${ti}/submark`}
+                />
+              </SectionCard>
+            </Card>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => updateContent(["logos", "tracks"], [...c.logos.tracks, emptyTrack(`Piste ${c.logos.tracks.length + 1}`)])}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Ajouter une piste de logo
+          </Button>
         </TabsContent>
 
         <TabsContent value="colors">
