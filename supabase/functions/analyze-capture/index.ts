@@ -136,13 +136,18 @@ Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la 
 
     const userMsg = `Source: ${source}\nMessage:\n"""${content}"""\n\nContexte (json):\n${JSON.stringify(ctx).slice(0, CONTEXT_CHAR_LIMIT)}`
 
-    const aiResult = await generateText({
-      model: gateway('google/gemini-2.5-flash'),
-      system,
-      prompt: userMsg,
-    })
-
-    const raw = aiResult.text ?? '{}'
+    let raw = '{}'
+    try {
+      const aiResult = await generateText({
+        model: gateway('google/gemini-2.5-flash'),
+        system,
+        prompt: userMsg,
+      })
+      raw = aiResult.text ?? '{}'
+    } catch (e: any) {
+      console.error('AI analysis fallback', e?.statusCode ?? e?.status ?? '', e?.responseBody ?? e?.message ?? e)
+      return json({ ok: true, ...fallbackAnalysis(content), ocr_text: ocrText || undefined, content_used: content })
+    }
     let parsed: any
     try { parsed = JSON.parse(raw) } catch {
       const match = raw.match(/\{[\s\S]*\}/)
@@ -159,4 +164,33 @@ Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la 
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+}
+
+function fallbackAnalysis(content: string) {
+  const email = content.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? null
+  const summary = `Traiter la demande client : ${content.replace(/\s+/g, ' ').slice(0, 220)}${content.length > 220 ? '…' : ''}`
+  const looksLikePrint = /impression|papier|gram|\bg\b|kg|kilo|exemplaire|format|pelliculage|flyer|carte|affiche|adhésif|bâche/i.test(content)
+
+  return {
+    summary,
+    link: { client_id: null, project_id: null, task_id: null, print_order_id: null, confidence: 'low' },
+    actions: [
+      {
+        type: looksLikePrint ? 'create_print_order' : 'create_task',
+        label: looksLikePrint ? 'Créer une commande d’impression' : 'Créer une tâche',
+        target: looksLikePrint ? 'print_order' : 'task',
+        target_id: null,
+        task_title: looksLikePrint ? null : summary.slice(0, 90),
+        prestation: looksLikePrint ? 'impression' : 'autre',
+        project_name: null,
+        project_type: null,
+        subtask_title: null,
+        subtasks: null,
+        deadline: null,
+        client_name: email ? email.split('@')[0] : null,
+        client_email: email,
+        print_description: looksLikePrint ? content.slice(0, 500) : null,
+      },
+    ],
+  }
 }
