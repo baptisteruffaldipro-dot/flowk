@@ -15,8 +15,8 @@ import { toast } from "sonner";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import ImageUpload from "@/components/logo-presentation/ImageUpload";
 import RichTextEditor from "@/components/logo-presentation/RichTextEditor";
-import type { LogoPresentation, LogoVariant, LogoTrack } from "@/data/logo-presentations/types";
-import { emptyLogoPresentationContent, emptyTrack } from "@/data/logo-presentations/empty";
+import type { LogoPresentation, LogoVariant, LogoTrack, MoodboardUniverse } from "@/data/logo-presentations/types";
+import { emptyLogoPresentationContent, emptyTrack, emptyUniverse } from "@/data/logo-presentations/empty";
 
 type DBRow = {
   id: string;
@@ -39,7 +39,14 @@ const genToken = () => {
 const ensureContent = (raw: any) => {
   const c = { ...emptyLogoPresentationContent, ...(raw || {}) };
   c.brief = { ...emptyLogoPresentationContent.brief, ...(c.brief || {}) };
-  c.moodboard = { ...emptyLogoPresentationContent.moodboard, ...(c.moodboard || {}) };
+  const mb: any = c.moodboard || {};
+  if (Array.isArray(mb.universes) && mb.universes.length > 0) {
+    c.moodboard = { universes: mb.universes.map((u: any, i: number) => ({ ...emptyUniverse(`Univers ${i + 1}`), ...u })) };
+  } else if (mb.intro || (Array.isArray(mb.keywords) && mb.keywords.length) || (Array.isArray(mb.images) && mb.images.length)) {
+    c.moodboard = { universes: [{ ...emptyUniverse("Univers 1"), intro: mb.intro || "", keywords: mb.keywords || [], images: mb.images || [] }] };
+  } else {
+    c.moodboard = { universes: [emptyUniverse("Univers 1")] };
+  }
   const lg: any = c.logos || {};
   if (Array.isArray(lg.tracks) && lg.tracks.length > 0) {
     c.logos = { tracks: lg.tracks.map((t: any, i: number) => ({ ...emptyTrack(`Piste ${i + 1}`), ...t })) };
