@@ -87,6 +87,11 @@ const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => {
 
 export default function LogoPresentationView({ presentation }: Props) {
   const p = presentation;
+  const trackCount = p.logos.tracks.length;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const colorsNum = pad(3 + trackCount);
+  const typoNum = pad(4 + trackCount);
+  const inSituNum = pad(5 + trackCount);
   return (
     <div className="bg-background text-foreground">
       <style>{`
@@ -226,9 +231,9 @@ export default function LogoPresentationView({ presentation }: Props) {
             );
           })}
 
-          {/* 04 — Couleurs */}
+          {/* Couleurs */}
           <section>
-            <SectionLabel number="04" title="Palette de couleurs" />
+            <SectionLabel number={colorsNum} title="Palette de couleurs" />
             {p.colors.intro && (
               <RichText html={p.colors.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
@@ -254,9 +259,9 @@ export default function LogoPresentationView({ presentation }: Props) {
 
           <Divider />
 
-          {/* 05 — Typographies */}
+          {/* Typographies */}
           <section>
-            <SectionLabel number="05" title="Typographies" />
+            <SectionLabel number={typoNum} title="Typographies" />
             {p.typography.intro && (
               <RichText html={p.typography.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
@@ -282,9 +287,9 @@ export default function LogoPresentationView({ presentation }: Props) {
 
           <Divider />
 
-          {/* 06 — En action */}
+          {/* En action */}
           <section className="pb-16">
-            <SectionLabel number="06" title="En action" />
+            <SectionLabel number={inSituNum} title="En action" />
             {p.inSitu.intro && (
               <RichText html={p.inSitu.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
