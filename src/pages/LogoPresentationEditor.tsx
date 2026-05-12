@@ -315,44 +315,70 @@ export default function LogoPresentationEditor() {
         </TabsContent>
 
         <TabsContent value="moodboard">
-          <SectionCard title="02 — Moodboard">
-            <div><Label>Intro</Label><RichTextEditor value={c.moodboard.intro} onChange={(html) => updateContent(["moodboard", "intro"], html)} /></div>
-            <div>
-              <Label>Mots-clés</Label>
-              <StringList value={c.moodboard.keywords} onChange={(v) => updateContent(["moodboard", "keywords"], v)} placeholder="Mot-clé" />
-            </div>
-            <div>
-              <Label>Références / Inspirations</Label>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
-                {c.moodboard.images.map((img: any, i: number) => (
-                  <Card key={i} className="p-3 space-y-2 bg-muted/20">
-                    <ImageUpload
-                      value={img.url}
-                      onChange={(url) => {
-                        const n = [...c.moodboard.images]; n[i] = { ...n[i], url }; updateContent(["moodboard", "images"], n);
-                      }}
-                      folder={`${folder}/moodboard`}
-                      aspect="aspect-square"
-                    />
-                    <Input
-                      placeholder="Légende"
-                      className="h-8 text-xs"
-                      value={img.caption || ""}
-                      onChange={(e) => {
-                        const n = [...c.moodboard.images]; n[i] = { ...n[i], caption: e.target.value }; updateContent(["moodboard", "images"], n);
-                      }}
-                    />
-                    <Button size="sm" variant="ghost" className="w-full" onClick={() => updateContent(["moodboard", "images"], c.moodboard.images.filter((_: any, j: number) => j !== i))}>
-                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Retirer
-                    </Button>
-                  </Card>
-                ))}
+        <TabsContent value="moodboard" className="space-y-4">
+          {(c.moodboard.universes as MoodboardUniverse[]).map((u, ui) => (
+            <Card key={ui} className="p-5 space-y-4 border-2">
+              <div className="flex items-center gap-3">
+                <Input
+                  className="flex-1 font-semibold"
+                  value={u.name}
+                  onChange={(e) => updateContent(["moodboard", "universes", ui, "name"], e.target.value)}
+                  placeholder={`Univers ${ui + 1}`}
+                />
+                {c.moodboard.universes.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => updateContent(["moodboard", "universes"], c.moodboard.universes.filter((_: any, j: number) => j !== ui))}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Retirer cet univers
+                  </Button>
+                )}
               </div>
-              <Button size="sm" variant="outline" className="mt-3" onClick={() => updateContent(["moodboard", "images"], [...c.moodboard.images, { url: "" }])}>
-                <Plus className="h-4 w-4 mr-1" /> Ajouter une référence
-              </Button>
-            </div>
-          </SectionCard>
+              <SectionCard title="Intro">
+                <RichTextEditor value={u.intro} onChange={(html) => updateContent(["moodboard", "universes", ui, "intro"], html)} />
+              </SectionCard>
+              <SectionCard title="Mots-clés">
+                <StringList value={u.keywords} onChange={(v) => updateContent(["moodboard", "universes", ui, "keywords"], v)} placeholder="Mot-clé" />
+              </SectionCard>
+              <SectionCard title="Références / Inspirations">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {u.images.map((img: any, i: number) => (
+                    <Card key={i} className="p-3 space-y-2 bg-muted/20">
+                      <ImageUpload
+                        value={img.url}
+                        onChange={(url) => {
+                          const n = [...u.images]; n[i] = { ...n[i], url }; updateContent(["moodboard", "universes", ui, "images"], n);
+                        }}
+                        folder={`${folder}/moodboard/u-${ui}`}
+                        aspect="aspect-square"
+                      />
+                      <Input
+                        placeholder="Légende"
+                        className="h-8 text-xs"
+                        value={img.caption || ""}
+                        onChange={(e) => {
+                          const n = [...u.images]; n[i] = { ...n[i], caption: e.target.value }; updateContent(["moodboard", "universes", ui, "images"], n);
+                        }}
+                      />
+                      <Button size="sm" variant="ghost" className="w-full" onClick={() => updateContent(["moodboard", "universes", ui, "images"], u.images.filter((_: any, j: number) => j !== i))}>
+                        <Trash2 className="h-3.5 w-3.5 mr-1" /> Retirer
+                      </Button>
+                    </Card>
+                  ))}
+                </div>
+                <Button size="sm" variant="outline" className="mt-3" onClick={() => updateContent(["moodboard", "universes", ui, "images"], [...u.images, { url: "" }])}>
+                  <Plus className="h-4 w-4 mr-1" /> Ajouter une référence
+                </Button>
+              </SectionCard>
+            </Card>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => updateContent(["moodboard", "universes"], [...c.moodboard.universes, emptyUniverse(`Univers ${c.moodboard.universes.length + 1}`)])}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Ajouter un univers
+          </Button>
         </TabsContent>
 
         <TabsContent value="logos" className="space-y-4">
