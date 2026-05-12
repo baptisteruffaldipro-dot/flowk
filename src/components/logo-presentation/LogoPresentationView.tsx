@@ -180,7 +180,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="02" title="Moodboard" />
             {p.moodboard.intro && (
-              <RichText html={p.moodboard.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed" />
+              <RichText html={p.moodboard.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
             {p.moodboard.keywords.length > 0 && (
               <div className="flex flex-wrap gap-3 mb-12">
@@ -209,7 +209,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="03" title="Pistes de logo" />
             {p.logos.intro && (
-              <RichText html={p.logos.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-16 leading-relaxed" />
+              <RichText html={p.logos.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-16 leading-relaxed" />
             )}
             <div className="space-y-24">
               <VariantBlock v={p.logos.primary} index="01" />
@@ -224,7 +224,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="04" title="Palette de couleurs" />
             {p.colors.intro && (
-              <RichText html={p.colors.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed" />
+              <RichText html={p.colors.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
             {p.colors.palette.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-foreground/10 border border-foreground/10">
@@ -252,7 +252,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="05" title="Typographies" />
             {p.typography.intro && (
-              <RichText html={p.typography.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed" />
+              <RichText html={p.typography.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
             {p.typography.fonts.length > 0 ? (
               <div className="grid md:grid-cols-3 gap-px bg-foreground/10 border border-foreground/10">
@@ -280,7 +280,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section className="pb-16">
             <SectionLabel number="06" title="En action" />
             {p.inSitu.intro && (
-              <RichText html={p.inSitu.intro} className="text-xl md:text-2xl font-light italic text-muted-foreground max-w-4xl mb-12 leading-relaxed" />
+              <RichText html={p.inSitu.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
             )}
             {p.inSitu.items.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
