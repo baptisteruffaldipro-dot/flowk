@@ -14,6 +14,7 @@ import { Plus, Trash2, Eye, Save, ArrowLeft, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import ImageUpload from "@/components/logo-presentation/ImageUpload";
+import RichTextEditor from "@/components/logo-presentation/RichTextEditor";
 import type { LogoPresentation, LogoVariant } from "@/data/logo-presentations/types";
 import { emptyLogoPresentationContent } from "@/data/logo-presentations/empty";
 
@@ -92,7 +93,7 @@ function VariantEditor({ variant, onChange, folder }: { variant: LogoVariant; on
         <div><Label>Libellé</Label><Input value={variant.label} onChange={(e) => update({ label: e.target.value })} /></div>
         <div><Label>Usage</Label><Input value={variant.usage} onChange={(e) => update({ usage: e.target.value })} /></div>
       </div>
-      <div><Label>Description</Label><Textarea rows={3} value={variant.description} onChange={(e) => update({ description: e.target.value })} /></div>
+      <div><Label>Description</Label><RichTextEditor value={variant.description} onChange={(html) => update({ description: html })} minHeight="120px" /></div>
       <div>
         <Label>Visuels (1er = grande image, 2 suivants = carrés)</Label>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
@@ -286,7 +287,7 @@ export default function LogoPresentationEditor() {
 
         <TabsContent value="brief">
           <SectionCard title="01 — Brief & contexte">
-            <div><Label>Intro</Label><Textarea rows={4} value={c.brief.intro} onChange={(e) => updateContent(["brief", "intro"], e.target.value)} /></div>
+            <div><Label>Intro</Label><RichTextEditor value={c.brief.intro} onChange={(html) => updateContent(["brief", "intro"], html)} /></div>
             <div>
               <Label>Objectifs</Label>
               <StringList value={c.brief.objectives} onChange={(v) => updateContent(["brief", "objectives"], v)} placeholder="Objectif" />
@@ -300,7 +301,7 @@ export default function LogoPresentationEditor() {
 
         <TabsContent value="moodboard">
           <SectionCard title="02 — Moodboard">
-            <div><Label>Intro</Label><Textarea rows={3} value={c.moodboard.intro} onChange={(e) => updateContent(["moodboard", "intro"], e.target.value)} /></div>
+            <div><Label>Intro</Label><RichTextEditor value={c.moodboard.intro} onChange={(html) => updateContent(["moodboard", "intro"], html)} /></div>
             <div>
               <Label>Mots-clés</Label>
               <StringList value={c.moodboard.keywords} onChange={(v) => updateContent(["moodboard", "keywords"], v)} placeholder="Mot-clé" />
@@ -341,7 +342,7 @@ export default function LogoPresentationEditor() {
 
         <TabsContent value="logos" className="space-y-4">
           <SectionCard title="03 — Pistes de logo (intro)">
-            <Textarea rows={3} value={c.logos.intro} onChange={(e) => updateContent(["logos", "intro"], e.target.value)} />
+            <RichTextEditor value={c.logos.intro} onChange={(html) => updateContent(["logos", "intro"], html)} />
           </SectionCard>
           <SectionCard title="Logo principal (primaire)">
             <VariantEditor
@@ -368,7 +369,7 @@ export default function LogoPresentationEditor() {
 
         <TabsContent value="colors">
           <SectionCard title="04 — Palette de couleurs">
-            <div><Label>Intro</Label><Textarea rows={3} value={c.colors.intro} onChange={(e) => updateContent(["colors", "intro"], e.target.value)} /></div>
+            <div><Label>Intro</Label><RichTextEditor value={c.colors.intro} onChange={(html) => updateContent(["colors", "intro"], html)} /></div>
             <div className="space-y-2">
               <Label>Couleurs</Label>
               {c.colors.palette.map((col: any, i: number) => (
@@ -421,7 +422,7 @@ export default function LogoPresentationEditor() {
 
         <TabsContent value="insitu">
           <SectionCard title="06 — En action (mockups)">
-            <div><Label>Intro</Label><Textarea rows={3} value={c.inSitu.intro} onChange={(e) => updateContent(["inSitu", "intro"], e.target.value)} /></div>
+            <div><Label>Intro</Label><RichTextEditor value={c.inSitu.intro} onChange={(html) => updateContent(["inSitu", "intro"], html)} /></div>
             <div>
               <Label>Mises en situation</Label>
               <div className="grid sm:grid-cols-2 gap-3 mt-2">
