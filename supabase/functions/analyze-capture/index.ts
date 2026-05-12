@@ -1,15 +1,21 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { generateText } from 'npm:ai'
+import { createOpenAICompatible } from 'npm:@ai-sdk/openai-compatible'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const aiHeaders = (lovableKey: string) => ({
-  'Lovable-API-Key': lovableKey,
-  'X-Lovable-AIG-SDK': 'vercel-ai-sdk',
-  'Content-Type': 'application/json',
-})
+const createLovableAiGatewayProvider = (lovableApiKey: string) =>
+  createOpenAICompatible({
+    name: 'lovable',
+    baseURL: 'https://ai.gateway.lovable.dev/v1',
+    headers: {
+      'Lovable-API-Key': lovableApiKey,
+      'X-Lovable-AIG-SDK': 'vercel-ai-sdk',
+    },
+  })
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -22,6 +28,7 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY')!
     const lovableKey = Deno.env.get('LOVABLE_API_KEY')
     if (!lovableKey) return json({ error: 'LOVABLE_API_KEY missing' }, 500)
+    const gateway = createLovableAiGatewayProvider(lovableKey)
 
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -64,32 +71,18 @@ Deno.serve(async (req) => {
       }
 
       // First call: extract text + visual description from the images
-      const visionResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: aiHeaders(lovableKey),
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            { role: 'system', content: "Tu es un OCR + analyste visuel. Pour CHAQUE image fournie, extrais TOUT le texte visible (mails, SMS, devis, captures…) puis ajoute une courte description visuelle (1 phrase). Si plusieurs images, numérote-les (Image 1, Image 2…). Réponds en français, format global:\nTEXTE:\n<texte brut tel quel, concaténé>\n\nVISUEL:\n<description courte par image>" },
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: content ? `Contexte fourni par l'utilisateur: ${content}` : `Analyse ${imageDataUrls.length > 1 ? 'ces images' : 'cette image'}.` },
-                ...imageDataUrls.map((url) => ({ type: 'image_url', image_url: { url } })),
-              ],
-            },
+      const visionResult = await generateText({
+        model: gateway('google/gemini-2.5-flash'),
+        system: "Tu es un OCR + analyste visuel. Pour CHAQUE image fournie, extrais TOUT le texte visible (mails, SMS, devis, captures…) puis ajoute une courte description visuelle (1 phrase). Si plusieurs images, numérote-les (Image 1, Image 2…). Réponds en français, format global:\nTEXTE:\n<texte brut tel quel, concaténé>\n\nVISUEL:\n<description courte par image>",
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: content ? `Contexte fourni par l'utilisateur: ${content}` : `Analyse ${imageDataUrls.length > 1 ? 'ces images' : 'cette image'}.` },
+            ...imageDataUrls.map((url) => ({ type: 'image', image: url })),
           ],
-        }),
+        }],
       })
-      if (visionResp.status === 429) return json({ error: 'Trop de requêtes IA, réessayez bientôt.' }, 429)
-      if (visionResp.status === 402) return json({ error: 'Crédits IA épuisés. Ajoutez-en dans Lovable.' }, 402)
-      if (!visionResp.ok) {
-        const t = await visionResp.text()
-        console.error('Vision error', visionResp.status, t)
-        return json({ error: 'Lecture image impossible' }, 500)
-      }
-      const visionData = await visionResp.json()
-      ocrText = visionData?.choices?.[0]?.message?.content ?? ''
+      ocrText = visionResult.text ?? ''
       // Merge into content for downstream analysis
       content = (content ? content + '\n\n' : '') + `[Contenu image]\n${ocrText}`
     }
