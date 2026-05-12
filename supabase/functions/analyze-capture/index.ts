@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: aiHeaders(lovableKey),
         body: JSON.stringify({
-          model: 'google/gemini-3-flash-preview',
+          model: 'google/gemini-2.5-flash',
           messages: [
             { role: 'system', content: "Tu es un OCR + analyste visuel. Pour CHAQUE image fournie, extrais TOUT le texte visible (mails, SMS, devis, captures…) puis ajoute une courte description visuelle (1 phrase). Si plusieurs images, numérote-les (Image 1, Image 2…). Réponds en français, format global:\nTEXTE:\n<texte brut tel quel, concaténé>\n\nVISUEL:\n<description courte par image>" },
             {
@@ -144,12 +144,11 @@ Choisis null pour les ids inconnus. N'invente jamais d'id qui n'est pas dans la 
       method: 'POST',
       headers: aiHeaders(lovableKey),
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: userMsg },
         ],
-        response_format: { type: 'json_object' },
       }),
     })
 
