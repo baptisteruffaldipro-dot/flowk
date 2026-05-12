@@ -87,11 +87,13 @@ const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => {
 
 export default function LogoPresentationView({ presentation }: Props) {
   const p = presentation;
+  const universeCount = p.moodboard.universes.length;
   const trackCount = p.logos.tracks.length;
   const pad = (n: number) => String(n).padStart(2, "0");
-  const colorsNum = pad(3 + trackCount);
-  const typoNum = pad(4 + trackCount);
-  const inSituNum = pad(5 + trackCount);
+  const logosStart = 2 + universeCount;
+  const colorsNum = pad(logosStart + trackCount);
+  const typoNum = pad(logosStart + trackCount + 1);
+  const inSituNum = pad(logosStart + trackCount + 2);
   return (
     <div className="bg-background text-foreground">
       <style>{`
@@ -181,38 +183,44 @@ export default function LogoPresentationView({ presentation }: Props) {
 
           <Divider />
 
-          {/* 02 — Moodboard */}
-          <section>
-            <SectionLabel number="02" title="Moodboard" />
-            {p.moodboard.intro && (
-              <RichText html={p.moodboard.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
-            )}
-            {p.moodboard.keywords.length > 0 && (
-              <div className="flex flex-wrap gap-3 mb-12">
-                {p.moodboard.keywords.map((k, i) => (
-                  <span key={i} className="px-4 py-2 border border-foreground/20 text-sm italic font-light">{k}</span>
-                ))}
+          {/* 02+ — Moodboard (univers) */}
+          {p.moodboard.universes.map((u, ui) => {
+            const number = pad(2 + ui);
+            return (
+              <div key={`u-${ui}`}>
+                <section>
+                  <SectionLabel number={number} title={u.name || `Univers ${ui + 1}`} />
+                  {u.intro && (
+                    <RichText html={u.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
+                  )}
+                  {u.keywords.length > 0 && (
+                    <div className="flex flex-wrap gap-3 mb-12">
+                      {u.keywords.map((k, i) => (
+                        <span key={i} className="px-4 py-2 border border-foreground/20 text-sm italic font-light">{k}</span>
+                      ))}
+                    </div>
+                  )}
+                  {u.images.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {u.images.map((img, i) => (
+                        <figure key={i} className="space-y-2">
+                          <img src={img.url} alt={img.caption ?? `Référence ${i + 1}`} className="w-full aspect-square object-cover rounded" />
+                          {img.caption && <figcaption className="text-xs text-muted-foreground italic">{img.caption}</figcaption>}
+                        </figure>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">Pas encore de références.</div>
+                  )}
+                </section>
+                <Divider />
               </div>
-            )}
-            {p.moodboard.images.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {p.moodboard.images.map((img, i) => (
-                  <figure key={i} className="space-y-2">
-                    <img src={img.url} alt={img.caption ?? `Référence ${i + 1}`} className="w-full aspect-square object-cover rounded" />
-                    {img.caption && <figcaption className="text-xs text-muted-foreground italic">{img.caption}</figcaption>}
-                  </figure>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground italic">Pas encore de références.</div>
-            )}
-          </section>
+            );
+          })}
 
-          <Divider />
-
-          {/* 03+ — Pistes de logo */}
+          {/* Pistes de logo */}
           {p.logos.tracks.map((track, ti) => {
-            const number = String(3 + ti).padStart(2, "0");
+            const number = pad(logosStart + ti);
             return (
               <div key={ti}>
                 <section>

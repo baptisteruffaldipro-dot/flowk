@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import type { LogoPresentation } from "@/data/logo-presentations/types";
-import { emptyLogoPresentationContent, emptyTrack } from "@/data/logo-presentations/empty";
+import { emptyLogoPresentationContent, emptyTrack, emptyUniverse } from "@/data/logo-presentations/empty";
 
 function migrateLogos(raw: any) {
   const base = emptyLogoPresentationContent.logos;
@@ -23,6 +23,17 @@ function migrateLogos(raw: any) {
     }] };
   }
   return base;
+}
+
+function migrateMoodboard(raw: any) {
+  const src = raw || {};
+  if (Array.isArray(src.universes) && src.universes.length > 0) {
+    return { universes: src.universes.map((u: any, i: number) => ({ ...emptyUniverse(`Univers ${i + 1}`), ...u })) };
+  }
+  if (src.intro || (Array.isArray(src.keywords) && src.keywords.length) || (Array.isArray(src.images) && src.images.length)) {
+    return { universes: [{ ...emptyUniverse("Univers 1"), intro: src.intro || "", keywords: src.keywords || [], images: src.images || [] }] };
+  }
+  return { universes: [emptyUniverse("Univers 1")] };
 }
 
 export default function LogoPresentationPublic() {
@@ -46,7 +57,7 @@ export default function LogoPresentationPublic() {
         ...emptyLogoPresentationContent,
         ...content,
         brief: { ...emptyLogoPresentationContent.brief, ...(content.brief || {}) },
-        moodboard: { ...emptyLogoPresentationContent.moodboard, ...(content.moodboard || {}) },
+        moodboard: migrateMoodboard(content.moodboard),
         logos: migrateLogos(content.logos),
         colors: { ...emptyLogoPresentationContent.colors, ...(content.colors || {}) },
         typography: { ...emptyLogoPresentationContent.typography, ...(content.typography || {}) },
