@@ -15,7 +15,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Sparkle, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Sparkle, Trash2, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { emptyBrandStrategyContent } from "@/data/brand-strategies/empty";
 import { gardenTennisStrategy } from "@/data/brand-strategies/garden-tennis";
@@ -81,6 +81,26 @@ export default function BrandStrategies() {
     if (error) { toast.error(error.message); return; }
     toast.success("Stratégie supprimée");
     load();
+  };
+
+  const duplicate = async (s: Row & { content?: any; tagline?: string }) => {
+    const { data: full, error: e1 } = await supabase.from("brand_strategies" as any).select("*").eq("id", s.id).single();
+    if (e1 || !full) { toast.error("Impossible de dupliquer"); return; }
+    const f: any = full;
+    const { data: u } = await supabase.auth.getUser();
+    const payload: any = {
+      project_name: `${f.project_name} (copie)`,
+      client_name: f.client_name,
+      client_id: f.client_id,
+      version: f.version,
+      tagline: f.tagline,
+      content: f.content,
+      created_by: u.user?.id,
+    };
+    const { data, error } = await supabase.from("brand_strategies" as any).insert(payload).select("id").single();
+    if (error) { toast.error(error.message); return; }
+    toast.success("Stratégie dupliquée");
+    navigate(`/strategie/${(data as any).id}`);
   };
 
   return (
@@ -157,6 +177,9 @@ export default function BrandStrategies() {
             <Badge variant={s.is_published ? "default" : "outline"}>
               {s.is_published ? "Publiée" : "Brouillon"}
             </Badge>
+            <Button variant="ghost" size="icon" onClick={() => duplicate(s)} title="Dupliquer">
+              <Copy className="h-4 w-4" />
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4" /></Button>
