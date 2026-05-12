@@ -40,6 +40,23 @@ const normalizeProjectType = (value?: string | null) => {
   return clean && VALID_PROJECT_TYPES.has(clean) ? clean : "autre";
 };
 
+const buildFallbackResult = (text: string, imageCount: number): AiResult => {
+  const base = text.trim() || `${imageCount} image${imageCount > 1 ? "s" : ""} à traiter`;
+  const title = base.replace(/\s+/g, " ").slice(0, 90) || "Nouvelle tâche";
+  return {
+    summary: `Traiter la demande client : ${title}`,
+    link: { client_id: null, project_id: null, task_id: null, print_order_id: null, confidence: "low" },
+    actions: [{
+      type: "create_task",
+      label: `Créer une tâche : ${title}`,
+      target: "task",
+      target_id: null,
+      task_title: title,
+      prestation: "autre",
+    }],
+  };
+};
+
 type Action = {
   type: "add_note"|"create_task"|"create_project"|"create_subtask"|"count_revision"|"set_deadline"|"create_client"|"create_print_order";
   label: string;
@@ -246,6 +263,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
   const analyze = async () => {
     if (!content.trim() && imageFiles.length === 0) return;
     setAnalyzing(true); setAi(null); setCaptureId(null);
+    let savedCaptureId: string | null = null;
     try {
       const { data: u } = await supabase.auth.getUser();
       // 0) Upload images first if present
@@ -269,6 +287,7 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
         content: content || (paths.length > 0 ? `[${paths.length} image${paths.length > 1 ? "s" : ""}]` : ""), source, created_by: u.user!.id,
       }).select("id").single();
       if (capErr) throw capErr;
+      savedCaptureId = cap.id;
       setCaptureId(cap.id);
 
       // 2) Ask the AI
@@ -297,7 +316,22 @@ export default function QuickCapture({ open, onOpenChange }: Props) {
         ai_suggestions: result as any,
       }).eq("id", cap.id);
     } catch (e: any) {
-      toast.error(e?.message ?? "Analyse impossible");
+      if (savedCaptureId) {
+        const fallback = buildFallbackResult(content, imageFiles.length);
+        setAi(fallback);
+        setClientId("");
+        setProjectId("");
+        setTaskId("");
+        setPrintOrderId("");
+        setSelectedActions(new Set([0]));
+        await supabase.from("quick_captures").update({
+          ai_summary: fallback.summary,
+          ai_suggestions: fallback as any,
+        }).eq("id", savedCaptureId);
+        toast.error("Analyse IA indisponible, une tâche simple est prête à créer.");
+      } else {
+        toast.error(e?.message ?? "Analyse impossible");
+      }
     } finally {
       setAnalyzing(false);
     }
