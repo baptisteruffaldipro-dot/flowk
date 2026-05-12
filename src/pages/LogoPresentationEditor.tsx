@@ -202,13 +202,13 @@ export default function LogoPresentationEditor() {
     setRow((r) => r ? { ...r, [key]: value } : r);
   }, []);
 
-  const updateContent = useCallback((path: string[], value: any) => {
+  const updateContent = useCallback((path: (string | number)[], value: any) => {
     setRow((r) => {
       if (!r) return r;
       const content = JSON.parse(JSON.stringify(r.content));
       let cur = content;
-      for (let i = 0; i < path.length - 1; i++) cur = cur[path[i]];
-      cur[path[path.length - 1]] = value;
+      for (let i = 0; i < path.length - 1; i++) cur = cur[path[i] as any];
+      cur[path[path.length - 1] as any] = value;
       return { ...r, content };
     });
   }, []);
