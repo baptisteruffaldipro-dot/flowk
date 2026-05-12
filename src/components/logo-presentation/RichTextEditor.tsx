@@ -5,8 +5,16 @@ import Underline from "@tiptap/extension-underline";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Bold, Italic, Underline as UnderlineIcon, AlignLeft, AlignCenter, AlignRight,
   Heading1, Heading2, Heading3, List, ListOrdered, Quote, Undo, Redo,
+  Type, StretchHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FontSize, LineHeight } from "./tiptap-extensions";
