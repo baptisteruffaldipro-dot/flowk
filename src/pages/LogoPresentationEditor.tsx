@@ -397,7 +397,7 @@ export default function LogoPresentationEditor() {
 
         <TabsContent value="typo">
           <SectionCard title="05 — Typographies">
-            <div><Label>Intro</Label><Textarea rows={3} value={c.typography.intro} onChange={(e) => updateContent(["typography", "intro"], e.target.value)} /></div>
+            <div><Label>Intro</Label><RichTextEditor value={c.typography.intro} onChange={(html) => updateContent(["typography", "intro"], html)} /></div>
             <div className="space-y-2">
               <Label>Polices</Label>
               {c.typography.fonts.map((f: any, i: number) => (
