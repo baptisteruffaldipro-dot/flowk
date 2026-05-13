@@ -238,6 +238,10 @@ export default function LogoPresentationEditor() {
       .eq("id", row.client_id)
       .maybeSingle();
     if (!client?.email) { toast.error("Le client n'a pas d'email enregistré"); return; }
+    const ok = window.confirm(
+      `Envoyer les propositions de logo à ${client.email} ?\n\nUne copie te sera également envoyée à bonjour@atelier-rufo.fr.`
+    );
+    if (!ok) return;
     setSending(true);
     const presentationUrl = `${window.location.origin}/p/logo/${row.share_token}`;
     const { data, error } = await supabase.functions.invoke("send-transactional-email", {
