@@ -717,6 +717,12 @@ export default function TaskDetail() {
         onOpenChange={setBatDialogOpen}
         onCreated={() => { setBatDialogOpen(false); load(); }}
       />
+      <NewTiimeInvoiceDialog
+        task={task}
+        open={tiimeDialogOpen}
+        onOpenChange={setTiimeDialogOpen}
+        onCreated={() => { setTiimeDialogOpen(false); load(); }}
+      />
     </div>
   );
 }
