@@ -51,13 +51,17 @@ async function tiimeLogin(email: string, password: string): Promise<LoginResp> {
 }
 
 async function tiimeCreateInvoice(token: string, companyId: string, payload: unknown) {
-  // TODO: confirm exact endpoint + payload shape with a captured curl from the Tiime UI.
   const r = await fetch(`${TIIME_BASE}/companies/${companyId}/invoices`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
       Accept: "application/json",
+      "tiime-app": "tiime",
+      "tiime-app-platform": "web",
+      "tiime-app-version": "4.33.2",
+      Origin: "https://apps.tiime.fr",
+      Referer: "https://apps.tiime.fr/",
     },
     body: JSON.stringify(payload),
   });
@@ -130,32 +134,101 @@ Deno.serve(async (req) => {
 
     // Login + create.
     const login = await tiimeLogin(TIIME_EMAIL, TIIME_PASSWORD);
-    const companyId = login.companies?.[0]?.id ?? "";
+    const companyId =
+      Deno.env.get("TIIME_COMPANY_ID") ?? String(login.companies?.[0]?.id ?? "");
+    if (!companyId) throw new Error("Tiime companyId introuvable");
 
-    // TODO: refine the payload mapping once Tiime endpoints are known.
+    // Build payload matching Tiime's /invoices schema (captured from web UI).
+    const today = new Date().toISOString().slice(0, 10);
+    const isHourly =
+      invoice.billing_type === "horaire" && invoice.hours && invoice.hourly_rate;
+    const quantity = isHourly ? Number(invoice.hours) : 1;
+    const unitAmount = isHourly ? Number(invoice.hourly_rate) : Number(invoice.amount);
+    const lineAmount = +(quantity * unitAmount).toFixed(2);
+
     const payload = {
-      label: invoice.label,
-      amount: Number(invoice.amount),
-      customer: {
-        name: invoice.clients?.company || invoice.clients?.name,
-        email: invoice.clients?.email,
-        address: invoice.clients?.address,
+      client: null,
+      client_country_code: null,
+      client_delivery_address: "",
+      client_delivery_city: "",
+      client_delivery_country_code: null,
+      client_delivery_enabled: false,
+      client_delivery_name: null,
+      client_delivery_postal_code: "",
+      client_intracom_vat_number: null,
+      client_intracom_vat_number_enabled: false,
+      client_name: invoice.clients?.company || invoice.clients?.name || "",
+      client_siren_or_siret: null,
+      client_siren_or_siret_enabled: false,
+      color: "#476388",
+      discount_amount: null,
+      discount_description: "",
+      discount_enabled: false,
+      discount_percentage: null,
+      emission_date: today,
+      footer: "SIREN 808526271 - NAF 9003A\nTVA intracommunautaire : FR26808526271",
+      free_field: "",
+      free_field_enabled: false,
+      header: "EI. ATELIER RUFO\n5 RUE CÉCILE TANGUY\n17200 ROYAN\n ",
+      lang_country_code: "FR",
+      lines: [
+        {
+          article: null,
+          description: invoice.label || "",
+          discount_amount: null,
+          discount_description: "",
+          discount_percentage: null,
+          id: null,
+          invoicing_category_type: "benefit",
+          invoicing_unit: null,
+          line_amount: lineAmount,
+          quantity,
+          sequence: 1,
+          unit_amount: unitAmount,
+          vat_type: { code: "normal" },
+        },
+      ],
+      invoicing_logo: { id: 16767103, size: { width: 118, height: 118 } },
+      non_applicable_vat_reason: null,
+      non_applicable_vat_reason_enabled: false,
+      number_template: "X",
+      seller: {
+        address: {
+          city: "ROYAN",
+          complement: null,
+          country: "FR",
+          postal_code: "17200",
+          street: "6 rue Cécile Tanguy",
+        },
+        ape_code: "9003A",
+        capital: null,
+        contact: { email: null, phone: null },
+        legal_form: "Entreprise individuelle",
+        name: "E.I. Baptiste RUFFALDI",
+        rcs_city: null,
+        siret: "80852627100016",
+        vat_number: "FR26808526271",
       },
-      items:
-        invoice.billing_type === "horaire" && invoice.hours && invoice.hourly_rate
-          ? [
-              {
-                description: invoice.label,
-                quantity: Number(invoice.hours),
-                unit_price: Number(invoice.hourly_rate),
-              },
-            ]
-          : [{ description: invoice.label, quantity: 1, unit_price: Number(invoice.amount) }],
-      installments: (invoice.invoice_installments ?? []).map((ii: any) => ({
-        label: ii.label,
-        amount: Number(ii.amount),
-        due_date: ii.due_date,
-      })),
+      template: "advanced",
+      text_lines: [],
+      title: null,
+      title_enabled: true,
+      client_pa_electronic_address: null,
+      total_excluding_taxes: lineAmount,
+      total_including_taxes: lineAmount,
+      totals_per_vat_type: {
+        normal: { total_excluding_taxes: lineAmount, vat_amount: 0 },
+      },
+      advance_payment_invoices_ids: [],
+      bank_detail_enabled: true,
+      bic: "CMCIFR2AXXX",
+      due_date: today,
+      due_date_mode: "emission_date",
+      iban: "FR7615519390870002272400137",
+      payment_condition:
+        "En cas de retard de paiement, une pénalité de 3 fois le taux d'intérêt légal sera appliquée, à laquelle s'ajoutera une indemnité forfaitaire pour frais de recouvrement de 40€.",
+      payment_condition_enabled: true,
+      status: "draft",
     };
 
     const created = await tiimeCreateInvoice(login.token, companyId, payload);
