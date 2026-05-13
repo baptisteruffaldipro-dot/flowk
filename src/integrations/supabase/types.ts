@@ -621,7 +621,13 @@ export type Database = {
           content: Json
           created_at: string
           created_by: string | null
+          deliverables: Json
+          delivery_override: boolean
+          delivery_override_at: string | null
+          delivery_override_by: string | null
+          delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
           id: string
+          invoice_url: string | null
           is_published: boolean
           project_name: string
           share_token: string | null
@@ -635,7 +641,13 @@ export type Database = {
           content?: Json
           created_at?: string
           created_by?: string | null
+          deliverables?: Json
+          delivery_override?: boolean
+          delivery_override_at?: string | null
+          delivery_override_by?: string | null
+          delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           id?: string
+          invoice_url?: string | null
           is_published?: boolean
           project_name: string
           share_token?: string | null
@@ -649,7 +661,13 @@ export type Database = {
           content?: Json
           created_at?: string
           created_by?: string | null
+          deliverables?: Json
+          delivery_override?: boolean
+          delivery_override_at?: string | null
+          delivery_override_by?: string | null
+          delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           id?: string
+          invoice_url?: string | null
           is_published?: boolean
           project_name?: string
           share_token?: string | null
@@ -679,12 +697,17 @@ export type Database = {
           colors: string | null
           created_at: string
           deliverables: Json
+          delivery_override: boolean
+          delivery_override_at: string | null
+          delivery_override_by: string | null
+          delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
           description: string
           estimated_delivery_date: string | null
           finitions: string | null
           format: string | null
           grammage: string | null
           id: string
+          invoice_url: string | null
           observations: string | null
           payment_status: Database["public"]["Enums"]["print_payment_status"]
           products: Json
@@ -707,12 +730,17 @@ export type Database = {
           colors?: string | null
           created_at?: string
           deliverables?: Json
+          delivery_override?: boolean
+          delivery_override_at?: string | null
+          delivery_override_by?: string | null
+          delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           description: string
           estimated_delivery_date?: string | null
           finitions?: string | null
           format?: string | null
           grammage?: string | null
           id?: string
+          invoice_url?: string | null
           observations?: string | null
           payment_status?: Database["public"]["Enums"]["print_payment_status"]
           products?: Json
@@ -735,12 +763,17 @@ export type Database = {
           colors?: string | null
           created_at?: string
           deliverables?: Json
+          delivery_override?: boolean
+          delivery_override_at?: string | null
+          delivery_override_by?: string | null
+          delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           description?: string
           estimated_delivery_date?: string | null
           finitions?: string | null
           format?: string | null
           grammage?: string | null
           id?: string
+          invoice_url?: string | null
           observations?: string | null
           payment_status?: Database["public"]["Enums"]["print_payment_status"]
           products?: Json
@@ -1067,12 +1100,17 @@ export type Database = {
           deadline: string | null
           deliverables: Json
           delivered_at: string | null
+          delivery_override: boolean
+          delivery_override_at: string | null
+          delivery_override_by: string | null
+          delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
           estimated_minutes: number | null
           extra_revision_rate: number | null
           flat_amount: number | null
           free_revisions: number
           hourly_rate: number | null
           id: string
+          invoice_url: string | null
           note_attachments: Json
           notes: string | null
           position: number
@@ -1096,12 +1134,17 @@ export type Database = {
           deadline?: string | null
           deliverables?: Json
           delivered_at?: string | null
+          delivery_override?: boolean
+          delivery_override_at?: string | null
+          delivery_override_by?: string | null
+          delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           estimated_minutes?: number | null
           extra_revision_rate?: number | null
           flat_amount?: number | null
           free_revisions?: number
           hourly_rate?: number | null
           id?: string
+          invoice_url?: string | null
           note_attachments?: Json
           notes?: string | null
           position?: number
@@ -1125,12 +1168,17 @@ export type Database = {
           deadline?: string | null
           deliverables?: Json
           delivered_at?: string | null
+          delivery_override?: boolean
+          delivery_override_at?: string | null
+          delivery_override_by?: string | null
+          delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           estimated_minutes?: number | null
           extra_revision_rate?: number | null
           flat_amount?: number | null
           free_revisions?: number
           hourly_rate?: number | null
           id?: string
+          invoice_url?: string | null
           note_attachments?: Json
           notes?: string | null
           position?: number
@@ -1289,6 +1337,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_download: {
+        Args: { _entity_id: string; _entity_type: string }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1328,7 +1380,13 @@ export type Database = {
           content: Json
           created_at: string
           created_by: string | null
+          deliverables: Json
+          delivery_override: boolean
+          delivery_override_at: string | null
+          delivery_override_by: string | null
+          delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
           id: string
+          invoice_url: string | null
           is_published: boolean
           project_name: string
           share_token: string | null
@@ -1385,6 +1443,7 @@ export type Database = {
         | "telephone"
         | "autre"
       capture_status: "a_traiter" | "traite" | "archive"
+      delivery_unlock_rule: "acompte" | "total" | "libre"
       invoice_billing_type: "forfait" | "horaire"
       invoice_status: "a_facturer" | "facturee" | "payee"
       lead_status: "nouveau" | "contacte" | "qualifie" | "perdu" | "converti"
@@ -1614,6 +1673,7 @@ export const Constants = {
         "autre",
       ],
       capture_status: ["a_traiter", "traite", "archive"],
+      delivery_unlock_rule: ["acompte", "total", "libre"],
       invoice_billing_type: ["forfait", "horaire"],
       invoice_status: ["a_facturer", "facturee", "payee"],
       lead_status: ["nouveau", "contacte", "qualifie", "perdu", "converti"],
