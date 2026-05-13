@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText, Link2, Pencil, Trash2, CalendarClock } from "lucide-react";
+import { Plus, FileText, Link2, Pencil, Trash2, CalendarClock, Send, ExternalLink } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { fmtMoney, INVOICE_STATUS_LABEL } from "@/lib/format";
@@ -127,6 +127,24 @@ export default function Invoices() {
     if (error) return toast.error(error.message);
     toast.success("Supprimé");
     load();
+  };
+
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const sendToTiime = async (invoice: any) => {
+    setSyncingId(invoice.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("tiime-create-invoice", {
+        body: { invoice_id: invoice.id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Facture créée dans Tiime");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Échec de la synchro Tiime");
+    } finally {
+      setSyncingId(null);
+    }
   };
 
   const editFilteredQuestionnaires = editing?.client_id
@@ -269,6 +287,24 @@ export default function Invoices() {
                       {Object.entries(INVOICE_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  {i.tiime_invoice_id ? (
+                    <Button
+                      variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-emerald-600"
+                      title="Voir dans Tiime"
+                      onClick={() => window.open(`https://invoice.tiime.fr/invoices/${i.tiime_invoice_id}`, "_blank")}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+                      title="Créer dans Tiime"
+                      disabled={syncingId === i.id}
+                      onClick={() => sendToTiime(i)}
+                    >
+                      <Send className={`h-3.5 w-3.5 ${syncingId === i.id ? "animate-pulse" : ""}`} />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
