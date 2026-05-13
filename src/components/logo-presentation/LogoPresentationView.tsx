@@ -42,14 +42,14 @@ const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => {
       <div className="text-7xl md:text-8xl italic font-light text-accent leading-none mb-4">{index}</div>
       <h3 className="text-3xl md:text-4xl italic font-normal leading-tight mb-4">{v.label}</h3>
       {v.description && (
-        <RichText html={v.description} className="text-base font-normal text-muted-foreground leading-snug mb-4" />
+        <RichText html={v.description} className="text-base font-normal text-muted-foreground leading-snug mb-4 bs-sans" />
       )}
       {v.usage && (
         <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-2 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
           Usage
         </div>
       )}
-      {v.usage && <p className="text-sm font-light italic whitespace-pre-line">{v.usage}</p>}
+      {v.usage && <p className="text-sm font-normal whitespace-pre-line bs-sans">{v.usage}</p>}
     </div>
     <div className="md:col-span-8">
       {v.shots.length === 0 ? (
@@ -152,7 +152,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="01" title="Brief & contexte" />
           {p.brief.intro && (
-              <RichText html={p.brief.intro} className="text-2xl md:text-3xl font-normal leading-snug max-w-4xl mb-12 italic" />
+              <RichText html={p.brief.intro} className="text-xl md:text-2xl font-normal leading-snug max-w-4xl mb-12 bs-sans" />
             )}
             <div className="grid md:grid-cols-2 gap-12">
               {p.brief.objectives.length > 0 && (
@@ -197,7 +197,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                   {u.keywords.length > 0 && (
                     <div className="flex flex-wrap gap-3 mb-12">
                       {u.keywords.map((k, i) => (
-                        <span key={i} className="px-4 py-2 border border-foreground/20 text-sm italic font-light">{k}</span>
+                        <span key={i} className="px-4 py-2 border border-foreground/20 text-sm font-medium bs-sans">{k}</span>
                       ))}
                     </div>
                   )}
