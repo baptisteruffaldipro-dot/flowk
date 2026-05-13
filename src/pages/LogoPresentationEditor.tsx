@@ -176,6 +176,7 @@ export default function LogoPresentationEditor() {
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!id) return;
