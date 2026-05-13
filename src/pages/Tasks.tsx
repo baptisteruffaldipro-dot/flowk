@@ -1078,6 +1078,12 @@ export default function Tasks() {
         onOpenChange={(v) => { if (!v) setBatForTask(null); }}
         onCreated={() => { setBatForTask(null); load(); }}
       />
+      <NewTiimeInvoiceDialog
+        task={tiimeForTask}
+        open={!!tiimeForTask}
+        onOpenChange={(v) => { if (!v) setTiimeForTask(null); }}
+        onCreated={() => { setTiimeForTask(null); load(); }}
+      />
     </div>
   );
 }
