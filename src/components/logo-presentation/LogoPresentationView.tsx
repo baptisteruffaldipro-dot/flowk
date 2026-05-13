@@ -99,8 +99,9 @@ export default function LogoPresentationView({ presentation }: Props) {
       <style>{`
         .bs-serif { font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif; }
         .bs-mono { font-family: "JetBrains Mono", ui-monospace, "SF Mono", monospace; }
+        .bs-sans { font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif; }
         /* Rich text — let user formatting drive style */
-        .rich-text, .rich-text p, .rich-text li { font-style: normal; font-weight: 500; line-height: 1.35; }
+        .rich-text, .rich-text p, .rich-text li { font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif; font-style: normal; font-weight: 400; line-height: 1.45; font-size: 0.95em; }
         .rich-text strong { font-weight: 700; }
         .rich-text em { font-style: italic; }
         .rich-text u { text-decoration: underline; }
@@ -122,7 +123,7 @@ export default function LogoPresentationView({ presentation }: Props) {
       `}</style>
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@300;400&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400&display=swap"
       />
 
       <div className="font-serif" style={{ fontFamily: '"Cormorant Garamond", Georgia, serif' }}>
