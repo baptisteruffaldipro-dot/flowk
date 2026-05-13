@@ -131,12 +131,12 @@ export default function ClientDetail() {
                   <CheckCircle2 className="h-3.5 w-3.5" /> Portail activé
                 </span>
                 <Button size="sm" variant="outline" onClick={resendInvite} disabled={resending}>
-                  <Mail className="h-4 w-4 mr-1" /> {resending ? "Envoi…" : "Renvoyer l'invitation"}
+                  <Mail className="h-4 w-4 mr-1" /> {resending ? "Envoi…" : "Renvoyer l'accès au portail"}
                 </Button>
               </>
             ) : (
               <Button size="sm" variant="outline" onClick={invite} disabled={inviting || !client.email}>
-                <Mail className="h-4 w-4 mr-1" /> {inviting ? "Envoi…" : "Inviter au portail"}
+                <Mail className="h-4 w-4 mr-1" /> {inviting ? "Envoi…" : "Créer l'accès au portail"}
               </Button>
             )}
             <AlertDialog>
