@@ -15,7 +15,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 // TODO: replace with the real base URL discovered from the Tiime web app.
-const TIIME_BASE = "https://chronos.tiime-apps.com";
+const TIIME_BASE = "https://chronos.tiime.fr";
 
 type LoginResp = { token: string; companies?: Array<{ id: string }> };
 
