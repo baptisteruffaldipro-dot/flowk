@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
 import NewBatDialog from "@/components/NewBatDialog";
+import NewTiimeInvoiceDialog from "@/components/NewTiimeInvoiceDialog";
 import {
   DndContext,
   DragEndEvent,
@@ -28,7 +29,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 
-const STATUSES = ["a_faire", "aujourdhui", "envoye", "bat", "a_facturer", "facture_envoyee", "archive"] as const;
+const STATUSES = ["a_faire", "aujourdhui", "envoye", "bat", "tiime", "a_facturer", "facture_envoyee", "archive"] as const;
 type Status = typeof STATUSES[number];
 
 function DeadlineBadge({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
@@ -509,6 +510,7 @@ export default function Tasks() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [batForTask, setBatForTask] = useState<any | null>(null);
+  const [tiimeForTask, setTiimeForTask] = useState<any | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
     title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire",
@@ -541,6 +543,21 @@ export default function Tasks() {
     if (newStatus !== "bat") return;
     const t = tasks.find((x) => x.id === taskId);
     if (t && !t.bat_id) setBatForTask(t);
+  };
+
+  const triggerTiimeIfNeeded = async (taskId: string, newStatus: Status) => {
+    if (newStatus !== "tiime") return;
+    const t = tasks.find((x) => x.id === taskId);
+    if (!t) return;
+    // Skip if a Tiime invoice already exists for this task.
+    const { data: existing } = await supabase
+      .from("invoices")
+      .select("id,tiime_invoice_id")
+      .eq("task_id", taskId)
+      .not("tiime_invoice_id", "is", null)
+      .maybeSingle();
+    if (existing) return;
+    setTiimeForTask(t);
   };
 
   const onDragEnd = async (e: DragEndEvent) => {
@@ -641,6 +658,7 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
+        triggerTiimeIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -701,6 +719,7 @@ export default function Tasks() {
         setDividers(prev.dividers);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
+        triggerTiimeIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -723,6 +742,7 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
+        triggerTiimeIfNeeded(task.id, newStatus);
       }
     }
   };
@@ -1057,6 +1077,12 @@ export default function Tasks() {
         open={!!batForTask}
         onOpenChange={(v) => { if (!v) setBatForTask(null); }}
         onCreated={() => { setBatForTask(null); load(); }}
+      />
+      <NewTiimeInvoiceDialog
+        task={tiimeForTask}
+        open={!!tiimeForTask}
+        onOpenChange={(v) => { if (!v) setTiimeForTask(null); }}
+        onCreated={() => { setTiimeForTask(null); load(); }}
       />
     </div>
   );
