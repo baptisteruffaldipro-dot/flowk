@@ -258,6 +258,44 @@ export default function ClientProjectPortal() {
           )}
         </Card>
 
+        {logoPresentations.length > 0 && (
+          <Card className="p-6 mb-4">
+            <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+              <Palette className="h-4 w-4 text-muted-foreground" /> Propositions logo
+            </h2>
+            <div className="space-y-1">
+              {logoPresentations.map((lp) => {
+                const href = lp.is_published && lp.share_token ? `/p/logo/${lp.share_token}` : null;
+                const inner = (
+                  <>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{lp.project_name}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Version {lp.version} · MAJ {fmtDate(lp.updated_at)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {lp.is_published
+                        ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Publiée</Badge>
+                        : <Badge variant="outline" className="text-[10px]">Brouillon</Badge>}
+                      {href && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                    </div>
+                  </>
+                );
+                return href ? (
+                  <Link key={lp.id} to={href} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-secondary/60 transition">
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={lp.id} className="flex items-center justify-between p-3 rounded-lg border border-border opacity-70">
+                    {inner}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold">Questionnaire / Brief</h2>
