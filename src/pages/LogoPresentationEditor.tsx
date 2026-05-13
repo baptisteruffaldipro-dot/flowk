@@ -677,6 +677,13 @@ export default function LogoPresentationEditor() {
             <Plus className="h-4 w-4 mr-1" /> Ajouter une piste « En action »
           </Button>
         </TabsContent>
+
+        <TabsContent value="livraison" className="space-y-4">
+          <LogoDeliveryTab row={row} onUpdated={async () => {
+            const { data } = await supabase.from("logo_presentations" as any).select("*").eq("id", row.id).single();
+            if (data) { const r = data as any; r.content = ensureContent(r.content); setRow(r); }
+          }} />
+        </TabsContent>
       </Tabs>
     </div>
   );
