@@ -147,12 +147,12 @@ export default function LogoPresentationView({ presentation }: Props) {
           </div>
         </section>
 
-        <div className="px-6 md:px-16 py-24 max-w-7xl mx-auto">
+        <div className="px-6 md:px-16 py-24 max-w-6xl mx-auto">
           {/* 01 — Brief */}
           <section>
             <SectionLabel number="01" title="Brief & contexte" />
           {p.brief.intro && (
-              <RichText html={p.brief.intro} className="text-xl md:text-2xl font-normal leading-snug max-w-4xl mb-12 bs-sans" />
+              <RichText html={p.brief.intro} className="text-xl md:text-2xl font-normal leading-snug max-w-2xl mb-12 bs-sans" />
             )}
             <div className="grid md:grid-cols-2 gap-12">
               {p.brief.objectives.length > 0 && (
@@ -192,7 +192,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                 <section>
                   <SectionLabel number={number} title={u.name || `Univers ${ui + 1}`} />
                   {u.intro && (
-                    <RichText html={u.intro} className="text-lg md:text-xl font-normal text-foreground max-w-4xl mb-12 leading-snug bs-sans" />
+                    <RichText html={u.intro} className="text-lg md:text-xl font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
                   )}
                   {u.keywords.length > 0 && (
                     <div className="flex flex-wrap gap-3 mb-12">
@@ -227,7 +227,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                 <section>
                   <SectionLabel number={number} title={track.name || `Piste ${ti + 1}`} />
                   {track.intro && (
-                    <RichText html={track.intro} className="text-lg md:text-xl font-normal text-foreground max-w-4xl mb-16 leading-snug bs-sans" />
+                    <RichText html={track.intro} className="text-lg md:text-xl font-normal text-foreground max-w-2xl mb-16 leading-snug bs-sans" />
                   )}
                   <div className="space-y-24">
                     <VariantBlock v={track.primary} index="01" />
@@ -244,7 +244,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number={colorsNum} title="Palette de couleurs" />
             {p.colors.intro && (
-              <RichText html={p.colors.intro} className="text-lg md:text-xl font-normal text-foreground max-w-4xl mb-12 leading-snug bs-sans" />
+              <RichText html={p.colors.intro} className="text-lg md:text-xl font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
             )}
             {p.colors.palette.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-foreground/10 border border-foreground/10">
@@ -272,7 +272,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number={typoNum} title="Typographies" />
             {p.typography.intro && (
-              <RichText html={p.typography.intro} className="text-lg md:text-xl font-normal text-foreground max-w-4xl mb-12 leading-snug bs-sans" />
+              <RichText html={p.typography.intro} className="text-lg md:text-xl font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
             )}
             {p.typography.fonts.length > 0 ? (
               <div className="grid md:grid-cols-3 gap-px bg-foreground/10 border border-foreground/10">
@@ -300,7 +300,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section className="pb-16">
             <SectionLabel number={inSituNum} title="En action" />
             {p.inSitu.intro && (
-              <RichText html={p.inSitu.intro} className="text-lg md:text-xl font-normal text-foreground max-w-4xl mb-12 leading-snug bs-sans" />
+              <RichText html={p.inSitu.intro} className="text-lg md:text-xl font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
             )}
             {p.inSitu.items.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
