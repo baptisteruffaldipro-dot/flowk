@@ -688,3 +688,87 @@ export default function LogoPresentationEditor() {
     </div>
   );
 }
+
+function LogoDeliveryTab({ row, onUpdated }: { row: any; onUpdated: () => void }) {
+  const [uploading, setUploading] = useState(false);
+  const deliverables: { name: string; path: string }[] = row.deliverables ?? [];
+
+  const upload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const next = [...deliverables];
+      for (const file of Array.from(files)) {
+        const path = `${row.id}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+        const { error } = await supabase.storage.from("logo-deliverables").upload(path, file);
+        if (error) { toast.error(error.message); continue; }
+        next.push({ name: file.name, path });
+      }
+      const { error } = await supabase.from("logo_presentations" as any)
+        .update({ deliverables: next }).eq("id", row.id);
+      if (error) toast.error(error.message);
+      else { toast.success("Fichier(s) ajouté(s)"); onUpdated(); }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const remove = async (path: string) => {
+    await supabase.storage.from("logo-deliverables").remove([path]);
+    const next = deliverables.filter((d) => d.path !== path);
+    const { error } = await supabase.from("logo_presentations" as any)
+      .update({ deliverables: next }).eq("id", row.id);
+    if (error) return toast.error(error.message);
+    onUpdated();
+  };
+
+  const download = async (path: string) => {
+    const { data } = await supabase.storage.from("logo-deliverables").createSignedUrl(path, 60 * 5);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
+  return (
+    <div className="space-y-4">
+      <DeliveryGateCard
+        entityType="logo_presentation"
+        table="logo_presentations"
+        row={row}
+        onUpdated={onUpdated}
+      />
+
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="text-sm font-semibold">Pack de fichiers livrés</h2>
+          <label className="cursor-pointer">
+            <input type="file" multiple className="hidden" disabled={uploading}
+              onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
+            <span className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded border hover:bg-secondary">
+              <Upload className="h-3.5 w-3.5" /> {uploading ? "Envoi…" : "Ajouter des fichiers"}
+            </span>
+          </label>
+        </div>
+        {deliverables.length === 0 ? (
+          <div className="text-xs text-muted-foreground py-4">
+            Dépose ici les fichiers sources, vectoriels, exports… que le client pourra télécharger une fois le paiement validé.
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {deliverables.map((d) => (
+              <div key={d.path} className="flex items-center justify-between text-sm p-2 rounded hover:bg-secondary/60">
+                <span className="truncate">{d.name}</span>
+                <div className="flex gap-1 shrink-0">
+                  <Button size="sm" variant="ghost" onClick={() => download(d.path)}>
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(d.path)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
