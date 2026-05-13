@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Eye, Save, ArrowLeft, Copy, Check } from "lucide-react";
+import { Plus, Trash2, Eye, Save, ArrowLeft, Copy, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import ImageUpload from "@/components/logo-presentation/ImageUpload";
@@ -176,6 +176,7 @@ export default function LogoPresentationEditor() {
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -225,6 +226,38 @@ export default function LogoPresentationEditor() {
     setCopied(true);
     toast.success("Lien copié");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const sendByEmail = async () => {
+    if (!row?.share_token) return;
+    if (!row.is_published) { toast.error("Active d'abord le lien public"); return; }
+    if (!row.client_id) { toast.error("Aucun client lié à cette présentation"); return; }
+    const { data: client } = await supabase
+      .from("clients")
+      .select("name,email")
+      .eq("id", row.client_id)
+      .maybeSingle();
+    if (!client?.email) { toast.error("Le client n'a pas d'email enregistré"); return; }
+    setSending(true);
+    const presentationUrl = `${window.location.origin}/p/logo/${row.share_token}`;
+    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "logo-ready",
+        recipientEmail: client.email,
+        idempotencyKey: `logo-ready-${row.id}-${Date.now()}`,
+        templateData: {
+          name: client.name ?? undefined,
+          projectName: row.project_name,
+          presentationUrl,
+        },
+      },
+    });
+    setSending(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error ?? error?.message ?? "Échec de l'envoi");
+      return;
+    }
+    toast.success(`Email envoyé à ${client.email}`);
   };
 
   const update = useCallback(<K extends keyof DBRow>(key: K, value: DBRow[K]) => {
@@ -298,9 +331,19 @@ export default function LogoPresentationEditor() {
             <Button size="sm" variant="outline" onClick={copyShareLink}>
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </Button>
+            <Button size="sm" onClick={sendByEmail} disabled={sending || !row.client_id}>
+              <Mail className="h-4 w-4 mr-1" /> {sending ? "Envoi…" : "Envoyer par email"}
+            </Button>
           </div>
         )}
       </Card>
+      {row.is_published && row.share_token && (
+        <p className="text-xs text-muted-foreground mt-2 px-1">
+          L'email envoyé au client indique que ses propositions de logo (moodboard,
+          pistes, couleurs, typographies et mises en situation) sont disponibles à la
+          consultation, avec un bouton menant directement à ce lien.
+        </p>
+      )}
 
       <Tabs defaultValue="meta" className="mt-6">
         <TabsList className="flex flex-wrap h-auto">
