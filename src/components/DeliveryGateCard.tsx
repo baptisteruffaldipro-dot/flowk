@@ -63,18 +63,19 @@ export default function DeliveryGateCard({
     if (status.state !== "available") return toast.error("Livraison non disponible — débloquez d'abord");
     setSending(true);
     try {
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
+      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
-          template: notifyTemplate ?? "files-delivered",
-          to: clientEmail,
-          data: {
+          templateName: notifyTemplate ?? "files-delivered",
+          recipientEmail: clientEmail,
+          idempotencyKey: `${notifyTemplate ?? "files-delivered"}-${row.id}-${Date.now()}`,
+          templateData: {
             name: clientName ?? "",
             description: notifyContext?.description ?? "",
             portalUrl: notifyContext?.portalUrl ?? `${window.location.origin}/portail`,
           },
         },
       });
-      if (error) throw error;
+      if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
       toast.success("Email envoyé au client");
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur d'envoi");
