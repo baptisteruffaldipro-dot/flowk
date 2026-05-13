@@ -40,7 +40,7 @@ const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => {
   <article className="grid md:grid-cols-12 gap-8 md:gap-12">
     <div className="md:col-span-4">
       <div className="text-7xl md:text-8xl italic font-light text-accent leading-none mb-4">{index}</div>
-      <h3 className="text-3xl md:text-4xl italic font-light leading-tight mb-4">{v.label}</h3>
+      <h3 className="text-3xl md:text-4xl italic font-normal leading-tight mb-4">{v.label}</h3>
       {v.description && (
         <RichText html={v.description} className="text-base font-light text-muted-foreground leading-relaxed mb-4" />
       )}
@@ -151,7 +151,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="01" title="Brief & contexte" />
           {p.brief.intro && (
-              <RichText html={p.brief.intro} className="text-2xl md:text-3xl font-light leading-relaxed max-w-4xl mb-12 italic" />
+              <RichText html={p.brief.intro} className="text-2xl md:text-3xl font-normal leading-snug max-w-4xl mb-12 italic" />
             )}
             <div className="grid md:grid-cols-2 gap-12">
               {p.brief.objectives.length > 0 && (
@@ -280,7 +280,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                     <div className="text-[10px] tracking-[0.3em] uppercase text-accent bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
                       {f.role}
                     </div>
-                    <div className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: f.name }}>
+                    <div className="text-4xl md:text-5xl font-normal leading-tight" style={{ fontFamily: f.name }}>
                       {f.sample || "Aa Bb"}
                     </div>
                     <div className="text-sm italic">{f.name}</div>
