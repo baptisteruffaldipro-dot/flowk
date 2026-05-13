@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail } from "lucide-react";
+import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   fmtMoney,
@@ -28,6 +28,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const [bats, setBats] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [logoPresentations, setLogoPresentations] = useState<any[]>([]);
   const [sendingOnboarding, setSendingOnboarding] = useState(false);
   const [clientInfo, setClientInfo] = useState<{ name: string | null; email: string | null } | null>(null);
 
@@ -36,13 +37,14 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
     (async () => {
       setLoading(true);
       const nowIso = new Date().toISOString();
-      const [p, t, o, b, i, a] = await Promise.all([
+      const [p, t, o, b, i, a, lp] = await Promise.all([
         supabase.from("projects").select("*").eq("client_id", clientId).eq("archived", false).order("created_at", { ascending: false }),
         supabase.from("tasks").select("id,title,status,deadline,project_id,delivered_at,priority").eq("client_id", clientId).order("deadline", { ascending: true, nullsFirst: false }),
         supabase.from("print_orders").select("id,description,status,amount,estimated_delivery_date,bat_file_path,bat_validated_at,bat_rejected_at").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("bats").select("id,title,status,validated_at,project_id").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("invoices").select("*, tasks(id, project_id)").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("appointments").select("id,title,start_at,duration_minutes,location,type,status").eq("client_id", clientId).gte("start_at", nowIso).order("start_at", { ascending: true }),
+        supabase.from("logo_presentations" as any).select("id,project_name,version,is_published,share_token,updated_at").eq("client_id", clientId).order("updated_at", { ascending: false }),
       ]);
       setProjects(p.data ?? []);
       setTasks(t.data ?? []);
@@ -50,6 +52,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       setBats(b.data ?? []);
       setInvoices(i.data ?? []);
       setAppointments(a.data ?? []);
+      setLogoPresentations((lp as any).data ?? []);
       setLoading(false);
     })();
   }, [clientId]);
@@ -330,6 +333,35 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
             <Badge variant="outline" className="text-[10px]">{a.type}</Badge>
           </div>
         ))}
+      </Section>
+
+      <Section icon={<Palette className="h-4 w-4" />} title="Propositions logo" count={logoPresentations.length}>
+        {logoPresentations.length === 0 ? <Empty text="Aucune proposition" /> : logoPresentations.map((lp) => {
+          const href = mode === "admin"
+            ? `/logo/${lp.id}`
+            : (lp.is_published && lp.share_token ? `/p/logo/${lp.share_token}` : null);
+          const content = (
+            <>
+              <div className="min-w-0">
+                <div className="text-sm truncate">{lp.project_name}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Version {lp.version} · MAJ {fmtDate(lp.updated_at)}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {lp.is_published
+                  ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Publiée</Badge>
+                  : <Badge variant="outline" className="text-[10px]">Brouillon</Badge>}
+                {href && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+              </div>
+            </>
+          );
+          return href ? (
+            <Link key={lp.id} to={href} className="flex items-center justify-between p-3 hover:bg-secondary/60 transition">{content}</Link>
+          ) : (
+            <div key={lp.id} className="flex items-center justify-between p-3 opacity-70">{content}</div>
+          );
+        })}
       </Section>
     </div>
   );
