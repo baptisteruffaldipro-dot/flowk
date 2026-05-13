@@ -14,29 +14,50 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
-// TODO: replace with the real base URL discovered from the Tiime web app.
-const TIIME_BASE = "https://chronos.tiime.fr";
+// Tiime uses Auth0 (auth0.tiime.fr) for auth and chronos-api.tiime-apps.com for the API.
+// client_id discovered from JWT `azp` claim of a real Tiime web-app session.
+const TIIME_AUTH = "https://auth0.tiime.fr";
+const TIIME_AUDIENCE = "https://chronos/";
+const TIIME_CLIENT_ID = "iEbsbe3o66gcTBfGRa012kj1Rb6vjAND";
+const TIIME_BASE = "https://chronos-api.tiime-apps.com/v1";
 
 type LoginResp = { token: string; companies?: Array<{ id: string }> };
 
 async function tiimeLogin(email: string, password: string): Promise<LoginResp> {
-  // TODO: confirm endpoint + payload shape.
-  const r = await fetch(`${TIIME_BASE}/auth/login`, {
+  const r = await fetch(`${TIIME_AUTH}/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      grant_type: "http://auth0.com/oauth/grant-type/password-realm",
+      realm: "Tiime-Database",
+      username: email,
+      password,
+      audience: TIIME_AUDIENCE,
+      scope: "openid email offline_access",
+      client_id: TIIME_CLIENT_ID,
+    }),
   });
   if (!r.ok) throw new Error(`Tiime login failed [${r.status}]: ${await r.text()}`);
-  return await r.json();
+  const json = await r.json();
+  const token = json.access_token ?? json.id_token;
+  if (!token) throw new Error("Tiime login: no access_token in response");
+
+  // Fetch companies list to discover companyId.
+  const cr = await fetch(`${TIIME_BASE}/companies`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+  });
+  const companies = cr.ok ? await cr.json() : [];
+  return { token, companies: Array.isArray(companies) ? companies : [] };
 }
 
 async function tiimeCreateInvoice(token: string, companyId: string, payload: unknown) {
-  // TODO: confirm endpoint + payload shape.
+  // TODO: confirm exact endpoint + payload shape with a captured curl from the Tiime UI.
   const r = await fetch(`${TIIME_BASE}/companies/${companyId}/invoices`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
+      Accept: "application/json",
     },
     body: JSON.stringify(payload),
   });
