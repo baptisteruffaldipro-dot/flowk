@@ -312,7 +312,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                         <div className="text-[10px] tracking-[0.3em] uppercase text-accent bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
                           {f.role}
                         </div>
-                        <div className="text-4xl md:text-5xl font-normal leading-tight" style={{ fontFamily: f.name }}>
+                        <div className="text-2xl md:text-3xl font-normal leading-tight whitespace-nowrap" style={{ fontFamily: f.name }}>
                           {f.sample || "Aa Bb"}
                         </div>
                         <div className="text-sm italic">{f.name}</div>
