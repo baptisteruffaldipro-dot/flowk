@@ -76,6 +76,8 @@ export interface TypographyTrack {
     sample: string;
     usage: string;
     googleFontUrl?: string;
+    fontFileUrl?: string;
+    fontFileFormat?: string; // truetype, opentype, woff, woff2
   }[];
 }
 

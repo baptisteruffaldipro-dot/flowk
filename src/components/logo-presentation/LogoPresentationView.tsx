@@ -121,6 +121,17 @@ export default function LogoPresentationView({ presentation }: Props) {
         .rich-text [style*="text-align:right"], .rich-text [style*="text-align: right"] { text-align: right; }
         .rich-text [style*="text-align:left"], .rich-text [style*="text-align: left"] { text-align: left; }
       `}</style>
+      {/* @font-face for uploaded font files */}
+      <style>{
+        p.typography.tracks
+          .flatMap((tt) => tt.fonts)
+          .filter((f) => f.fontFileUrl && f.name)
+          .map(
+            (f) =>
+              `@font-face { font-family: "${f.name.replace(/"/g, "")}"; src: url("${f.fontFileUrl}") format("${f.fontFileFormat || "truetype"}"); font-display: swap; }`
+          )
+          .join("\n")
+      }</style>
       <link
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400&display=swap"
