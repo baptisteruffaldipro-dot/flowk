@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Eye, Save, ArrowLeft, Copy, Check, Mail } from "lucide-react";
+import { Plus, Trash2, Eye, Save, ArrowLeft, Copy, Check, Mail, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import ImageUpload from "@/components/logo-presentation/ImageUpload";
@@ -18,6 +18,7 @@ import FontUpload from "@/components/logo-presentation/FontUpload";
 import RichTextEditor from "@/components/logo-presentation/RichTextEditor";
 import type { LogoPresentation, LogoVariant, LogoTrack, MoodboardUniverse, ColorsTrack, TypographyTrack, InSituTrack } from "@/data/logo-presentations/types";
 import { emptyLogoPresentationContent, emptyTrack, emptyUniverse, emptyColorsTrack, emptyTypographyTrack, emptyInSituTrack } from "@/data/logo-presentations/empty";
+import DeliveryGateCard from "@/components/DeliveryGateCard";
 
 type DBRow = {
   id: string;
