@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, FileCheck2, Clock, Euro, Repeat, Truck, CalendarClock, ClipboardList, Sparkles, Package, AlertTriangle, Circle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FileCheck2, Clock, Euro, Repeat, Truck, CalendarClock, ClipboardList, Sparkles, Package, AlertTriangle, Circle, Palette, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PROJECT_TYPE_LABEL, fmtDate, fmtDateTime, STATUS_LABEL } from "@/lib/format";
 
@@ -30,6 +30,7 @@ export default function ClientProjectPortal() {
   const [printOrders, setPrintOrders] = useState<any[]>([]);
   const [bats, setBats] = useState<any[]>([]);
   const [subtasks, setSubtasks] = useState<any[]>([]);
+  const [logoPresentations, setLogoPresentations] = useState<any[]>([]);
 
   const load = async () => {
     if (!id) return;
@@ -50,6 +51,17 @@ export default function ClientProjectPortal() {
       setSubtasks(st ?? []);
     } else {
       setSubtasks([]);
+    }
+    const cid = (p.data as any)?.client_id;
+    if (cid) {
+      const { data: lp } = await supabase
+        .from("logo_presentations" as any)
+        .select("id,project_name,version,is_published,share_token,updated_at")
+        .eq("client_id", cid)
+        .order("updated_at", { ascending: false });
+      setLogoPresentations((lp as any) ?? []);
+    } else {
+      setLogoPresentations([]);
     }
   };
   useEffect(() => { load(); }, [id]);
