@@ -91,9 +91,9 @@ export default function LogoPresentationView({ presentation }: Props) {
   const trackCount = p.logos.tracks.length;
   const pad = (n: number) => String(n).padStart(2, "0");
   const logosStart = 2 + universeCount;
-  const colorsNum = pad(logosStart + trackCount);
-  const typoNum = pad(logosStart + trackCount + 1);
-  const inSituNum = pad(logosStart + trackCount + 2);
+  const colorsStart = logosStart + trackCount;
+  const typoStart = colorsStart + p.colors.tracks.length;
+  const inSituStart = typoStart + p.typography.tracks.length;
   return (
     <div className="bg-background text-foreground">
       <style>{`
@@ -240,86 +240,100 @@ export default function LogoPresentationView({ presentation }: Props) {
             );
           })}
 
-          {/* Couleurs */}
-          <section>
-            <SectionLabel number={colorsNum} title="Palette de couleurs" />
-            {p.colors.intro && (
-              <RichText html={p.colors.intro} className="text-base md:text-lg font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
-            )}
-            {p.colors.palette.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-foreground/10 border border-foreground/10">
-                {p.colors.palette.map((c, i) => (
-                  <div key={i} className="bg-background">
-                    <div className="h-48" style={{ backgroundColor: c.hex }} />
-                    <div className="p-6 space-y-1">
-                      <div className="text-xl italic font-light">{c.name}</div>
-                      <div className="text-xs uppercase tracking-widest text-muted-foreground bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
-                        {c.hex}
+          {/* Couleurs (multi-pistes) */}
+          {p.colors.tracks.map((ct, i) => (
+            <div key={`c-${i}`}>
+              <section>
+                <SectionLabel number={pad(colorsStart + i)} title={ct.name || `Palette ${i + 1}`} />
+                {ct.intro && (
+                  <RichText html={ct.intro} className="text-base md:text-lg font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
+                )}
+                {ct.palette.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-foreground/10 border border-foreground/10">
+                    {ct.palette.map((c, j) => (
+                      <div key={j} className="bg-background">
+                        <div className="h-48" style={{ backgroundColor: c.hex }} />
+                        <div className="p-6 space-y-1">
+                          <div className="text-xl italic font-light">{c.name}</div>
+                          <div className="text-xs uppercase tracking-widest text-muted-foreground bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                            {c.hex}
+                          </div>
+                          {c.usage && <div className="text-sm text-muted-foreground italic mt-2">{c.usage}</div>}
+                        </div>
                       </div>
-                      {c.usage && <div className="text-sm text-muted-foreground italic mt-2">{c.usage}</div>}
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground italic">Pas encore de couleurs.</div>
-            )}
-          </section>
+                ) : (
+                  <div className="text-sm text-muted-foreground italic">Pas encore de couleurs.</div>
+                )}
+              </section>
+              <Divider />
+            </div>
+          ))}
 
-          <Divider />
-
-          {/* Typographies */}
-          <section>
-            <SectionLabel number={typoNum} title="Typographies" />
-            {p.typography.intro && (
-              <RichText html={p.typography.intro} className="text-base md:text-lg font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
-            )}
-            {p.typography.fonts.length > 0 ? (
-              <div className="grid md:grid-cols-3 gap-px bg-foreground/10 border border-foreground/10">
-                {p.typography.fonts.map((f, i) => (
-                  <div key={i} className="bg-background p-8 space-y-4">
-                    <div className="text-[10px] tracking-[0.3em] uppercase text-accent bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
-                      {f.role}
-                    </div>
-                    <div className="text-4xl md:text-5xl font-normal leading-tight" style={{ fontFamily: f.name }}>
-                      {f.sample || "Aa Bb"}
-                    </div>
-                    <div className="text-sm italic">{f.name}</div>
-                    {f.usage && <div className="text-sm text-muted-foreground italic">{f.usage}</div>}
+          {/* Typographies (multi-pistes) */}
+          {p.typography.tracks.map((tt, i) => (
+            <div key={`t-${i}`}>
+              <section>
+                <SectionLabel number={pad(typoStart + i)} title={tt.name || `Typographies ${i + 1}`} />
+                {tt.intro && (
+                  <RichText html={tt.intro} className="text-base md:text-lg font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
+                )}
+                {tt.fonts.length > 0 ? (
+                  <div className="grid md:grid-cols-3 gap-px bg-foreground/10 border border-foreground/10">
+                    {tt.fonts.map((f, j) => (
+                      <div key={j} className="bg-background p-8 space-y-4">
+                        <div className="text-[10px] tracking-[0.3em] uppercase text-accent bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
+                          {f.role}
+                        </div>
+                        <div className="text-4xl md:text-5xl font-normal leading-tight" style={{ fontFamily: f.name }}>
+                          {f.sample || "Aa Bb"}
+                        </div>
+                        <div className="text-sm italic">{f.name}</div>
+                        {f.usage && <div className="text-sm text-muted-foreground italic">{f.usage}</div>}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground italic">Pas encore de typographies.</div>
-            )}
-          </section>
+                ) : (
+                  <div className="text-sm text-muted-foreground italic">Pas encore de typographies.</div>
+                )}
+              </section>
+              <Divider />
+            </div>
+          ))}
 
-          <Divider />
-
-          {/* En action */}
-          <section className="pb-16">
-            <SectionLabel number={inSituNum} title="En action" />
-            {p.inSitu.intro && (
-              <RichText html={p.inSitu.intro} className="text-base md:text-lg font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
-            )}
-            {p.inSitu.items.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {p.inSitu.items.map((it, i) => (
-                  <figure key={i} className="space-y-3">
-                    <img src={it.url} alt={it.title ?? `Mise en situation ${i + 1}`} className="w-full aspect-[4/3] object-cover rounded" />
-                    {(it.title || it.caption) && (
-                      <figcaption className="space-y-1">
-                        {it.title && <div className="text-lg italic font-light">{it.title}</div>}
-                        {it.caption && <div className="text-sm text-muted-foreground italic">{it.caption}</div>}
-                      </figcaption>
-                    )}
-                  </figure>
-                ))}
+          {/* En action (multi-pistes) */}
+          {p.inSitu.tracks.map((it, i) => {
+            const isLast = i === p.inSitu.tracks.length - 1;
+            return (
+              <div key={`is-${i}`}>
+                <section className={isLast ? "pb-16" : undefined}>
+                  <SectionLabel number={pad(inSituStart + i)} title={it.name || `En action ${i + 1}`} />
+                  {it.intro && (
+                    <RichText html={it.intro} className="text-base md:text-lg font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
+                  )}
+                  {it.items.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {it.items.map((m, j) => (
+                        <figure key={j} className="space-y-3">
+                          <img src={m.url} alt={m.title ?? `Mise en situation ${j + 1}`} className="w-full aspect-[4/3] object-cover rounded" />
+                          {(m.title || m.caption) && (
+                            <figcaption className="space-y-1">
+                              {m.title && <div className="text-lg italic font-light">{m.title}</div>}
+                              {m.caption && <div className="text-sm text-muted-foreground italic">{m.caption}</div>}
+                            </figcaption>
+                          )}
+                        </figure>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">Pas encore de mise en situation.</div>
+                  )}
+                </section>
+                {!isLast && <Divider />}
               </div>
-            ) : (
-              <div className="text-sm text-muted-foreground italic">Pas encore de mise en situation.</div>
-            )}
-          </section>
+            );
+          })}
         </div>
       </div>
     </div>

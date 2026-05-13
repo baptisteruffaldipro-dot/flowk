@@ -1,4 +1,4 @@
-import type { LogoPresentation, LogoVariant, LogoTrack, MoodboardUniverse } from "./types";
+import type { LogoPresentation, LogoVariant, LogoTrack, MoodboardUniverse, ColorsTrack, TypographyTrack, InSituTrack } from "./types";
 
 const emptyVariant = (label: string, usage: string): LogoVariant => ({
   label,
@@ -22,6 +22,24 @@ export const emptyUniverse = (name: string): MoodboardUniverse => ({
   images: [],
 });
 
+export const emptyColorsTrack = (name: string): ColorsTrack => ({
+  name,
+  intro: "",
+  palette: [],
+});
+
+export const emptyTypographyTrack = (name: string): TypographyTrack => ({
+  name,
+  intro: "",
+  fonts: [],
+});
+
+export const emptyInSituTrack = (name: string): InSituTrack => ({
+  name,
+  intro: "",
+  items: [],
+});
+
 export const emptyLogoPresentationContent: Omit<
   LogoPresentation,
   "slug" | "client" | "projectName" | "version" | "tagline"
@@ -38,15 +56,12 @@ export const emptyLogoPresentationContent: Omit<
     tracks: [emptyTrack("Piste 1")],
   },
   colors: {
-    intro: "",
-    palette: [],
+    tracks: [emptyColorsTrack("Piste 1")],
   },
   typography: {
-    intro: "",
-    fonts: [],
+    tracks: [emptyTypographyTrack("Piste 1")],
   },
   inSitu: {
-    intro: "",
-    items: [],
+    tracks: [emptyInSituTrack("Piste 1")],
   },
 };
