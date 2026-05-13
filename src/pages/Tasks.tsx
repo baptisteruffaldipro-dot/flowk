@@ -1052,6 +1052,12 @@ export default function Tasks() {
           </DndContext>
         </TabsContent>
       </Tabs>
+      <NewBatDialog
+        task={batForTask}
+        open={!!batForTask}
+        onOpenChange={(v) => { if (!v) setBatForTask(null); }}
+        onCreated={() => { setBatForTask(null); load(); }}
+      />
     </div>
   );
 }
