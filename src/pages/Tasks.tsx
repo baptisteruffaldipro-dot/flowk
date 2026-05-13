@@ -28,7 +28,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 
-const STATUSES = ["a_faire", "aujourdhui", "bat", "envoye", "a_facturer", "facture_envoyee", "archive"] as const;
+const STATUSES = ["a_faire", "aujourdhui", "envoye", "bat", "a_facturer", "facture_envoyee", "archive"] as const;
 type Status = typeof STATUSES[number];
 
 function DeadlineBadge({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
