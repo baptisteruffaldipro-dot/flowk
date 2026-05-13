@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import BatViewer from "@/components/BatViewer";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
+import DeliveryGateCard from "@/components/DeliveryGateCard";
 
 export default function PrintOrderDetail() {
   const { id } = useParams();
@@ -486,6 +487,19 @@ export default function PrintOrderDetail() {
           />
         </Card>
       )}
+
+      <div className="mt-4">
+        <DeliveryGateCard
+          entityType="print_order"
+          table="print_orders"
+          row={order}
+          clientEmail={order.clients?.email ?? null}
+          clientName={order.clients?.name ?? null}
+          notifyTemplate="files-delivered"
+          notifyContext={{ description: order.description, portalUrl: `${window.location.origin}/portail/impression/${order.id}` }}
+          onUpdated={load}
+        />
+      </div>
     </div>
   );
 }
