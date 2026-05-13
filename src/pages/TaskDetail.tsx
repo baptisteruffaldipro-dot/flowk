@@ -54,7 +54,7 @@ export default function TaskDetail() {
   const load = async () => {
     if (!id) return;
     const [t, s, e, c, p, q] = await Promise.all([
-      supabase.from("tasks").select("*, clients(id,name), projects(id,name)").eq("id", id).maybeSingle(),
+      supabase.from("tasks").select("*, clients(id,name,email), projects(id,name)").eq("id", id).maybeSingle(),
       supabase.from("subtasks").select("*").eq("task_id", id).order("position"),
       supabase.from("time_entries").select("*").eq("task_id", id).order("started_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
