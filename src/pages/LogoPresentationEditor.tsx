@@ -356,6 +356,7 @@ export default function LogoPresentationEditor() {
           <TabsTrigger value="colors">Couleurs</TabsTrigger>
           <TabsTrigger value="typo">Typographies</TabsTrigger>
           <TabsTrigger value="insitu">En action</TabsTrigger>
+          <TabsTrigger value="livraison">Livraison</TabsTrigger>
         </TabsList>
 
         <TabsContent value="meta">
