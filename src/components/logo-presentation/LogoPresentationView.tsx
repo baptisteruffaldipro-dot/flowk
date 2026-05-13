@@ -100,14 +100,14 @@ export default function LogoPresentationView({ presentation }: Props) {
         .bs-serif { font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif; }
         .bs-mono { font-family: "JetBrains Mono", ui-monospace, "SF Mono", monospace; }
         /* Rich text — let user formatting drive style */
-        .rich-text, .rich-text p, .rich-text li { font-style: normal; font-weight: 400; }
+        .rich-text, .rich-text p, .rich-text li { font-style: normal; font-weight: 500; line-height: 1.35; }
         .rich-text strong { font-weight: 700; }
         .rich-text em { font-style: italic; }
         .rich-text u { text-decoration: underline; }
-        .rich-text h1 { font-size: 2.25em; font-weight: 600; line-height: 1.1; margin: 0.6em 0 0.4em; }
-        .rich-text h2 { font-size: 1.6em; font-weight: 600; line-height: 1.2; margin: 0.6em 0 0.3em; }
-        .rich-text h3 { font-size: 1.25em; font-weight: 600; line-height: 1.3; margin: 0.5em 0 0.25em; }
-        .rich-text p { margin: 0 0 0.4em !important; }
+        .rich-text h1 { font-size: 2.25em; font-weight: 600; line-height: 1.05; margin: 0.5em 0 0.3em; }
+        .rich-text h2 { font-size: 1.6em; font-weight: 600; line-height: 1.15; margin: 0.5em 0 0.25em; }
+        .rich-text h3 { font-size: 1.25em; font-weight: 600; line-height: 1.25; margin: 0.4em 0 0.2em; }
+        .rich-text p { margin: 0 0 0.25em !important; }
         .rich-text p:empty::before { content: "\\00a0"; }
         .rich-text p:has(> br:only-child)::before { content: "\\00a0"; }
         .rich-text p:last-child { margin-bottom: 0 !important; }
