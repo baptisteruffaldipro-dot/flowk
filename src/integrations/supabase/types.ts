@@ -482,6 +482,8 @@ export type Database = {
           questionnaire_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           task_id: string | null
+          tiime_invoice_id: string | null
+          tiime_synced_at: string | null
           updated_at: string
         }
         Insert: {
@@ -499,6 +501,8 @@ export type Database = {
           questionnaire_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           task_id?: string | null
+          tiime_invoice_id?: string | null
+          tiime_synced_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -516,6 +520,8 @@ export type Database = {
           questionnaire_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           task_id?: string | null
+          tiime_invoice_id?: string | null
+          tiime_synced_at?: string | null
           updated_at?: string
         }
         Relationships: [
