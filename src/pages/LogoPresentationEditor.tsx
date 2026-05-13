@@ -15,8 +15,8 @@ import { toast } from "sonner";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import ImageUpload from "@/components/logo-presentation/ImageUpload";
 import RichTextEditor from "@/components/logo-presentation/RichTextEditor";
-import type { LogoPresentation, LogoVariant, LogoTrack, MoodboardUniverse } from "@/data/logo-presentations/types";
-import { emptyLogoPresentationContent, emptyTrack, emptyUniverse } from "@/data/logo-presentations/empty";
+import type { LogoPresentation, LogoVariant, LogoTrack, MoodboardUniverse, ColorsTrack, TypographyTrack, InSituTrack } from "@/data/logo-presentations/types";
+import { emptyLogoPresentationContent, emptyTrack, emptyUniverse, emptyColorsTrack, emptyTypographyTrack, emptyInSituTrack } from "@/data/logo-presentations/empty";
 
 type DBRow = {
   id: string;
@@ -62,9 +62,30 @@ const ensureContent = (raw: any) => {
   } else {
     c.logos = { tracks: [emptyTrack("Piste 1")] };
   }
-  c.colors = { ...emptyLogoPresentationContent.colors, ...(c.colors || {}) };
-  c.typography = { ...emptyLogoPresentationContent.typography, ...(c.typography || {}) };
-  c.inSitu = { ...emptyLogoPresentationContent.inSitu, ...(c.inSitu || {}) };
+  const co: any = c.colors || {};
+  if (Array.isArray(co.tracks) && co.tracks.length > 0) {
+    c.colors = { tracks: co.tracks.map((t: any, i: number) => ({ ...emptyColorsTrack(`Piste ${i + 1}`), ...t })) };
+  } else if (co.intro || (Array.isArray(co.palette) && co.palette.length)) {
+    c.colors = { tracks: [{ ...emptyColorsTrack("Piste 1"), intro: co.intro || "", palette: co.palette || [] }] };
+  } else {
+    c.colors = { tracks: [emptyColorsTrack("Piste 1")] };
+  }
+  const ty: any = c.typography || {};
+  if (Array.isArray(ty.tracks) && ty.tracks.length > 0) {
+    c.typography = { tracks: ty.tracks.map((t: any, i: number) => ({ ...emptyTypographyTrack(`Piste ${i + 1}`), ...t })) };
+  } else if (ty.intro || (Array.isArray(ty.fonts) && ty.fonts.length)) {
+    c.typography = { tracks: [{ ...emptyTypographyTrack("Piste 1"), intro: ty.intro || "", fonts: ty.fonts || [] }] };
+  } else {
+    c.typography = { tracks: [emptyTypographyTrack("Piste 1")] };
+  }
+  const is: any = c.inSitu || {};
+  if (Array.isArray(is.tracks) && is.tracks.length > 0) {
+    c.inSitu = { tracks: is.tracks.map((t: any, i: number) => ({ ...emptyInSituTrack(`Piste ${i + 1}`), ...t })) };
+  } else if (is.intro || (Array.isArray(is.items) && is.items.length)) {
+    c.inSitu = { tracks: [{ ...emptyInSituTrack("Piste 1"), intro: is.intro || "", items: is.items || [] }] };
+  } else {
+    c.inSitu = { tracks: [emptyInSituTrack("Piste 1")] };
+  }
   return c;
 };
 
