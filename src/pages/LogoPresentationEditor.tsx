@@ -455,86 +455,168 @@ export default function LogoPresentationEditor() {
           </Button>
         </TabsContent>
 
-        <TabsContent value="colors">
-          <SectionCard title="04 — Palette de couleurs">
-            <div><Label>Intro</Label><RichTextEditor value={c.colors.intro} onChange={(html) => updateContent(["colors", "intro"], html)} /></div>
-            <div className="space-y-2">
-              <Label>Couleurs</Label>
-              {c.colors.palette.map((col: any, i: number) => (
-                <Card key={i} className="p-3 grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr_2fr_auto] gap-2 items-center bg-muted/20">
-                  <input
-                    type="color"
-                    value={col.hex || "#000000"}
-                    onChange={(e) => { const n = [...c.colors.palette]; n[i] = { ...n[i], hex: e.target.value }; updateContent(["colors", "palette"], n); }}
-                    className="h-10 w-12 rounded cursor-pointer"
-                  />
-                  <Input placeholder="Nom (Vert pomme)" value={col.name} onChange={(e) => { const n = [...c.colors.palette]; n[i] = { ...n[i], name: e.target.value }; updateContent(["colors", "palette"], n); }} />
-                  <Input placeholder="#9BCA3E" value={col.hex} onChange={(e) => { const n = [...c.colors.palette]; n[i] = { ...n[i], hex: e.target.value }; updateContent(["colors", "palette"], n); }} />
-                  <Input placeholder="Usage" value={col.usage} onChange={(e) => { const n = [...c.colors.palette]; n[i] = { ...n[i], usage: e.target.value }; updateContent(["colors", "palette"], n); }} />
-                  <Button size="icon" variant="ghost" onClick={() => updateContent(["colors", "palette"], c.colors.palette.filter((_: any, j: number) => j !== i))}>
-                    <Trash2 className="h-4 w-4" />
+        <TabsContent value="colors" className="space-y-4">
+          {(c.colors.tracks as ColorsTrack[]).map((ct, ti) => (
+            <Card key={ti} className="p-5 space-y-4 border-2">
+              <div className="flex items-center gap-3">
+                <Input
+                  className="flex-1 font-semibold"
+                  value={ct.name}
+                  onChange={(e) => updateContent(["colors", "tracks", ti, "name"], e.target.value)}
+                  placeholder={`Piste ${ti + 1}`}
+                />
+                {c.colors.tracks.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => updateContent(["colors", "tracks"], c.colors.tracks.filter((_: any, j: number) => j !== ti))}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Retirer cette piste
                   </Button>
-                </Card>
-              ))}
-              <Button size="sm" variant="outline" onClick={() => updateContent(["colors", "palette"], [...c.colors.palette, { name: "", hex: "#000000", usage: "" }])}>
-                <Plus className="h-4 w-4 mr-1" /> Ajouter une couleur
-              </Button>
-            </div>
-          </SectionCard>
-        </TabsContent>
-
-        <TabsContent value="typo">
-          <SectionCard title="05 — Typographies">
-            <div><Label>Intro</Label><RichTextEditor value={c.typography.intro} onChange={(html) => updateContent(["typography", "intro"], html)} /></div>
-            <div className="space-y-2">
-              <Label>Polices</Label>
-              {c.typography.fonts.map((f: any, i: number) => (
-                <Card key={i} className="p-3 space-y-2 bg-muted/20">
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input placeholder="Rôle (Principale)" value={f.role} onChange={(e) => { const n = [...c.typography.fonts]; n[i] = { ...n[i], role: e.target.value }; updateContent(["typography", "fonts"], n); }} />
-                    <Input placeholder="Nom (GC Grind)" value={f.name} onChange={(e) => { const n = [...c.typography.fonts]; n[i] = { ...n[i], name: e.target.value }; updateContent(["typography", "fonts"], n); }} />
-                  </div>
-                  <Input placeholder="Échantillon (Aa Bb Cc)" value={f.sample} onChange={(e) => { const n = [...c.typography.fonts]; n[i] = { ...n[i], sample: e.target.value }; updateContent(["typography", "fonts"], n); }} />
-                  <Input placeholder="Usage" value={f.usage} onChange={(e) => { const n = [...c.typography.fonts]; n[i] = { ...n[i], usage: e.target.value }; updateContent(["typography", "fonts"], n); }} />
-                  <Button size="sm" variant="ghost" onClick={() => updateContent(["typography", "fonts"], c.typography.fonts.filter((_: any, j: number) => j !== i))}>
-                    <Trash2 className="h-4 w-4 mr-1" /> Retirer
-                  </Button>
-                </Card>
-              ))}
-              <Button size="sm" variant="outline" onClick={() => updateContent(["typography", "fonts"], [...c.typography.fonts, { role: "", name: "", sample: "Aa Bb", usage: "" }])}>
-                <Plus className="h-4 w-4 mr-1" /> Ajouter une police
-              </Button>
-            </div>
-          </SectionCard>
-        </TabsContent>
-
-        <TabsContent value="insitu">
-          <SectionCard title="06 — En action (mockups)">
-            <div><Label>Intro</Label><RichTextEditor value={c.inSitu.intro} onChange={(html) => updateContent(["inSitu", "intro"], html)} /></div>
-            <div>
-              <Label>Mises en situation</Label>
-              <div className="grid sm:grid-cols-2 gap-3 mt-2">
-                {c.inSitu.items.map((it: any, i: number) => (
-                  <Card key={i} className="p-3 space-y-2 bg-muted/20">
-                    <ImageUpload
-                      value={it.url}
-                      onChange={(url) => { const n = [...c.inSitu.items]; n[i] = { ...n[i], url }; updateContent(["inSitu", "items"], n); }}
-                      folder={`${folder}/insitu`}
-                      aspect="aspect-[4/3]"
-                    />
-                    <Input placeholder="Titre (T-shirt, carte de visite…)" className="h-8 text-xs" value={it.title || ""} onChange={(e) => { const n = [...c.inSitu.items]; n[i] = { ...n[i], title: e.target.value }; updateContent(["inSitu", "items"], n); }} />
-                    <Input placeholder="Légende" className="h-8 text-xs" value={it.caption || ""} onChange={(e) => { const n = [...c.inSitu.items]; n[i] = { ...n[i], caption: e.target.value }; updateContent(["inSitu", "items"], n); }} />
-                    <Button size="sm" variant="ghost" className="w-full" onClick={() => updateContent(["inSitu", "items"], c.inSitu.items.filter((_: any, j: number) => j !== i))}>
-                      <Trash2 className="h-3.5 w-3.5 mr-1" /> Retirer
-                    </Button>
-                  </Card>
-                ))}
+                )}
               </div>
-              <Button size="sm" variant="outline" className="mt-3" onClick={() => updateContent(["inSitu", "items"], [...c.inSitu.items, { url: "" }])}>
-                <Plus className="h-4 w-4 mr-1" /> Ajouter un mockup
-              </Button>
-            </div>
-          </SectionCard>
+              <SectionCard title="Intro">
+                <RichTextEditor value={ct.intro} onChange={(html) => updateContent(["colors", "tracks", ti, "intro"], html)} />
+              </SectionCard>
+              <SectionCard title="Couleurs">
+                <div className="space-y-2">
+                  {ct.palette.map((col: any, i: number) => (
+                    <Card key={i} className="p-3 grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr_2fr_auto] gap-2 items-center bg-muted/20">
+                      <input
+                        type="color"
+                        value={col.hex || "#000000"}
+                        onChange={(e) => { const n = [...ct.palette]; n[i] = { ...n[i], hex: e.target.value }; updateContent(["colors", "tracks", ti, "palette"], n); }}
+                        className="h-10 w-12 rounded cursor-pointer"
+                      />
+                      <Input placeholder="Nom (Vert pomme)" value={col.name} onChange={(e) => { const n = [...ct.palette]; n[i] = { ...n[i], name: e.target.value }; updateContent(["colors", "tracks", ti, "palette"], n); }} />
+                      <Input placeholder="#9BCA3E" value={col.hex} onChange={(e) => { const n = [...ct.palette]; n[i] = { ...n[i], hex: e.target.value }; updateContent(["colors", "tracks", ti, "palette"], n); }} />
+                      <Input placeholder="Usage" value={col.usage} onChange={(e) => { const n = [...ct.palette]; n[i] = { ...n[i], usage: e.target.value }; updateContent(["colors", "tracks", ti, "palette"], n); }} />
+                      <Button size="icon" variant="ghost" onClick={() => updateContent(["colors", "tracks", ti, "palette"], ct.palette.filter((_: any, j: number) => j !== i))}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </Card>
+                  ))}
+                  <Button size="sm" variant="outline" onClick={() => updateContent(["colors", "tracks", ti, "palette"], [...ct.palette, { name: "", hex: "#000000", usage: "" }])}>
+                    <Plus className="h-4 w-4 mr-1" /> Ajouter une couleur
+                  </Button>
+                </div>
+              </SectionCard>
+            </Card>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => updateContent(["colors", "tracks"], [...c.colors.tracks, emptyColorsTrack(`Piste ${c.colors.tracks.length + 1}`)])}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Ajouter une piste de couleurs
+          </Button>
+        </TabsContent>
+
+        <TabsContent value="typo" className="space-y-4">
+          {(c.typography.tracks as TypographyTrack[]).map((tt, ti) => (
+            <Card key={ti} className="p-5 space-y-4 border-2">
+              <div className="flex items-center gap-3">
+                <Input
+                  className="flex-1 font-semibold"
+                  value={tt.name}
+                  onChange={(e) => updateContent(["typography", "tracks", ti, "name"], e.target.value)}
+                  placeholder={`Piste ${ti + 1}`}
+                />
+                {c.typography.tracks.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => updateContent(["typography", "tracks"], c.typography.tracks.filter((_: any, j: number) => j !== ti))}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Retirer cette piste
+                  </Button>
+                )}
+              </div>
+              <SectionCard title="Intro">
+                <RichTextEditor value={tt.intro} onChange={(html) => updateContent(["typography", "tracks", ti, "intro"], html)} />
+              </SectionCard>
+              <SectionCard title="Polices">
+                <div className="space-y-2">
+                  {tt.fonts.map((f: any, i: number) => (
+                    <Card key={i} className="p-3 space-y-2 bg-muted/20">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input placeholder="Rôle (Principale)" value={f.role} onChange={(e) => { const n = [...tt.fonts]; n[i] = { ...n[i], role: e.target.value }; updateContent(["typography", "tracks", ti, "fonts"], n); }} />
+                        <Input placeholder="Nom (GC Grind)" value={f.name} onChange={(e) => { const n = [...tt.fonts]; n[i] = { ...n[i], name: e.target.value }; updateContent(["typography", "tracks", ti, "fonts"], n); }} />
+                      </div>
+                      <Input placeholder="Échantillon (Aa Bb Cc)" value={f.sample} onChange={(e) => { const n = [...tt.fonts]; n[i] = { ...n[i], sample: e.target.value }; updateContent(["typography", "tracks", ti, "fonts"], n); }} />
+                      <Input placeholder="Usage" value={f.usage} onChange={(e) => { const n = [...tt.fonts]; n[i] = { ...n[i], usage: e.target.value }; updateContent(["typography", "tracks", ti, "fonts"], n); }} />
+                      <Button size="sm" variant="ghost" onClick={() => updateContent(["typography", "tracks", ti, "fonts"], tt.fonts.filter((_: any, j: number) => j !== i))}>
+                        <Trash2 className="h-4 w-4 mr-1" /> Retirer
+                      </Button>
+                    </Card>
+                  ))}
+                  <Button size="sm" variant="outline" onClick={() => updateContent(["typography", "tracks", ti, "fonts"], [...tt.fonts, { role: "", name: "", sample: "Aa Bb", usage: "" }])}>
+                    <Plus className="h-4 w-4 mr-1" /> Ajouter une police
+                  </Button>
+                </div>
+              </SectionCard>
+            </Card>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => updateContent(["typography", "tracks"], [...c.typography.tracks, emptyTypographyTrack(`Piste ${c.typography.tracks.length + 1}`)])}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Ajouter une piste de typographies
+          </Button>
+        </TabsContent>
+
+        <TabsContent value="insitu" className="space-y-4">
+          {(c.inSitu.tracks as InSituTrack[]).map((it, ti) => (
+            <Card key={ti} className="p-5 space-y-4 border-2">
+              <div className="flex items-center gap-3">
+                <Input
+                  className="flex-1 font-semibold"
+                  value={it.name}
+                  onChange={(e) => updateContent(["inSitu", "tracks", ti, "name"], e.target.value)}
+                  placeholder={`Piste ${ti + 1}`}
+                />
+                {c.inSitu.tracks.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => updateContent(["inSitu", "tracks"], c.inSitu.tracks.filter((_: any, j: number) => j !== ti))}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Retirer cette piste
+                  </Button>
+                )}
+              </div>
+              <SectionCard title="Intro">
+                <RichTextEditor value={it.intro} onChange={(html) => updateContent(["inSitu", "tracks", ti, "intro"], html)} />
+              </SectionCard>
+              <SectionCard title="Mises en situation">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {it.items.map((m: any, i: number) => (
+                    <Card key={i} className="p-3 space-y-2 bg-muted/20">
+                      <ImageUpload
+                        value={m.url}
+                        onChange={(url) => { const n = [...it.items]; n[i] = { ...n[i], url }; updateContent(["inSitu", "tracks", ti, "items"], n); }}
+                        folder={`${folder}/insitu/track-${ti}`}
+                        aspect="aspect-[4/3]"
+                      />
+                      <Input placeholder="Titre (T-shirt, carte de visite…)" className="h-8 text-xs" value={m.title || ""} onChange={(e) => { const n = [...it.items]; n[i] = { ...n[i], title: e.target.value }; updateContent(["inSitu", "tracks", ti, "items"], n); }} />
+                      <Input placeholder="Légende" className="h-8 text-xs" value={m.caption || ""} onChange={(e) => { const n = [...it.items]; n[i] = { ...n[i], caption: e.target.value }; updateContent(["inSitu", "tracks", ti, "items"], n); }} />
+                      <Button size="sm" variant="ghost" className="w-full" onClick={() => updateContent(["inSitu", "tracks", ti, "items"], it.items.filter((_: any, j: number) => j !== i))}>
+                        <Trash2 className="h-3.5 w-3.5 mr-1" /> Retirer
+                      </Button>
+                    </Card>
+                  ))}
+                </div>
+                <Button size="sm" variant="outline" className="mt-3" onClick={() => updateContent(["inSitu", "tracks", ti, "items"], [...it.items, { url: "" }])}>
+                  <Plus className="h-4 w-4 mr-1" /> Ajouter un mockup
+                </Button>
+              </SectionCard>
+            </Card>
+          ))}
+          <Button
+            variant="outline"
+            onClick={() => updateContent(["inSitu", "tracks"], [...c.inSitu.tracks, emptyInSituTrack(`Piste ${c.inSitu.tracks.length + 1}`)])}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Ajouter une piste « En action »
+          </Button>
         </TabsContent>
       </Tabs>
     </div>
