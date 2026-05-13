@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette } from "lucide-react";
+import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   fmtMoney,
@@ -31,6 +31,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const [logoPresentations, setLogoPresentations] = useState<any[]>([]);
   const [sendingOnboarding, setSendingOnboarding] = useState(false);
   const [clientInfo, setClientInfo] = useState<{ name: string | null; email: string | null } | null>(null);
+  const [copiedPortal, setCopiedPortal] = useState(false);
 
   useEffect(() => {
     if (!clientId) return;
@@ -83,6 +84,18 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       return;
     }
     toast.success(`Email envoyé à ${clientInfo.email}`);
+  };
+
+  const copyPortalLink = async () => {
+    const url = `${window.location.origin}/portail`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedPortal(true);
+      toast.success("Lien copié");
+      setTimeout(() => setCopiedPortal(false), 2000);
+    } catch {
+      toast.error("Impossible de copier");
+    }
   };
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -141,7 +154,11 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   return (
     <div className="space-y-6">
       {mode === "admin" && (
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={copyPortalLink}>
+            {copiedPortal ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+            Copier le lien onboarding
+          </Button>
           <Button size="sm" variant="outline" onClick={sendOnboardingEmail} disabled={sendingOnboarding || !clientInfo?.email}>
             <Mail className="h-4 w-4 mr-1" />
             {sendingOnboarding ? "Envoi…" : "Envoyer l'onboarding par email"}
