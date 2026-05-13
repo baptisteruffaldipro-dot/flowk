@@ -1,80 +1,80 @@
 
-# Livraison conditionnée par BAT + paiement
+# Intégration Tiime — création de factures
 
-Objectif : un client ne peut télécharger un livrable que si **(a) le BAT est validé** quand applicable, et **(b) l'acompte ou le solde est encaissé** — sauf si tu actives un override manuel.
+## Contexte
 
-## 1. Modèle de données
+Tiime n'expose **aucune API publique officielle**. Le SDK communautaire `yabbal/tiime` a été retiré de GitHub/npm. Il reste deux voies :
 
-Ajouts minimes, le reste réutilise `invoices` + `invoice_installments` qui existent déjà.
+1. **Rétro-ingénierie de l'API interne** utilisée par l'app web Tiime (login + endpoints `/invoices`). C'est ce que faisait le SDK supprimé. Risque : Tiime peut casser à tout moment.
+2. **Chift** comme intermédiaire payant (~50€/mois). Stable, mais coût récurrent.
 
-**`tasks`** (livraison de fichiers / logos)
-- `delivery_unlock_rule` enum `acompte | total | libre` — défaut `acompte`
-- `delivery_override` bool — bypass paiement
-- `invoice_url` text (lien Tiime) — en plus du PDF déjà uploadable dans `deliverables`
+Tu as choisi le SDK non officiel + priorité basse. On garde donc le lien manuel comme fallback partout, et on ajoute la création automatique en option.
 
-**`print_orders`** (impressions)
-- mêmes 3 colonnes (`delivery_unlock_rule`, `delivery_override`, `invoice_url`)
-- on garde `bat_validated_at` comme verrou supplémentaire : pas de livrable tant que BAT non validé.
+## Ce qu'on construit
 
-**`logo_presentations`**
-- `deliverables` jsonb (liste de fichiers téléchargeables — sources, vectoriels)
-- `delivery_unlock_rule`, `delivery_override`, `invoice_url`
-- la **présentation** reste libre (token public) ; seul le **pack final** est gated.
+Un edge function `tiime-create-invoice` qui :
+- s'authentifie sur l'API interne Tiime avec tes identifiants stockés en secrets
+- crée une facture (brouillon) à partir d'une de nos `invoices`
+- stocke l'ID + l'URL Tiime retournés dans notre table `invoices`
 
-**`invoices`** : on s'appuie sur `invoice_installments.paid_amount` vs `amount` pour savoir ce qui est payé. Pas besoin de nouveau champ.
+Côté UI : un bouton **"Créer dans Tiime"** sur chaque facture, qui appelle l'edge function et remplit ensuite automatiquement le champ `invoice_url` (déjà utilisé par le DeliveryGate).
 
-**Fonction SQL `public.can_download(entity_type, entity_id)`** (security definer) qui renvoie un booléen :
-1. si `delivery_override` → true
-2. si `entity_type='print_order'` et `bat_validated_at IS NULL` → false
-3. selon `delivery_unlock_rule` :
-   - `libre` → true
-   - `acompte` → true si au moins une `invoice_installments` liée est payée (paid_amount ≥ amount)
-   - `total` → true si somme(paid_amount) ≥ somme(amount) sur toutes les échéances liées
-4. sinon false.
+## Étapes
 
-Cette fonction est appelée côté client avant de générer un signed URL via Storage.
+### 1. Reconnaissance API Tiime (avant tout code)
+Avant d'écrire l'edge function, je dois inspecter les requêtes réseau de l'app web Tiime pendant que **toi** tu te connectes et crées une facture manuellement. J'ai besoin de :
+- L'URL de l'endpoint d'auth (probablement `https://chronos.tiime-apps.com/auth/login` ou similaire)
+- Le payload de création de facture (champs requis : client, lignes, TVA, etc.)
+- Le format de la réponse (id, numéro, URL publique)
 
-## 2. UI admin (toi)
+**Action requise de ta part** : ouvrir Tiime, F12 → onglet Network, créer une facture test, et me copier-coller les 2-3 requêtes clés (URL + headers + body). Je ne peux pas faire ça moi-même.
 
-**Sur une tâche / commande / présentation logo :**
-- Sélecteur **Règle de déblocage** : Acompte / Total / Libre
-- Bloc **Facture** :
-  - Bouton « Joindre PDF » (upload dans bucket `livrables`)
-  - Champ « Lien Tiime » (URL externe)
-  - Les deux peuvent coexister
-- Liste des **échéances** (déjà gérée par `InstallmentsManager`) : checkbox « Encaissé » → set `paid_amount = amount`, `paid_at = today`
-- Toggle **« Autoriser le téléchargement maintenant »** (override)
-- Badge d'état : 🔒 Verrouillé / ⏳ BAT en attente / 💰 Acompte requis / ✅ Disponible
+### 2. Secrets
+Ajouter `TIIME_EMAIL` + `TIIME_PASSWORD` (ou un token long-lived si Tiime en propose un dans son interface).
 
-**Notification automatique** quand l'état passe à ✅ : email "Vos fichiers sont disponibles" (template `files-delivered` existe déjà).
+### 3. Mapping de données
 
-## 3. UI portail client
+Mapper notre `invoices` + `invoice_installments` vers le payload Tiime :
 
-Sur `ClientPortal` / `ClientProjectPortal` / `ClientPrintOrderPortal` / page logo :
-- Carte **Livraison** qui montre toujours :
-  - le **récapitulatif financier** (forfait/horaire, montant, ce qui est dû, ce qui est payé)
-  - la/les **factures** (lien Tiime ou PDF téléchargeable)
-  - l'état du **BAT** (impressions uniquement)
-  - l'état du **paiement** (acompte ✅ / solde ⏳)
-- Bouton **Télécharger** :
-  - actif → signed URL généré
-  - inactif → tooltip explicite (« BAT à valider », « Acompte à régler », etc.)
+```text
+Flowk invoice              →  Tiime invoice
+─────────────────────────     ──────────────────────
+client_id (→ profiles)     →  customer (matching par email/nom)
+lines (description, qty,   →  items[]
+       unit_price)
+total_ht, tva, total_ttc   →  calculs Tiime
+installments[]             →  due_date + plan d'échéances
+```
 
-## 4. Intégration Tiime (v2 — pas dans cette plan)
+Le matching client est délicat : si le client n'existe pas dans Tiime, il faut le créer avant. Je gère les deux cas dans l'edge function.
 
-On prévoit la place : champ `invoice_url` + un futur edge function `sync-tiime` qui mettra à jour `paid_amount` automatiquement via l'API Tiime. Pour l'instant tu coches manuellement.
+### 4. Edge function `tiime-create-invoice`
+- Input : `{ invoice_id }`
+- Process : login → find/create customer → POST invoice → save `tiime_invoice_id` + `invoice_url` sur notre `invoices`
+- Output : `{ tiime_id, url }`
 
-## 5. Découpage d'implémentation
+### 5. UI
+- Page `Invoices` et `InstallmentsManager` : bouton **"Créer dans Tiime"** (visible quand `invoice_url` est vide)
+- Toast succès → le champ `invoice_url` se remplit tout seul → le client voit le lien dans son portail
+- Bouton **"Voir dans Tiime"** quand déjà créé
 
-1. **Migration DB** : nouvelles colonnes + fonction `can_download` + RLS qui interdit aux clients de modifier ces champs.
-2. **Helper TS partagé** `useDeliveryState(entity)` qui calcule l'état (verrouillé / disponible / raison) côté admin **et** côté client (mêmes règles).
-3. **UI admin** : composant `DeliveryGate` réutilisable injecté dans `TaskDetail`, `PrintOrderDetail`, `LogoPresentationEditor`.
-4. **UI client** : composant `ClientDeliveryCard` réutilisable injecté dans les 3 portails.
-5. **Email auto** : trigger côté UI admin quand l'état devient « disponible » → envoi `files-delivered`.
-6. **Tiime** : juste le champ texte pour l'instant.
+### 6. Fallback
+Le champ `invoice_url` manuel + l'upload PDF restent en place. Si l'API casse, tu continues comme aujourd'hui sans rien perdre.
 
-## Détails techniques
+## Hors scope (v2)
 
-- Les fichiers livrables restent dans le bucket privé `livrables` ; on ne change pas le RLS du bucket. Le téléchargement passe par `supabase.storage.createSignedUrl` côté client uniquement si `can_download()` renvoie true (vérifié par un appel RPC juste avant).
-- Pour les logos, on ajoute un bucket privé `logo-deliverables` (le bucket actuel `logo-presentations` est public et sert à l'affichage de la présentation, pas au pack final).
-- L'override est tracé : on log `delivery_override_at` + `delivery_override_by` pour audit.
+- **Synchro retour** (Tiime → Flowk pour marquer payé). Trop fragile sans webhook officiel. Tu coches les paiements à la main, comme aujourd'hui.
+- **Création de devis**.
+- **Avoirs / annulations**.
+
+## Migration DB
+
+Ajout sur `invoices` :
+- `tiime_invoice_id` text
+- `tiime_synced_at` timestamptz
+
+## Décision à prendre maintenant
+
+Je peux **préparer le squelette** (UI, edge function avec stub, secrets, migration) sans attendre — tu remplis les vrais endpoints Tiime quand tu as 5 min pour faire la capture réseau.
+
+Ou on attend que tu aies les requêtes Tiime en main pour tout faire d'un coup.
