@@ -699,6 +699,13 @@ export default function TaskDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <NewBatDialog
+        task={task}
+        open={batDialogOpen}
+        onOpenChange={setBatDialogOpen}
+        onCreated={() => { setBatDialogOpen(false); load(); }}
+      />
     </div>
   );
 }
