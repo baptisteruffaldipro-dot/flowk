@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ type Props = {
 };
 
 export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Props) {
-  const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
