@@ -40,9 +40,9 @@ const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => {
   <article className="grid md:grid-cols-12 gap-8 md:gap-12">
     <div className="md:col-span-4">
       <div className="text-7xl md:text-8xl italic font-light text-accent leading-none mb-4">{index}</div>
-      <h3 className="text-3xl md:text-4xl italic font-light leading-tight mb-4">{v.label}</h3>
+      <h3 className="text-3xl md:text-4xl italic font-normal leading-tight mb-4">{v.label}</h3>
       {v.description && (
-        <RichText html={v.description} className="text-base font-light text-muted-foreground leading-relaxed mb-4" />
+        <RichText html={v.description} className="text-base font-normal text-muted-foreground leading-snug mb-4" />
       )}
       {v.usage && (
         <div className="text-[10px] tracking-[0.3em] uppercase text-muted-foreground mb-2 bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
@@ -100,14 +100,14 @@ export default function LogoPresentationView({ presentation }: Props) {
         .bs-serif { font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif; }
         .bs-mono { font-family: "JetBrains Mono", ui-monospace, "SF Mono", monospace; }
         /* Rich text — let user formatting drive style */
-        .rich-text, .rich-text p, .rich-text li { font-style: normal; font-weight: 400; }
+        .rich-text, .rich-text p, .rich-text li { font-style: normal; font-weight: 500; line-height: 1.35; }
         .rich-text strong { font-weight: 700; }
         .rich-text em { font-style: italic; }
         .rich-text u { text-decoration: underline; }
-        .rich-text h1 { font-size: 2.25em; font-weight: 600; line-height: 1.1; margin: 0.6em 0 0.4em; }
-        .rich-text h2 { font-size: 1.6em; font-weight: 600; line-height: 1.2; margin: 0.6em 0 0.3em; }
-        .rich-text h3 { font-size: 1.25em; font-weight: 600; line-height: 1.3; margin: 0.5em 0 0.25em; }
-        .rich-text p { margin: 0 0 0.4em !important; }
+        .rich-text h1 { font-size: 2.25em; font-weight: 600; line-height: 1.05; margin: 0.5em 0 0.3em; }
+        .rich-text h2 { font-size: 1.6em; font-weight: 600; line-height: 1.15; margin: 0.5em 0 0.25em; }
+        .rich-text h3 { font-size: 1.25em; font-weight: 600; line-height: 1.25; margin: 0.4em 0 0.2em; }
+        .rich-text p { margin: 0 0 0.25em !important; }
         .rich-text p:empty::before { content: "\\00a0"; }
         .rich-text p:has(> br:only-child)::before { content: "\\00a0"; }
         .rich-text p:last-child { margin-bottom: 0 !important; }
@@ -151,7 +151,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number="01" title="Brief & contexte" />
           {p.brief.intro && (
-              <RichText html={p.brief.intro} className="text-2xl md:text-3xl font-light leading-relaxed max-w-4xl mb-12 italic" />
+              <RichText html={p.brief.intro} className="text-2xl md:text-3xl font-normal leading-snug max-w-4xl mb-12 italic" />
             )}
             <div className="grid md:grid-cols-2 gap-12">
               {p.brief.objectives.length > 0 && (
@@ -161,7 +161,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                   </div>
                   <ul className="space-y-3">
                     {p.brief.objectives.map((o, i) => (
-                      <li key={i} className="text-lg font-light italic border-l-2 border-accent/40 pl-4">{o}</li>
+                      <li key={i} className="text-lg font-normal italic border-l-2 border-accent/40 pl-4">{o}</li>
                     ))}
                   </ul>
                 </div>
@@ -173,7 +173,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                   </div>
                   <ul className="space-y-3">
                     {p.brief.deliverables.map((o, i) => (
-                      <li key={i} className="text-lg font-light italic border-l border-foreground/20 pl-4">{o}</li>
+                      <li key={i} className="text-lg font-normal italic border-l border-foreground/20 pl-4">{o}</li>
                     ))}
                   </ul>
                 </div>
@@ -191,7 +191,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                 <section>
                   <SectionLabel number={number} title={u.name || `Univers ${ui + 1}`} />
                   {u.intro && (
-                    <RichText html={u.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
+                    <RichText html={u.intro} className="text-xl md:text-2xl font-normal italic text-foreground max-w-4xl mb-12 leading-snug" />
                   )}
                   {u.keywords.length > 0 && (
                     <div className="flex flex-wrap gap-3 mb-12">
@@ -226,7 +226,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                 <section>
                   <SectionLabel number={number} title={track.name || `Piste ${ti + 1}`} />
                   {track.intro && (
-                    <RichText html={track.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-16 leading-relaxed" />
+                    <RichText html={track.intro} className="text-xl md:text-2xl font-normal italic text-foreground max-w-4xl mb-16 leading-snug" />
                   )}
                   <div className="space-y-24">
                     <VariantBlock v={track.primary} index="01" />
@@ -243,7 +243,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number={colorsNum} title="Palette de couleurs" />
             {p.colors.intro && (
-              <RichText html={p.colors.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
+              <RichText html={p.colors.intro} className="text-xl md:text-2xl font-normal italic text-foreground max-w-4xl mb-12 leading-snug" />
             )}
             {p.colors.palette.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-foreground/10 border border-foreground/10">
@@ -271,7 +271,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section>
             <SectionLabel number={typoNum} title="Typographies" />
             {p.typography.intro && (
-              <RichText html={p.typography.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
+              <RichText html={p.typography.intro} className="text-xl md:text-2xl font-normal italic text-foreground max-w-4xl mb-12 leading-snug" />
             )}
             {p.typography.fonts.length > 0 ? (
               <div className="grid md:grid-cols-3 gap-px bg-foreground/10 border border-foreground/10">
@@ -280,7 +280,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                     <div className="text-[10px] tracking-[0.3em] uppercase text-accent bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
                       {f.role}
                     </div>
-                    <div className="text-4xl md:text-5xl font-light leading-tight" style={{ fontFamily: f.name }}>
+                    <div className="text-4xl md:text-5xl font-normal leading-tight" style={{ fontFamily: f.name }}>
                       {f.sample || "Aa Bb"}
                     </div>
                     <div className="text-sm italic">{f.name}</div>
@@ -299,7 +299,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <section className="pb-16">
             <SectionLabel number={inSituNum} title="En action" />
             {p.inSitu.intro && (
-              <RichText html={p.inSitu.intro} className="text-xl md:text-2xl font-light italic text-foreground max-w-4xl mb-12 leading-relaxed" />
+              <RichText html={p.inSitu.intro} className="text-xl md:text-2xl font-normal italic text-foreground max-w-4xl mb-12 leading-snug" />
             )}
             {p.inSitu.items.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
