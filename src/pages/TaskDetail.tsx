@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
 import PrestationPicker from "@/components/PrestationPicker";
+import DeliveryGateCard from "@/components/DeliveryGateCard";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -617,6 +618,19 @@ export default function TaskDetail() {
           </div>
         )}
       </Card>
+
+      <div className="mb-4">
+        <DeliveryGateCard
+          entityType="task"
+          table="tasks"
+          row={task}
+          clientEmail={(task as any).clients?.email ?? null}
+          clientName={(task as any).clients?.name ?? null}
+          notifyTemplate="files-delivered"
+          notifyContext={{ description: task.title, portalUrl: `${window.location.origin}/portail` }}
+          onUpdated={load}
+        />
+      </div>
 
       {entries.length > 0 && (
         <Card className="p-5 mt-4">
