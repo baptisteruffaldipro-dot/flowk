@@ -45,26 +45,41 @@ export interface LogoPresentation {
     tracks: LogoTrack[];
   };
 
-  // 4 — Couleurs
+  // 4 — Couleurs (multi-pistes)
   colors: {
-    intro: string;
-    palette: { name: string; hex: string; usage: string }[];
+    tracks: ColorsTrack[];
   };
 
-  // 5 — Typographies
+  // 5 — Typographies (multi-pistes)
   typography: {
-    intro: string;
-    fonts: {
-      role: string;       // Principale / Secondaire / Soutien
-      name: string;
-      sample: string;
-      usage: string;
-    }[];
+    tracks: TypographyTrack[];
   };
 
-  // 6 — En action
+  // 6 — En action (multi-pistes)
   inSitu: {
-    intro: string;
-    items: { url: string; title?: string; caption?: string }[];
+    tracks: InSituTrack[];
   };
+}
+
+export interface ColorsTrack {
+  name: string;
+  intro: string;
+  palette: { name: string; hex: string; usage: string }[];
+}
+
+export interface TypographyTrack {
+  name: string;
+  intro: string;
+  fonts: {
+    role: string;
+    name: string;
+    sample: string;
+    usage: string;
+  }[];
+}
+
+export interface InSituTrack {
+  name: string;
+  intro: string;
+  items: { url: string; title?: string; caption?: string }[];
 }
