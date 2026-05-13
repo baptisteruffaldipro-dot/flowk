@@ -1099,6 +1099,7 @@ export type Database = {
       tasks: {
         Row: {
           acompte_invoiced: boolean
+          bat_id: string | null
           billing_type: Database["public"]["Enums"]["billing_type"]
           client_id: string | null
           client_revisions_count: number
@@ -1134,6 +1135,7 @@ export type Database = {
         }
         Insert: {
           acompte_invoiced?: boolean
+          bat_id?: string | null
           billing_type?: Database["public"]["Enums"]["billing_type"]
           client_id?: string | null
           client_revisions_count?: number
@@ -1169,6 +1171,7 @@ export type Database = {
         }
         Update: {
           acompte_invoiced?: boolean
+          bat_id?: string | null
           billing_type?: Database["public"]["Enums"]["billing_type"]
           client_id?: string | null
           client_revisions_count?: number
@@ -1203,6 +1206,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_bat_id_fkey"
+            columns: ["bat_id"]
+            isOneToOne: false
+            referencedRelation: "bats"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_client_id_fkey"
             columns: ["client_id"]
@@ -1540,6 +1550,7 @@ export type Database = {
         | "facturee"
         | "payee"
         | "facture_envoyee"
+        | "bat"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1774,6 +1785,7 @@ export const Constants = {
         "facturee",
         "payee",
         "facture_envoyee",
+        "bat",
       ],
     },
   },
