@@ -37,7 +37,7 @@ const LogoReadyEmail = ({ name, projectName, presentationUrl }: LogoReadyProps) 
             Découvrir les propositions
           </Button>
         )}
-        <Text style={footer}>— L'{SITE_NAME}</Text>
+        <Text style={footer}>— {SITE_NAME}</Text>
       </Container>
     </Body>
   </Html>

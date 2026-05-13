@@ -27,7 +27,7 @@ const OnboardingReadyEmail = ({ name, portalUrl }: OnboardingReadyProps) => (
         {portalUrl && (
           <Button style={button} href={portalUrl}>Accéder à mon espace</Button>
         )}
-        <Text style={footer}>— L'équipe {SITE_NAME}</Text>
+        <Text style={footer}>— {SITE_NAME}</Text>
       </Container>
     </Body>
   </Html>
