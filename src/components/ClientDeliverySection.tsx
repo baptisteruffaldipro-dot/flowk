@@ -22,9 +22,11 @@ type Props = {
   bucket?: string;
   /** Récap financier optionnel à afficher (forfait, horaire, etc.) */
   pricingSummary?: { label: string; value: string }[];
+  /** Path d'une facture PDF uploadée (dans le même bucket) */
+  invoiceFilePath?: string | null;
 };
 
-export default function ClientDeliverySection({ entityType, row, deliverables, bucket, pricingSummary }: Props) {
+export default function ClientDeliverySection({ entityType, row, deliverables, bucket, pricingSummary, invoiceFilePath }: Props) {
   const [installments, setInstallments] = useState<InstallmentRow[]>([]);
 
   useEffect(() => {
@@ -34,6 +36,15 @@ export default function ClientDeliverySection({ entityType, row, deliverables, b
   const status = computeDeliveryStatus(entityType, row, installments);
   const totalDue = installments.reduce((s, i) => s + Number(i.amount || 0), 0);
   const totalPaid = installments.reduce((s, i) => s + Number(i.paid_amount || 0), 0);
+
+  const bucketName = bucket ?? (entityType === "logo_presentation" ? "logo-deliverables" : "livrables");
+
+  const openInvoicePdf = async () => {
+    if (!invoiceFilePath) return;
+    const { data, error } = await supabase.storage.from(bucketName).createSignedUrl(invoiceFilePath, 60 * 5);
+    if (error || !data) return toast.error("Lien indisponible");
+    window.open(data.signedUrl, "_blank");
+  };
 
   const open = async (item: FileItem) => {
     if (status.state !== "available") return toast.error(status.reason);
@@ -95,6 +106,15 @@ export default function ClientDeliverySection({ entityType, row, deliverables, b
         >
           <ExternalLink className="h-3.5 w-3.5" /> Voir la facture
         </a>
+      )}
+
+      {invoiceFilePath && (
+        <button
+          onClick={openInvoicePdf}
+          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mb-3 ml-3"
+        >
+          <FileText className="h-3.5 w-3.5" /> Télécharger la facture (PDF)
+        </button>
       )}
 
       {deliverables.length === 0 ? (
