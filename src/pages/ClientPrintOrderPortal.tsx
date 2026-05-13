@@ -9,6 +9,7 @@ import { ArrowLeft, CheckCircle2, XCircle, Download, FileText } from "lucide-rea
 import { toast } from "sonner";
 import { PRINT_STATUS_LABEL, fmtDateTime } from "@/lib/format";
 import BatViewer from "@/components/BatViewer";
+import ClientDeliverySection from "@/components/ClientDeliverySection";
 
 export default function ClientPrintOrderPortal() {
   const { id } = useParams();
@@ -125,22 +126,11 @@ export default function ClientPrintOrderPortal() {
         )}
 
         {(order.deliverables ?? []).length > 0 && (
-          <Card className="p-5">
-            <h2 className="text-sm font-semibold mb-3">Fichiers livrés</h2>
-            <div className="space-y-1">
-              {order.deliverables.map((d: any) => (
-                <div key={d.path} className="flex items-center justify-between text-sm p-2 rounded hover:bg-secondary/60">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{d.name}</span>
-                  </div>
-                  <Button size="sm" variant="ghost" onClick={() => download(d.path)}>
-                    <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <ClientDeliverySection
+            entityType="print_order"
+            row={order}
+            deliverables={order.deliverables}
+          />
         )}
       </div>
     </div>
