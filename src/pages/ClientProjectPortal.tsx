@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, FileCheck2, Clock, Euro, Repeat, Truck, CalendarClock, ClipboardList, Sparkles, Package, AlertTriangle, Circle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FileCheck2, Clock, Euro, Repeat, Truck, CalendarClock, ClipboardList, Sparkles, Package, AlertTriangle, Circle, Palette, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PROJECT_TYPE_LABEL, fmtDate, fmtDateTime, STATUS_LABEL } from "@/lib/format";
 
@@ -30,6 +30,7 @@ export default function ClientProjectPortal() {
   const [printOrders, setPrintOrders] = useState<any[]>([]);
   const [bats, setBats] = useState<any[]>([]);
   const [subtasks, setSubtasks] = useState<any[]>([]);
+  const [logoPresentations, setLogoPresentations] = useState<any[]>([]);
 
   const load = async () => {
     if (!id) return;
@@ -50,6 +51,17 @@ export default function ClientProjectPortal() {
       setSubtasks(st ?? []);
     } else {
       setSubtasks([]);
+    }
+    const cid = (p.data as any)?.client_id;
+    if (cid) {
+      const { data: lp } = await supabase
+        .from("logo_presentations" as any)
+        .select("id,project_name,version,is_published,share_token,updated_at")
+        .eq("client_id", cid)
+        .order("updated_at", { ascending: false });
+      setLogoPresentations((lp as any) ?? []);
+    } else {
+      setLogoPresentations([]);
     }
   };
   useEffect(() => { load(); }, [id]);
@@ -245,6 +257,44 @@ export default function ClientProjectPortal() {
             </div>
           )}
         </Card>
+
+        {logoPresentations.length > 0 && (
+          <Card className="p-6 mb-4">
+            <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+              <Palette className="h-4 w-4 text-muted-foreground" /> Propositions logo
+            </h2>
+            <div className="space-y-1">
+              {logoPresentations.map((lp) => {
+                const href = lp.is_published && lp.share_token ? `/p/logo/${lp.share_token}` : null;
+                const inner = (
+                  <>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">{lp.project_name}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Version {lp.version} · MAJ {fmtDate(lp.updated_at)}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {lp.is_published
+                        ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Publiée</Badge>
+                        : <Badge variant="outline" className="text-[10px]">Brouillon</Badge>}
+                      {href && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                    </div>
+                  </>
+                );
+                return href ? (
+                  <Link key={lp.id} to={href} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-secondary/60 transition">
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={lp.id} className="flex items-center justify-between p-3 rounded-lg border border-border opacity-70">
+                    {inner}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
 
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
