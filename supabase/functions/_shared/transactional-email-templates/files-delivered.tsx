@@ -30,7 +30,7 @@ const FilesDeliveredEmail = ({ name, description, portalUrl }: FilesDeliveredPro
             Télécharger les fichiers
           </Button>
         )}
-        <Text style={footer}>— L'{SITE_NAME}</Text>
+        <Text style={footer}>— {SITE_NAME}</Text>
       </Container>
     </Body>
   </Html>
