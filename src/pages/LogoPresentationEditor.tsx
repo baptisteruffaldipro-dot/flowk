@@ -692,7 +692,7 @@ export default function LogoPresentationEditor() {
 
 function LogoDeliveryTab({ row, onUpdated }: { row: any; onUpdated: () => void }) {
   const [uploading, setUploading] = useState(false);
-  const deliverables: { name: string; path: string }[] = row.deliverables ?? [];
+  const deliverables: { name: string; path?: string; url?: string }[] = row.deliverables ?? [];
 
   const upload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -754,14 +754,14 @@ function LogoDeliveryTab({ row, onUpdated }: { row: any; onUpdated: () => void }
           </div>
         ) : (
           <div className="space-y-1">
-            {deliverables.map((d) => (
+            {deliverables.filter((d) => d.path).map((d) => (
               <div key={d.path} className="flex items-center justify-between text-sm p-2 rounded hover:bg-secondary/60">
                 <span className="truncate">{d.name}</span>
                 <div className="flex gap-1 shrink-0">
-                  <Button size="sm" variant="ghost" onClick={() => download(d.path)}>
+                  <Button size="sm" variant="ghost" onClick={() => download(d.path!)}>
                     <Download className="h-3.5 w-3.5" />
                   </Button>
-                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(d.path)}>
+                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(d.path!)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>

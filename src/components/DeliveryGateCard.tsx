@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Lock, Unlock, FileWarning, CheckCircle2, ExternalLink, Send } from "lucide-react";
+import { Lock, Unlock, FileWarning, CheckCircle2, ExternalLink, Send, Upload, Link2, Trash2, FileText, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   computeDeliveryStatus, loadEntityInstallments, UNLOCK_RULE_LABEL,
@@ -26,14 +26,23 @@ type Props = {
   notifyContext?: { description?: string; portalUrl?: string };
   clientEmail?: string | null;
   clientName?: string | null;
+  /** bucket de stockage pour les fichiers livrables */
+  bucket?: string;
 };
 
 export default function DeliveryGateCard({
-  entityType, table, row, onUpdated, notifyTemplate, notifyContext, clientEmail, clientName,
+  entityType, table, row, onUpdated, notifyTemplate, notifyContext, clientEmail, clientName, bucket,
 }: Props) {
   const [installments, setInstallments] = useState<{ amount: number | string; paid_amount: number | string }[]>([]);
   const [invoiceUrl, setInvoiceUrl] = useState(row.invoice_url ?? "");
   const [sending, setSending] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkName, setLinkName] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const storageBucket = bucket ?? (entityType === "logo_presentation" ? "logo-deliverables" : "livrables");
+  const deliverables: { name: string; path?: string; url?: string }[] = (row as any).deliverables ?? [];
 
   useEffect(() => {
     loadEntityInstallments(entityType, row.id).then(setInstallments);
@@ -47,6 +56,53 @@ export default function DeliveryGateCard({
     const { error } = await supabase.from(table as any).update(patch).eq("id", row.id);
     if (error) return toast.error(error.message);
     onUpdated();
+  };
+
+  const saveDeliverables = async (next: typeof deliverables) => {
+    const { error } = await supabase.from(table as any).update({ deliverables: next }).eq("id", row.id);
+    if (error) return toast.error(error.message);
+    onUpdated();
+  };
+
+  const addLink = async () => {
+    const url = linkUrl.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) return toast.error("Lien invalide (http(s)://…)");
+    const name = linkName.trim() || url.replace(/^https?:\/\//, "").slice(0, 60);
+    await saveDeliverables([...deliverables, { name, url }]);
+    setLinkUrl(""); setLinkName("");
+    toast.success("Lien ajouté");
+  };
+
+  const uploadFiles = async (files: FileList) => {
+    setUploading(true);
+    try {
+      const next = [...deliverables];
+      for (const file of Array.from(files)) {
+        const path = `${row.id}/${Date.now()}-${file.name}`;
+        const { error } = await supabase.storage.from(storageBucket).upload(path, file);
+        if (error) { toast.error(error.message); continue; }
+        next.push({ name: file.name, path });
+      }
+      await saveDeliverables(next);
+      toast.success("Fichier(s) ajouté(s)");
+    } finally {
+      setUploading(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
+
+  const removeItem = async (item: { path?: string; url?: string }) => {
+    if (item.path) {
+      await supabase.storage.from(storageBucket).remove([item.path]);
+    }
+    await saveDeliverables(deliverables.filter((d) => (d.path ?? d.url) !== (item.path ?? item.url)));
+  };
+
+  const downloadFile = async (path: string) => {
+    const { data, error } = await supabase.storage.from(storageBucket).createSignedUrl(path, 60 * 5);
+    if (error || !data) return toast.error("Lien indisponible");
+    window.open(data.signedUrl, "_blank");
   };
 
   const toggleOverride = async (next: boolean) => {
@@ -152,6 +208,81 @@ export default function DeliveryGateCard({
         État : <span className="font-medium text-foreground">{status.reason}</span>
         {row.delivery_override && row.delivery_override_at && (
           <> · override activé le {new Date(row.delivery_override_at).toLocaleString("fr-FR")}</>
+        )}
+      </div>
+
+      <div className="border-t pt-4 mb-3 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="text-sm font-semibold">Fichiers livrables</div>
+          <div className="flex gap-2">
+            <input
+              ref={fileInput}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => e.target.files && uploadFiles(e.target.files)}
+            />
+            <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={uploading}>
+              <Upload className="h-3.5 w-3.5 mr-1.5" /> {uploading ? "Upload…" : "Uploader un fichier"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="rounded-md border p-3 space-y-2">
+          <Label className="text-xs">Ajouter un lien externe (Google Drive, WeTransfer, Dropbox…)</Label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              type="url"
+              placeholder="https://drive.google.com/…"
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              className="flex-1"
+            />
+            <Input
+              placeholder="Libellé (optionnel)"
+              value={linkName}
+              onChange={(e) => setLinkName(e.target.value)}
+              className="sm:w-48"
+            />
+            <Button size="sm" variant="secondary" onClick={addLink} disabled={!linkUrl.trim()}>
+              <Link2 className="h-3.5 w-3.5 mr-1.5" /> Ajouter
+            </Button>
+          </div>
+        </div>
+
+        {deliverables.length === 0 ? (
+          <div className="text-xs text-muted-foreground">Aucun livrable pour le moment.</div>
+        ) : (
+          <div className="space-y-1">
+            {deliverables.map((d, i) => {
+              const isLink = !!d.url;
+              return (
+                <div key={d.path ?? d.url ?? i} className="flex items-center justify-between text-sm p-2 rounded hover:bg-secondary/60 border">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {isLink
+                      ? <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      : <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                    <span className="truncate">{d.name}</span>
+                    {isLink && <span className="text-[10px] text-muted-foreground">(lien)</span>}
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    {isLink ? (
+                      <Button size="sm" variant="ghost" asChild>
+                        <a href={d.url} target="_blank" rel="noreferrer"><ExternalLink className="h-3.5 w-3.5" /></a>
+                      </Button>
+                    ) : d.path ? (
+                      <Button size="sm" variant="ghost" onClick={() => downloadFile(d.path!)}>
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    ) : null}
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => removeItem(d)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 

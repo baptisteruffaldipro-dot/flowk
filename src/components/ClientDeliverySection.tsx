@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Unlock, FileWarning, Download, ExternalLink, FileText } from "lucide-react";
+import { Lock, Unlock, FileWarning, Download, ExternalLink, FileText, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   computeDeliveryStatus, loadEntityInstallments,
@@ -11,7 +11,7 @@ import {
 } from "@/lib/deliveryGate";
 import { fmtMoney } from "@/lib/format";
 
-type FileItem = { name: string; path: string };
+type FileItem = { name: string; path?: string; url?: string };
 
 type Props = {
   entityType: DeliveryEntityType;
@@ -35,10 +35,15 @@ export default function ClientDeliverySection({ entityType, row, deliverables, b
   const totalDue = installments.reduce((s, i) => s + Number(i.amount || 0), 0);
   const totalPaid = installments.reduce((s, i) => s + Number(i.paid_amount || 0), 0);
 
-  const download = async (path: string) => {
+  const open = async (item: FileItem) => {
     if (status.state !== "available") return toast.error(status.reason);
+    if (item.url) {
+      window.open(item.url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (!item.path) return;
     const b = bucket ?? (entityType === "logo_presentation" ? "logo-deliverables" : "livrables");
-    const { data, error } = await supabase.storage.from(b).createSignedUrl(path, 60 * 5);
+    const { data, error } = await supabase.storage.from(b).createSignedUrl(item.path, 60 * 5);
     if (error || !data) return toast.error("Lien indisponible");
     window.open(data.signedUrl, "_blank");
   };
@@ -96,24 +101,31 @@ export default function ClientDeliverySection({ entityType, row, deliverables, b
         <div className="text-xs text-muted-foreground">Aucun fichier déposé pour le moment.</div>
       ) : (
         <div className="space-y-1">
-          {deliverables.map((d) => (
-            <div key={d.path} className="flex items-center justify-between text-sm p-2 rounded hover:bg-secondary/60">
-              <div className="flex items-center gap-2 min-w-0">
-                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="truncate">{d.name}</span>
+          {deliverables.map((d, i) => {
+            const isLink = !!d.url;
+            return (
+              <div key={d.path ?? d.url ?? i} className="flex items-center justify-between text-sm p-2 rounded hover:bg-secondary/60">
+                <div className="flex items-center gap-2 min-w-0">
+                  {isLink
+                    ? <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    : <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                  <span className="truncate">{d.name}</span>
+                </div>
+                <Button
+                  size="sm" variant={status.state === "available" ? "default" : "ghost"}
+                  disabled={status.state !== "available"}
+                  onClick={() => open(d)}
+                  title={status.reason}
+                >
+                  {status.state === "available"
+                    ? (isLink
+                        ? <><ExternalLink className="h-3.5 w-3.5 mr-1" /> Ouvrir</>
+                        : <><Download className="h-3.5 w-3.5 mr-1" /> Télécharger</>)
+                    : <><Lock className="h-3.5 w-3.5 mr-1" /> Verrouillé</>}
+                </Button>
               </div>
-              <Button
-                size="sm" variant={status.state === "available" ? "default" : "ghost"}
-                disabled={status.state !== "available"}
-                onClick={() => download(d.path)}
-                title={status.reason}
-              >
-                {status.state === "available"
-                  ? <><Download className="h-3.5 w-3.5 mr-1" /> Télécharger</>
-                  : <><Lock className="h-3.5 w-3.5 mr-1" /> Verrouillé</>}
-              </Button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -459,7 +459,7 @@ export default function PrintOrderDetail() {
             <div className="text-xs text-muted-foreground py-3">Aucun fichier</div>
           ) : (
             <div className="space-y-1">
-              {(order.deliverables ?? []).map((d: any) => (
+              {(order.deliverables ?? []).filter((d: any) => d.path).map((d: any) => (
                 <div key={d.path} className="flex items-center justify-between text-sm p-2 rounded hover:bg-secondary/60">
                   <div className="flex items-center gap-2 min-w-0">
                     <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
