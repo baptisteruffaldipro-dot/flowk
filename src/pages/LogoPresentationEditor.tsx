@@ -544,6 +544,11 @@ export default function LogoPresentationEditor() {
                       </div>
                       <Input placeholder="Échantillon (Aa Bb Cc)" value={f.sample} onChange={(e) => { const n = [...tt.fonts]; n[i] = { ...n[i], sample: e.target.value }; updateContent(["typography", "tracks", ti, "fonts"], n); }} />
                       <Input placeholder="Usage" value={f.usage} onChange={(e) => { const n = [...tt.fonts]; n[i] = { ...n[i], usage: e.target.value }; updateContent(["typography", "tracks", ti, "fonts"], n); }} />
+                      <Input
+                        placeholder="URL Google Fonts (https://fonts.googleapis.com/css2?family=...) ou @import / <link>"
+                        value={f.googleFontUrl || ""}
+                        onChange={(e) => { const n = [...tt.fonts]; n[i] = { ...n[i], googleFontUrl: e.target.value }; updateContent(["typography", "tracks", ti, "fonts"], n); }}
+                      />
                       <Button size="sm" variant="ghost" onClick={() => updateContent(["typography", "tracks", ti, "fonts"], tt.fonts.filter((_: any, j: number) => j !== i))}>
                         <Trash2 className="h-4 w-4 mr-1" /> Retirer
                       </Button>

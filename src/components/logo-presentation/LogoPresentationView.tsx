@@ -125,6 +125,21 @@ export default function LogoPresentationView({ presentation }: Props) {
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400&display=swap"
       />
+      {Array.from(new Set(
+        p.typography.tracks.flatMap((tt) =>
+          tt.fonts
+            .map((f) => {
+              const raw = (f.googleFontUrl || "").trim();
+              if (!raw) return null;
+              // Extract href from <link ... href="..."> if user pasted full tag
+              const m = raw.match(/href=["']([^"']+)["']/);
+              return m ? m[1] : raw;
+            })
+            .filter((u): u is string => !!u)
+        )
+      )).map((href) => (
+        <link key={href} rel="stylesheet" href={href} />
+      ))}
 
       <div className="font-serif" style={{ fontFamily: '"Cormorant Garamond", Georgia, serif' }}>
         {/* HERO */}

@@ -75,6 +75,7 @@ export interface TypographyTrack {
     name: string;
     sample: string;
     usage: string;
+    googleFontUrl?: string;
   }[];
 }
 
