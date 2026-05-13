@@ -658,6 +658,7 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
+        triggerTiimeIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -718,6 +719,7 @@ export default function Tasks() {
         setDividers(prev.dividers);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
+        triggerTiimeIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -740,6 +742,7 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
+        triggerTiimeIfNeeded(task.id, newStatus);
       }
     }
   };
