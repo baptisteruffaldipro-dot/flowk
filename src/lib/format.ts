@@ -15,6 +15,7 @@ export const STATUS_LABEL: Record<string, string> = {
   a_faire: "À faire",
   en_attente: "En attente",
   aujourdhui: "Aujourd'hui",
+  bat: "BAT",
   envoye: "Envoyé",
   a_facturer: "À facturer",
   facture_envoyee: "Facture envoyée",
@@ -141,6 +142,7 @@ export const PRIORITY_COLOR: Record<string, string> = {
 export const STATUS_META: Record<string, { emoji: string; bg: string; ring: string; count: string; accent: string }> = {
   a_faire:    { emoji: "📁", bg: "bg-rose-50 dark:bg-rose-950/40",       ring: "ring-rose-200/70 dark:ring-rose-900/50",       count: "text-rose-600 dark:text-rose-400",       accent: "bg-rose-400" },
   aujourdhui: { emoji: "👷", bg: "bg-amber-50 dark:bg-amber-950/40",     ring: "ring-amber-200/70 dark:ring-amber-900/50",     count: "text-amber-600 dark:text-amber-400",     accent: "bg-amber-400" },
+  bat:        { emoji: "📝", bg: "bg-fuchsia-50 dark:bg-fuchsia-950/40", ring: "ring-fuchsia-200/70 dark:ring-fuchsia-900/50", count: "text-fuchsia-600 dark:text-fuchsia-400", accent: "bg-fuchsia-400" },
   envoye:     { emoji: "📤", bg: "bg-sky-50 dark:bg-sky-950/40",         ring: "ring-sky-200/70 dark:ring-sky-900/50",         count: "text-sky-600 dark:text-sky-400",         accent: "bg-sky-400" },
   a_facturer: { emoji: "💰", bg: "bg-emerald-50 dark:bg-emerald-950/40", ring: "ring-emerald-200/70 dark:ring-emerald-900/50", count: "text-emerald-600 dark:text-emerald-400", accent: "bg-emerald-400" },
   facture_envoyee: { emoji: "🧾", bg: "bg-teal-50 dark:bg-teal-950/40",  ring: "ring-teal-200/70 dark:ring-teal-900/50",       count: "text-teal-600 dark:text-teal-400",       accent: "bg-teal-400" },

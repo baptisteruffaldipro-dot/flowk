@@ -15,6 +15,7 @@ import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X } from "lucide-rea
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
+import NewBatDialog from "@/components/NewBatDialog";
 import {
   DndContext,
   DragEndEvent,
@@ -27,7 +28,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 
-const STATUSES = ["a_faire", "aujourdhui", "envoye", "a_facturer", "facture_envoyee", "archive"] as const;
+const STATUSES = ["a_faire", "aujourdhui", "bat", "envoye", "a_facturer", "facture_envoyee", "archive"] as const;
 type Status = typeof STATUSES[number];
 
 function DeadlineBadge({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
@@ -507,6 +508,7 @@ export default function Tasks() {
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [batForTask, setBatForTask] = useState<any | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
     title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire",
@@ -534,6 +536,13 @@ export default function Tasks() {
   }, []);
 
   const onDragStart = (e: DragStartEvent) => setActiveId(String(e.active.id));
+
+  const triggerBatIfNeeded = (taskId: string, newStatus: Status) => {
+    if (newStatus !== "bat") return;
+    const t = tasks.find((x) => x.id === taskId);
+    if (t && !t.bat_id) setBatForTask(t);
+  };
+
   const onDragEnd = async (e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
@@ -630,6 +639,8 @@ export default function Tasks() {
       if (error) {
         toast.error(error.message);
         setTasks(prev);
+      } else {
+        triggerBatIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -688,6 +699,8 @@ export default function Tasks() {
         toast.error(errors[0]);
         setTasks(prev.tasks);
         setDividers(prev.dividers);
+      } else {
+        triggerBatIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -708,6 +721,8 @@ export default function Tasks() {
       if (error) {
         toast.error(error.message);
         setTasks(prev);
+      } else {
+        triggerBatIfNeeded(task.id, newStatus);
       }
     }
   };
@@ -1037,6 +1052,12 @@ export default function Tasks() {
           </DndContext>
         </TabsContent>
       </Tabs>
+      <NewBatDialog
+        task={batForTask}
+        open={!!batForTask}
+        onOpenChange={(v) => { if (!v) setBatForTask(null); }}
+        onCreated={() => { setBatForTask(null); load(); }}
+      />
     </div>
   );
 }

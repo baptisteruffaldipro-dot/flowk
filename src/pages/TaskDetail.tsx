@@ -31,6 +31,7 @@ import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, f
 import { computeTaskBilling } from "@/lib/billing";
 import PrestationPicker from "@/components/PrestationPicker";
 import DeliveryGateCard from "@/components/DeliveryGateCard";
+import NewBatDialog from "@/components/NewBatDialog";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -46,6 +47,7 @@ export default function TaskDetail() {
   const [projects, setProjects] = useState<any[]>([]);
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [newClientDialog, setNewClientDialog] = useState(false);
+  const [batDialogOpen, setBatDialogOpen] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newClientCompany, setNewClientCompany] = useState("");
@@ -282,6 +284,9 @@ export default function TaskDetail() {
     if (newStatus === "a_facturer" && !wasDelivered) {
       // petit délai pour laisser load() rafraîchir, puis on tente le solde
       setTimeout(() => invoiceBalance(true), 400);
+    }
+    if (newStatus === "bat" && !task.bat_id) {
+      setBatDialogOpen(true);
     }
   };
 
@@ -694,6 +699,13 @@ export default function TaskDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <NewBatDialog
+        task={task}
+        open={batDialogOpen}
+        onOpenChange={setBatDialogOpen}
+        onCreated={() => { setBatDialogOpen(false); load(); }}
+      />
     </div>
   );
 }
