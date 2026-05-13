@@ -68,6 +68,10 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
 
   const sendOnboardingEmail = async () => {
     if (!clientInfo?.email) return toast.error("Le client n'a pas d'email enregistré");
+    const ok = window.confirm(
+      `Envoyer l'onboarding à ${clientInfo.email} ?\n\nUne copie te sera également envoyée à bonjour@atelier-rufo.fr.`
+    );
+    if (!ok) return;
     setSendingOnboarding(true);
     const portalUrl = `${window.location.origin}/portail`;
     const { data, error } = await supabase.functions.invoke("send-transactional-email", {
