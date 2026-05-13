@@ -14,6 +14,9 @@ const SENDER_DOMAIN = "notify.atelier-rufo.fr"
 // When display_from_root is enabled, this can be the root domain for cleaner branding,
 // even though actual sending uses the subdomain above.
 const FROM_DOMAIN = "notify.atelier-rufo.fr"
+// Address that automatically receives a copy of every transactional email
+// sent through this function. Set to empty string to disable.
+const BCC_OWNER_EMAIL = "bonjour@atelier-rufo.fr"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -388,6 +391,69 @@ Deno.serve(async (req) => {
   }
 
   console.log('Transactional email enqueued', { templateName, effectiveRecipient })
+
+  // Send a copy to the owner so they always have a trace of what was sent.
+  // We skip when the recipient is already the owner to avoid duplicates.
+  if (
+    BCC_OWNER_EMAIL &&
+    effectiveRecipient.toLowerCase() !== BCC_OWNER_EMAIL.toLowerCase()
+  ) {
+    try {
+      const ownerMessageId = crypto.randomUUID()
+
+      // Ensure an unsubscribe token exists for the owner address too
+      let ownerUnsubToken: string
+      const { data: ownerExisting } = await supabase
+        .from('email_unsubscribe_tokens')
+        .select('token')
+        .eq('email', BCC_OWNER_EMAIL.toLowerCase())
+        .maybeSingle()
+      if (ownerExisting?.token) {
+        ownerUnsubToken = ownerExisting.token
+      } else {
+        ownerUnsubToken = generateToken()
+        await supabase
+          .from('email_unsubscribe_tokens')
+          .upsert(
+            { token: ownerUnsubToken, email: BCC_OWNER_EMAIL.toLowerCase() },
+            { onConflict: 'email', ignoreDuplicates: true }
+          )
+        const { data: stored } = await supabase
+          .from('email_unsubscribe_tokens')
+          .select('token')
+          .eq('email', BCC_OWNER_EMAIL.toLowerCase())
+          .maybeSingle()
+        if (stored?.token) ownerUnsubToken = stored.token
+      }
+
+      await supabase.from('email_send_log').insert({
+        message_id: ownerMessageId,
+        template_name: templateName,
+        recipient_email: BCC_OWNER_EMAIL,
+        status: 'pending',
+      })
+
+      await supabase.rpc('enqueue_email', {
+        queue_name: 'transactional_emails',
+        payload: {
+          message_id: ownerMessageId,
+          to: BCC_OWNER_EMAIL,
+          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          sender_domain: SENDER_DOMAIN,
+          subject: `[Copie — envoyé à ${effectiveRecipient}] ${resolvedSubject}`,
+          html,
+          text: plainText,
+          purpose: 'transactional',
+          label: templateName,
+          idempotency_key: `${idempotencyKey}-owner-copy`,
+          unsubscribe_token: ownerUnsubToken,
+          queued_at: new Date().toISOString(),
+        },
+      })
+    } catch (err) {
+      console.error('Failed to enqueue owner copy', err)
+    }
+  }
 
   return new Response(
     JSON.stringify({ success: true, queued: true }),
