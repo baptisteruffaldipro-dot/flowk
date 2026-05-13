@@ -627,6 +627,7 @@ export type Database = {
           delivery_override_by: string | null
           delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
           id: string
+          invoice_file_path: string | null
           invoice_url: string | null
           is_published: boolean
           project_name: string
@@ -647,6 +648,7 @@ export type Database = {
           delivery_override_by?: string | null
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           id?: string
+          invoice_file_path?: string | null
           invoice_url?: string | null
           is_published?: boolean
           project_name: string
@@ -667,6 +669,7 @@ export type Database = {
           delivery_override_by?: string | null
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           id?: string
+          invoice_file_path?: string | null
           invoice_url?: string | null
           is_published?: boolean
           project_name?: string
@@ -707,6 +710,7 @@ export type Database = {
           format: string | null
           grammage: string | null
           id: string
+          invoice_file_path: string | null
           invoice_url: string | null
           observations: string | null
           payment_status: Database["public"]["Enums"]["print_payment_status"]
@@ -740,6 +744,7 @@ export type Database = {
           format?: string | null
           grammage?: string | null
           id?: string
+          invoice_file_path?: string | null
           invoice_url?: string | null
           observations?: string | null
           payment_status?: Database["public"]["Enums"]["print_payment_status"]
@@ -773,6 +778,7 @@ export type Database = {
           format?: string | null
           grammage?: string | null
           id?: string
+          invoice_file_path?: string | null
           invoice_url?: string | null
           observations?: string | null
           payment_status?: Database["public"]["Enums"]["print_payment_status"]
@@ -1110,6 +1116,7 @@ export type Database = {
           free_revisions: number
           hourly_rate: number | null
           id: string
+          invoice_file_path: string | null
           invoice_url: string | null
           note_attachments: Json
           notes: string | null
@@ -1144,6 +1151,7 @@ export type Database = {
           free_revisions?: number
           hourly_rate?: number | null
           id?: string
+          invoice_file_path?: string | null
           invoice_url?: string | null
           note_attachments?: Json
           notes?: string | null
@@ -1178,6 +1186,7 @@ export type Database = {
           free_revisions?: number
           hourly_rate?: number | null
           id?: string
+          invoice_file_path?: string | null
           invoice_url?: string | null
           note_attachments?: Json
           notes?: string | null
@@ -1386,6 +1395,7 @@ export type Database = {
           delivery_override_by: string | null
           delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
           id: string
+          invoice_file_path: string | null
           invoice_url: string | null
           is_published: boolean
           project_name: string

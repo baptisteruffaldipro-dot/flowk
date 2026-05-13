@@ -40,9 +40,12 @@ export default function DeliveryGateCard({
   const [linkName, setLinkName] = useState("");
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const invoiceInput = useRef<HTMLInputElement>(null);
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
 
   const storageBucket = bucket ?? (entityType === "logo_presentation" ? "logo-deliverables" : "livrables");
   const deliverables: { name: string; path?: string; url?: string }[] = (row as any).deliverables ?? [];
+  const invoiceFilePath: string | null = (row as any).invoice_file_path ?? null;
 
   useEffect(() => {
     loadEntityInstallments(entityType, row.id).then(setInstallments);
@@ -101,6 +104,38 @@ export default function DeliveryGateCard({
 
   const downloadFile = async (path: string) => {
     const { data, error } = await supabase.storage.from(storageBucket).createSignedUrl(path, 60 * 5);
+    if (error || !data) return toast.error("Lien indisponible");
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const uploadInvoice = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    setUploadingInvoice(true);
+    try {
+      // remove previous if any
+      if (invoiceFilePath) {
+        await supabase.storage.from(storageBucket).remove([invoiceFilePath]);
+      }
+      const path = `${row.id}/facture-${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+      const { error } = await supabase.storage.from(storageBucket).upload(path, file);
+      if (error) { toast.error(error.message); return; }
+      await update({ invoice_file_path: path });
+      toast.success("Facture ajoutée");
+    } finally {
+      setUploadingInvoice(false);
+      if (invoiceInput.current) invoiceInput.current.value = "";
+    }
+  };
+
+  const removeInvoice = async () => {
+    if (invoiceFilePath) await supabase.storage.from(storageBucket).remove([invoiceFilePath]);
+    await update({ invoice_file_path: null });
+  };
+
+  const openInvoice = async () => {
+    if (!invoiceFilePath) return;
+    const { data, error } = await supabase.storage.from(storageBucket).createSignedUrl(invoiceFilePath, 60 * 5);
     if (error || !data) return toast.error("Lien indisponible");
     window.open(data.signedUrl, "_blank");
   };
@@ -192,7 +227,29 @@ export default function DeliveryGateCard({
               </Button>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground">Tu peux aussi joindre un PDF dans les pièces jointes / livrables.</p>
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              ref={invoiceInput}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={(e) => uploadInvoice(e.target.files)}
+            />
+            <Button size="sm" variant="outline" onClick={() => invoiceInput.current?.click()} disabled={uploadingInvoice}>
+              <Upload className="h-3.5 w-3.5 mr-1.5" />
+              {uploadingInvoice ? "Upload…" : invoiceFilePath ? "Remplacer le PDF" : "Uploader le PDF"}
+            </Button>
+            {invoiceFilePath && (
+              <>
+                <Button size="sm" variant="ghost" onClick={openInvoice}>
+                  <FileText className="h-3.5 w-3.5 mr-1" /> Voir
+                </Button>
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={removeInvoice}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

@@ -125,11 +125,12 @@ export default function ClientPrintOrderPortal() {
           </Card>
         )}
 
-        {(order.deliverables ?? []).length > 0 && (
+        {((order.deliverables ?? []).length > 0 || order.invoice_file_path || order.invoice_url) && (
           <ClientDeliverySection
             entityType="print_order"
             row={order}
-            deliverables={order.deliverables}
+            deliverables={order.deliverables ?? []}
+            invoiceFilePath={order.invoice_file_path}
           />
         )}
       </div>
