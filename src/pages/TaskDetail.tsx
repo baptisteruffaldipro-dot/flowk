@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
 import PrestationPicker from "@/components/PrestationPicker";
+import DeliveryGateCard from "@/components/DeliveryGateCard";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -53,7 +54,7 @@ export default function TaskDetail() {
   const load = async () => {
     if (!id) return;
     const [t, s, e, c, p, q] = await Promise.all([
-      supabase.from("tasks").select("*, clients(id,name), projects(id,name)").eq("id", id).maybeSingle(),
+      supabase.from("tasks").select("*, clients(id,name,email), projects(id,name)").eq("id", id).maybeSingle(),
       supabase.from("subtasks").select("*").eq("task_id", id).order("position"),
       supabase.from("time_entries").select("*").eq("task_id", id).order("started_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
@@ -617,6 +618,19 @@ export default function TaskDetail() {
           </div>
         )}
       </Card>
+
+      <div className="mb-4">
+        <DeliveryGateCard
+          entityType="task"
+          table="tasks"
+          row={task}
+          clientEmail={(task as any).clients?.email ?? null}
+          clientName={(task as any).clients?.name ?? null}
+          notifyTemplate="files-delivered"
+          notifyContext={{ description: task.title, portalUrl: `${window.location.origin}/portail` }}
+          onUpdated={load}
+        />
+      </div>
 
       {entries.length > 0 && (
         <Card className="p-5 mt-4">
