@@ -14,6 +14,7 @@ import { Plus, Trash2, Eye, Save, ArrowLeft, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import ImageUpload from "@/components/logo-presentation/ImageUpload";
+import FontUpload from "@/components/logo-presentation/FontUpload";
 import RichTextEditor from "@/components/logo-presentation/RichTextEditor";
 import type { LogoPresentation, LogoVariant, LogoTrack, MoodboardUniverse, ColorsTrack, TypographyTrack, InSituTrack } from "@/data/logo-presentations/types";
 import { emptyLogoPresentationContent, emptyTrack, emptyUniverse, emptyColorsTrack, emptyTypographyTrack, emptyInSituTrack } from "@/data/logo-presentations/empty";
@@ -548,6 +549,13 @@ export default function LogoPresentationEditor() {
                         placeholder="URL Google Fonts (https://fonts.googleapis.com/css2?family=...) ou @import / <link>"
                         value={f.googleFontUrl || ""}
                         onChange={(e) => { const n = [...tt.fonts]; n[i] = { ...n[i], googleFontUrl: e.target.value }; updateContent(["typography", "tracks", ti, "fonts"], n); }}
+                      />
+                      <FontUpload
+                        value={f.fontFileUrl}
+                        format={f.fontFileFormat}
+                        folder={`${folder}/fonts`}
+                        onChange={(url, format) => { const n = [...tt.fonts]; n[i] = { ...n[i], fontFileUrl: url, fontFileFormat: format }; updateContent(["typography", "tracks", ti, "fonts"], n); }}
+                        onRemove={() => { const n = [...tt.fonts]; n[i] = { ...n[i], fontFileUrl: undefined, fontFileFormat: undefined }; updateContent(["typography", "tracks", ti, "fonts"], n); }}
                       />
                       <Button size="sm" variant="ghost" onClick={() => updateContent(["typography", "tracks", ti, "fonts"], tt.fonts.filter((_: any, j: number) => j !== i))}>
                         <Trash2 className="h-4 w-4 mr-1" /> Retirer
