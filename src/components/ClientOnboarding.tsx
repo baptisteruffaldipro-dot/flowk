@@ -163,7 +163,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
           </Button>
           <Button size="sm" variant="outline" onClick={sendOnboardingEmail} disabled={sendingOnboarding || !clientInfo?.email}>
             <Mail className="h-4 w-4 mr-1" />
-            {sendingOnboarding ? "Envoi…" : "Envoyer l'onboarding par email"}
+            {sendingOnboarding ? "Envoi…" : "Notifier que l'onboarding est prêt"}
           </Button>
         </div>
       )}
