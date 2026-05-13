@@ -639,6 +639,8 @@ export default function Tasks() {
       if (error) {
         toast.error(error.message);
         setTasks(prev);
+      } else {
+        triggerBatIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -697,6 +699,8 @@ export default function Tasks() {
         toast.error(errors[0]);
         setTasks(prev.tasks);
         setDividers(prev.dividers);
+      } else {
+        triggerBatIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -717,6 +721,8 @@ export default function Tasks() {
       if (error) {
         toast.error(error.message);
         setTasks(prev);
+      } else {
+        triggerBatIfNeeded(task.id, newStatus);
       }
     }
   };
