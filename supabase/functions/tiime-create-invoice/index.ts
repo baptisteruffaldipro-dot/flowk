@@ -29,7 +29,7 @@ async function tiimeLogin(email: string, password: string): Promise<LoginResp> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       grant_type: "http://auth0.com/oauth/grant-type/password-realm",
-      realm: "Tiime-Database",
+      realm: "Username-Password-Authentication",
       username: email,
       password,
       audience: TIIME_AUDIENCE,
