@@ -9,6 +9,7 @@ import { Send, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
+import { getFunctionErrorMessage } from "@/lib/function-errors";
 
 type Task = {
   id: string;
@@ -105,9 +106,8 @@ export default function NewTiimeInvoiceDialog({ task, open, onOpenChange, onCrea
         body: { invoice_id: invoice.id },
       });
       if (fnErr || (data as any)?.error) {
-        toast.warning(
-          "Facture brouillon créée localement, mais l'envoi vers Tiime a échoué. Tu peux réessayer depuis la page Facturation.",
-        );
+        const message = await getFunctionErrorMessage(fnErr, data, "Facture brouillon créée localement, mais l'envoi vers Tiime a échoué. Tu peux réessayer depuis la page Facturation.");
+        toast.warning(message);
         onCreated?.(invoice.id);
         onOpenChange(false);
         return;

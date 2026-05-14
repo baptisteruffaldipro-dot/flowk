@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { fmtMoney, INVOICE_STATUS_LABEL } from "@/lib/format";
 import InstallmentsManager from "@/components/InstallmentsManager";
+import { getFunctionErrorMessage } from "@/lib/function-errors";
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -136,8 +137,9 @@ export default function Invoices() {
       const { data, error } = await supabase.functions.invoke("tiime-create-invoice", {
         body: { invoice_id: invoice.id },
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      if (error || (data as any)?.error) {
+        throw new Error(await getFunctionErrorMessage(error, data, "Échec de la synchro Tiime"));
+      }
       toast.success("Facture créée dans Tiime");
       load();
     } catch (e: any) {

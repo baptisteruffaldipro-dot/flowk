@@ -19,9 +19,26 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 const TIIME_AUTH = "https://auth0.tiime.fr";
 const TIIME_AUDIENCE = "https://chronos/";
 const TIIME_CLIENT_ID = "iEbsbe3o66gcTBfGRa012kj1Rb6vjAND";
+const TIIME_REALM = "Chronos-prod-db";
 const TIIME_BASE = "https://chronos-api.tiime-apps.com/v1";
 
 type LoginResp = { token: string; companies?: Array<{ id: string }> };
+
+class TiimeAuthError extends Error {
+  constructor(message: string, public status = 502, public code = "tiime_auth_failed") {
+    super(message);
+  }
+}
+
+async function readTiimeError(response: Response) {
+  const raw = await response.text();
+  try {
+    const parsed = JSON.parse(raw);
+    return { raw, error: parsed?.error, description: parsed?.error_description };
+  } catch {
+    return { raw, error: undefined, description: undefined };
+  }
+}
 
 async function tiimeLogin(email: string, password: string): Promise<LoginResp> {
   const r = await fetch(`${TIIME_AUTH}/oauth/token`, {
@@ -29,7 +46,7 @@ async function tiimeLogin(email: string, password: string): Promise<LoginResp> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       grant_type: "http://auth0.com/oauth/grant-type/password-realm",
-      realm: "Username-Password-Authentication",
+      realm: TIIME_REALM,
       username: email,
       password,
       audience: TIIME_AUDIENCE,
@@ -37,7 +54,17 @@ async function tiimeLogin(email: string, password: string): Promise<LoginResp> {
       client_id: TIIME_CLIENT_ID,
     }),
   });
-  if (!r.ok) throw new Error(`Tiime login failed [${r.status}]: ${await r.text()}`);
+  if (!r.ok) {
+    const details = await readTiimeError(r);
+    if (details.error === "mfa_required") {
+      throw new TiimeAuthError(
+        "La connexion Tiime est protégée par double authentification. Tiime bloque donc la création automatique par mot de passe ; crée la facture dans Tiime puis colle le lien manuellement.",
+        409,
+        "tiime_mfa_required",
+      );
+    }
+    throw new TiimeAuthError(`Tiime login failed [${r.status}]: ${details.raw}`, r.status);
+  }
   const json = await r.json();
   const token = json.access_token ?? json.id_token;
   if (!token) throw new Error("Tiime login: no access_token in response");
@@ -249,6 +276,13 @@ Deno.serve(async (req) => {
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
+    if (e instanceof TiimeAuthError) {
+      console.warn("tiime-create-invoice auth blocked:", message);
+      return new Response(JSON.stringify({ error: message, code: e.code }), {
+        status: e.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     console.error("tiime-create-invoice error:", message);
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
