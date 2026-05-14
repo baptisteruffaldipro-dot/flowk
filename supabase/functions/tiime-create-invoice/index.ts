@@ -276,6 +276,13 @@ Deno.serve(async (req) => {
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
+    if (e instanceof TiimeAuthError) {
+      console.warn("tiime-create-invoice auth blocked:", message);
+      return new Response(JSON.stringify({ error: message, code: e.code }), {
+        status: e.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     console.error("tiime-create-invoice error:", message);
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
