@@ -19,6 +19,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 const TIIME_AUTH = "https://auth0.tiime.fr";
 const TIIME_AUDIENCE = "https://chronos/";
 const TIIME_CLIENT_ID = "iEbsbe3o66gcTBfGRa012kj1Rb6vjAND";
+const TIIME_REALM = "Chronos-prod-db";
 const TIIME_BASE = "https://chronos-api.tiime-apps.com/v1";
 
 type LoginResp = { token: string; companies?: Array<{ id: string }> };
@@ -29,7 +30,7 @@ async function tiimeLogin(email: string, password: string): Promise<LoginResp> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       grant_type: "http://auth0.com/oauth/grant-type/password-realm",
-      realm: "Username-Password-Authentication",
+      realm: TIIME_REALM,
       username: email,
       password,
       audience: TIIME_AUDIENCE,
