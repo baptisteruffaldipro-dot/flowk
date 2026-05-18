@@ -18,7 +18,7 @@ const schema = z.object({
 export default function Auth() {
   const navigate = useNavigate();
   const { user, role, loading } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode] = useState<"signin">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -79,22 +79,6 @@ export default function Auth() {
           <p className="text-sm text-muted-foreground mt-1">Gestion de projets graphiques</p>
         </div>
         <Card className="p-6 space-y-5">
-          <div className="flex gap-1 p-1 bg-secondary rounded-md text-sm">
-            <button
-              type="button"
-              onClick={() => setMode("signin")}
-              className={`flex-1 py-1.5 rounded transition ${mode === "signin" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
-            >
-              Connexion
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("signup")}
-              className={`flex-1 py-1.5 rounded transition ${mode === "signup" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
-            >
-              Créer un compte
-            </button>
-          </div>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
