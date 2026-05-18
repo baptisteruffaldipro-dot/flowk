@@ -35,7 +35,7 @@ export default function BatDetail() {
 
   const load = async () => {
     if (!id) return;
-    const { data } = await supabase.from("bats").select("*, clients(id,name,portal_user_id), projects(id,name)").eq("id", id).maybeSingle();
+    const { data } = await supabase.from("bats").select("*, clients(id,name,email,portal_user_id), projects(id,name)").eq("id", id).maybeSingle();
     setBat(data);
   };
   useEffect(() => { load(); }, [id]);
@@ -63,7 +63,24 @@ export default function BatDetail() {
     if (!bat?.file_path) return toast.error("Upload d'abord le PDF");
     if (!bat?.clients?.portal_user_id) return toast.error("Le client n'a pas d'accès au portail");
     await update({ status: "en_relecture", sent_at: new Date().toISOString() });
-    toast.success("BAT envoyé au client pour relecture");
+    if (bat?.clients?.email) {
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "bat-ready",
+          recipientEmail: bat.clients.email,
+          idempotencyKey: `bat-ready-${bat.id}-${Date.now()}`,
+          templateData: {
+            name: bat.clients.name,
+            description: bat.title,
+            portalUrl: `${window.location.origin}/portail`,
+          },
+        },
+      });
+      if (error) toast.warning("BAT envoyé, mais email indisponible");
+      else toast.success("BAT envoyé au client (email + portail)");
+    } else {
+      toast.success("BAT envoyé au portail client (pas d'email renseigné)");
+    }
   };
 
   const remove = async () => {
