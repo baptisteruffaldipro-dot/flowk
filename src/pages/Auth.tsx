@@ -18,7 +18,6 @@ const schema = z.object({
 export default function Auth() {
   const navigate = useNavigate();
   const { user, role, loading } = useAuth();
-  const [mode] = useState<"signin">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
