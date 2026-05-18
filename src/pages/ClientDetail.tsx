@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Mail, CheckCircle2, Trash2 } from "lucide-react";
+import { ArrowLeft, Mail, CheckCircle2, Trash2, Link2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +27,7 @@ export default function ClientDetail() {
   const [editing, setEditing] = useState<null | "email" | "phone" | "address">(null);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -125,6 +126,22 @@ export default function ClientDetail() {
         description={client.company ?? undefined}
         actions={
           <div className="flex items-center gap-2">
+            {client.portal_token && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const url = `${window.location.origin}/p/portail/${client.portal_token}`;
+                  await navigator.clipboard.writeText(url);
+                  setCopiedLink(true);
+                  toast.success("Lien personnalisé copié");
+                  setTimeout(() => setCopiedLink(false), 2000);
+                }}
+              >
+                {copiedLink ? <Check className="h-4 w-4 mr-1" /> : <Link2 className="h-4 w-4 mr-1" />}
+                {copiedLink ? "Copié" : "Copier le lien portail"}
+              </Button>
+            )}
             {client.portal_user_id ? (
               <>
                 <span className="text-xs inline-flex items-center gap-1 text-emerald-600">
