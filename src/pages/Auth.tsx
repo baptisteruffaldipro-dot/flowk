@@ -18,7 +18,6 @@ const schema = z.object({
 export default function Auth() {
   const navigate = useNavigate();
   const { user, role, loading } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,21 +37,11 @@ export default function Auth() {
     }
     setBusy(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email: parsed.data.email,
-          password: parsed.data.password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast.success("Compte créé");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: parsed.data.email,
-          password: parsed.data.password,
-        });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
+      if (error) throw error;
     } catch (err: any) {
       toast.error(err.message ?? "Erreur");
     } finally {
@@ -79,22 +68,6 @@ export default function Auth() {
           <p className="text-sm text-muted-foreground mt-1">Gestion de projets graphiques</p>
         </div>
         <Card className="p-6 space-y-5">
-          <div className="flex gap-1 p-1 bg-secondary rounded-md text-sm">
-            <button
-              type="button"
-              onClick={() => setMode("signin")}
-              className={`flex-1 py-1.5 rounded transition ${mode === "signin" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
-            >
-              Connexion
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("signup")}
-              className={`flex-1 py-1.5 rounded transition ${mode === "signup" ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
-            >
-              Créer un compte
-            </button>
-          </div>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
@@ -105,7 +78,7 @@ export default function Auth() {
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             <Button type="submit" disabled={busy} className="w-full">
-              {mode === "signin" ? "Se connecter" : "Créer mon compte"}
+              Se connecter
             </Button>
           </form>
           <div className="relative">
