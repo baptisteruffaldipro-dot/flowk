@@ -37,21 +37,11 @@ export default function Auth() {
     }
     setBusy(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email: parsed.data.email,
-          password: parsed.data.password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast.success("Compte créé");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: parsed.data.email,
-          password: parsed.data.password,
-        });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: parsed.data.email,
+        password: parsed.data.password,
+      });
+      if (error) throw error;
     } catch (err: any) {
       toast.error(err.message ?? "Erreur");
     } finally {
@@ -88,7 +78,7 @@ export default function Auth() {
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             <Button type="submit" disabled={busy} className="w-full">
-              {mode === "signin" ? "Se connecter" : "Créer mon compte"}
+              Se connecter
             </Button>
           </form>
           <div className="relative">
