@@ -303,6 +303,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string | null
+          portal_token: string
           portal_user_id: string | null
           updated_at: string
         }
@@ -315,6 +316,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone?: string | null
+          portal_token?: string
           portal_user_id?: string | null
           updated_at?: string
         }
@@ -327,6 +329,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          portal_token?: string
           portal_user_id?: string | null
           updated_at?: string
         }
