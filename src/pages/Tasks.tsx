@@ -1119,6 +1119,7 @@ export default function Tasks() {
                   onDeleteDivider={deleteDivider}
                   paidTaskIds={paidTaskIds}
                   onQuickAdd={quickAddTask}
+                  onComplete={completeTask}
                 />
               ))}
             </div>
