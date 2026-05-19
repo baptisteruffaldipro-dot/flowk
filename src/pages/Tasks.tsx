@@ -1144,13 +1144,37 @@ export default function Tasks() {
         task={batForTask}
         open={!!batForTask}
         onOpenChange={(v) => { if (!v) setBatForTask(null); }}
-        onCreated={() => { setBatForTask(null); load(); }}
+        onCreated={async () => {
+          if (batForTask) {
+            await supabase.from("tasks").update({ status: "bat" } as any).eq("id", batForTask.id);
+          }
+          setBatForTask(null);
+          load();
+        }}
       />
       <NewTiimeInvoiceDialog
         task={tiimeForTask}
         open={!!tiimeForTask}
         onOpenChange={(v) => { if (!v) setTiimeForTask(null); }}
-        onCreated={() => { setTiimeForTask(null); load(); }}
+        onCreated={async () => {
+          if (tiimeForTask) {
+            await supabase.from("tasks").update({ status: "tiime" } as any).eq("id", tiimeForTask.id);
+          }
+          setTiimeForTask(null);
+          load();
+        }}
+      />
+      <NewPrintOrderDialog
+        task={printForTask}
+        open={!!printForTask}
+        onOpenChange={(v) => { if (!v) setPrintForTask(null); }}
+        onCreated={async () => {
+          if (printForTask) {
+            await supabase.from("tasks").update({ status: "envoye" } as any).eq("id", printForTask.id);
+          }
+          setPrintForTask(null);
+          load();
+        }}
       />
     </div>
   );
