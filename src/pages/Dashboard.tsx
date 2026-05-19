@@ -268,6 +268,23 @@ function ProgressStatCard({ label, value, done, total }: { label: string; value:
   );
 }
 
+function SplitStatCard({ label, value, presta, bien }: { label: string; value: string; presta: number; bien: number }) {
+  return (
+    <Card className="p-5">
+      <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
+      <div className="text-2xl font-semibold mt-2">{value}</div>
+      <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-primary" /> Presta {fmtMoney(presta)}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-amber-500" /> Bien {fmtMoney(bien)}
+        </span>
+      </div>
+    </Card>
+  );
+}
+
 function TodayBoard({ tasks, printOrders }: { tasks: Task[]; printOrders: Order[] }) {
   const today = new Date().toISOString().slice(0, 10);
   const isToday = (t: Task) => t.status === "aujourdhui" || t.deadline === today;
