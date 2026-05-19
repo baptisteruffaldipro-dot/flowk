@@ -434,10 +434,12 @@ function InstallmentsWidget({ items }: { items: Installment[] }) {
   return InstallmentsWidgetInner({ items, today, overdue, upcoming });
 }
 
-function MonthlyRevenueCard({ months }: { months: { key: string; label: string; total: number }[] }) {
+function MonthlyRevenueCard({ months }: { months: { key: string; label: string; presta: number; bien: number; total: number }[] }) {
   if (months.length === 0) return null;
   const max = Math.max(1, ...months.map((m) => m.total));
   const cumul = months.reduce((s, m) => s + m.total, 0);
+  const cumulPresta = months.reduce((s, m) => s + m.presta, 0);
+  const cumulBien = months.reduce((s, m) => s + m.bien, 0);
   return (
     <Card className="p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
@@ -445,18 +447,41 @@ function MonthlyRevenueCard({ months }: { months: { key: string; label: string; 
           <h2 className="text-sm font-semibold tracking-tight">CA mensuel (HT)</h2>
           <p className="text-xs text-muted-foreground">6 derniers mois · cumul {fmtMoney(cumul)}</p>
         </div>
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-sm bg-primary" /> Presta {fmtMoney(cumulPresta)}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-sm bg-amber-500" /> Bien {fmtMoney(cumulBien)}
+          </span>
+        </div>
       </div>
       <div className="grid grid-cols-6 gap-3 items-end h-32">
         {months.map((m, i) => {
-          const h = Math.max(4, Math.round((m.total / max) * 100));
           const isCurrent = i === months.length - 1;
+          const totalH = Math.max(4, Math.round((m.total / max) * 100));
+          const prestaH = m.total > 0 ? Math.round((m.presta / m.total) * totalH) : 0;
+          const bienH = Math.max(0, totalH - prestaH);
           return (
             <div key={m.key} className="flex flex-col items-center gap-1.5 h-full justify-end">
               <div className="text-[10px] tabular-nums text-muted-foreground">{fmtMoney(m.total)}</div>
-              <div
-                className={`w-full rounded-t-md transition-all ${isCurrent ? "bg-primary" : "bg-primary/30"}`}
-                style={{ height: `${h}%` }}
-              />
+              <div className="w-full flex flex-col justify-end" style={{ height: `${totalH}%` }}>
+                {bienH > 0 && (
+                  <div
+                    className={`w-full rounded-t-md transition-all ${isCurrent ? "bg-amber-500" : "bg-amber-500/40"}`}
+                    style={{ height: `${(bienH / totalH) * 100}%` }}
+                  />
+                )}
+                {prestaH > 0 && (
+                  <div
+                    className={`w-full transition-all ${bienH === 0 ? "rounded-t-md" : ""} ${isCurrent ? "bg-primary" : "bg-primary/30"}`}
+                    style={{ height: `${(prestaH / totalH) * 100}%` }}
+                  />
+                )}
+                {prestaH === 0 && bienH === 0 && (
+                  <div className="w-full rounded-t-md bg-muted" style={{ height: "100%" }} />
+                )}
+              </div>
               <div className={`text-[10px] uppercase tracking-wider ${isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{m.label}</div>
             </div>
           );
