@@ -232,11 +232,13 @@ function KanbanCard({
   clients,
   onUpdate,
   paid,
+  onComplete,
 }: {
   task: any;
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
   paid?: boolean;
+  onComplete: (task: any, action: "bat" | "print" | "invoice" | "archive") => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   const navigate = useNavigate();
@@ -246,7 +248,7 @@ function KanbanCard({
     <div
       ref={setNodeRef}
       style={{ opacity: isDragging ? 0.4 : 1 }}
-      className="touch-none"
+      className="touch-none group"
     >
       <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
         <div
@@ -259,6 +261,40 @@ function KanbanCard({
           <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
             {projectName}
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                className="opacity-0 group-hover:opacity-100 transition shrink-0 inline-flex items-center gap-1 rounded-md border border-emerald-400/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-semibold"
+                title="Terminer la tâche"
+              >
+                <CheckCircle2 className="h-3 w-3" />
+                Terminer
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <DropdownMenuLabel className="text-xs">Envoyer en…</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => onComplete(task, "bat")}>
+                <FileText className="h-3.5 w-3.5 mr-2" /> BAT
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onComplete(task, "print")}>
+                <Printer className="h-3.5 w-3.5 mr-2" /> Impression
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onComplete(task, "invoice")}>
+                <Receipt className="h-3.5 w-3.5 mr-2" /> Facturation (Tiime)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onComplete(task, "archive")}>
+                <Archive className="h-3.5 w-3.5 mr-2" /> Marquer terminée
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {paid && (
