@@ -419,6 +419,13 @@ export default function Invoices() {
           onChanged={load}
         />
       )}
+
+      <NewTiimeInvoiceDialog
+        task={draftFor}
+        open={!!draftFor}
+        onOpenChange={(v) => { if (!v) setDraftFor(null); }}
+        prefillInvoice={draftFor?._invoice ?? null}
+      />
     </div>
   );
 }
