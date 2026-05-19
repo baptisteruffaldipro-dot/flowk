@@ -35,8 +35,8 @@ export default function Dashboard() {
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [upcomingInstallments, setUpcomingInstallments] = useState<Installment[]>([]);
-  const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, monthRevenue: 0, awaitingBat: 0 });
-  const [monthly, setMonthly] = useState<{ key: string; label: string; total: number }[]>([]);
+  const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, paidPresta: 0, paidBien: 0, monthRevenue: 0, monthPresta: 0, monthBien: 0, awaitingBat: 0 });
+  const [monthly, setMonthly] = useState<{ key: string; label: string; presta: number; bien: number; total: number }[]>([]);
 
   const load = async () => {
       const [t, todayT, o, i, a, paid, p, batsRelecture] = await Promise.all([
@@ -76,40 +76,48 @@ export default function Dashboard() {
       const invoicesWithInstallments = new Set<string>(
         ((paidInstallments.data as any[]) ?? []).map((x) => x.invoice_id),
       );
-      type Entry = { date: string; amount: number };
+      type Entry = { date: string; amount: number; kind: "presta" | "bien" };
       const entries: Entry[] = [];
       ((paidInvFull.data as any[]) ?? []).forEach((inv) => {
         if (invoicesWithInstallments.has(inv.id)) return; // évite double-comptage
         if (!inv.paid_at) return;
-        entries.push({ date: inv.paid_at, amount: Number(inv.amount ?? 0) });
+        entries.push({ date: inv.paid_at, amount: Number(inv.amount ?? 0), kind: "presta" });
       });
       ((paidInstallments.data as any[]) ?? []).forEach((r) => {
-        entries.push({ date: r.paid_at, amount: Number(r.paid_amount ?? 0) });
+        entries.push({ date: r.paid_at, amount: Number(r.paid_amount ?? 0), kind: "presta" });
       });
       allPrintData.forEach((x: any) => {
         const amt = x.amount ? Number(x.amount) : 0;
         const d = x.updated_at ? String(x.updated_at).slice(0, 10) : null;
         if (!d || amt === 0) return;
-        if (x.payment_status === "regle" || x.status === "livre_paye") entries.push({ date: d, amount: amt });
-        else if (x.payment_status === "acompte_50") entries.push({ date: d, amount: amt * 0.5 });
+        if (x.payment_status === "regle" || x.status === "livre_paye") entries.push({ date: d, amount: amt, kind: "bien" });
+        else if (x.payment_status === "acompte_50") entries.push({ date: d, amount: amt * 0.5, kind: "bien" });
       });
 
       const now = new Date();
-      const months: { key: string; label: string; total: number }[] = [];
+      const months: { key: string; label: string; presta: number; bien: number; total: number }[] = [];
       for (let k = 5; k >= 0; k--) {
         const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        months.push({ key, label: d.toLocaleDateString("fr-FR", { month: "short" }), total: 0 });
+        months.push({ key, label: d.toLocaleDateString("fr-FR", { month: "short" }), presta: 0, bien: 0, total: 0 });
       }
       const idx = new Map(months.map((m, i) => [m.key, i] as const));
       const monthKeyOf = (iso: string) => iso.slice(0, 7);
       const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
       let monthRev = 0;
+      let monthPresta = 0;
+      let monthBien = 0;
       entries.forEach((e) => {
         const k = monthKeyOf(e.date);
-        if (k === currentKey) monthRev += e.amount;
+        if (k === currentKey) {
+          monthRev += e.amount;
+          if (e.kind === "presta") monthPresta += e.amount; else monthBien += e.amount;
+        }
         const i = idx.get(k);
-        if (i !== undefined) months[i].total += e.amount;
+        if (i !== undefined) {
+          months[i].total += e.amount;
+          if (e.kind === "presta") months[i].presta += e.amount; else months[i].bien += e.amount;
+        }
       });
       setMonthly(months);
       // Merge today tasks that might have been cut off by the limit
@@ -141,7 +149,7 @@ export default function Dashboard() {
       const awaitPrintBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "validation_bat").length;
       const awaitBatRows = ((batsRelecture.data as any) ?? []).length;
       const awaitBat = awaitPrintBat + awaitBatRows;
-      setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, paidRevenue: paidRev + paidPrintRev, monthRevenue: monthRev, awaitingBat: awaitBat });
+      setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, paidRevenue: paidRev + paidPrintRev, paidPresta: paidRev, paidBien: paidPrintRev, monthRevenue: monthRev, monthPresta, monthBien, awaitingBat: awaitBat });
   };
   useEffect(() => { load(); }, []);
 
