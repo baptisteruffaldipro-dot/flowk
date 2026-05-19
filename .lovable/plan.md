@@ -1,80 +1,78 @@
+## Objectif
 
-# Intégration Tiime — création de factures
+Depuis le Kanban des tâches, permettre de transformer une tâche terminée en :
+- **BAT** (popup `NewBatDialog`)
+- **Commande d'impression** (popup nouvelle impression)
+- **Facture** (popup `NewTiimeInvoiceDialog`)
 
-## Contexte
+Sans quitter le Kanban, et en pré-remplissant un maximum de champs depuis la tâche source.
 
-Tiime n'expose **aucune API publique officielle**. Le SDK communautaire `yabbal/tiime` a été retiré de GitHub/npm. Il reste deux voies :
+---
 
-1. **Rétro-ingénierie de l'API interne** utilisée par l'app web Tiime (login + endpoints `/invoices`). C'est ce que faisait le SDK supprimé. Risque : Tiime peut casser à tout moment.
-2. **Chift** comme intermédiaire payant (~50€/mois). Stable, mais coût récurrent.
+## Options proposées (à choisir une ou combiner)
 
-Tu as choisi le SDK non officiel + priorité basse. On garde donc le lien manuel comme fallback partout, et on ajoute la création automatique en option.
-
-## Ce qu'on construit
-
-Un edge function `tiime-create-invoice` qui :
-- s'authentifie sur l'API interne Tiime avec tes identifiants stockés en secrets
-- crée une facture (brouillon) à partir d'une de nos `invoices`
-- stocke l'ID + l'URL Tiime retournés dans notre table `invoices`
-
-Côté UI : un bouton **"Créer dans Tiime"** sur chaque facture, qui appelle l'edge function et remplit ensuite automatiquement le champ `invoice_url` (déjà utilisé par le DeliveryGate).
-
-## Étapes
-
-### 1. Reconnaissance API Tiime (avant tout code)
-Avant d'écrire l'edge function, je dois inspecter les requêtes réseau de l'app web Tiime pendant que **toi** tu te connectes et crées une facture manuellement. J'ai besoin de :
-- L'URL de l'endpoint d'auth (probablement `https://chronos.tiime-apps.com/auth/login` ou similaire)
-- Le payload de création de facture (champs requis : client, lignes, TVA, etc.)
-- Le format de la réponse (id, numéro, URL publique)
-
-**Action requise de ta part** : ouvrir Tiime, F12 → onglet Network, créer une facture test, et me copier-coller les 2-3 requêtes clés (URL + headers + body). Je ne peux pas faire ça moi-même.
-
-### 2. Secrets
-Ajouter `TIIME_EMAIL` + `TIIME_PASSWORD` (ou un token long-lived si Tiime en propose un dans son interface).
-
-### 3. Mapping de données
-
-Mapper notre `invoices` + `invoice_installments` vers le payload Tiime :
-
+### Option A — Bouton "Terminer →" sur chaque carte (recommandé)
+Un petit bouton vert en bas/coin de la carte Kanban (visible au hover) ouvre un mini-menu :
 ```text
-Flowk invoice              →  Tiime invoice
-─────────────────────────     ──────────────────────
-client_id (→ profiles)     →  customer (matching par email/nom)
-lines (description, qty,   →  items[]
-       unit_price)
-total_ht, tva, total_ttc   →  calculs Tiime
-installments[]             →  due_date + plan d'échéances
+Terminer la tâche en…
+ ├─ 📄 Envoyer en BAT
+ ├─ 🖨️ Envoyer en impression
+ ├─ 💶 Envoyer en facturation
+ └─ ✅ Marquer terminée (sans suite)
 ```
+Avantage : 1 clic, découvrable, pas besoin d'ouvrir la tâche.
 
-Le matching client est délicat : si le client n'existe pas dans Tiime, il faut le créer avant. Je gère les deux cas dans l'edge function.
+### Option B — Menu contextuel (clic droit / "⋯")
+Trois points "⋯" sur la carte → mêmes 4 actions. Plus discret, moins découvrable.
 
-### 4. Edge function `tiime-create-invoice`
-- Input : `{ invoice_id }`
-- Process : login → find/create customer → POST invoice → save `tiime_invoice_id` + `invoice_url` sur notre `invoices`
-- Output : `{ tiime_id, url }`
+### Option C — Colonne spéciale "À clôturer"
+Drag d'une tâche vers une colonne dédiée déclenche automatiquement le menu de choix. Visuel mais ajoute du bruit au Kanban.
 
-### 5. UI
-- Page `Invoices` et `InstallmentsManager` : bouton **"Créer dans Tiime"** (visible quand `invoice_url` est vide)
-- Toast succès → le champ `invoice_url` se remplit tout seul → le client voit le lien dans son portail
-- Bouton **"Voir dans Tiime"** quand déjà créé
+### Option D — Drag direct vers colonnes existantes
+Glisser dans `bat` → ouvre popup BAT. Glisser dans `a_facturer` → ouvre popup facture. Pas de popup pour impression (créer colonne ou rester sur A).
 
-### 6. Fallback
-Le champ `invoice_url` manuel + l'upload PDF restent en place. Si l'API casse, tu continues comme aujourd'hui sans rien perdre.
+**Recommandation** : **Option A** + **Option D** (drag déjà naturel pour BAT/facturation, bouton "Terminer →" pour exposer aussi l'impression).
 
-## Hors scope (v2)
+---
 
-- **Synchro retour** (Tiime → Flowk pour marquer payé). Trop fragile sans webhook officiel. Tu coches les paiements à la main, comme aujourd'hui.
-- **Création de devis**.
-- **Avoirs / annulations**.
+## Comportement détaillé des 3 popups
 
-## Migration DB
+Tous les popups reçoivent la tâche en prop et pré-remplissent :
 
-Ajout sur `invoices` :
-- `tiime_invoice_id` text
-- `tiime_synced_at` timestamptz
+| Popup | Source pré-remplie | Au succès |
+|---|---|---|
+| **BAT** (`NewBatDialog` existant) | titre, client, projet | `task.bat_id` mis à jour + `status = 'bat'` |
+| **Impression** (nouveau `NewPrintOrderDialog`, calqué sur `NewBatDialog`) | description = titre tâche, client, projet, montant = `flat_amount` ou calcul horaire | `status = 'envoye'`, lien optionnel `task.id` stocké dans description |
+| **Facturation** (`NewTiimeInvoiceDialog` existant) | label = titre, montant, heures, taux | `task.status = 'a_facturer'` ou `'tiime'` |
 
-## Décision à prendre maintenant
+Action **"Marquer terminée"** : passe simplement `status = 'archive'`.
 
-Je peux **préparer le squelette** (UI, edge function avec stub, secrets, migration) sans attendre — tu remplis les vrais endpoints Tiime quand tu as 5 min pour faire la capture réseau.
+---
 
-Ou on attend que tu aies les requêtes Tiime en main pour tout faire d'un coup.
+## Section technique
+
+**Fichiers à modifier**
+- `src/pages/Tasks.tsx` :
+  - Composant `KanbanCard` : ajouter bouton "Terminer →" (DropdownMenu shadcn) qui ouvre un menu avec 4 entrées.
+  - State local au niveau de `Tasks` pour piloter les 3 dialogs : `{ batTask, printTask, invoiceTask }`.
+  - Callback `onComplete(task, action)` passé aux cartes.
+- `src/components/NewPrintOrderDialog.tsx` (nouveau) :
+  - Calqué sur `NewBatDialog`, insère dans `print_orders` avec `client_id`, `project_id`, `description`, `amount`, `status = 'a_commander'`.
+  - Champs : description, référence, quantité, format, support, finitions, observations, montant estimé.
+- Réutiliser `NewBatDialog` et `NewTiimeInvoiceDialog` tels quels (props déjà compatibles).
+
+**Sur succès d'un popup** : mettre à jour la tâche source (`status`, `bat_id` si BAT) via le `onUpdate` existant + refresh local.
+
+**Drag-to-column (Option D)** : dans `onDragEnd`, si `newStatus === 'bat'` et `task.bat_id` est nul → ouvrir popup BAT au lieu de muter directement. Idem pour `'a_facturer'`.
+
+---
+
+## Décision à prendre
+
+Je peux implémenter :
+1. **A seul** (bouton "Terminer →" + 3 popups) — le plus simple, le plus clair
+2. **A + D** (bouton + drag intelligent vers `bat`/`a_facturer`)
+3. **B seul** (menu "⋯" discret)
+4. **C** (colonne "À clôturer" dédiée)
+
+Dis-moi quelle option tu préfères et je l'implémente.
