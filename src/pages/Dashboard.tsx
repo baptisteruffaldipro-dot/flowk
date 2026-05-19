@@ -406,6 +406,42 @@ function InstallmentsWidget({ items }: { items: Installment[] }) {
   const today = new Date().toISOString().slice(0, 10);
   const overdue = items.filter((x) => x.due_date < today);
   const upcoming = items.filter((x) => x.due_date >= today);
+  return InstallmentsWidgetInner({ items, today, overdue, upcoming });
+}
+
+function MonthlyRevenueCard({ months }: { months: { key: string; label: string; total: number }[] }) {
+  if (months.length === 0) return null;
+  const max = Math.max(1, ...months.map((m) => m.total));
+  const cumul = months.reduce((s, m) => s + m.total, 0);
+  return (
+    <Card className="p-5 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight">CA mensuel (HT)</h2>
+          <p className="text-xs text-muted-foreground">6 derniers mois · cumul {fmtMoney(cumul)}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-6 gap-3 items-end h-32">
+        {months.map((m, i) => {
+          const h = Math.max(4, Math.round((m.total / max) * 100));
+          const isCurrent = i === months.length - 1;
+          return (
+            <div key={m.key} className="flex flex-col items-center gap-1.5 h-full justify-end">
+              <div className="text-[10px] tabular-nums text-muted-foreground">{fmtMoney(m.total)}</div>
+              <div
+                className={`w-full rounded-t-md transition-all ${isCurrent ? "bg-primary" : "bg-primary/30"}`}
+                style={{ height: `${h}%` }}
+              />
+              <div className={`text-[10px] uppercase tracking-wider ${isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{m.label}</div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function InstallmentsWidgetInner({ items, today, overdue, upcoming }: { items: Installment[]; today: string; overdue: Installment[]; upcoming: Installment[] }) {
   return (
     <Card className="p-5 mb-6">
       <div className="flex items-center justify-between mb-3">
