@@ -285,24 +285,13 @@ export default function Invoices() {
                       {Object.entries(INVOICE_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  {i.tiime_invoice_id ? (
-                    <Button
-                      variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-emerald-600"
-                      title="Voir dans Tiime"
-                      onClick={() => window.open(`https://invoice.tiime.fr/invoices/${i.tiime_invoice_id}`, "_blank")}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost" size="icon" className="h-8 w-8 shrink-0"
-                      title="Créer dans Tiime"
-                      disabled={syncingId === i.id}
-                      onClick={() => sendToTiime(i)}
-                    >
-                      <Send className={`h-3.5 w-3.5 ${syncingId === i.id ? "animate-pulse" : ""}`} />
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+                    title="Brouillon Tiime (copier-coller)"
+                    onClick={() => openDraft(i)}
+                  >
+                    <ClipboardCopy className="h-3.5 w-3.5" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
