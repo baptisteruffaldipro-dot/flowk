@@ -169,8 +169,8 @@ export default function Dashboard() {
           total={stats.totalCount}
         />
         <StatCard label="CA en attente" value={fmtMoney(stats.pendingRevenue)} />
-        <StatCard label="CA du mois" value={fmtMoney(stats.monthRevenue)} />
-        <StatCard label="CA cumulé HT" value={fmtMoney(stats.paidRevenue)} />
+        <SplitStatCard label="CA du mois" value={fmtMoney(stats.monthRevenue)} presta={stats.monthPresta} bien={stats.monthBien} />
+        <SplitStatCard label="CA cumulé HT" value={fmtMoney(stats.paidRevenue)} presta={stats.paidPresta} bien={stats.paidBien} />
         <StatCard label="BAT à valider" value={String(stats.awaitingBat)} href="/bats" highlight={stats.awaitingBat > 0} />
       </div>
 
