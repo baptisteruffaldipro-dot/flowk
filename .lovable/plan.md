@@ -1,78 +1,83 @@
-## Objectif
+## Le problème
 
-Depuis le Kanban des tâches, permettre de transformer une tâche terminée en :
-- **BAT** (popup `NewBatDialog`)
-- **Commande d'impression** (popup nouvelle impression)
-- **Facture** (popup `NewTiimeInvoiceDialog`)
+Tiime n'a pas d'API publique. Notre edge function se connecte en simulant l'app web (Auth0 / `password-realm`). Comme ton compte Tiime a la **double authentification activée**, Auth0 refuse ce mode de connexion et renvoie `mfa_required` → 409.
 
-Sans quitter le Kanban, et en pré-remplissant un maximum de champs depuis la tâche source.
+Désactiver la MFA sur Tiime serait la solution la plus simple, mais c'est dangereux pour un compte qui contient ta compta. On garde la MFA.
 
----
+## La solution : authentification par refresh_token
 
-## Options proposées (à choisir une ou combiner)
+Auth0 (utilisé par Tiime) accepte un **refresh_token** long-lived (scope `offline_access`, déjà demandé par l'app web Tiime). Une fois que tu t'es connecté **une fois manuellement** sur apps.tiime.fr (avec MFA), un refresh_token est stocké dans le navigateur. On le récupère, on le colle dans Lovable Cloud, et l'edge function s'en sert ensuite pour obtenir un access_token frais à chaque appel — sans jamais redemander la MFA.
 
-### Option A — Bouton "Terminer →" sur chaque carte (recommandé)
-Un petit bouton vert en bas/coin de la carte Kanban (visible au hover) ouvre un mini-menu :
-```text
-Terminer la tâche en…
- ├─ 📄 Envoyer en BAT
- ├─ 🖨️ Envoyer en impression
- ├─ 💶 Envoyer en facturation
- └─ ✅ Marquer terminée (sans suite)
-```
-Avantage : 1 clic, découvrable, pas besoin d'ouvrir la tâche.
+Le refresh_token rote à chaque utilisation. Donc on doit le **persister en base** (pas en secret), et le mettre à jour après chaque échange. S'il expire (typiquement après 30 jours d'inactivité), tu refais la capture une fois.
 
-### Option B — Menu contextuel (clic droit / "⋯")
-Trois points "⋯" sur la carte → mêmes 4 actions. Plus discret, moins découvrable.
+L'objectif reste : créer une **facture en brouillon** dans Tiime, ouvrir l'URL renvoyée, et finir la validation / l'envoi côté Tiime.
 
-### Option C — Colonne spéciale "À clôturer"
-Drag d'une tâche vers une colonne dédiée déclenche automatiquement le menu de choix. Visuel mais ajoute du bruit au Kanban.
+## Étapes
 
-### Option D — Drag direct vers colonnes existantes
-Glisser dans `bat` → ouvre popup BAT. Glisser dans `a_facturer` → ouvre popup facture. Pas de popup pour impression (créer colonne ou rester sur A).
+### 1. Stockage du refresh_token (base)
 
-**Recommandation** : **Option A** + **Option D** (drag déjà naturel pour BAT/facturation, bouton "Terminer →" pour exposer aussi l'impression).
+Nouvelle table `tiime_auth` (row unique, admin uniquement) :
+- `refresh_token` text
+- `access_token` text (cache court)
+- `access_token_expires_at` timestamptz
+- `updated_at`, `created_at`
 
----
+RLS : lecture/écriture admin uniquement.
 
-## Comportement détaillé des 3 popups
+### 2. Page admin "Connexion Tiime"
 
-Tous les popups reçoivent la tâche en prop et pré-remplissent :
+Nouvelle page `/parametres/tiime` (lien dans la sidebar admin) avec :
+- **État** : connecté ✅ / déconnecté ❌, dernière rotation du token
+- **Bouton "Tester la connexion"** : appelle l'edge function en mode `verify`, qui tente un refresh + un `GET /companies`
+- **Champ "Coller le refresh_token"** + bouton "Enregistrer"
+- **Notice pas-à-pas** pour récupérer le token :
+  1. Ouvrir https://apps.tiime.fr, se connecter (avec MFA)
+  2. F12 → onglet *Application* → *Local Storage* → `https://apps.tiime.fr`
+  3. Chercher la clé qui commence par `@@auth0spajs@@::iEbsbe3o66gcTBfGRa012kj1Rb6vjAND`
+  4. Copier la valeur de `body.refresh_token`
+  5. Coller dans le champ ci-dessus
 
-| Popup | Source pré-remplie | Au succès |
-|---|---|---|
-| **BAT** (`NewBatDialog` existant) | titre, client, projet | `task.bat_id` mis à jour + `status = 'bat'` |
-| **Impression** (nouveau `NewPrintOrderDialog`, calqué sur `NewBatDialog`) | description = titre tâche, client, projet, montant = `flat_amount` ou calcul horaire | `status = 'envoye'`, lien optionnel `task.id` stocké dans description |
-| **Facturation** (`NewTiimeInvoiceDialog` existant) | label = titre, montant, heures, taux | `task.status = 'a_facturer'` ou `'tiime'` |
+### 3. Edge function refactorée
 
-Action **"Marquer terminée"** : passe simplement `status = 'archive'`.
+`supabase/functions/tiime-create-invoice/index.ts` :
+- Lit `refresh_token` depuis `tiime_auth` (au lieu d'utiliser `password-realm`)
+- Si `access_token` en cache encore valide (>5 min) → l'utilise
+- Sinon → POST Auth0 `/oauth/token` avec `grant_type=refresh_token` + `client_id` + `refresh_token`
+- Stocke le nouveau `access_token`, son expiration, et le **nouveau refresh_token rotaté** dans `tiime_auth`
+- Continue avec la création de facture (statut `draft` — déjà le cas)
+- Si Auth0 répond `invalid_grant` → erreur claire : "refresh_token expiré, refais la capture sur /parametres/tiime"
 
----
+Nouvelle action `verify` (query param `?action=verify`) : tente juste le refresh + `/companies` et renvoie l'état, sans créer de facture. Utilisé par le bouton de test.
+
+Les secrets `TIIME_EMAIL` / `TIIME_PASSWORD` ne sont plus utilisés (on peut les laisser ou les supprimer plus tard).
+
+### 4. UX côté Kanban / facturation
+
+Inchangé : le bouton "Terminer → Facturation (Tiime)" ouvre toujours `NewTiimeInvoiceDialog`, qui appelle la même edge function. Si la connexion Tiime n'est pas configurée, on affiche un toast "Connecte Tiime dans Paramètres" avec un lien direct.
 
 ## Section technique
 
+**Fichiers à créer**
+- Migration : `tiime_auth` table + RLS admin
+- `src/pages/TiimeSettings.tsx` (page de connexion + statut + champ refresh_token)
+- Route dans `App.tsx` : `/parametres/tiime`
+- Lien dans la sidebar admin (sous "Paramètres")
+
 **Fichiers à modifier**
-- `src/pages/Tasks.tsx` :
-  - Composant `KanbanCard` : ajouter bouton "Terminer →" (DropdownMenu shadcn) qui ouvre un menu avec 4 entrées.
-  - State local au niveau de `Tasks` pour piloter les 3 dialogs : `{ batTask, printTask, invoiceTask }`.
-  - Callback `onComplete(task, action)` passé aux cartes.
-- `src/components/NewPrintOrderDialog.tsx` (nouveau) :
-  - Calqué sur `NewBatDialog`, insère dans `print_orders` avec `client_id`, `project_id`, `description`, `amount`, `status = 'a_commander'`.
-  - Champs : description, référence, quantité, format, support, finitions, observations, montant estimé.
-- Réutiliser `NewBatDialog` et `NewTiimeInvoiceDialog` tels quels (props déjà compatibles).
+- `supabase/functions/tiime-create-invoice/index.ts` :
+  - Remplacer `tiimeLogin(email, password)` par `getAccessToken()` basé sur refresh_token de la DB
+  - Ajouter rotation/persistance du refresh_token
+  - Ajouter mode `verify`
+- `src/components/NewTiimeInvoiceDialog.tsx` : si erreur `tiime_not_configured` → toast avec lien vers `/parametres/tiime`
 
-**Sur succès d'un popup** : mettre à jour la tâche source (`status`, `bat_id` si BAT) via le `onUpdate` existant + refresh local.
+**Aucun secret API key supplémentaire requis** — tout passe par la DB.
 
-**Drag-to-column (Option D)** : dans `onDragEnd`, si `newStatus === 'bat'` et `task.bat_id` est nul → ouvrir popup BAT au lieu de muter directement. Idem pour `'a_facturer'`.
+## Limites à connaître
 
----
+- Si Tiime invalide le refresh_token (changement de mot de passe, déconnexion forcée), il faudra refaire la capture. Le bouton "Tester la connexion" t'aide à le détecter avant de créer une facture.
+- Auth0 peut limiter la durée totale du refresh_token (absolute lifetime, souvent 30 jours sans usage). Une utilisation régulière le maintient en vie.
+- On reste dépendants des endpoints non documentés de Tiime — si Tiime change son auth, il faudra adapter.
 
 ## Décision à prendre
 
-Je peux implémenter :
-1. **A seul** (bouton "Terminer →" + 3 popups) — le plus simple, le plus clair
-2. **A + D** (bouton + drag intelligent vers `bat`/`a_facturer`)
-3. **B seul** (menu "⋯" discret)
-4. **C** (colonne "À clôturer" dédiée)
-
-Dis-moi quelle option tu préfères et je l'implémente.
+Tu valides cette approche (refresh_token capturé manuellement, stocké en base, page admin pour le gérer) ? Si oui je l'implémente.
