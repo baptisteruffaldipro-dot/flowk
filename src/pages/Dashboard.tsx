@@ -144,7 +144,7 @@ export default function Dashboard() {
             <Link key={o.id} to={`/impressions/${o.id}`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
               <div className="flex items-start justify-between gap-2">
                 <div className="text-sm font-medium leading-snug truncate">{o.description}</div>
-                <Badge variant="outline" className="shrink-0 text-[10px]">{PRINT_STATUS_LABEL[o.status]}</Badge>
+                <Badge variant="outline" className={`shrink-0 text-[10px] ${printStatusBadgeClass(o.status)}`}>{PRINT_STATUS_LABEL[o.status]}</Badge>
               </div>
               <div className="text-xs text-muted-foreground mt-1 truncate">{o.clients?.name ?? "—"}</div>
             </Link>
@@ -157,15 +157,16 @@ export default function Dashboard() {
             const dt = new Date(a.start_at);
             const dateStr = dt.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short" });
             const timeStr = dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+            const soon = isApptSoon(dt);
             return (
               <Link key={a.id} to="/rdv" className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
                 <div className="flex items-start justify-between gap-2">
                   <div className="text-sm font-medium leading-snug truncate">{a.title}</div>
-                  <Badge variant="outline" className="shrink-0 text-[10px] inline-flex items-center gap-1">
+                  <Badge variant="outline" className={`shrink-0 text-[10px] inline-flex items-center gap-1 ${soon ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400" : ""}`}>
                     <Icon className="h-2.5 w-2.5" /> {timeStr}
                   </Badge>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1 truncate">
+                <div className={`text-xs mt-1 truncate ${soon ? "text-red-600 dark:text-red-400 font-medium" : "text-muted-foreground"}`}>
                   {dateStr} · {a.clients?.name ?? "—"}
                 </div>
               </Link>
@@ -270,7 +271,7 @@ function TodayBoard({ tasks, printOrders }: { tasks: Task[]; printOrders: Order[
           )}
           {toOrderPrints.length > 0 && (
             <div>
-              <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-orange-600 dark:text-orange-400 uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 mb-2 text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wider">
                 <Printer className="h-3.5 w-3.5" /> Impressions à commander
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -278,11 +279,11 @@ function TodayBoard({ tasks, printOrders }: { tasks: Task[]; printOrders: Order[
                   <Link
                     key={o.id}
                     to={`/impressions/${o.id}`}
-                    className="block p-3 rounded-md border border-orange-300/40 bg-card hover:bg-secondary/60 transition"
+                    className="block p-3 rounded-md border border-red-400/50 bg-red-500/5 hover:bg-red-500/10 transition"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="text-sm font-medium leading-snug truncate">{o.description}</div>
-                      <Badge variant="outline" className="shrink-0 text-[10px]">{PRINT_STATUS_LABEL[o.status]}</Badge>
+                      <Badge variant="outline" className="shrink-0 text-[10px] border-red-500/40 bg-red-500/15 text-red-600 dark:text-red-400">{PRINT_STATUS_LABEL[o.status]}</Badge>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1 truncate">{o.clients?.name ?? "—"}</div>
                   </Link>
@@ -301,12 +302,15 @@ function TodayCard({ task, variant }: { task: Task; variant: "today" | "overdue"
     <Link
       to={`/taches/${task.id}`}
       className={`block p-3 rounded-md border bg-card hover:bg-secondary/60 transition ${
-        variant === "overdue" ? "border-destructive/40" : "border-border"
+        variant === "overdue" ? "border-destructive/40" : "border-emerald-500/40"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="text-sm font-medium leading-snug truncate">{task.title}</div>
-        <Badge variant={variant === "overdue" ? "destructive" : "default"} className="shrink-0 text-[10px]">
+        <Badge
+          variant={variant === "overdue" ? "destructive" : "outline"}
+          className={`shrink-0 text-[10px] ${variant === "today" ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : ""}`}
+        >
           {variant === "overdue" && task.deadline
             ? `Retard ${new Date(task.deadline).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}`
             : STATUS_LABEL[task.status]}
@@ -315,6 +319,20 @@ function TodayCard({ task, variant }: { task: Task; variant: "today" | "overdue"
       <div className="text-xs text-muted-foreground mt-1 truncate">{task.clients?.name ?? "—"}</div>
     </Link>
   );
+}
+
+function printStatusBadgeClass(status: string): string {
+  if (status === "a_commander") return "border-red-500/40 bg-red-500/15 text-red-600 dark:text-red-400";
+  if (status === "en_impression") return "border-orange-500/40 bg-orange-500/15 text-orange-600 dark:text-orange-400";
+  return "";
+}
+
+function isApptSoon(dt: Date): boolean {
+  const now = new Date();
+  const sameDay = dt.toDateString() === now.toDateString();
+  if (sameDay) return true;
+  const diffMs = dt.getTime() - now.getTime();
+  return diffMs > 0 && diffMs < 24 * 60 * 60 * 1000;
 }
 
 function Column({ title, href, children, empty }: { title: string; href: string; children: React.ReactNode; empty: string }) {
