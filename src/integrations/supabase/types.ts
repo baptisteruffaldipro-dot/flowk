@@ -1561,6 +1561,7 @@ export type Database = {
         | "facture_envoyee"
         | "bat"
         | "tiime"
+        | "impression"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1797,6 +1798,7 @@ export const Constants = {
         "facture_envoyee",
         "bat",
         "tiime",
+        "impression",
       ],
     },
   },
