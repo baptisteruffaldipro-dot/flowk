@@ -107,11 +107,7 @@ export default function Dashboard() {
         <QuickCreate onCreated={load} />
       </div>
 
-      <TodayBoard tasks={tasks} printOrders={orders} />
-
-      {upcomingInstallments.length > 0 && <InstallmentsWidget items={upcomingInstallments} />}
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <ProgressStatCard
           label="Tâches à faire"
           value={stats.todoCount}
@@ -122,6 +118,10 @@ export default function Dashboard() {
         <StatCard label="Chiffre d'affaires HT" value={fmtMoney(stats.paidRevenue)} />
         <StatCard label="BAT à valider" value={String(stats.awaitingBat)} href="/bats" highlight={stats.awaitingBat > 0} />
       </div>
+
+      <TodayBoard tasks={tasks} printOrders={orders} />
+
+      {upcomingInstallments.length > 0 && <InstallmentsWidget items={upcomingInstallments} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Column title="Projets en cours" href="/projets" empty="Aucun projet en cours">
