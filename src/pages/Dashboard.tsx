@@ -35,7 +35,8 @@ export default function Dashboard() {
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [upcomingInstallments, setUpcomingInstallments] = useState<Installment[]>([]);
-  const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, awaitingBat: 0 });
+  const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, monthRevenue: 0, awaitingBat: 0 });
+  const [monthly, setMonthly] = useState<{ key: string; label: string; total: number }[]>([]);
 
   const load = async () => {
       const [t, todayT, o, i, a, paid, p, batsRelecture] = await Promise.all([
@@ -58,7 +59,7 @@ export default function Dashboard() {
         .order("due_date", { ascending: true })
         .limit(10);
       setUpcomingInstallments((ins.data as any) ?? []);
-      const allPrint = await supabase.from("print_orders").select("amount,payment_status,status");
+      const allPrint = await supabase.from("print_orders").select("amount,payment_status,status,updated_at");
       const allPrintData = (allPrint.data as any[]) ?? [];
       const paidPrintRev = allPrintData.reduce((s: number, x: any) => {
         const amt = x.amount ? Number(x.amount) : 0;
@@ -66,6 +67,51 @@ export default function Dashboard() {
         if (x.payment_status === "acompte_50") return s + amt * 0.5;
         return s;
       }, 0);
+
+      // ---- Mensualisation du CA (basé sur paid_at) ----
+      const [paidInvFull, paidInstallments] = await Promise.all([
+        supabase.from("invoices").select("id,amount,paid_at").eq("status", "payee"),
+        supabase.from("invoice_installments").select("invoice_id,paid_amount,paid_at").not("paid_at", "is", null),
+      ]);
+      const invoicesWithInstallments = new Set<string>(
+        ((paidInstallments.data as any[]) ?? []).map((x) => x.invoice_id),
+      );
+      type Entry = { date: string; amount: number };
+      const entries: Entry[] = [];
+      ((paidInvFull.data as any[]) ?? []).forEach((inv) => {
+        if (invoicesWithInstallments.has(inv.id)) return; // évite double-comptage
+        if (!inv.paid_at) return;
+        entries.push({ date: inv.paid_at, amount: Number(inv.amount ?? 0) });
+      });
+      ((paidInstallments.data as any[]) ?? []).forEach((r) => {
+        entries.push({ date: r.paid_at, amount: Number(r.paid_amount ?? 0) });
+      });
+      allPrintData.forEach((x: any) => {
+        const amt = x.amount ? Number(x.amount) : 0;
+        const d = x.updated_at ? String(x.updated_at).slice(0, 10) : null;
+        if (!d || amt === 0) return;
+        if (x.payment_status === "regle" || x.status === "livre_paye") entries.push({ date: d, amount: amt });
+        else if (x.payment_status === "acompte_50") entries.push({ date: d, amount: amt * 0.5 });
+      });
+
+      const now = new Date();
+      const months: { key: string; label: string; total: number }[] = [];
+      for (let k = 5; k >= 0; k--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        months.push({ key, label: d.toLocaleDateString("fr-FR", { month: "short" }), total: 0 });
+      }
+      const idx = new Map(months.map((m, i) => [m.key, i] as const));
+      const monthKeyOf = (iso: string) => iso.slice(0, 7);
+      const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      let monthRev = 0;
+      entries.forEach((e) => {
+        const k = monthKeyOf(e.date);
+        if (k === currentKey) monthRev += e.amount;
+        const i = idx.get(k);
+        if (i !== undefined) months[i].total += e.amount;
+      });
+      setMonthly(months);
       // Merge today tasks that might have been cut off by the limit
       const allTasks = (t.data as any) ?? [];
       const todayTasks = (todayT.data as any) ?? [];
@@ -95,7 +141,7 @@ export default function Dashboard() {
       const awaitPrintBat = ((o.data as any) ?? []).filter((x: Order) => x.status === "validation_bat").length;
       const awaitBatRows = ((batsRelecture.data as any) ?? []).length;
       const awaitBat = awaitPrintBat + awaitBatRows;
-      setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, paidRevenue: paidRev + paidPrintRev, awaitingBat: awaitBat });
+      setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, paidRevenue: paidRev + paidPrintRev, monthRevenue: monthRev, awaitingBat: awaitBat });
   };
   useEffect(() => { load(); }, []);
 
@@ -107,7 +153,7 @@ export default function Dashboard() {
         <QuickCreate onCreated={load} />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <ProgressStatCard
           label="Tâches à faire"
           value={stats.todoCount}
@@ -115,9 +161,12 @@ export default function Dashboard() {
           total={stats.totalCount}
         />
         <StatCard label="CA en attente" value={fmtMoney(stats.pendingRevenue)} />
-        <StatCard label="Chiffre d'affaires HT" value={fmtMoney(stats.paidRevenue)} />
+        <StatCard label="CA du mois" value={fmtMoney(stats.monthRevenue)} />
+        <StatCard label="CA cumulé HT" value={fmtMoney(stats.paidRevenue)} />
         <StatCard label="BAT à valider" value={String(stats.awaitingBat)} href="/bats" highlight={stats.awaitingBat > 0} />
       </div>
+
+      <MonthlyRevenueCard months={monthly} />
 
       <TodayBoard tasks={tasks} printOrders={orders} />
 
@@ -357,6 +406,42 @@ function InstallmentsWidget({ items }: { items: Installment[] }) {
   const today = new Date().toISOString().slice(0, 10);
   const overdue = items.filter((x) => x.due_date < today);
   const upcoming = items.filter((x) => x.due_date >= today);
+  return InstallmentsWidgetInner({ items, today, overdue, upcoming });
+}
+
+function MonthlyRevenueCard({ months }: { months: { key: string; label: string; total: number }[] }) {
+  if (months.length === 0) return null;
+  const max = Math.max(1, ...months.map((m) => m.total));
+  const cumul = months.reduce((s, m) => s + m.total, 0);
+  return (
+    <Card className="p-5 mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-sm font-semibold tracking-tight">CA mensuel (HT)</h2>
+          <p className="text-xs text-muted-foreground">6 derniers mois · cumul {fmtMoney(cumul)}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-6 gap-3 items-end h-32">
+        {months.map((m, i) => {
+          const h = Math.max(4, Math.round((m.total / max) * 100));
+          const isCurrent = i === months.length - 1;
+          return (
+            <div key={m.key} className="flex flex-col items-center gap-1.5 h-full justify-end">
+              <div className="text-[10px] tabular-nums text-muted-foreground">{fmtMoney(m.total)}</div>
+              <div
+                className={`w-full rounded-t-md transition-all ${isCurrent ? "bg-primary" : "bg-primary/30"}`}
+                style={{ height: `${h}%` }}
+              />
+              <div className={`text-[10px] uppercase tracking-wider ${isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{m.label}</div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function InstallmentsWidgetInner({ items, today, overdue, upcoming }: { items: Installment[]; today: string; overdue: Installment[]; upcoming: Installment[] }) {
   return (
     <Card className="p-5 mb-6">
       <div className="flex items-center justify-between mb-3">
