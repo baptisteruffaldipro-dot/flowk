@@ -341,6 +341,9 @@ export default function PrintOrders() {
                   {o.payment_status === "acompte_50" && (
                     <Badge className="text-[10px] bg-amber-500 hover:bg-amber-500 text-white">Acompte 50%</Badge>
                   )}
+                  {!paidPrintIds.has(o.id) && o.status !== "livre_paye" && (o.payment_status ?? "non_regle") === "non_regle" && (
+                    <Badge className="text-[10px] bg-red-500 hover:bg-red-500 text-white">Non réglé</Badge>
+                  )}
                 </div>
                 <div className="col-span-2">
                   <Select value={o.status} onValueChange={(v) => updateOrderStatus(o.id, v)}>
