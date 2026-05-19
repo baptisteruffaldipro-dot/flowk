@@ -11,12 +11,21 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Receipt, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
 import NewBatDialog from "@/components/NewBatDialog";
 import NewTiimeInvoiceDialog from "@/components/NewTiimeInvoiceDialog";
+import NewPrintOrderDialog from "@/components/NewPrintOrderDialog";
 import {
   DndContext,
   DragEndEvent,
