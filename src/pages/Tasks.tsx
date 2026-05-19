@@ -369,6 +369,7 @@ function KanbanColumn({
   onDeleteDivider,
   paidTaskIds,
   onQuickAdd,
+  onComplete,
 }: {
   status: Status;
   tasks: any[];
@@ -380,6 +381,7 @@ function KanbanColumn({
   onDeleteDivider: (id: string) => void;
   paidTaskIds: Set<string>;
   onQuickAdd: (status: Status, title: string) => Promise<void>;
+  onComplete: (task: any, action: "bat" | "print" | "invoice" | "archive") => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
@@ -416,7 +418,7 @@ function KanbanColumn({
           {items.map((it, idx) => (
             <div key={it.kind === "task" ? `t-${it.data.id}` : `d-${it.data.id}`}>
               {it.kind === "task" ? (
-                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} paid={paidTaskIds.has(it.data.id)} />
+                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} paid={paidTaskIds.has(it.data.id)} onComplete={onComplete} />
               ) : (
                 <DividerRow
                   divider={it.data}
