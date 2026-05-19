@@ -1167,7 +1167,7 @@ export default function Tasks() {
         onOpenChange={(v) => { if (!v) setTiimeForTask(null); }}
         onCreated={async () => {
           if (tiimeForTask) {
-            await supabase.from("tasks").update({ status: "tiime" } as any).eq("id", tiimeForTask.id);
+            await supabase.from("tasks").update({ status: "a_facturer" } as any).eq("id", tiimeForTask.id);
           }
           setTiimeForTask(null);
           load();
@@ -1179,7 +1179,7 @@ export default function Tasks() {
         onOpenChange={(v) => { if (!v) setPrintForTask(null); }}
         onCreated={async () => {
           if (printForTask) {
-            await supabase.from("tasks").update({ status: "envoye" } as any).eq("id", printForTask.id);
+            await supabase.from("tasks").update({ status: "impression" } as any).eq("id", printForTask.id);
           }
           setPrintForTask(null);
           load();
