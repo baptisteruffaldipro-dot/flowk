@@ -38,7 +38,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 
-const STATUSES = ["a_faire", "aujourdhui", "envoye", "bat", "tiime", "a_facturer", "facture_envoyee", "archive"] as const;
+const STATUSES = ["a_faire", "aujourdhui", "envoye", "bat", "impression", "a_facturer", "archive"] as const;
 type Status = typeof STATUSES[number];
 
 function DeadlineBadge({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
@@ -594,7 +594,7 @@ export default function Tasks() {
   };
 
   const triggerTiimeIfNeeded = async (taskId: string, newStatus: Status) => {
-    if (newStatus !== "tiime") return;
+    if (newStatus !== "a_facturer") return;
     const t = tasks.find((x) => x.id === taskId);
     if (!t) return;
     // Skip if a Tiime invoice already exists for this task.
@@ -606,6 +606,12 @@ export default function Tasks() {
       .maybeSingle();
     if (existing) return;
     setTiimeForTask(t);
+  };
+
+  const triggerPrintIfNeeded = (taskId: string, newStatus: Status) => {
+    if (newStatus !== "impression") return;
+    const t = tasks.find((x) => x.id === taskId);
+    if (t) setPrintForTask(t);
   };
 
   const onDragEnd = async (e: DragEndEvent) => {
@@ -707,6 +713,7 @@ export default function Tasks() {
       } else {
         triggerBatIfNeeded(task.id, newStatus);
         triggerTiimeIfNeeded(task.id, newStatus);
+        triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -768,6 +775,7 @@ export default function Tasks() {
       } else {
         triggerBatIfNeeded(task.id, newStatus);
         triggerTiimeIfNeeded(task.id, newStatus);
+        triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -791,6 +799,7 @@ export default function Tasks() {
       } else {
         triggerBatIfNeeded(task.id, newStatus);
         triggerTiimeIfNeeded(task.id, newStatus);
+        triggerPrintIfNeeded(task.id, newStatus);
       }
     }
   };
@@ -1158,7 +1167,7 @@ export default function Tasks() {
         onOpenChange={(v) => { if (!v) setTiimeForTask(null); }}
         onCreated={async () => {
           if (tiimeForTask) {
-            await supabase.from("tasks").update({ status: "tiime" } as any).eq("id", tiimeForTask.id);
+            await supabase.from("tasks").update({ status: "a_facturer" } as any).eq("id", tiimeForTask.id);
           }
           setTiimeForTask(null);
           load();
@@ -1170,7 +1179,7 @@ export default function Tasks() {
         onOpenChange={(v) => { if (!v) setPrintForTask(null); }}
         onCreated={async () => {
           if (printForTask) {
-            await supabase.from("tasks").update({ status: "envoye" } as any).eq("id", printForTask.id);
+            await supabase.from("tasks").update({ status: "impression" } as any).eq("id", printForTask.id);
           }
           setPrintForTask(null);
           load();

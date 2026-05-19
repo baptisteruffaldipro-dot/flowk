@@ -1,0 +1,1 @@
+UPDATE public.tasks SET status = 'a_facturer' WHERE status IN ('tiime', 'facture_envoyee');
