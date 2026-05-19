@@ -11,12 +11,21 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Receipt, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
 import NewBatDialog from "@/components/NewBatDialog";
 import NewTiimeInvoiceDialog from "@/components/NewTiimeInvoiceDialog";
+import NewPrintOrderDialog from "@/components/NewPrintOrderDialog";
 import {
   DndContext,
   DragEndEvent,
@@ -223,11 +232,13 @@ function KanbanCard({
   clients,
   onUpdate,
   paid,
+  onComplete,
 }: {
   task: any;
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
   paid?: boolean;
+  onComplete: (task: any, action: "bat" | "print" | "invoice" | "archive") => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
   const navigate = useNavigate();
@@ -237,7 +248,7 @@ function KanbanCard({
     <div
       ref={setNodeRef}
       style={{ opacity: isDragging ? 0.4 : 1 }}
-      className="touch-none"
+      className="touch-none group"
     >
       <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
         <div
@@ -250,6 +261,40 @@ function KanbanCard({
           <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
             {projectName}
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                className="opacity-0 group-hover:opacity-100 transition shrink-0 inline-flex items-center gap-1 rounded-md border border-emerald-400/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 text-[10px] font-semibold"
+                title="Terminer la tâche"
+              >
+                <CheckCircle2 className="h-3 w-3" />
+                Terminer
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <DropdownMenuLabel className="text-xs">Envoyer en…</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => onComplete(task, "bat")}>
+                <FileText className="h-3.5 w-3.5 mr-2" /> BAT
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onComplete(task, "print")}>
+                <Printer className="h-3.5 w-3.5 mr-2" /> Impression
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onComplete(task, "invoice")}>
+                <Receipt className="h-3.5 w-3.5 mr-2" /> Facturation (Tiime)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onComplete(task, "archive")}>
+                <Archive className="h-3.5 w-3.5 mr-2" /> Marquer terminée
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {paid && (
@@ -324,6 +369,7 @@ function KanbanColumn({
   onDeleteDivider,
   paidTaskIds,
   onQuickAdd,
+  onComplete,
 }: {
   status: Status;
   tasks: any[];
@@ -335,6 +381,7 @@ function KanbanColumn({
   onDeleteDivider: (id: string) => void;
   paidTaskIds: Set<string>;
   onQuickAdd: (status: Status, title: string) => Promise<void>;
+  onComplete: (task: any, action: "bat" | "print" | "invoice" | "archive") => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
@@ -371,7 +418,7 @@ function KanbanColumn({
           {items.map((it, idx) => (
             <div key={it.kind === "task" ? `t-${it.data.id}` : `d-${it.data.id}`}>
               {it.kind === "task" ? (
-                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} paid={paidTaskIds.has(it.data.id)} />
+                <KanbanCard task={it.data} clients={clients} onUpdate={onUpdate} paid={paidTaskIds.has(it.data.id)} onComplete={onComplete} />
               ) : (
                 <DividerRow
                   divider={it.data}
@@ -511,6 +558,7 @@ export default function Tasks() {
   const [search, setSearch] = useState("");
   const [batForTask, setBatForTask] = useState<any | null>(null);
   const [tiimeForTask, setTiimeForTask] = useState<any | null>(null);
+  const [printForTask, setPrintForTask] = useState<any | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
     title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire",
@@ -841,6 +889,25 @@ export default function Tasks() {
     await load();
   };
 
+  const completeTask = async (task: any, action: "bat" | "print" | "invoice" | "archive") => {
+    if (action === "bat") {
+      if (task.bat_id) {
+        toast.info("Cette tâche a déjà un BAT lié");
+        return;
+      }
+      setBatForTask(task);
+    } else if (action === "print") {
+      setPrintForTask(task);
+    } else if (action === "invoice") {
+      setTiimeForTask(task);
+    } else if (action === "archive") {
+      const { error } = await supabase.from("tasks").update({ status: "archive" } as any).eq("id", task.id);
+      if (error) return toast.error(error.message);
+      toast.success("Tâche archivée");
+      load();
+    }
+  };
+
   const filteredProjects = projects.filter((p) => !form.client_id || p.client_id === form.client_id);
 
   const q = search.trim().toLowerCase();
@@ -1052,6 +1119,7 @@ export default function Tasks() {
                   onDeleteDivider={deleteDivider}
                   paidTaskIds={paidTaskIds}
                   onQuickAdd={quickAddTask}
+                  onComplete={completeTask}
                 />
               ))}
             </div>
@@ -1076,13 +1144,37 @@ export default function Tasks() {
         task={batForTask}
         open={!!batForTask}
         onOpenChange={(v) => { if (!v) setBatForTask(null); }}
-        onCreated={() => { setBatForTask(null); load(); }}
+        onCreated={async () => {
+          if (batForTask) {
+            await supabase.from("tasks").update({ status: "bat" } as any).eq("id", batForTask.id);
+          }
+          setBatForTask(null);
+          load();
+        }}
       />
       <NewTiimeInvoiceDialog
         task={tiimeForTask}
         open={!!tiimeForTask}
         onOpenChange={(v) => { if (!v) setTiimeForTask(null); }}
-        onCreated={() => { setTiimeForTask(null); load(); }}
+        onCreated={async () => {
+          if (tiimeForTask) {
+            await supabase.from("tasks").update({ status: "tiime" } as any).eq("id", tiimeForTask.id);
+          }
+          setTiimeForTask(null);
+          load();
+        }}
+      />
+      <NewPrintOrderDialog
+        task={printForTask}
+        open={!!printForTask}
+        onOpenChange={(v) => { if (!v) setPrintForTask(null); }}
+        onCreated={async () => {
+          if (printForTask) {
+            await supabase.from("tasks").update({ status: "envoye" } as any).eq("id", printForTask.id);
+          }
+          setPrintForTask(null);
+          load();
+        }}
       />
     </div>
   );
