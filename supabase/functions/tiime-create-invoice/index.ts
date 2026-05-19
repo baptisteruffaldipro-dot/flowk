@@ -1,15 +1,16 @@
-// Edge function: create an invoice on Tiime from one of our `invoices` rows.
+// Edge function: create a draft invoice on Tiime from one of our `invoices` rows.
 //
-// STATUS: STUB. Tiime has no public API. The actual endpoints below are
-// placeholders and need to be replaced once the Tiime web-app network calls
-// have been captured (see .lovable/plan.md, step 1).
+// Auth: uses an Auth0 refresh_token stored in `public.tiime_auth`. The user
+// captures the refresh_token once from the Tiime web app (after MFA) via the
+// /parametres/tiime page. The function refreshes the access_token on each
+// call and persists the rotated refresh_token back to the DB.
 //
-// Required secrets:
-//   - TIIME_EMAIL
-//   - TIIME_PASSWORD
-//
-// Input:  { invoice_id: string }
-// Output: { tiime_id: string, url: string }
+// Input:
+//   { invoice_id: string }        → create draft invoice
+//   { action: "verify" }          → just test the refresh + companies fetch
+//   { action: "save_refresh_token", refresh_token: string } → store new token
+// Output (create): { tiime_id: string, url: string }
+// Output (verify): { ok: true, companies: number }
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
@@ -19,10 +20,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 const TIIME_AUTH = "https://auth0.tiime.fr";
 const TIIME_AUDIENCE = "https://chronos/";
 const TIIME_CLIENT_ID = "iEbsbe3o66gcTBfGRa012kj1Rb6vjAND";
-const TIIME_REALM = "Chronos-prod-db";
 const TIIME_BASE = "https://chronos-api.tiime-apps.com/v1";
-
-type LoginResp = { token: string; companies?: Array<{ id: string }> };
 
 class TiimeAuthError extends Error {
   constructor(message: string, public status = 502, public code = "tiime_auth_failed") {
@@ -40,41 +38,76 @@ async function readTiimeError(response: Response) {
   }
 }
 
-async function tiimeLogin(email: string, password: string): Promise<LoginResp> {
+async function getAccessToken(supabase: any): Promise<string> {
+  const { data: row, error } = await supabase
+    .from("tiime_auth")
+    .select("refresh_token, access_token, access_token_expires_at")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error) throw new Error(`tiime_auth lookup failed: ${error.message}`);
+  if (!row || !row.refresh_token) {
+    throw new TiimeAuthError(
+      "Connexion Tiime non configurée. Va sur Paramètres → Tiime pour coller un refresh_token.",
+      409,
+      "tiime_not_configured",
+    );
+  }
+
+  // Reuse cached access_token if still valid for >5 min.
+  if (row.access_token && row.access_token_expires_at) {
+    const expiresMs = new Date(row.access_token_expires_at).getTime();
+    if (expiresMs - Date.now() > 5 * 60 * 1000) {
+      return row.access_token;
+    }
+  }
+
+  // Exchange refresh_token for a fresh access_token.
   const r = await fetch(`${TIIME_AUTH}/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      grant_type: "http://auth0.com/oauth/grant-type/password-realm",
-      realm: TIIME_REALM,
-      username: email,
-      password,
-      audience: TIIME_AUDIENCE,
-      scope: "openid email offline_access",
+      grant_type: "refresh_token",
       client_id: TIIME_CLIENT_ID,
+      refresh_token: row.refresh_token,
     }),
   });
   if (!r.ok) {
     const details = await readTiimeError(r);
-    if (details.error === "mfa_required") {
+    if (details.error === "invalid_grant") {
       throw new TiimeAuthError(
-        "La connexion Tiime est protégée par double authentification. Tiime bloque donc la création automatique par mot de passe ; crée la facture dans Tiime puis colle le lien manuellement.",
-        409,
-        "tiime_mfa_required",
+        "Le refresh_token Tiime n'est plus valide. Reconnecte-toi sur apps.tiime.fr et recopie un nouveau refresh_token dans Paramètres → Tiime.",
+        401,
+        "tiime_refresh_expired",
       );
     }
-    throw new TiimeAuthError(`Tiime login failed [${r.status}]: ${details.raw}`, r.status);
+    throw new TiimeAuthError(`Tiime refresh failed [${r.status}]: ${details.raw}`, r.status);
   }
   const json = await r.json();
-  const token = json.access_token ?? json.id_token;
-  if (!token) throw new Error("Tiime login: no access_token in response");
+  const accessToken = json.access_token as string | undefined;
+  if (!accessToken) throw new Error("Tiime refresh: no access_token in response");
+  const newRefresh = (json.refresh_token as string | undefined) ?? row.refresh_token;
+  const expiresIn = Number(json.expires_in ?? 3600);
+  const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
-  // Fetch companies list to discover companyId.
+  await supabase
+    .from("tiime_auth")
+    .update({
+      refresh_token: newRefresh,
+      access_token: accessToken,
+      access_token_expires_at: expiresAt,
+    })
+    .eq("id", 1);
+
+  return accessToken;
+}
+
+async function fetchCompanies(token: string): Promise<Array<{ id: string | number }>> {
   const cr = await fetch(`${TIIME_BASE}/companies`, {
     headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
   });
-  const companies = cr.ok ? await cr.json() : [];
-  return { token, companies: Array.isArray(companies) ? companies : [] };
+  if (!cr.ok) throw new Error(`Tiime /companies failed [${cr.status}]: ${await cr.text()}`);
+  const list = await cr.json();
+  return Array.isArray(list) ? list : [];
 }
 
 async function tiimeCreateInvoice(token: string, companyId: string, payload: unknown) {
@@ -100,25 +133,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const TIIME_EMAIL = Deno.env.get("TIIME_EMAIL");
-    const TIIME_PASSWORD = Deno.env.get("TIIME_PASSWORD");
-    if (!TIIME_EMAIL || !TIIME_PASSWORD) {
-      return new Response(
-        JSON.stringify({
-          error: "TIIME_EMAIL et TIIME_PASSWORD doivent être configurés dans les secrets.",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const body = await req.json().catch(() => null);
-    const invoiceId = body?.invoice_id;
-    if (!invoiceId || typeof invoiceId !== "string") {
-      return new Response(JSON.stringify({ error: "invoice_id requis" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = await req.json().catch(() => ({} as any)) ?? {};
+    const action: string = body?.action ?? "create";
 
     // Verify caller is admin via JWT.
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -151,6 +167,49 @@ Deno.serve(async (req) => {
       });
     }
 
+    // --- save_refresh_token: store a freshly captured refresh_token ---
+    if (action === "save_refresh_token") {
+      const newToken: unknown = body?.refresh_token;
+      if (typeof newToken !== "string" || newToken.trim().length < 20) {
+        return new Response(JSON.stringify({ error: "refresh_token invalide" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error: upErr } = await supabase
+        .from("tiime_auth")
+        .update({
+          refresh_token: newToken.trim(),
+          access_token: null,
+          access_token_expires_at: null,
+        })
+        .eq("id", 1);
+      if (upErr) throw new Error(upErr.message);
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- verify: just check we can refresh + list companies ---
+    if (action === "verify") {
+      const token = await getAccessToken(supabase);
+      const companies = await fetchCompanies(token);
+      return new Response(JSON.stringify({ ok: true, companies: companies.length }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- default: create draft invoice ---
+    const invoiceId = body?.invoice_id;
+    if (!invoiceId || typeof invoiceId !== "string") {
+      return new Response(JSON.stringify({ error: "invoice_id requis" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Load invoice + client + installments.
     const { data: invoice, error: invErr } = await supabase
       .from("invoices")
@@ -159,10 +218,10 @@ Deno.serve(async (req) => {
       .single();
     if (invErr || !invoice) throw new Error(`Facture introuvable: ${invErr?.message}`);
 
-    // Login + create.
-    const login = await tiimeLogin(TIIME_EMAIL, TIIME_PASSWORD);
+    const token = await getAccessToken(supabase);
+    const companies = await fetchCompanies(token);
     const companyId =
-      Deno.env.get("TIIME_COMPANY_ID") ?? String(login.companies?.[0]?.id ?? "");
+      Deno.env.get("TIIME_COMPANY_ID") ?? String(companies?.[0]?.id ?? "");
     if (!companyId) throw new Error("Tiime companyId introuvable");
 
     // Build payload matching Tiime's /invoices schema (captured from web UI).
@@ -258,7 +317,7 @@ Deno.serve(async (req) => {
       status: "draft",
     };
 
-    const created = await tiimeCreateInvoice(login.token, companyId, payload);
+    const created = await tiimeCreateInvoice(token, companyId, payload);
     const tiimeId = String(created?.id ?? "");
     const url = created?.public_url ?? created?.url ?? "";
 

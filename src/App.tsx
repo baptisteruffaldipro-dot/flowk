@@ -26,6 +26,7 @@ import Questionnaires from "./pages/Questionnaires";
 import QuestionnaireDetail from "./pages/QuestionnaireDetail";
 import QuestionnairePublic from "./pages/QuestionnairePublic";
 import TelegramSettings from "./pages/TelegramSettings";
+import TiimeSettings from "./pages/TiimeSettings";
 import Leads from "./pages/Leads";
 import BrandStrategy from "./pages/BrandStrategy";
 import BrandStrategies from "./pages/BrandStrategies";
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/questionnaires" element={<Questionnaires />} />
               <Route path="/questionnaires/:id" element={<QuestionnaireDetail />} />
               <Route path="/telegram" element={<TelegramSettings />} />
+              <Route path="/parametres/tiime" element={<TiimeSettings />} />
               <Route path="/leads" element={<Leads />} />
               <Route path="/strategies" element={<BrandStrategies />} />
               <Route path="/strategie/:id" element={<BrandStrategy />} />
