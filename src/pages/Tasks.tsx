@@ -889,6 +889,25 @@ export default function Tasks() {
     await load();
   };
 
+  const completeTask = async (task: any, action: "bat" | "print" | "invoice" | "archive") => {
+    if (action === "bat") {
+      if (task.bat_id) {
+        toast.info("Cette tâche a déjà un BAT lié");
+        return;
+      }
+      setBatForTask(task);
+    } else if (action === "print") {
+      setPrintForTask(task);
+    } else if (action === "invoice") {
+      setTiimeForTask(task);
+    } else if (action === "archive") {
+      const { error } = await supabase.from("tasks").update({ status: "archive" } as any).eq("id", task.id);
+      if (error) return toast.error(error.message);
+      toast.success("Tâche archivée");
+      load();
+    }
+  };
+
   const filteredProjects = projects.filter((p) => !form.client_id || p.client_id === form.client_id);
 
   const q = search.trim().toLowerCase();
