@@ -8,12 +8,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText, Link2, Pencil, Trash2, CalendarClock, Send, ExternalLink } from "lucide-react";
+import { Plus, FileText, Link2, Pencil, Trash2, CalendarClock, ClipboardCopy } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { fmtMoney, INVOICE_STATUS_LABEL } from "@/lib/format";
 import InstallmentsManager from "@/components/InstallmentsManager";
-import { getFunctionErrorMessage } from "@/lib/function-errors";
+import NewTiimeInvoiceDialog from "@/components/NewTiimeInvoiceDialog";
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -22,6 +22,7 @@ export default function Invoices() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [installmentsFor, setInstallmentsFor] = useState<any | null>(null);
+  const [draftFor, setDraftFor] = useState<any | null>(null);
   const [form, setForm] = useState<any>({
     label: "", client_id: "", status: "a_facturer",
     billing_type: "forfait", amount: "", hours: "", hourly_rate: "", questionnaire_id: "",
@@ -130,23 +131,18 @@ export default function Invoices() {
     load();
   };
 
-  const [syncingId, setSyncingId] = useState<string | null>(null);
-  const sendToTiime = async (invoice: any) => {
-    setSyncingId(invoice.id);
-    try {
-      const { data, error } = await supabase.functions.invoke("tiime-create-invoice", {
-        body: { invoice_id: invoice.id },
-      });
-      if (error || (data as any)?.error) {
-        throw new Error(await getFunctionErrorMessage(error, data, "Échec de la synchro Tiime"));
-      }
-      toast.success("Facture créée dans Tiime");
-      load();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Échec de la synchro Tiime");
-    } finally {
-      setSyncingId(null);
-    }
+  const openDraft = (invoice: any) => {
+    setDraftFor({
+      // shape compatible avec le dialog (task-like)
+      id: invoice.id,
+      title: invoice.label,
+      client_id: invoice.client_id,
+      billing_type: invoice.billing_type ?? "forfait",
+      flat_amount: Number(invoice.amount ?? 0),
+      hourly_rate: invoice.hourly_rate ?? null,
+      total_minutes: invoice.hours ? Number(invoice.hours) * 60 : 0,
+      _invoice: { id: invoice.id, label: invoice.label, amount: Number(invoice.amount ?? 0) },
+    });
   };
 
   const editFilteredQuestionnaires = editing?.client_id
