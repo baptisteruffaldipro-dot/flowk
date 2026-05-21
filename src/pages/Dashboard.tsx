@@ -288,7 +288,7 @@ function SplitStatCard({ label, value, presta, bien }: { label: string; value: s
 function TodayBoard({ tasks, printOrders }: { tasks: Task[]; printOrders: Order[] }) {
   const today = new Date().toISOString().slice(0, 10);
   const isToday = (t: Task) => t.status === "aujourdhui" || t.deadline === today;
-  const isOverdue = (t: Task) => !!t.deadline && t.deadline < today && t.status !== "envoye" && t.status !== "archive";
+  const isOverdue = (t: Task) => !!t.deadline && t.deadline < today && !["envoye", "a_facturer", "facture_envoyee", "facturee", "payee", "archive"].includes(t.status);
 
   const todayTasks = tasks.filter(isToday);
   const overdueTasks = tasks.filter((t) => isOverdue(t) && !isToday(t));
