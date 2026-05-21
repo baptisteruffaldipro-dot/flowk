@@ -440,10 +440,12 @@ export default function TaskDetail() {
             }}
           />
         </Card>
-        <Card className="p-4 min-w-0">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Deadline</div>
-          <Input type="date" value={task.deadline ?? ""} onChange={(e) => updateField({ deadline: e.target.value || null })} className="mt-2 w-full min-w-0" />
-        </Card>
+        {!["envoye", "a_facturer", "facture_envoyee", "facturee", "payee", "archive"].includes(task.status) && (
+          <Card className="p-4 min-w-0">
+            <div className="text-xs text-muted-foreground uppercase tracking-wider">Deadline</div>
+            <Input type="date" value={task.deadline ?? ""} onChange={(e) => updateField({ deadline: e.target.value || null })} className="mt-2 w-full min-w-0" />
+          </Card>
+        )}
       </div>
 
       <Card className="p-4 mb-4">
