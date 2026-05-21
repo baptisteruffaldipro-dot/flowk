@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
+import ClientSelectField from "@/components/ClientSelectField";
 
 export default function PrintOrders() {
   const [bats, setBats] = useState<any[]>([]);
@@ -223,10 +224,12 @@ export default function PrintOrders() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Client *</Label>
-                  <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <ClientSelectField
+                    value={form.client_id}
+                    onChange={(v) => setForm({ ...form, client_id: v })}
+                    clients={clients}
+                    onClientCreated={(c) => setClients((prev) => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)))}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Quantité</Label>
