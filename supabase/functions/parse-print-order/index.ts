@@ -40,31 +40,39 @@ Deno.serve(async (req) => {
     if (text.length > 12000) return json({ error: 'text too long' }, 400)
 
     const system = `Tu es un assistant OCR + extraction qui lit une commande d'impression depuis un texte brut (copié-collé d'un site d'imprimeur, devis, email, etc.) ou une capture d'écran.
- Tu DOIS répondre UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, avec EXACTEMENT ces clés (toutes optionnelles, mets null si inconnu). Ne réponds jamais avec un tableau : si plusieurs lignes/produits sont visibles, regroupe-les dans une seule commande :
+Tu DOIS répondre UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, avec EXACTEMENT ces clés :
 {
-  "description": string|null,
   "reference": string|null,
-  "quantity": number|null,
-  "format": string|null,
-  "grammage": string|null,
-  "support": string|null,
-  "colors": string|null,
-  "finitions": string|null,
   "observations": string|null,
-  "amount": number|null
+  "amount": number|null,
+  "products": [
+    {
+      "description": string|null,
+      "quantity": number|null,
+      "format": string|null,
+      "grammage": string|null,
+      "support": string|null,
+      "colors": string|null,
+      "finitions": string|null,
+      "amount": number|null
+    }
+  ]
 }
 
 Règles :
- - "description" : libellé court et clair du produit imprimé (ex: "Cartes de visite", "Flyer A5 recto-verso"). Si plusieurs lignes proches existent, synthétise (ex: "Enseigne vitres").
-- "reference" : numéro de commande / devis / référence interne de l'imprimeur si présent.
- - "quantity" : nombre d'exemplaires/unités total visible (entier). Si plusieurs lignes affichent 7 unités et 4 unités, retourne 11.
- - "format" : dimensions (ex: "A4", "85 × 55 mm", "10 × 21 cm"). S'il y en a plusieurs, mets les dimensions principales séparées par des virgules ou null si trop nombreuses.
-- "grammage" : grammage du papier (ex: "350 g/m²", "170 g").
-- "support" : type de papier/support (ex: "Couché brillant", "Offset", "Carton").
-- "colors" : impression couleur (ex: "Quadri recto-verso", "Pantone 485 C", "Noir recto").
-- "finitions" : finitions/options (ex: "Pelliculage mat", "Vernis sélectif", "Coins arrondis").
- - "observations" : remarques utiles non couvertes ailleurs. Pour les captures avec plusieurs lignes, détaille les lignes, vues, dimensions et quantités ici.
- - "amount" : montant TTC en euros (nombre positif, sans symbole). Si seulement HT visible, prends le HT. Si plusieurs montants de ligne sont visibles et aucun total n'est affiché, additionne-les. Si les montants sont affichés négatifs (ex: -210,00), retourne leur valeur positive.
+- "products" : UN OBJET PAR LIGNE/PRODUIT distinct visible dans la commande. Si la capture montre 3 lignes (ex: flyers + cartes + affiches, ou microperforé + étiquettes), retourne 3 objets — JAMAIS un seul produit fusionné. Si un seul produit est visible, retourne un tableau d'un seul objet.
+- Pour chaque produit :
+  • "description" : libellé court et clair (ex: "Cartes de visite 85×55mm", "Flyer A5 recto-verso", "Microperforé 110×96cm").
+  • "quantity" : nombre d'exemplaires de CETTE ligne uniquement (entier).
+  • "format" : dimensions de CETTE ligne (ex: "A4", "85 × 55 mm").
+  • "grammage" : grammage du papier (ex: "350 g/m²", "170 g").
+  • "support" : type de papier/support (ex: "Couché brillant", "Polymère blanc").
+  • "colors" : impression (ex: "Quadri R°/V°", "Pantone 485 C").
+  • "finitions" : finitions/options (ex: "Pelliculage mat", "Coins carrés").
+  • "amount" : montant HT/TTC de cette ligne en euros (positif, sans symbole). Null si seul un total global est visible.
+- "reference" : numéro de commande / devis / référence interne de l'imprimeur si présent (commun à toute la commande).
+- "observations" : remarques globales utiles non couvertes ailleurs (livraison, délais, conditions).
+- "amount" : montant TOTAL de la commande en euros (positif). Si seulement les lignes ont un montant, additionne-les. Si seulement HT visible, prends le HT. Les montants négatifs (ex: -210,00) doivent être interprétés comme positifs.
 - Réponds en français pour les valeurs textuelles.`
 
     const userContent: any[] = []
@@ -106,17 +114,36 @@ Règles :
       }
     }
 
+    const str = (v: any) => (typeof v === 'string' && v.trim() ? v : null)
+    const num = (v: any) => (Number.isFinite(Number(v)) ? Number(v) : null)
+    const int = (v: any) => (Number.isFinite(Number(v)) ? Math.round(Number(v)) : null)
+
+    const productsRaw = Array.isArray(parsed.products) ? parsed.products : []
+    const products = productsRaw.map((p: any) => ({
+      description: str(p?.description),
+      quantity: int(p?.quantity),
+      format: str(p?.format),
+      grammage: str(p?.grammage),
+      support: str(p?.support),
+      colors: str(p?.colors),
+      finitions: str(p?.finitions),
+      amount: num(p?.amount),
+    })).filter((p: any) => p.description || p.quantity || p.format || p.amount)
+
+    // Backward-compatible main fields = first product (if any)
+    const first = products[0] ?? {}
     const out = {
-      description: typeof parsed.description === 'string' ? parsed.description : null,
-      reference: typeof parsed.reference === 'string' ? parsed.reference : null,
-      quantity: Number.isFinite(Number(parsed.quantity)) ? Math.round(Number(parsed.quantity)) : null,
-      format: typeof parsed.format === 'string' ? parsed.format : null,
-      grammage: typeof parsed.grammage === 'string' ? parsed.grammage : null,
-      support: typeof parsed.support === 'string' ? parsed.support : null,
-      colors: typeof parsed.colors === 'string' ? parsed.colors : null,
-      finitions: typeof parsed.finitions === 'string' ? parsed.finitions : null,
-      observations: typeof parsed.observations === 'string' ? parsed.observations : null,
-      amount: Number.isFinite(Number(parsed.amount)) ? Number(parsed.amount) : null,
+      description: first.description ?? str(parsed.description),
+      reference: str(parsed.reference),
+      quantity: first.quantity ?? int(parsed.quantity),
+      format: first.format ?? str(parsed.format),
+      grammage: first.grammage ?? str(parsed.grammage),
+      support: first.support ?? str(parsed.support),
+      colors: first.colors ?? str(parsed.colors),
+      finitions: first.finitions ?? str(parsed.finitions),
+      observations: str(parsed.observations),
+      amount: num(parsed.amount) ?? (products.length ? products.reduce((s: number, p: any) => s + (p.amount ?? 0), 0) : null),
+      products,
     }
 
     return json(out)

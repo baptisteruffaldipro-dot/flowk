@@ -124,7 +124,18 @@ export default function PrintOrders() {
         observations: data.observations ?? prev.observations,
         amount: data.amount != null ? String(data.amount) : prev.amount,
       }));
-      toast.success("Champs remplis depuis la capture");
+      const extras = Array.isArray(data.products) ? data.products.slice(1) : [];
+      if (extras.length > 0) {
+        setProducts(extras.map((p: any) => ({
+          description: p.description ?? "",
+          quantity: p.quantity != null ? String(p.quantity) : "",
+          format: p.format ?? "",
+          support: p.support ?? "",
+          finitions: p.finitions ?? "",
+          amount: p.amount != null ? String(p.amount) : "",
+        })));
+      }
+      toast.success(extras.length > 0 ? `${extras.length + 1} produits détectés` : "Champs remplis depuis la capture");
     } catch (e: any) {
       toast.error(e?.message ?? "Analyse impossible");
     } finally {
@@ -153,7 +164,18 @@ export default function PrintOrders() {
         observations: data.observations ?? prev.observations,
         amount: data.amount != null ? String(data.amount) : prev.amount,
       }));
-      toast.success("Champs remplis depuis la note");
+      const extras = Array.isArray(data.products) ? data.products.slice(1) : [];
+      if (extras.length > 0) {
+        setProducts(extras.map((p: any) => ({
+          description: p.description ?? "",
+          quantity: p.quantity != null ? String(p.quantity) : "",
+          format: p.format ?? "",
+          support: p.support ?? "",
+          finitions: p.finitions ?? "",
+          amount: p.amount != null ? String(p.amount) : "",
+        })));
+      }
+      toast.success(extras.length > 0 ? `${extras.length + 1} produits détectés` : "Champs remplis depuis la note");
     } catch (e: any) {
       toast.error(e?.message ?? "Analyse impossible");
     } finally {
