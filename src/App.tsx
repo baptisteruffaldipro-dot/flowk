@@ -34,6 +34,8 @@ import BrandStrategyPublic from "./pages/BrandStrategyPublic";
 import LogoPresentations from "./pages/LogoPresentations";
 import LogoPresentation from "./pages/LogoPresentation";
 import LogoPresentationPublic from "./pages/LogoPresentationPublic";
+import SocialMedia from "./pages/SocialMedia";
+import SocialMediaClient from "./pages/SocialMediaClient";
 import ClientPortal from "./pages/ClientPortal";
 import PortalTokenLanding from "./pages/PortalTokenLanding";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
@@ -85,6 +87,8 @@ const App = () => (
               <Route path="/strategie/:id" element={<BrandStrategy />} />
               <Route path="/logos" element={<LogoPresentations />} />
               <Route path="/logo/:id" element={<LogoPresentation />} />
+              <Route path="/social" element={<SocialMedia />} />
+              <Route path="/social/:clientId" element={<SocialMediaClient />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
