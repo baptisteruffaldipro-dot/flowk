@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, CalendarCheck, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, CalendarCheck, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ const nav: NavItem[] = [
   { to: "/questionnaires", icon: ClipboardList, label: "Questionnaires" },
   { to: "/strategies", icon: Sparkle, label: "Stratégies de marque" },
   { to: "/logos", icon: Palette, label: "Présentations logo" },
+  { to: "/social", icon: Share2, label: "Réseaux sociaux" },
   { to: "/impressions", icon: Printer, label: "Impressions" },
   { to: "/bats", icon: FileCheck2, label: "BAT" },
   { to: "/facturation", icon: Receipt, label: "Facturation" },
