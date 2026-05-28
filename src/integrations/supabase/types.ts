@@ -1046,6 +1046,135 @@ export type Database = {
           },
         ]
       }
+      social_links: {
+        Row: {
+          category: string | null
+          client_id: string
+          created_at: string
+          id: string
+          label: string
+          position: number
+          url: string
+        }
+        Insert: {
+          category?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          label: string
+          position?: number
+          url: string
+        }
+        Update: {
+          category?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          position?: number
+          url?: string
+        }
+        Relationships: []
+      }
+      social_posts: {
+        Row: {
+          caption: string | null
+          checklist: Json
+          client_id: string
+          created_at: string
+          event_name: string | null
+          format: Database["public"]["Enums"]["social_format"]
+          id: string
+          media: Json
+          notes: string | null
+          pillar: string | null
+          platforms: Database["public"]["Enums"]["social_platform"][]
+          published_at: string | null
+          scheduled_at: string | null
+          status: Database["public"]["Enums"]["social_post_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          checklist?: Json
+          client_id: string
+          created_at?: string
+          event_name?: string | null
+          format?: Database["public"]["Enums"]["social_format"]
+          id?: string
+          media?: Json
+          notes?: string | null
+          pillar?: string | null
+          platforms?: Database["public"]["Enums"]["social_platform"][]
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["social_post_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          checklist?: Json
+          client_id?: string
+          created_at?: string
+          event_name?: string | null
+          format?: Database["public"]["Enums"]["social_format"]
+          id?: string
+          media?: Json
+          notes?: string | null
+          pillar?: string | null
+          platforms?: Database["public"]["Enums"]["social_platform"][]
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["social_post_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      social_strategies: {
+        Row: {
+          axes: Json
+          client_id: string
+          content: string | null
+          created_at: string
+          id: string
+          objective: string | null
+          pillars: Json
+          rhythm: Json
+          tone: string | null
+          updated_at: string
+          weekly_template: Json
+        }
+        Insert: {
+          axes?: Json
+          client_id: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          objective?: string | null
+          pillars?: Json
+          rhythm?: Json
+          tone?: string | null
+          updated_at?: string
+          weekly_template?: Json
+        }
+        Update: {
+          axes?: Json
+          client_id?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          objective?: string | null
+          pillars?: Json
+          rhythm?: Json
+          tone?: string | null
+          updated_at?: string
+          weekly_template?: Json
+        }
+        Relationships: []
+      }
       subtasks: {
         Row: {
           created_at: string
@@ -1571,6 +1700,28 @@ export type Database = {
         | "multi_projets"
       questionnaire_status: "brouillon" | "envoye" | "complete" | "archive"
       questionnaire_template: "logo" | "print" | "web" | "rapide" | "note"
+      social_format:
+        | "reel"
+        | "post"
+        | "carrousel"
+        | "story"
+        | "linkedin"
+        | "video"
+        | "autre"
+      social_platform:
+        | "instagram"
+        | "facebook"
+        | "linkedin"
+        | "tiktok"
+        | "pinterest"
+        | "autre"
+      social_post_status:
+        | "idee"
+        | "a_faire"
+        | "pret"
+        | "programme"
+        | "publie"
+        | "annule"
       task_priority:
         | "en_priorite"
         | "secondaire"
@@ -1807,6 +1958,31 @@ export const Constants = {
       ],
       questionnaire_status: ["brouillon", "envoye", "complete", "archive"],
       questionnaire_template: ["logo", "print", "web", "rapide", "note"],
+      social_format: [
+        "reel",
+        "post",
+        "carrousel",
+        "story",
+        "linkedin",
+        "video",
+        "autre",
+      ],
+      social_platform: [
+        "instagram",
+        "facebook",
+        "linkedin",
+        "tiktok",
+        "pinterest",
+        "autre",
+      ],
+      social_post_status: [
+        "idee",
+        "a_faire",
+        "pret",
+        "programme",
+        "publie",
+        "annule",
+      ],
       task_priority: [
         "en_priorite",
         "secondaire",

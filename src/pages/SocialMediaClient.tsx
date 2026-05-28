@@ -1,0 +1,430 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import PageHeader from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Plus, ChevronLeft, ChevronRight, ExternalLink, Trash2, Save } from "lucide-react";
+import { toast } from "sonner";
+import {
+  addMonths, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek,
+  eachDayOfInterval, parseISO,
+} from "date-fns";
+import { fr } from "date-fns/locale";
+import SocialPostDialog, { SocialPost } from "@/components/SocialPostDialog";
+
+type Strategy = {
+  id?: string;
+  client_id: string;
+  objective: string | null;
+  axes: { name: string; objective: string; contents: string }[];
+  pillars: { name: string; description: string }[];
+  tone: string | null;
+  rhythm: { platform: string; frequency: string }[];
+  weekly_template: { day: string; type: string }[];
+  content: string | null;
+};
+
+type LinkRow = { id?: string; client_id: string; label: string; url: string; category: string | null };
+
+const STATUS_LABELS: Record<string, string> = {
+  idee: "Idée", a_faire: "À faire", pret: "Prêt", programme: "Programmé", publie: "Publié", annule: "Annulé",
+};
+const STATUS_COLORS: Record<string, string> = {
+  idee: "bg-slate-400", a_faire: "bg-amber-500", pret: "bg-sky-500",
+  programme: "bg-violet-500", publie: "bg-emerald-500", annule: "bg-rose-500",
+};
+
+export default function SocialMediaClient() {
+  const { clientId } = useParams<{ clientId: string }>();
+  const [client, setClient] = useState<{ id: string; name: string } | null>(null);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [strategy, setStrategy] = useState<Strategy | null>(null);
+  const [links, setLinks] = useState<LinkRow[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Partial<SocialPost> | undefined>();
+
+  const reload = async () => {
+    if (!clientId) return;
+    const [{ data: c }, { data: ps }, { data: st }, { data: ls }] = await Promise.all([
+      supabase.from("clients").select("id,name").eq("id", clientId).maybeSingle(),
+      supabase.from("social_posts").select("*").eq("client_id", clientId).order("scheduled_at", { ascending: true, nullsFirst: false }),
+      supabase.from("social_strategies").select("*").eq("client_id", clientId).maybeSingle(),
+      supabase.from("social_links").select("*").eq("client_id", clientId).order("position"),
+    ]);
+    setClient(c as any);
+    setPosts(ps ?? []);
+    setStrategy((st as any) ?? null);
+    setLinks((ls ?? []) as any);
+  };
+
+  useEffect(() => { reload(); }, [clientId]);
+
+  const openNew = (date?: Date) => {
+    setEditing({
+      client_id: clientId!,
+      scheduled_at: date ? new Date(date.setHours(10, 0, 0, 0)).toISOString() : null,
+    });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (p: any) => {
+    setEditing(p);
+    setDialogOpen(true);
+  };
+
+  if (!client) return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
+
+  return (
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <Link to="/social" className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground mb-3">
+        <ArrowLeft className="h-3 w-3 mr-1" /> Réseaux sociaux
+      </Link>
+      <PageHeader
+        title={client.name}
+        description="Calendrier éditorial, posts, stratégie et ressources"
+        actions={<Button onClick={() => openNew()}><Plus className="h-4 w-4 mr-1" /> Nouveau post</Button>}
+      />
+
+      <Tabs defaultValue="calendar">
+        <TabsList>
+          <TabsTrigger value="calendar">Calendrier</TabsTrigger>
+          <TabsTrigger value="posts">Posts</TabsTrigger>
+          <TabsTrigger value="strategy">Stratégie</TabsTrigger>
+          <TabsTrigger value="links">Liens</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="calendar" className="mt-4">
+          <CalendarView posts={posts} onDayClick={openNew} onPostClick={openEdit} />
+        </TabsContent>
+
+        <TabsContent value="posts" className="mt-4">
+          <PostsList posts={posts} onPostClick={openEdit} />
+        </TabsContent>
+
+        <TabsContent value="strategy" className="mt-4">
+          <StrategyEditor clientId={clientId!} strategy={strategy} onSaved={reload} />
+        </TabsContent>
+
+        <TabsContent value="links" className="mt-4">
+          <LinksEditor clientId={clientId!} links={links} onSaved={reload} />
+        </TabsContent>
+      </Tabs>
+
+      <SocialPostDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        clientId={clientId!}
+        initial={editing}
+        onSaved={reload}
+      />
+    </div>
+  );
+}
+
+/* ---------- Calendar ---------- */
+function CalendarView({ posts, onDayClick, onPostClick }: { posts: any[]; onDayClick: (d: Date) => void; onPostClick: (p: any) => void }) {
+  const [cursor, setCursor] = useState(new Date());
+  const days = useMemo(() => {
+    const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
+    const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
+    return eachDayOfInterval({ start, end });
+  }, [cursor]);
+
+  const postsByDay = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    posts.forEach((p) => {
+      if (!p.scheduled_at) return;
+      const k = format(parseISO(p.scheduled_at), "yyyy-MM-dd");
+      (map[k] ||= []).push(p);
+    });
+    return map;
+  }, [posts]);
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, -1))}><ChevronLeft className="h-4 w-4" /></Button>
+            <div className="text-base font-semibold capitalize min-w-[160px] text-center">{format(cursor, "LLLL yyyy", { locale: fr })}</div>
+            <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, 1))}><ChevronRight className="h-4 w-4" /></Button>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setCursor(new Date())}>Aujourd'hui</Button>
+        </div>
+        <div className="grid grid-cols-7 text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+          {["lun", "mar", "mer", "jeu", "ven", "sam", "dim"].map((d) => (
+            <div key={d} className="px-2 py-1">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((d) => {
+            const k = format(d, "yyyy-MM-dd");
+            const dayPosts = postsByDay[k] ?? [];
+            const isCurMonth = isSameMonth(d, cursor);
+            const isToday = isSameDay(d, new Date());
+            return (
+              <div
+                key={k}
+                onClick={() => onDayClick(d)}
+                className={`min-h-[90px] p-1.5 rounded border cursor-pointer hover:border-primary/50 transition-colors ${isCurMonth ? "bg-card" : "bg-secondary/30 opacity-60"}`}
+              >
+                <div className={`text-[11px] font-medium mb-1 ${isToday ? "text-primary" : ""}`}>{format(d, "d")}</div>
+                <div className="space-y-0.5">
+                  {dayPosts.slice(0, 3).map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={(e) => { e.stopPropagation(); onPostClick(p); }}
+                      className="text-[10px] px-1 py-0.5 rounded bg-secondary hover:bg-secondary/80 truncate flex items-center gap-1"
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_COLORS[p.status] ?? "bg-slate-400"}`} />
+                      <span className="truncate">{p.title}</span>
+                    </div>
+                  ))}
+                  {dayPosts.length > 3 && <div className="text-[10px] text-muted-foreground">+{dayPosts.length - 3}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-muted-foreground">
+          {Object.entries(STATUS_LABELS).map(([k, l]) => (
+            <div key={k} className="flex items-center gap-1">
+              <span className={`h-2 w-2 rounded-full ${STATUS_COLORS[k]}`} /> {l}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------- Posts list ---------- */
+function PostsList({ posts, onPostClick }: { posts: any[]; onPostClick: (p: any) => void }) {
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const filtered = posts.filter((p) => statusFilter === "all" || p.status === statusFilter);
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              {Object.entries(STATUS_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <div className="text-xs text-muted-foreground ml-auto">{filtered.length} post{filtered.length > 1 ? "s" : ""}</div>
+        </div>
+        <div className="divide-y">
+          {filtered.length === 0 && <div className="text-sm text-muted-foreground py-6 text-center">Aucun post</div>}
+          {filtered.map((p) => (
+            <div key={p.id} onClick={() => onPostClick(p)} className="py-2.5 cursor-pointer hover:bg-secondary/40 px-2 -mx-2 rounded flex items-start gap-3">
+              <span className={`h-2 w-2 rounded-full mt-2 shrink-0 ${STATUS_COLORS[p.status]}`} />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium truncate">{p.title}</div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                  {p.scheduled_at && <span className="text-[11px] text-muted-foreground">{format(parseISO(p.scheduled_at), "EEE d MMM yyyy HH:mm", { locale: fr })}</span>}
+                  <Badge variant="outline" className="text-[10px] py-0">{p.format}</Badge>
+                  {p.platforms?.map((pl: string) => <Badge key={pl} variant="secondary" className="text-[10px] py-0">{pl}</Badge>)}
+                  {p.pillar && <Badge variant="outline" className="text-[10px] py-0">{p.pillar}</Badge>}
+                </div>
+              </div>
+              <Badge variant="outline" className="text-[10px] shrink-0">{STATUS_LABELS[p.status]}</Badge>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------- Strategy ---------- */
+function StrategyEditor({ clientId, strategy, onSaved }: { clientId: string; strategy: Strategy | null; onSaved: () => void }) {
+  const empty: Strategy = {
+    client_id: clientId,
+    objective: "",
+    axes: [],
+    pillars: [],
+    tone: "",
+    rhythm: [],
+    weekly_template: [],
+    content: "",
+  };
+  const [s, setS] = useState<Strategy>(strategy ?? empty);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { setS(strategy ?? empty); /* eslint-disable-next-line */ }, [strategy?.id, clientId]);
+
+  const save = async () => {
+    setBusy(true);
+    const payload = { ...s, client_id: clientId };
+    const res = await supabase.from("social_strategies").upsert(payload, { onConflict: "client_id" });
+    setBusy(false);
+    if (res.error) return toast.error(res.error.message);
+    toast.success("Stratégie enregistrée");
+    onSaved();
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-5">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Objectif global</Label>
+          <Textarea rows={3} value={s.objective ?? ""} onChange={(e) => setS({ ...s, objective: e.target.value })} />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs">Ligne éditoriale / ton</Label>
+          <Textarea rows={3} value={s.tone ?? ""} onChange={(e) => setS({ ...s, tone: e.target.value })} />
+        </div>
+
+        <RepeaterAxes value={s.axes} onChange={(v) => setS({ ...s, axes: v })} />
+        <RepeaterPillars value={s.pillars} onChange={(v) => setS({ ...s, pillars: v })} />
+        <RepeaterRhythm value={s.rhythm} onChange={(v) => setS({ ...s, rhythm: v })} />
+        <RepeaterWeekly value={s.weekly_template} onChange={(v) => setS({ ...s, weekly_template: v })} />
+
+        <div className="space-y-1.5">
+          <Label className="text-xs">Notes libres / stratégie détaillée</Label>
+          <Textarea rows={10} value={s.content ?? ""} onChange={(e) => setS({ ...s, content: e.target.value })} />
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={busy}><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RepeaterAxes({ value, onChange }: { value: Strategy["axes"]; onChange: (v: Strategy["axes"]) => void }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Axes</Label>
+        <Button type="button" variant="outline" size="sm" onClick={() => onChange([...value, { name: "", objective: "", contents: "" }])}><Plus className="h-3 w-3 mr-1" /> Ajouter</Button>
+      </div>
+      {value.map((a, i) => (
+        <div key={i} className="grid grid-cols-12 gap-2 p-2 border rounded">
+          <Input className="col-span-3" placeholder="Nom" value={a.name} onChange={(e) => onChange(value.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+          <Input className="col-span-4" placeholder="Objectif" value={a.objective} onChange={(e) => onChange(value.map((x, j) => j === i ? { ...x, objective: e.target.value } : x))} />
+          <Input className="col-span-4" placeholder="Contenus" value={a.contents} onChange={(e) => onChange(value.map((x, j) => j === i ? { ...x, contents: e.target.value } : x))} />
+          <Button type="button" variant="ghost" size="icon" className="col-span-1" onClick={() => onChange(value.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+function RepeaterPillars({ value, onChange }: { value: Strategy["pillars"]; onChange: (v: Strategy["pillars"]) => void }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Piliers de contenu</Label>
+        <Button type="button" variant="outline" size="sm" onClick={() => onChange([...value, { name: "", description: "" }])}><Plus className="h-3 w-3 mr-1" /> Ajouter</Button>
+      </div>
+      {value.map((p, i) => (
+        <div key={i} className="grid grid-cols-12 gap-2 p-2 border rounded">
+          <Input className="col-span-3" placeholder="Nom" value={p.name} onChange={(e) => onChange(value.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+          <Input className="col-span-8" placeholder="Description" value={p.description} onChange={(e) => onChange(value.map((x, j) => j === i ? { ...x, description: e.target.value } : x))} />
+          <Button type="button" variant="ghost" size="icon" className="col-span-1" onClick={() => onChange(value.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+function RepeaterRhythm({ value, onChange }: { value: Strategy["rhythm"]; onChange: (v: Strategy["rhythm"]) => void }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Rythme de publication</Label>
+        <Button type="button" variant="outline" size="sm" onClick={() => onChange([...value, { platform: "", frequency: "" }])}><Plus className="h-3 w-3 mr-1" /> Ajouter</Button>
+      </div>
+      {value.map((r, i) => (
+        <div key={i} className="grid grid-cols-12 gap-2 p-2 border rounded">
+          <Input className="col-span-4" placeholder="Plateforme / format" value={r.platform} onChange={(e) => onChange(value.map((x, j) => j === i ? { ...x, platform: e.target.value } : x))} />
+          <Input className="col-span-7" placeholder="Fréquence" value={r.frequency} onChange={(e) => onChange(value.map((x, j) => j === i ? { ...x, frequency: e.target.value } : x))} />
+          <Button type="button" variant="ghost" size="icon" className="col-span-1" onClick={() => onChange(value.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+function RepeaterWeekly({ value, onChange }: { value: Strategy["weekly_template"]; onChange: (v: Strategy["weekly_template"]) => void }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Planning hebdomadaire type</Label>
+        <Button type="button" variant="outline" size="sm" onClick={() => onChange([...value, { day: "", type: "" }])}><Plus className="h-3 w-3 mr-1" /> Ajouter</Button>
+      </div>
+      {value.map((w, i) => (
+        <div key={i} className="grid grid-cols-12 gap-2 p-2 border rounded">
+          <Input className="col-span-3" placeholder="Jour" value={w.day} onChange={(e) => onChange(value.map((x, j) => j === i ? { ...x, day: e.target.value } : x))} />
+          <Input className="col-span-8" placeholder="Type de contenu" value={w.type} onChange={(e) => onChange(value.map((x, j) => j === i ? { ...x, type: e.target.value } : x))} />
+          <Button type="button" variant="ghost" size="icon" className="col-span-1" onClick={() => onChange(value.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Links ---------- */
+function LinksEditor({ clientId, links, onSaved }: { clientId: string; links: LinkRow[]; onSaved: () => void }) {
+  const [form, setForm] = useState<LinkRow>({ client_id: clientId, label: "", url: "", category: "" });
+
+  const add = async () => {
+    if (!form.label.trim() || !form.url.trim()) return toast.error("Label et URL requis");
+    const { error } = await supabase.from("social_links").insert({ ...form, position: links.length });
+    if (error) return toast.error(error.message);
+    setForm({ client_id: clientId, label: "", url: "", category: "" });
+    onSaved();
+  };
+
+  const remove = async (id?: string) => {
+    if (!id) return;
+    await supabase.from("social_links").delete().eq("id", id);
+    onSaved();
+  };
+
+  const grouped = links.reduce<Record<string, LinkRow[]>>((acc, l) => {
+    const k = l.category || "Général";
+    (acc[k] ||= []).push(l);
+    return acc;
+  }, {});
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-4">
+        <div className="grid grid-cols-12 gap-2">
+          <Input className="col-span-3" placeholder="Catégorie" value={form.category ?? ""} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+          <Input className="col-span-3" placeholder="Label" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+          <Input className="col-span-5" placeholder="https://…" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
+          <Button className="col-span-1" onClick={add}><Plus className="h-4 w-4" /></Button>
+        </div>
+        {Object.keys(grouped).length === 0 && <div className="text-sm text-muted-foreground py-4 text-center">Aucun lien</div>}
+        {Object.entries(grouped).map(([cat, items]) => (
+          <div key={cat}>
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">{cat}</div>
+            <div className="divide-y">
+              {items.map((l) => (
+                <div key={l.id} className="py-2 flex items-center gap-2">
+                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">{l.label}</div>
+                    <a href={l.url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline truncate block">{l.url}</a>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => remove(l.id)}><Trash2 className="h-3 w-3" /></Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
