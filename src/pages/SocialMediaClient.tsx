@@ -92,13 +92,18 @@ export default function SocialMediaClient() {
         actions={<Button onClick={() => openNew()}><Plus className="h-4 w-4 mr-1" /> Nouveau post</Button>}
       />
 
-      <Tabs defaultValue="calendar">
+      <Tabs defaultValue="overview">
         <TabsList>
+          <TabsTrigger value="overview">Récapitulatif</TabsTrigger>
           <TabsTrigger value="calendar">Calendrier</TabsTrigger>
           <TabsTrigger value="posts">Posts</TabsTrigger>
           <TabsTrigger value="strategy">Stratégie</TabsTrigger>
           <TabsTrigger value="links">Liens</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="mt-4">
+          <OverviewView posts={posts} strategy={strategy} links={links} onPostClick={openEdit} />
+        </TabsContent>
 
         <TabsContent value="calendar" className="mt-4">
           <CalendarView posts={posts} onDayClick={openNew} onPostClick={openEdit} />
@@ -129,6 +134,149 @@ export default function SocialMediaClient() {
 }
 
 /* ---------- Calendar ---------- */
+function OverviewView({
+  posts, strategy, links, onPostClick,
+}: { posts: any[]; strategy: Strategy | null; links: LinkRow[]; onPostClick: (p: any) => void }) {
+  const now = Date.now();
+  const upcoming = posts
+    .filter((p) => p.scheduled_at && new Date(p.scheduled_at).getTime() >= now && p.status !== "publie" && p.status !== "annule")
+    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+  const next5 = upcoming.slice(0, 5);
+  const scheduledOnly = upcoming.filter((p) => p.status === "programme");
+
+  const counts: Record<string, number> = {};
+  posts.forEach((p) => { counts[p.status] = (counts[p.status] ?? 0) + 1; });
+
+  const linksByCat: Record<string, LinkRow[]> = {};
+  links.forEach((l) => { (linksByCat[l.category || "Autres"] ||= []).push(l); });
+
+  return (
+    <div className="grid lg:grid-cols-3 gap-4">
+      <Card className="lg:col-span-3">
+        <CardContent className="p-4 grid grid-cols-2 md:grid-cols-6 gap-3">
+          <Stat label="Total posts" value={posts.length} />
+          <Stat label="À venir" value={upcoming.length} />
+          <Stat label="Programmés" value={scheduledOnly.length} />
+          <Stat label="Idées" value={counts.idee ?? 0} />
+          <Stat label="À faire" value={counts.a_faire ?? 0} />
+          <Stat label="Publiés" value={counts.publie ?? 0} />
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Stratégie</h3>
+            {!strategy && <span className="text-xs text-muted-foreground">Aucune stratégie définie</span>}
+          </div>
+          {strategy?.objective && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Objectif</div>
+              <p className="text-sm whitespace-pre-wrap">{strategy.objective}</p>
+            </div>
+          )}
+          {strategy?.tone && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Ton</div>
+              <p className="text-sm whitespace-pre-wrap">{strategy.tone}</p>
+            </div>
+          )}
+          {strategy?.pillars && strategy.pillars.length > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Piliers</div>
+              <div className="flex flex-wrap gap-1.5">
+                {strategy.pillars.map((p, i) => (
+                  <Badge key={i} variant="secondary" title={p.description}>{p.name}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          {strategy?.rhythm && strategy.rhythm.length > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Rythme</div>
+              <ul className="text-sm space-y-0.5">
+                {strategy.rhythm.map((r, i) => (
+                  <li key={i} className="text-muted-foreground"><span className="text-foreground">{r.platform}</span> — {r.frequency}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4 space-y-2">
+          <h3 className="text-sm font-semibold mb-2">Prochaines dates</h3>
+          {next5.length === 0 && <div className="text-xs text-muted-foreground">Aucune date à venir</div>}
+          {next5.map((p) => (
+            <div key={p.id} onClick={() => onPostClick(p)} className="cursor-pointer hover:bg-secondary/40 -mx-1 px-1 py-1.5 rounded">
+              <div className="flex items-center gap-2">
+                <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${STATUS_COLORS[p.status] ?? "bg-slate-400"}`} />
+                <div className="text-xs font-medium truncate flex-1">{p.title}</div>
+              </div>
+              <div className="text-[11px] text-muted-foreground pl-3.5">
+                {format(parseISO(p.scheduled_at), "EEE d MMM HH:mm", { locale: fr })}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardContent className="p-4">
+          <h3 className="text-sm font-semibold mb-2">Posts programmés</h3>
+          {scheduledOnly.length === 0 && <div className="text-xs text-muted-foreground">Aucun post programmé</div>}
+          <div className="divide-y">
+            {scheduledOnly.slice(0, 10).map((p) => (
+              <div key={p.id} onClick={() => onPostClick(p)} className="py-2 cursor-pointer hover:bg-secondary/40 px-2 -mx-2 rounded flex items-start gap-2">
+                <span className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${STATUS_COLORS[p.status]}`} />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm truncate">{p.title}</div>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                    <span className="text-[11px] text-muted-foreground">{format(parseISO(p.scheduled_at), "d MMM HH:mm", { locale: fr })}</span>
+                    <Badge variant="outline" className="text-[10px] py-0">{p.format}</Badge>
+                    {p.platforms?.map((pl: string) => <Badge key={pl} variant="secondary" className="text-[10px] py-0">{pl}</Badge>)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-sm font-semibold">Liens utiles</h3>
+          {links.length === 0 && <div className="text-xs text-muted-foreground">Aucun lien</div>}
+          {Object.entries(linksByCat).map(([cat, ls]) => (
+            <div key={cat}>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">{cat}</div>
+              <div className="space-y-1">
+                {ls.map((l) => (
+                  <a key={l.id} href={l.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+                    <ExternalLink className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{l.label}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="text-center">
+      <div className="text-2xl font-semibold">{value}</div>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+/* ---------- Calendar (cont.) ---------- */
 function CalendarView({ posts, onDayClick, onPostClick }: { posts: any[]; onDayClick: (d: Date) => void; onPostClick: (p: any) => void }) {
   const [cursor, setCursor] = useState(new Date());
   const days = useMemo(() => {
