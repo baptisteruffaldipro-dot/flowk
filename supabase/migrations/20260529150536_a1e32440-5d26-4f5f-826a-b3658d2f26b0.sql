@@ -1,0 +1,1 @@
+CREATE POLICY "admin reads leads" ON public.leads FOR SELECT TO authenticated USING (public.is_admin());
