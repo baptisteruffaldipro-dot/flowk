@@ -40,17 +40,21 @@ export default function SocialTasksAggregate({ compact = false }: { compact?: bo
 
   const reload = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("social_tasks")
-      .select("*, clients(id,name), social_posts(id,title)")
-      .order("due_date", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
+    const [{ data: ts, error }, { data: cs }] = await Promise.all([
+      supabase
+        .from("social_tasks")
+        .select("*, social_posts(id,title)")
+        .order("due_date", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false }),
+      supabase.from("clients").select("id,name"),
+    ]);
     setLoading(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    setTasks((data ?? []) as any);
+    const clientMap = new Map((cs ?? []).map((c: any) => [c.id, c]));
+    setTasks(((ts ?? []) as any[]).map((t) => ({ ...t, clients: clientMap.get(t.client_id) ?? null })));
   };
 
   useEffect(() => { reload(); }, []);
