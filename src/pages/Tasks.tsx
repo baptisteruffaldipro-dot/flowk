@@ -42,6 +42,62 @@ import {
 const STATUSES = ["a_faire", "aujourdhui", "envoye", "bat", "impression", "a_facturer", "archive"] as const;
 type Status = typeof STATUSES[number];
 
+const SOCIAL_STATUS_TO_KANBAN: Record<string, Status> = {
+  a_faire: "a_faire",
+  en_cours: "aujourdhui",
+  fait: "archive",
+};
+
+const SOCIAL_PRIORITY_LABEL: Record<string, string> = {
+  basse: "Basse",
+  normale: "Normale",
+  haute: "Haute",
+};
+const SOCIAL_PRIORITY_COLOR: Record<string, string> = {
+  basse: "bg-slate-100 text-slate-700 border-slate-300",
+  normale: "bg-blue-100 text-blue-700 border-blue-300",
+  haute: "bg-red-100 text-red-700 border-red-300",
+};
+
+function SocialKanbanCard({ task }: { task: any }) {
+  const navigate = useNavigate();
+  const overdue = task.due_date && task.status !== "fait" && new Date(task.due_date) < new Date(new Date().toDateString());
+  return (
+    <div className="group">
+      <Card
+        onClick={() => navigate(`/social/${task.client_id}`)}
+        className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg cursor-pointer"
+      >
+        <div className="flex items-start gap-2 mb-3">
+          <span className="text-base leading-none mt-0.5">📱</span>
+          <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
+            {task.title}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(task.clients?.name ?? "—")}`}>
+            {task.clients?.name ?? "Sans client"}
+          </Badge>
+          <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5 bg-purple-100 text-purple-700 border-purple-300">
+            Réseaux sociaux
+          </Badge>
+          {task.priority && task.priority !== "normale" && (
+            <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${SOCIAL_PRIORITY_COLOR[task.priority] ?? ""}`}>
+              {SOCIAL_PRIORITY_LABEL[task.priority]}
+            </Badge>
+          )}
+          {task.due_date && (
+            <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 inline-flex items-center gap-1 ${overdue ? "bg-red-100 text-red-700 border-red-300" : ""}`}>
+              <Calendar className="h-3 w-3" />
+              {fmtDate(task.due_date)}
+            </Badge>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function DeadlineBadge({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
   const [open, setOpen] = useState(false);
   return (
@@ -362,6 +418,7 @@ function KanbanCard({
 function KanbanColumn({
   status,
   tasks,
+  socialTasks,
   clients,
   onUpdate,
   dividers,
@@ -374,6 +431,7 @@ function KanbanColumn({
 }: {
   status: Status;
   tasks: any[];
+  socialTasks: any[];
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
   dividers: any[];
@@ -412,7 +470,7 @@ function KanbanColumn({
         <div className="flex items-center gap-2 mb-3 px-1">
           <span className="text-base leading-none">{meta.emoji}</span>
           <span className="text-sm font-semibold text-foreground flex-1 truncate">{STATUS_LABEL[status]}</span>
-          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length}</span>
+          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length + socialTasks.length}</span>
         </div>
         <div className="space-y-1 min-h-[80px]">
           <DropSlot id={`slot:${status}:0`} />
@@ -428,6 +486,11 @@ function KanbanColumn({
                 />
               )}
               <DropSlot id={`slot:${status}:${idx + 1}`} />
+            </div>
+          ))}
+          {socialTasks.map((st) => (
+            <div key={`st-${st.id}`} className="mt-1">
+              <SocialKanbanCard task={st} />
             </div>
           ))}
           {adding ? (
@@ -554,6 +617,7 @@ export default function Tasks() {
   const [projects, setProjects] = useState<any[]>([]);
   const [dividers, setDividers] = useState<any[]>([]);
   const [paidTaskIds, setPaidTaskIds] = useState<Set<string>>(new Set());
+  const [socialTasks, setSocialTasks] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -567,18 +631,25 @@ export default function Tasks() {
   });
 
   const load = async () => {
-    const [t, c, p, d, inv] = await Promise.all([
+    const [t, c, p, d, inv, st] = await Promise.all([
       supabase.from("tasks").select("*, clients(name), projects(name)").order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id"),
       supabase.from("kanban_dividers").select("*").order("position", { ascending: true }),
       supabase.from("invoices").select("task_id,status").eq("status", "payee").not("task_id", "is", null),
+      supabase.from("social_tasks" as any).select("*").order("created_at", { ascending: false }),
     ]);
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
     setProjects(p.data ?? []);
     setDividers(d.data ?? []);
     setPaidTaskIds(new Set(((inv.data as any[]) ?? []).map((r) => r.task_id)));
+    const clientMap = new Map((c.data ?? []).map((x: any) => [x.id, x]));
+    const enriched = ((st.data as any[]) ?? []).map((row) => ({
+      ...row,
+      clients: clientMap.get(row.client_id) ?? null,
+    }));
+    setSocialTasks(enriched);
   };
   useEffect(() => {
     load();
@@ -947,6 +1018,14 @@ export default function Tasks() {
       })
     : tasks;
 
+  const filteredSocialTasks = q
+    ? socialTasks.filter((t) => {
+        const h = [t.title, t.description, t.clients?.name, t.status, t.priority]
+          .filter(Boolean).join(" ").toLowerCase();
+        return h.includes(q);
+      })
+    : socialTasks;
+
   return (
     <div className="p-4 md:p-8">
       <PageHeader
@@ -1122,6 +1201,7 @@ export default function Tasks() {
                   key={s}
                   status={s}
                   tasks={filteredTasks.filter((t) => t.status === s)}
+                  socialTasks={filteredSocialTasks.filter((st) => SOCIAL_STATUS_TO_KANBAN[st.status] === s)}
                   clients={clients}
                   onUpdate={updateTask}
                   dividers={dividers.filter((d) => d.status === s)}
