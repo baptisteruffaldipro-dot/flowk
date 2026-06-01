@@ -26,6 +26,7 @@ import { computeTaskBilling } from "@/lib/billing";
 import NewBatDialog from "@/components/NewBatDialog";
 import NewTiimeInvoiceDialog from "@/components/NewTiimeInvoiceDialog";
 import NewPrintOrderDialog from "@/components/NewPrintOrderDialog";
+import SocialTasksAggregate from "@/components/SocialTasksAggregate";
 import {
   DndContext,
   DragEndEvent,
@@ -1069,6 +1070,7 @@ export default function Tasks() {
         <TabsList>
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
           <TabsTrigger value="list">Liste</TabsTrigger>
+          <TabsTrigger value="social">Réseaux sociaux</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="mt-4">
