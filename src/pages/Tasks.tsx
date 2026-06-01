@@ -418,6 +418,7 @@ function KanbanCard({
 function KanbanColumn({
   status,
   tasks,
+  socialTasks,
   clients,
   onUpdate,
   dividers,
@@ -430,6 +431,7 @@ function KanbanColumn({
 }: {
   status: Status;
   tasks: any[];
+  socialTasks: any[];
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
   dividers: any[];
@@ -468,7 +470,7 @@ function KanbanColumn({
         <div className="flex items-center gap-2 mb-3 px-1">
           <span className="text-base leading-none">{meta.emoji}</span>
           <span className="text-sm font-semibold text-foreground flex-1 truncate">{STATUS_LABEL[status]}</span>
-          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length}</span>
+          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length + socialTasks.length}</span>
         </div>
         <div className="space-y-1 min-h-[80px]">
           <DropSlot id={`slot:${status}:0`} />
@@ -484,6 +486,11 @@ function KanbanColumn({
                 />
               )}
               <DropSlot id={`slot:${status}:${idx + 1}`} />
+            </div>
+          ))}
+          {socialTasks.map((st) => (
+            <div key={`st-${st.id}`} className="mt-1">
+              <SocialKanbanCard task={st} />
             </div>
           ))}
           {adding ? (
