@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Share2, Calendar as CalendarIcon, FileText } from "lucide-react";
+import SocialTasksAggregate from "@/components/SocialTasksAggregate";
 
 type ClientRow = { id: string; name: string; company: string | null };
 type Stat = { posts_count: number; upcoming_count: number; has_strategy: boolean };
@@ -59,6 +60,10 @@ export default function SocialMedia() {
         onChange={(e) => setQ(e.target.value)}
         className="mb-4 max-w-sm"
       />
+
+      <div className="mb-8">
+        <SocialTasksAggregate />
+      </div>
 
       {withActivity.length > 0 && (
         <>
