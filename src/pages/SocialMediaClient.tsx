@@ -18,6 +18,7 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import SocialPostDialog, { SocialPost } from "@/components/SocialPostDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Strategy = {
   id?: string;
@@ -33,6 +34,23 @@ type Strategy = {
 
 type LinkRow = { id?: string; client_id: string; label: string; url: string; category: string | null };
 
+type SocialTask = {
+  id?: string;
+  client_id: string;
+  post_id?: string | null;
+  title: string;
+  description?: string | null;
+  status: "a_faire" | "en_cours" | "fait";
+  priority: "basse" | "normale" | "haute";
+  due_date?: string | null;
+  reminder_at?: string | null;
+  done_at?: string | null;
+};
+
+const TASK_STATUS_LABELS: Record<string, string> = { a_faire: "À faire", en_cours: "En cours", fait: "Fait" };
+const TASK_PRIORITY_LABELS: Record<string, string> = { basse: "Basse", normale: "Normale", haute: "Haute" };
+const TASK_PRIORITY_COLORS: Record<string, string> = { basse: "bg-slate-400", normale: "bg-sky-500", haute: "bg-rose-500" };
+
 const STATUS_LABELS: Record<string, string> = {
   idee: "Idée", a_faire: "À faire", pret: "Prêt", programme: "Programmé", publie: "Publié", annule: "Annulé",
 };
@@ -47,21 +65,24 @@ export default function SocialMediaClient() {
   const [posts, setPosts] = useState<any[]>([]);
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [links, setLinks] = useState<LinkRow[]>([]);
+  const [tasks, setTasks] = useState<SocialTask[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<SocialPost> | undefined>();
 
   const reload = async () => {
     if (!clientId) return;
-    const [{ data: c }, { data: ps }, { data: st }, { data: ls }] = await Promise.all([
+    const [{ data: c }, { data: ps }, { data: st }, { data: ls }, { data: ts }] = await Promise.all([
       supabase.from("clients").select("id,name").eq("id", clientId).maybeSingle(),
       supabase.from("social_posts").select("*").eq("client_id", clientId).order("scheduled_at", { ascending: true, nullsFirst: false }),
       supabase.from("social_strategies").select("*").eq("client_id", clientId).maybeSingle(),
       supabase.from("social_links").select("*").eq("client_id", clientId).order("position"),
+      supabase.from("social_tasks").select("*").eq("client_id", clientId).order("position").order("created_at"),
     ]);
     setClient(c as any);
     setPosts(ps ?? []);
     setStrategy((st as any) ?? null);
     setLinks((ls ?? []) as any);
+    setTasks((ts ?? []) as any);
   };
 
   useEffect(() => { reload(); }, [clientId]);
@@ -97,12 +118,13 @@ export default function SocialMediaClient() {
           <TabsTrigger value="overview">Récapitulatif</TabsTrigger>
           <TabsTrigger value="calendar">Calendrier</TabsTrigger>
           <TabsTrigger value="posts">Posts</TabsTrigger>
+          <TabsTrigger value="tasks">Tâches</TabsTrigger>
           <TabsTrigger value="strategy">Stratégie</TabsTrigger>
           <TabsTrigger value="links">Liens</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
-          <OverviewView posts={posts} strategy={strategy} links={links} onPostClick={openEdit} />
+          <OverviewView posts={posts} strategy={strategy} links={links} tasks={tasks} onPostClick={openEdit} />
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-4">
@@ -111,6 +133,10 @@ export default function SocialMediaClient() {
 
         <TabsContent value="posts" className="mt-4">
           <PostsList posts={posts} onPostClick={openEdit} />
+        </TabsContent>
+
+        <TabsContent value="tasks" className="mt-4">
+          <TasksView clientId={clientId!} tasks={tasks} posts={posts} onSaved={reload} />
         </TabsContent>
 
         <TabsContent value="strategy" className="mt-4">
