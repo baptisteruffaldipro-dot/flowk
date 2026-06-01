@@ -617,6 +617,7 @@ export default function Tasks() {
   const [projects, setProjects] = useState<any[]>([]);
   const [dividers, setDividers] = useState<any[]>([]);
   const [paidTaskIds, setPaidTaskIds] = useState<Set<string>>(new Set());
+  const [socialTasks, setSocialTasks] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -630,18 +631,25 @@ export default function Tasks() {
   });
 
   const load = async () => {
-    const [t, c, p, d, inv] = await Promise.all([
+    const [t, c, p, d, inv, st] = await Promise.all([
       supabase.from("tasks").select("*, clients(name), projects(name)").order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id"),
       supabase.from("kanban_dividers").select("*").order("position", { ascending: true }),
       supabase.from("invoices").select("task_id,status").eq("status", "payee").not("task_id", "is", null),
+      supabase.from("social_tasks" as any).select("*").order("created_at", { ascending: false }),
     ]);
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
     setProjects(p.data ?? []);
     setDividers(d.data ?? []);
     setPaidTaskIds(new Set(((inv.data as any[]) ?? []).map((r) => r.task_id)));
+    const clientMap = new Map((c.data ?? []).map((x: any) => [x.id, x]));
+    const enriched = ((st.data as any[]) ?? []).map((row) => ({
+      ...row,
+      clients: clientMap.get(row.client_id) ?? null,
+    }));
+    setSocialTasks(enriched);
   };
   useEffect(() => {
     load();
