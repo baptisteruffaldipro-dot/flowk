@@ -639,3 +639,196 @@ function LinksEditor({ clientId, links, onSaved }: { clientId: string; links: Li
     </Card>
   );
 }
+
+/* ---------- Tasks ---------- */
+function TasksView({ clientId, tasks, posts, onSaved }: { clientId: string; tasks: SocialTask[]; posts: any[]; onSaved: () => void }) {
+  const [form, setForm] = useState<Partial<SocialTask>>({ title: "", priority: "normale", status: "a_faire" });
+  const [busy, setBusy] = useState(false);
+  const [filter, setFilter] = useState<string>("open");
+  const [editing, setEditing] = useState<SocialTask | null>(null);
+
+  const filtered = tasks.filter((t) => {
+    if (filter === "all") return true;
+    if (filter === "open") return t.status !== "fait";
+    return t.status === filter;
+  });
+
+  const grouped: Record<string, SocialTask[]> = { a_faire: [], en_cours: [], fait: [] };
+  filtered.forEach((t) => grouped[t.status]?.push(t));
+
+  const add = async () => {
+    if (!form.title?.trim()) return toast.error("Titre requis");
+    setBusy(true);
+    const { error } = await supabase.from("social_tasks").insert({
+      client_id: clientId,
+      title: form.title.trim(),
+      description: form.description || null,
+      status: form.status ?? "a_faire",
+      priority: form.priority ?? "normale",
+      due_date: form.due_date || null,
+      reminder_at: form.reminder_at || null,
+      post_id: form.post_id || null,
+      position: tasks.length,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setForm({ title: "", priority: "normale", status: "a_faire" });
+    onSaved();
+  };
+
+  const toggleDone = async (t: SocialTask) => {
+    const next = t.status === "fait" ? "a_faire" : "fait";
+    const { error } = await supabase.from("social_tasks").update({
+      status: next,
+      done_at: next === "fait" ? new Date().toISOString() : null,
+    }).eq("id", t.id!);
+    if (error) return toast.error(error.message);
+    onSaved();
+  };
+
+  const remove = async (id?: string) => {
+    if (!id) return;
+    if (!confirm("Supprimer cette tâche ?")) return;
+    const { error } = await supabase.from("social_tasks").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    onSaved();
+  };
+
+  const saveEdit = async () => {
+    if (!editing?.id) return;
+    const { error } = await supabase.from("social_tasks").update({
+      title: editing.title,
+      description: editing.description ?? null,
+      status: editing.status,
+      priority: editing.priority,
+      due_date: editing.due_date || null,
+      reminder_at: editing.reminder_at || null,
+      post_id: editing.post_id || null,
+    }).eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    setEditing(null);
+    onSaved();
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-sm font-semibold">Nouvelle tâche</h3>
+          <div className="grid grid-cols-12 gap-2">
+            <Input className="col-span-12 md:col-span-5" placeholder="Titre" value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <Input type="date" className="col-span-6 md:col-span-2" value={form.due_date ?? ""} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+            <Select value={form.priority ?? "normale"} onValueChange={(v: any) => setForm({ ...form, priority: v })}>
+              <SelectTrigger className="col-span-6 md:col-span-2"><SelectValue /></SelectTrigger>
+              <SelectContent>{Object.entries(TASK_PRIORITY_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={form.post_id ?? "none"} onValueChange={(v) => setForm({ ...form, post_id: v === "none" ? null : v })}>
+              <SelectTrigger className="col-span-10 md:col-span-2"><SelectValue placeholder="Post lié" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucun post</SelectItem>
+                {posts.map((p) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button className="col-span-2 md:col-span-1" onClick={add} disabled={busy}><Plus className="h-4 w-4" /></Button>
+            <Textarea className="col-span-12" rows={2} placeholder="Description (optionnel)" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">Ouvertes</SelectItem>
+                <SelectItem value="all">Toutes</SelectItem>
+                {Object.entries(TASK_STATUS_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="text-xs text-muted-foreground ml-auto">{filtered.length} tâche{filtered.length > 1 ? "s" : ""}</div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-3">
+            {(["a_faire", "en_cours", "fait"] as const).map((col) => (
+              <div key={col} className="rounded border bg-secondary/20 p-2">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2 px-1">
+                  {TASK_STATUS_LABELS[col]} <span className="text-foreground/60">({grouped[col].length})</span>
+                </div>
+                <div className="space-y-1.5">
+                  {grouped[col].length === 0 && <div className="text-xs text-muted-foreground/60 px-1 py-2">—</div>}
+                  {grouped[col].map((t) => {
+                    const post = posts.find((p) => p.id === t.post_id);
+                    const todayKey = format(new Date(), "yyyy-MM-dd");
+                    const isLate = t.due_date && t.due_date < todayKey && t.status !== "fait";
+                    return (
+                      <div key={t.id} className="bg-card border rounded p-2 group">
+                        <div className="flex items-start gap-2">
+                          <Checkbox checked={t.status === "fait"} onCheckedChange={() => toggleDone(t)} className="mt-0.5" />
+                          <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setEditing(t)}>
+                            <div className={`text-sm font-medium ${t.status === "fait" ? "line-through text-muted-foreground" : ""}`}>{t.title}</div>
+                            {t.description && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{t.description}</div>}
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              <Badge variant="outline" className="text-[10px] py-0">
+                                <span className={`h-1.5 w-1.5 rounded-full mr-1 ${TASK_PRIORITY_COLORS[t.priority]}`} />
+                                {TASK_PRIORITY_LABELS[t.priority]}
+                              </Badge>
+                              {t.due_date && (
+                                <span className={`text-[10px] ${isLate ? "text-rose-500 font-medium" : "text-muted-foreground"}`}>
+                                  {format(parseISO(t.due_date), "d MMM", { locale: fr })}
+                                </span>
+                              )}
+                              {post && <Badge variant="secondary" className="text-[10px] py-0 max-w-[120px] truncate">📌 {post.title}</Badge>}
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => remove(t.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {editing && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Modifier la tâche</h3>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Fermer</Button>
+            </div>
+            <div className="grid grid-cols-12 gap-2">
+              <Input className="col-span-12" placeholder="Titre" value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
+              <Textarea className="col-span-12" rows={3} placeholder="Description" value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+              <Select value={editing.status} onValueChange={(v: any) => setEditing({ ...editing, status: v })}>
+                <SelectTrigger className="col-span-6 md:col-span-3"><SelectValue /></SelectTrigger>
+                <SelectContent>{Object.entries(TASK_STATUS_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
+              </Select>
+              <Select value={editing.priority} onValueChange={(v: any) => setEditing({ ...editing, priority: v })}>
+                <SelectTrigger className="col-span-6 md:col-span-3"><SelectValue /></SelectTrigger>
+                <SelectContent>{Object.entries(TASK_PRIORITY_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
+              </Select>
+              <Input type="date" className="col-span-6 md:col-span-3" value={editing.due_date ?? ""} onChange={(e) => setEditing({ ...editing, due_date: e.target.value })} />
+              <Input type="datetime-local" className="col-span-6 md:col-span-3" value={editing.reminder_at ? editing.reminder_at.slice(0, 16) : ""} onChange={(e) => setEditing({ ...editing, reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })} />
+              <Select value={editing.post_id ?? "none"} onValueChange={(v) => setEditing({ ...editing, post_id: v === "none" ? null : v })}>
+                <SelectTrigger className="col-span-12"><SelectValue placeholder="Post lié" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucun post</SelectItem>
+                  {posts.map((p) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={saveEdit}><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
