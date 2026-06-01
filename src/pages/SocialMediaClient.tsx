@@ -18,6 +18,7 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import SocialPostDialog, { SocialPost } from "@/components/SocialPostDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Strategy = {
   id?: string;
@@ -33,6 +34,23 @@ type Strategy = {
 
 type LinkRow = { id?: string; client_id: string; label: string; url: string; category: string | null };
 
+type SocialTask = {
+  id?: string;
+  client_id: string;
+  post_id?: string | null;
+  title: string;
+  description?: string | null;
+  status: "a_faire" | "en_cours" | "fait";
+  priority: "basse" | "normale" | "haute";
+  due_date?: string | null;
+  reminder_at?: string | null;
+  done_at?: string | null;
+};
+
+const TASK_STATUS_LABELS: Record<string, string> = { a_faire: "À faire", en_cours: "En cours", fait: "Fait" };
+const TASK_PRIORITY_LABELS: Record<string, string> = { basse: "Basse", normale: "Normale", haute: "Haute" };
+const TASK_PRIORITY_COLORS: Record<string, string> = { basse: "bg-slate-400", normale: "bg-sky-500", haute: "bg-rose-500" };
+
 const STATUS_LABELS: Record<string, string> = {
   idee: "Idée", a_faire: "À faire", pret: "Prêt", programme: "Programmé", publie: "Publié", annule: "Annulé",
 };
@@ -47,21 +65,24 @@ export default function SocialMediaClient() {
   const [posts, setPosts] = useState<any[]>([]);
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [links, setLinks] = useState<LinkRow[]>([]);
+  const [tasks, setTasks] = useState<SocialTask[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<SocialPost> | undefined>();
 
   const reload = async () => {
     if (!clientId) return;
-    const [{ data: c }, { data: ps }, { data: st }, { data: ls }] = await Promise.all([
+    const [{ data: c }, { data: ps }, { data: st }, { data: ls }, { data: ts }] = await Promise.all([
       supabase.from("clients").select("id,name").eq("id", clientId).maybeSingle(),
       supabase.from("social_posts").select("*").eq("client_id", clientId).order("scheduled_at", { ascending: true, nullsFirst: false }),
       supabase.from("social_strategies").select("*").eq("client_id", clientId).maybeSingle(),
       supabase.from("social_links").select("*").eq("client_id", clientId).order("position"),
+      supabase.from("social_tasks").select("*").eq("client_id", clientId).order("position").order("created_at"),
     ]);
     setClient(c as any);
     setPosts(ps ?? []);
     setStrategy((st as any) ?? null);
     setLinks((ls ?? []) as any);
+    setTasks((ts ?? []) as any);
   };
 
   useEffect(() => { reload(); }, [clientId]);
@@ -97,12 +118,13 @@ export default function SocialMediaClient() {
           <TabsTrigger value="overview">Récapitulatif</TabsTrigger>
           <TabsTrigger value="calendar">Calendrier</TabsTrigger>
           <TabsTrigger value="posts">Posts</TabsTrigger>
+          <TabsTrigger value="tasks">Tâches</TabsTrigger>
           <TabsTrigger value="strategy">Stratégie</TabsTrigger>
           <TabsTrigger value="links">Liens</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-4">
-          <OverviewView posts={posts} strategy={strategy} links={links} onPostClick={openEdit} />
+          <OverviewView posts={posts} strategy={strategy} links={links} tasks={tasks} onPostClick={openEdit} />
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-4">
@@ -111,6 +133,10 @@ export default function SocialMediaClient() {
 
         <TabsContent value="posts" className="mt-4">
           <PostsList posts={posts} onPostClick={openEdit} />
+        </TabsContent>
+
+        <TabsContent value="tasks" className="mt-4">
+          <TasksView clientId={clientId!} tasks={tasks} posts={posts} onSaved={reload} />
         </TabsContent>
 
         <TabsContent value="strategy" className="mt-4">
@@ -135,14 +161,18 @@ export default function SocialMediaClient() {
 
 /* ---------- Calendar ---------- */
 function OverviewView({
-  posts, strategy, links, onPostClick,
-}: { posts: any[]; strategy: Strategy | null; links: LinkRow[]; onPostClick: (p: any) => void }) {
+  posts, strategy, links, tasks, onPostClick,
+}: { posts: any[]; strategy: Strategy | null; links: LinkRow[]; tasks: SocialTask[]; onPostClick: (p: any) => void }) {
   const now = Date.now();
   const upcoming = posts
     .filter((p) => p.scheduled_at && new Date(p.scheduled_at).getTime() >= now && p.status !== "publie" && p.status !== "annule")
     .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
   const next5 = upcoming.slice(0, 5);
   const scheduledOnly = upcoming.filter((p) => p.status === "programme");
+  const openTasks = tasks.filter((t) => t.status !== "fait");
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const overdue = openTasks.filter((t) => t.due_date && t.due_date < todayKey);
+  const dueSoon = openTasks.filter((t) => t.due_date && t.due_date >= todayKey).slice(0, 5);
 
   const counts: Record<string, number> = {};
   posts.forEach((p) => { counts[p.status] = (counts[p.status] ?? 0) + 1; });
@@ -157,11 +187,43 @@ function OverviewView({
           <Stat label="Total posts" value={posts.length} />
           <Stat label="À venir" value={upcoming.length} />
           <Stat label="Programmés" value={scheduledOnly.length} />
-          <Stat label="Idées" value={counts.idee ?? 0} />
-          <Stat label="À faire" value={counts.a_faire ?? 0} />
+          <Stat label="Tâches ouvertes" value={openTasks.length} />
+          <Stat label="Tâches en retard" value={overdue.length} />
           <Stat label="Publiés" value={counts.publie ?? 0} />
         </CardContent>
       </Card>
+
+      {(overdue.length > 0 || dueSoon.length > 0) && (
+        <Card className="lg:col-span-3">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold mb-2">Tâches à traiter</h3>
+            <div className="grid md:grid-cols-2 gap-3">
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">En retard</div>
+                {overdue.length === 0 && <div className="text-xs text-muted-foreground">—</div>}
+                {overdue.map((t) => (
+                  <div key={t.id} className="text-xs py-1 flex items-center gap-2">
+                    <span className={`h-1.5 w-1.5 rounded-full ${TASK_PRIORITY_COLORS[t.priority]}`} />
+                    <span className="truncate flex-1">{t.title}</span>
+                    <span className="text-muted-foreground">{t.due_date && format(parseISO(t.due_date), "d MMM", { locale: fr })}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">À venir</div>
+                {dueSoon.length === 0 && <div className="text-xs text-muted-foreground">—</div>}
+                {dueSoon.map((t) => (
+                  <div key={t.id} className="text-xs py-1 flex items-center gap-2">
+                    <span className={`h-1.5 w-1.5 rounded-full ${TASK_PRIORITY_COLORS[t.priority]}`} />
+                    <span className="truncate flex-1">{t.title}</span>
+                    <span className="text-muted-foreground">{t.due_date && format(parseISO(t.due_date), "d MMM", { locale: fr })}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="lg:col-span-2">
         <CardContent className="p-4 space-y-3">
@@ -523,6 +585,7 @@ function RepeaterWeekly({ value, onChange }: { value: Strategy["weekly_template"
 
 /* ---------- Links ---------- */
 function LinksEditor({ clientId, links, onSaved }: { clientId: string; links: LinkRow[]; onSaved: () => void }) {
+  // (unchanged below)
   const [form, setForm] = useState<LinkRow>({ client_id: clientId, label: "", url: "", category: "" });
 
   const add = async () => {
@@ -574,5 +637,198 @@ function LinksEditor({ clientId, links, onSaved }: { clientId: string; links: Li
         ))}
       </CardContent>
     </Card>
+  );
+}
+
+/* ---------- Tasks ---------- */
+function TasksView({ clientId, tasks, posts, onSaved }: { clientId: string; tasks: SocialTask[]; posts: any[]; onSaved: () => void }) {
+  const [form, setForm] = useState<Partial<SocialTask>>({ title: "", priority: "normale", status: "a_faire" });
+  const [busy, setBusy] = useState(false);
+  const [filter, setFilter] = useState<string>("open");
+  const [editing, setEditing] = useState<SocialTask | null>(null);
+
+  const filtered = tasks.filter((t) => {
+    if (filter === "all") return true;
+    if (filter === "open") return t.status !== "fait";
+    return t.status === filter;
+  });
+
+  const grouped: Record<string, SocialTask[]> = { a_faire: [], en_cours: [], fait: [] };
+  filtered.forEach((t) => grouped[t.status]?.push(t));
+
+  const add = async () => {
+    if (!form.title?.trim()) return toast.error("Titre requis");
+    setBusy(true);
+    const { error } = await supabase.from("social_tasks").insert({
+      client_id: clientId,
+      title: form.title.trim(),
+      description: form.description || null,
+      status: form.status ?? "a_faire",
+      priority: form.priority ?? "normale",
+      due_date: form.due_date || null,
+      reminder_at: form.reminder_at || null,
+      post_id: form.post_id || null,
+      position: tasks.length,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setForm({ title: "", priority: "normale", status: "a_faire" });
+    onSaved();
+  };
+
+  const toggleDone = async (t: SocialTask) => {
+    const next = t.status === "fait" ? "a_faire" : "fait";
+    const { error } = await supabase.from("social_tasks").update({
+      status: next,
+      done_at: next === "fait" ? new Date().toISOString() : null,
+    }).eq("id", t.id!);
+    if (error) return toast.error(error.message);
+    onSaved();
+  };
+
+  const remove = async (id?: string) => {
+    if (!id) return;
+    if (!confirm("Supprimer cette tâche ?")) return;
+    const { error } = await supabase.from("social_tasks").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    onSaved();
+  };
+
+  const saveEdit = async () => {
+    if (!editing?.id) return;
+    const { error } = await supabase.from("social_tasks").update({
+      title: editing.title,
+      description: editing.description ?? null,
+      status: editing.status,
+      priority: editing.priority,
+      due_date: editing.due_date || null,
+      reminder_at: editing.reminder_at || null,
+      post_id: editing.post_id || null,
+    }).eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    setEditing(null);
+    onSaved();
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="text-sm font-semibold">Nouvelle tâche</h3>
+          <div className="grid grid-cols-12 gap-2">
+            <Input className="col-span-12 md:col-span-5" placeholder="Titre" value={form.title ?? ""} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <Input type="date" className="col-span-6 md:col-span-2" value={form.due_date ?? ""} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+            <Select value={form.priority ?? "normale"} onValueChange={(v: any) => setForm({ ...form, priority: v })}>
+              <SelectTrigger className="col-span-6 md:col-span-2"><SelectValue /></SelectTrigger>
+              <SelectContent>{Object.entries(TASK_PRIORITY_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
+            </Select>
+            <Select value={form.post_id ?? "none"} onValueChange={(v) => setForm({ ...form, post_id: v === "none" ? null : v })}>
+              <SelectTrigger className="col-span-10 md:col-span-2"><SelectValue placeholder="Post lié" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucun post</SelectItem>
+                {posts.map((p) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button className="col-span-2 md:col-span-1" onClick={add} disabled={busy}><Plus className="h-4 w-4" /></Button>
+            <Textarea className="col-span-12" rows={2} placeholder="Description (optionnel)" value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">Ouvertes</SelectItem>
+                <SelectItem value="all">Toutes</SelectItem>
+                {Object.entries(TASK_STATUS_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="text-xs text-muted-foreground ml-auto">{filtered.length} tâche{filtered.length > 1 ? "s" : ""}</div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-3">
+            {(["a_faire", "en_cours", "fait"] as const).map((col) => (
+              <div key={col} className="rounded border bg-secondary/20 p-2">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2 px-1">
+                  {TASK_STATUS_LABELS[col]} <span className="text-foreground/60">({grouped[col].length})</span>
+                </div>
+                <div className="space-y-1.5">
+                  {grouped[col].length === 0 && <div className="text-xs text-muted-foreground/60 px-1 py-2">—</div>}
+                  {grouped[col].map((t) => {
+                    const post = posts.find((p) => p.id === t.post_id);
+                    const todayKey = format(new Date(), "yyyy-MM-dd");
+                    const isLate = t.due_date && t.due_date < todayKey && t.status !== "fait";
+                    return (
+                      <div key={t.id} className="bg-card border rounded p-2 group">
+                        <div className="flex items-start gap-2">
+                          <Checkbox checked={t.status === "fait"} onCheckedChange={() => toggleDone(t)} className="mt-0.5" />
+                          <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setEditing(t)}>
+                            <div className={`text-sm font-medium ${t.status === "fait" ? "line-through text-muted-foreground" : ""}`}>{t.title}</div>
+                            {t.description && <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{t.description}</div>}
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                              <Badge variant="outline" className="text-[10px] py-0">
+                                <span className={`h-1.5 w-1.5 rounded-full mr-1 ${TASK_PRIORITY_COLORS[t.priority]}`} />
+                                {TASK_PRIORITY_LABELS[t.priority]}
+                              </Badge>
+                              {t.due_date && (
+                                <span className={`text-[10px] ${isLate ? "text-rose-500 font-medium" : "text-muted-foreground"}`}>
+                                  {format(parseISO(t.due_date), "d MMM", { locale: fr })}
+                                </span>
+                              )}
+                              {post && <Badge variant="secondary" className="text-[10px] py-0 max-w-[120px] truncate">📌 {post.title}</Badge>}
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => remove(t.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {editing && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Modifier la tâche</h3>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Fermer</Button>
+            </div>
+            <div className="grid grid-cols-12 gap-2">
+              <Input className="col-span-12" placeholder="Titre" value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
+              <Textarea className="col-span-12" rows={3} placeholder="Description" value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+              <Select value={editing.status} onValueChange={(v: any) => setEditing({ ...editing, status: v })}>
+                <SelectTrigger className="col-span-6 md:col-span-3"><SelectValue /></SelectTrigger>
+                <SelectContent>{Object.entries(TASK_STATUS_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
+              </Select>
+              <Select value={editing.priority} onValueChange={(v: any) => setEditing({ ...editing, priority: v })}>
+                <SelectTrigger className="col-span-6 md:col-span-3"><SelectValue /></SelectTrigger>
+                <SelectContent>{Object.entries(TASK_PRIORITY_LABELS).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
+              </Select>
+              <Input type="date" className="col-span-6 md:col-span-3" value={editing.due_date ?? ""} onChange={(e) => setEditing({ ...editing, due_date: e.target.value })} />
+              <Input type="datetime-local" className="col-span-6 md:col-span-3" value={editing.reminder_at ? editing.reminder_at.slice(0, 16) : ""} onChange={(e) => setEditing({ ...editing, reminder_at: e.target.value ? new Date(e.target.value).toISOString() : null })} />
+              <Select value={editing.post_id ?? "none"} onValueChange={(v) => setEditing({ ...editing, post_id: v === "none" ? null : v })}>
+                <SelectTrigger className="col-span-12"><SelectValue placeholder="Post lié" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucun post</SelectItem>
+                  {posts.map((p) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={saveEdit}><Save className="h-4 w-4 mr-1" /> Enregistrer</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

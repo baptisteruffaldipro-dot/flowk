@@ -1175,6 +1175,62 @@ export type Database = {
         }
         Relationships: []
       }
+      social_tasks: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          done_at: string | null
+          due_date: string | null
+          id: string
+          position: number
+          post_id: string | null
+          priority: Database["public"]["Enums"]["social_task_priority"]
+          reminder_at: string | null
+          status: Database["public"]["Enums"]["social_task_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          position?: number
+          post_id?: string | null
+          priority?: Database["public"]["Enums"]["social_task_priority"]
+          reminder_at?: string | null
+          status?: Database["public"]["Enums"]["social_task_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          done_at?: string | null
+          due_date?: string | null
+          id?: string
+          position?: number
+          post_id?: string | null
+          priority?: Database["public"]["Enums"]["social_task_priority"]
+          reminder_at?: string | null
+          status?: Database["public"]["Enums"]["social_task_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_tasks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subtasks: {
         Row: {
           created_at: string
@@ -1722,6 +1778,8 @@ export type Database = {
         | "programme"
         | "publie"
         | "annule"
+      social_task_priority: "basse" | "normale" | "haute"
+      social_task_status: "a_faire" | "en_cours" | "fait"
       task_priority:
         | "en_priorite"
         | "secondaire"
@@ -1983,6 +2041,8 @@ export const Constants = {
         "publie",
         "annule",
       ],
+      social_task_priority: ["basse", "normale", "haute"],
+      social_task_status: ["a_faire", "en_cours", "fait"],
       task_priority: [
         "en_priorite",
         "secondaire",
