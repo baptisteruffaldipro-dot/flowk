@@ -585,6 +585,7 @@ function RepeaterWeekly({ value, onChange }: { value: Strategy["weekly_template"
 
 /* ---------- Links ---------- */
 function LinksEditor({ clientId, links, onSaved }: { clientId: string; links: LinkRow[]; onSaved: () => void }) {
+  // (unchanged below)
   const [form, setForm] = useState<LinkRow>({ client_id: clientId, label: "", url: "", category: "" });
 
   const add = async () => {
