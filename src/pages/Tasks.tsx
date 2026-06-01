@@ -42,6 +42,62 @@ import {
 const STATUSES = ["a_faire", "aujourdhui", "envoye", "bat", "impression", "a_facturer", "archive"] as const;
 type Status = typeof STATUSES[number];
 
+const SOCIAL_STATUS_TO_KANBAN: Record<string, Status> = {
+  a_faire: "a_faire",
+  en_cours: "aujourdhui",
+  fait: "archive",
+};
+
+const SOCIAL_PRIORITY_LABEL: Record<string, string> = {
+  basse: "Basse",
+  normale: "Normale",
+  haute: "Haute",
+};
+const SOCIAL_PRIORITY_COLOR: Record<string, string> = {
+  basse: "bg-slate-100 text-slate-700 border-slate-300",
+  normale: "bg-blue-100 text-blue-700 border-blue-300",
+  haute: "bg-red-100 text-red-700 border-red-300",
+};
+
+function SocialKanbanCard({ task }: { task: any }) {
+  const navigate = useNavigate();
+  const overdue = task.due_date && task.status !== "fait" && new Date(task.due_date) < new Date(new Date().toDateString());
+  return (
+    <div className="group">
+      <Card
+        onClick={() => navigate(`/social/${task.client_id}`)}
+        className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg cursor-pointer"
+      >
+        <div className="flex items-start gap-2 mb-3">
+          <span className="text-base leading-none mt-0.5">📱</span>
+          <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
+            {task.title}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(task.clients?.name ?? "—")}`}>
+            {task.clients?.name ?? "Sans client"}
+          </Badge>
+          <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5 bg-purple-100 text-purple-700 border-purple-300">
+            Réseaux sociaux
+          </Badge>
+          {task.priority && task.priority !== "normale" && (
+            <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${SOCIAL_PRIORITY_COLOR[task.priority] ?? ""}`}>
+              {SOCIAL_PRIORITY_LABEL[task.priority]}
+            </Badge>
+          )}
+          {task.due_date && (
+            <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 inline-flex items-center gap-1 ${overdue ? "bg-red-100 text-red-700 border-red-300" : ""}`}>
+              <Calendar className="h-3 w-3" />
+              {fmtDate(task.due_date)}
+            </Badge>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function DeadlineBadge({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
   const [open, setOpen] = useState(false);
   return (
