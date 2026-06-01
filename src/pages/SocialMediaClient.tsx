@@ -161,14 +161,18 @@ export default function SocialMediaClient() {
 
 /* ---------- Calendar ---------- */
 function OverviewView({
-  posts, strategy, links, onPostClick,
-}: { posts: any[]; strategy: Strategy | null; links: LinkRow[]; onPostClick: (p: any) => void }) {
+  posts, strategy, links, tasks, onPostClick,
+}: { posts: any[]; strategy: Strategy | null; links: LinkRow[]; tasks: SocialTask[]; onPostClick: (p: any) => void }) {
   const now = Date.now();
   const upcoming = posts
     .filter((p) => p.scheduled_at && new Date(p.scheduled_at).getTime() >= now && p.status !== "publie" && p.status !== "annule")
     .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
   const next5 = upcoming.slice(0, 5);
   const scheduledOnly = upcoming.filter((p) => p.status === "programme");
+  const openTasks = tasks.filter((t) => t.status !== "fait");
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const overdue = openTasks.filter((t) => t.due_date && t.due_date < todayKey);
+  const dueSoon = openTasks.filter((t) => t.due_date && t.due_date >= todayKey).slice(0, 5);
 
   const counts: Record<string, number> = {};
   posts.forEach((p) => { counts[p.status] = (counts[p.status] ?? 0) + 1; });
@@ -183,11 +187,43 @@ function OverviewView({
           <Stat label="Total posts" value={posts.length} />
           <Stat label="À venir" value={upcoming.length} />
           <Stat label="Programmés" value={scheduledOnly.length} />
-          <Stat label="Idées" value={counts.idee ?? 0} />
-          <Stat label="À faire" value={counts.a_faire ?? 0} />
+          <Stat label="Tâches ouvertes" value={openTasks.length} />
+          <Stat label="Tâches en retard" value={overdue.length} />
           <Stat label="Publiés" value={counts.publie ?? 0} />
         </CardContent>
       </Card>
+
+      {(overdue.length > 0 || dueSoon.length > 0) && (
+        <Card className="lg:col-span-3">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-semibold mb-2">Tâches à traiter</h3>
+            <div className="grid md:grid-cols-2 gap-3">
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">En retard</div>
+                {overdue.length === 0 && <div className="text-xs text-muted-foreground">—</div>}
+                {overdue.map((t) => (
+                  <div key={t.id} className="text-xs py-1 flex items-center gap-2">
+                    <span className={`h-1.5 w-1.5 rounded-full ${TASK_PRIORITY_COLORS[t.priority]}`} />
+                    <span className="truncate flex-1">{t.title}</span>
+                    <span className="text-muted-foreground">{t.due_date && format(parseISO(t.due_date), "d MMM", { locale: fr })}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">À venir</div>
+                {dueSoon.length === 0 && <div className="text-xs text-muted-foreground">—</div>}
+                {dueSoon.map((t) => (
+                  <div key={t.id} className="text-xs py-1 flex items-center gap-2">
+                    <span className={`h-1.5 w-1.5 rounded-full ${TASK_PRIORITY_COLORS[t.priority]}`} />
+                    <span className="truncate flex-1">{t.title}</span>
+                    <span className="text-muted-foreground">{t.due_date && format(parseISO(t.due_date), "d MMM", { locale: fr })}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="lg:col-span-2">
         <CardContent className="p-4 space-y-3">
