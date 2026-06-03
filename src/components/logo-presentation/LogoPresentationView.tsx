@@ -311,7 +311,10 @@ export default function LogoPresentationView({ presentation }: Props) {
                   <RichText html={tt.intro} className="text-base md:text-lg font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
                 )}
                 {tt.fonts.length > 0 ? (
-                  <div className="grid md:grid-cols-3 gap-px bg-foreground/10 border border-foreground/10">
+                  <div
+                    className="grid gap-px bg-foreground/10 border border-foreground/10"
+                    style={{ gridTemplateColumns: `repeat(${Math.min(tt.fonts.length, 3)}, minmax(0, 1fr))` }}
+                  >
                     {tt.fonts.map((f, j) => (
                       <div key={j} className="bg-background p-8 space-y-4">
                         <div className="text-[10px] tracking-[0.3em] uppercase text-accent bs-mono" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
