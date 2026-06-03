@@ -149,6 +149,11 @@ export default function BatViewer({ printOrderId, taskId, batId, filePath, canAn
       </Card>
 
       <div className="space-y-3">
+        {canAnnotate && isPdf && !pending && (
+          <Button size="sm" variant="outline" onClick={() => setPending({ x: 0, y: 0 })}>
+            <MessageCircle className="h-3.5 w-3.5 mr-1" /> Ajouter un commentaire
+          </Button>
+        )}
         {pending && (
           <Card className="p-3 border-primary">
             <div className="text-xs font-semibold mb-2">Nouveau commentaire</div>
@@ -166,7 +171,11 @@ export default function BatViewer({ printOrderId, taskId, batId, filePath, canAn
           </div>
           {annotations.length === 0 ? (
             <Card className="p-4 text-xs text-muted-foreground text-center">
-              {canAnnotate && isImage ? "Cliquez sur le document pour ajouter un commentaire" : "Aucune annotation"}
+              {canAnnotate
+                ? (isImage
+                    ? "Cliquez sur le document pour ajouter un commentaire"
+                    : "Utilisez « Ajouter un commentaire » ci-dessus")
+                : "Aucune annotation"}
             </Card>
           ) : (
             <div className="space-y-2 max-h-[640px] overflow-y-auto">
