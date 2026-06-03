@@ -87,7 +87,11 @@ const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => {
 
 export default function LogoPresentationView({ presentation }: Props) {
   const p = presentation;
-  const universeCount = p.moodboard.universes.length;
+  const stripHtml = (s: string) => s.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+  const visibleUniverses = p.moodboard.universes.filter(
+    (u) => stripHtml(u.intro || "") !== "" || (u.keywords?.length ?? 0) > 0 || (u.images?.length ?? 0) > 0
+  );
+  const universeCount = visibleUniverses.length;
   const trackCount = p.logos.tracks.length;
   const pad = (n: number) => String(n).padStart(2, "0");
   const logosStart = 2 + universeCount;
@@ -211,7 +215,7 @@ export default function LogoPresentationView({ presentation }: Props) {
           <Divider />
 
           {/* 02+ — Moodboard (univers) */}
-          {p.moodboard.universes.map((u, ui) => {
+          {visibleUniverses.map((u, ui) => {
             const number = pad(2 + ui);
             return (
               <div key={`u-${ui}`}>
@@ -227,7 +231,7 @@ export default function LogoPresentationView({ presentation }: Props) {
                       ))}
                     </div>
                   )}
-                  {u.images.length > 0 ? (
+                  {u.images.length > 0 && (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {u.images.map((img, i) => (
                         <figure key={i} className="space-y-2">
@@ -236,8 +240,6 @@ export default function LogoPresentationView({ presentation }: Props) {
                         </figure>
                       ))}
                     </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground italic">Pas encore de références.</div>
                   )}
                 </section>
                 <Divider />
