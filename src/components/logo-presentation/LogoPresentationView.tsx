@@ -277,7 +277,10 @@ export default function LogoPresentationView({ presentation }: Props) {
                   <RichText html={ct.intro} className="text-base md:text-lg font-normal text-foreground max-w-2xl mb-12 leading-snug bs-sans" />
                 )}
                 {ct.palette.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-foreground/10 border border-foreground/10">
+                  <div
+                    className="grid grid-cols-2 gap-px bg-foreground/10 border border-foreground/10"
+                    style={{ gridTemplateColumns: `repeat(${Math.min(ct.palette.length, 4)}, minmax(0, 1fr))` }}
+                  >
                     {ct.palette.map((c, j) => (
                       <div key={j} className="bg-background">
                         <div className="h-48" style={{ backgroundColor: c.hex }} />
