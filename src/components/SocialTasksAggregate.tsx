@@ -84,7 +84,7 @@ export default function SocialTasksAggregate({ compact = false }: { compact?: bo
 
   const filtered = tasks.filter((t) => {
     if (clientFilter !== "all" && t.client_id !== clientFilter) return false;
-    if (statusFilter === "open" && t.status === "fait") return false;
+    if (statusFilter === "open" && (t.status === "fait" || t.status === "archive")) return false;
     if (statusFilter !== "open" && statusFilter !== "all" && t.status !== statusFilter) return false;
     if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
     if (q && !`${t.title} ${t.description ?? ""} ${t.clients?.name ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
@@ -92,11 +92,11 @@ export default function SocialTasksAggregate({ compact = false }: { compact?: bo
   });
 
   const todayKey = format(new Date(), "yyyy-MM-dd");
-  const overdue = filtered.filter((t) => t.status !== "fait" && t.due_date && t.due_date < todayKey);
-  const today = filtered.filter((t) => t.status !== "fait" && t.due_date === todayKey);
-  const upcoming = filtered.filter((t) => t.status !== "fait" && t.due_date && t.due_date > todayKey);
-  const noDate = filtered.filter((t) => t.status !== "fait" && !t.due_date);
-  const done = filtered.filter((t) => t.status === "fait");
+  const overdue = filtered.filter((t) => t.status !== "fait" && t.status !== "archive" && t.due_date && t.due_date < todayKey);
+  const today = filtered.filter((t) => t.status !== "fait" && t.status !== "archive" && t.due_date === todayKey);
+  const upcoming = filtered.filter((t) => t.status !== "fait" && t.status !== "archive" && t.due_date && t.due_date > todayKey);
+  const noDate = filtered.filter((t) => t.status !== "fait" && t.status !== "archive" && !t.due_date);
+  const done = filtered.filter((t) => t.status === "fait" || t.status === "archive");
 
   const Section = ({ title, items, tone }: { title: string; items: Row[]; tone?: string }) => (
     items.length > 0 && (
@@ -165,14 +165,15 @@ export default function SocialTasksAggregate({ compact = false }: { compact?: bo
 
 function TaskRow({ t, onToggle }: { t: Row; onToggle: (t: Row) => void }) {
   const todayKey = format(new Date(), "yyyy-MM-dd");
-  const isLate = t.due_date && t.due_date < todayKey && t.status !== "fait";
+  const isDone = t.status === "fait" || t.status === "archive";
+  const isLate = t.due_date && t.due_date < todayKey && !isDone;
   return (
     <div className="py-2 flex items-start gap-2.5">
-      <Checkbox checked={t.status === "fait"} onCheckedChange={() => onToggle(t)} className="mt-1" />
+      <Checkbox checked={isDone} onCheckedChange={() => onToggle(t)} className="mt-1" />
       <Link to={`/social/${t.client_id}`} className="min-w-0 flex-1 hover:bg-secondary/30 -mx-1 px-1 rounded">
         <div className="flex items-center gap-2">
           <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${PRIORITY_COLORS[t.priority]}`} />
-          <div className={`text-sm font-medium truncate ${t.status === "fait" ? "line-through text-muted-foreground" : ""}`}>
+          <div className={`text-sm font-medium truncate ${isDone ? "line-through text-muted-foreground" : ""}`}>
             {t.title}
           </div>
         </div>
