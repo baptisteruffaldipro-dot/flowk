@@ -62,13 +62,16 @@ const SOCIAL_PRIORITY_COLOR: Record<string, string> = {
 function SocialKanbanCard({ task }: { task: any }) {
   const navigate = useNavigate();
   const overdue = task.due_date && task.status !== "fait" && new Date(task.due_date) < new Date(new Date().toDateString());
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `social:${task.id}` });
   return (
-    <div className="group">
-      <Card
-        onClick={() => navigate(`/social/${task.client_id}`)}
-        className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg cursor-pointer"
-      >
-        <div className="flex items-start gap-2 mb-3">
+    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
+      <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
+        <div
+          {...listeners}
+          {...attributes}
+          onClick={() => { if (!isDragging) navigate(`/social/${task.client_id}`); }}
+          className="flex items-start gap-2 mb-3 cursor-grab active:cursor-grabbing"
+        >
           <span className="text-base leading-none mt-0.5">📱</span>
           <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
             {task.title}
@@ -692,6 +695,39 @@ export default function Tasks() {
     if (!over) return;
     const overId = String(over.id);
     const activeIdStr = String(active.id);
+
+    // === SOCIAL task being dragged ===
+    if (activeIdStr.startsWith("social:")) {
+      const socialId = activeIdStr.slice("social:".length);
+      const st = socialTasks.find((s) => s.id === socialId);
+      if (!st) return;
+      let targetCol: Status | null = null;
+      if (overId.startsWith("slot:")) targetCol = overId.split(":")[1] as Status;
+      else if (overId.startsWith("divider:")) {
+        const d = dividers.find((x) => x.id === overId.slice("divider:".length));
+        targetCol = (d?.status as Status) ?? null;
+      } else if (STATUSES.includes(overId as Status)) targetCol = overId as Status;
+      if (!targetCol) return;
+      const KANBAN_TO_SOCIAL: Record<string, "a_faire" | "en_cours" | "fait"> = {
+        a_faire: "a_faire",
+        aujourdhui: "en_cours",
+        envoye: "en_cours",
+        bat: "en_cours",
+        impression: "en_cours",
+        a_facturer: "en_cours",
+        archive: "fait",
+      };
+      const newStatus = KANBAN_TO_SOCIAL[targetCol];
+      if (!newStatus || newStatus === st.status) return;
+      const prev = socialTasks;
+      setSocialTasks((arr) => arr.map((s) => s.id === socialId ? { ...s, status: newStatus, done_at: newStatus === "fait" ? new Date().toISOString() : null } : s));
+      const { error } = await supabase.from("social_tasks" as any).update({
+        status: newStatus,
+        done_at: newStatus === "fait" ? new Date().toISOString() : null,
+      }).eq("id", socialId);
+      if (error) { toast.error(error.message); setSocialTasks(prev); }
+      return;
+    }
 
     // === DIVIDER being dragged ===
     if (activeIdStr.startsWith("divider-drag:")) {
