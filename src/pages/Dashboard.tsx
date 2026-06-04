@@ -184,7 +184,27 @@ export default function Dashboard() {
 
       {upcomingInstallments.length > 0 && <InstallmentsWidget items={upcomingInstallments} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Column title="Nouveaux leads" href="/leads" empty="Aucun nouveau lead">
+          {leads.map((lead) => {
+            const dateStr = new Date(lead.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+            return (
+              <Link key={lead.id} to={`/leads`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="text-sm font-medium leading-snug truncate inline-flex items-center gap-1.5">
+                    <UserPlus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    {lead.name || lead.email || lead.phone || "Nouveau lead"}
+                  </div>
+                  <Badge variant="outline" className="shrink-0 text-[10px] border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400">Nouveau</Badge>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 truncate">
+                  {lead.company ? `${lead.company} · ` : ""}{lead.source ?? "—"} · {dateStr}
+                </div>
+              </Link>
+            );
+          })}
+        </Column>
+
         <Column title="Projets en cours" href="/projets" empty="Aucun projet en cours">
           {projects.slice(0, 8).map((p) => (
             <Link key={p.id} to={`/projets/${p.id}`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
