@@ -788,6 +788,26 @@ export default function Tasks() {
       return;
     }
 
+    // === LEAD being dragged ===
+    if (activeIdStr.startsWith("lead:")) {
+      const leadId = activeIdStr.slice("lead:".length);
+      const lead = leads.find((l) => l.id === leadId);
+      if (!lead) return;
+      let targetCol: Status | null = null;
+      if (overId.startsWith("slot:")) targetCol = overId.split(":")[1] as Status;
+      else if (overId.startsWith("divider:")) {
+        const d = dividers.find((x) => x.id === overId.slice("divider:".length));
+        targetCol = (d?.status as Status) ?? null;
+      } else if (STATUSES.includes(overId as Status)) targetCol = overId as Status;
+      if (!targetCol || leadKanbanStatus(lead) === targetCol) return;
+      const metadata = { ...(lead.metadata ?? {}), kanban_status: targetCol };
+      const prev = leads;
+      setLeads((arr) => arr.map((l) => l.id === leadId ? { ...l, metadata } : l));
+      const { error } = await supabase.from("leads" as any).update({ metadata }).eq("id", leadId);
+      if (error) { toast.error(error.message); setLeads(prev); }
+      return;
+    }
+
     // === DIVIDER being dragged ===
     if (activeIdStr.startsWith("divider-drag:")) {
       const dividerId = activeIdStr.slice("divider-drag:".length);
