@@ -17,7 +17,7 @@ type Row = {
   post_id: string | null;
   title: string;
   description: string | null;
-  status: "a_faire" | "en_cours" | "fait";
+  status: "a_faire" | "en_cours" | "fait" | "aujourdhui" | "envoye" | "bat" | "impression" | "a_facturer" | "archive";
   priority: "basse" | "normale" | "haute";
   due_date: string | null;
   reminder_at: string | null;
@@ -26,7 +26,17 @@ type Row = {
   social_posts?: { id: string; title: string } | null;
 };
 
-const STATUS_LABELS: Record<string, string> = { a_faire: "À faire", en_cours: "En cours", fait: "Fait" };
+const STATUS_LABELS: Record<string, string> = {
+  a_faire: "À faire",
+  en_cours: "En cours",
+  aujourdhui: "Aujourd'hui",
+  envoye: "Traité / En validation",
+  bat: "BAT",
+  impression: "En impression",
+  a_facturer: "En facturation",
+  fait: "Fait",
+  archive: "Archivé",
+};
 const PRIORITY_LABELS: Record<string, string> = { basse: "Basse", normale: "Normale", haute: "Haute" };
 const PRIORITY_COLORS: Record<string, string> = { basse: "bg-slate-400", normale: "bg-sky-500", haute: "bg-rose-500" };
 
@@ -60,10 +70,11 @@ export default function SocialTasksAggregate({ compact = false }: { compact?: bo
   useEffect(() => { reload(); }, []);
 
   const toggleDone = async (t: Row) => {
-    const next = t.status === "fait" ? "a_faire" : "fait";
+    const isDone = t.status === "archive" || t.status === "fait";
+    const next = isDone ? "a_faire" : "archive";
     const { error } = await supabase.from("social_tasks").update({
       status: next,
-      done_at: next === "fait" ? new Date().toISOString() : null,
+      done_at: next === "archive" ? new Date().toISOString() : null,
     }).eq("id", t.id);
     if (error) return toast.error(error.message);
     reload();
