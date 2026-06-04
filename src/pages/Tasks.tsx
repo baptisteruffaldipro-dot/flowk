@@ -696,6 +696,39 @@ export default function Tasks() {
     const overId = String(over.id);
     const activeIdStr = String(active.id);
 
+    // === SOCIAL task being dragged ===
+    if (activeIdStr.startsWith("social:")) {
+      const socialId = activeIdStr.slice("social:".length);
+      const st = socialTasks.find((s) => s.id === socialId);
+      if (!st) return;
+      let targetCol: Status | null = null;
+      if (overId.startsWith("slot:")) targetCol = overId.split(":")[1] as Status;
+      else if (overId.startsWith("divider:")) {
+        const d = dividers.find((x) => x.id === overId.slice("divider:".length));
+        targetCol = (d?.status as Status) ?? null;
+      } else if (STATUSES.includes(overId as Status)) targetCol = overId as Status;
+      if (!targetCol) return;
+      const KANBAN_TO_SOCIAL: Record<string, "a_faire" | "en_cours" | "fait"> = {
+        a_faire: "a_faire",
+        aujourdhui: "en_cours",
+        envoye: "en_cours",
+        bat: "en_cours",
+        impression: "en_cours",
+        a_facturer: "en_cours",
+        archive: "fait",
+      };
+      const newStatus = KANBAN_TO_SOCIAL[targetCol];
+      if (!newStatus || newStatus === st.status) return;
+      const prev = socialTasks;
+      setSocialTasks((arr) => arr.map((s) => s.id === socialId ? { ...s, status: newStatus, done_at: newStatus === "fait" ? new Date().toISOString() : null } : s));
+      const { error } = await supabase.from("social_tasks" as any).update({
+        status: newStatus,
+        done_at: newStatus === "fait" ? new Date().toISOString() : null,
+      }).eq("id", socialId);
+      if (error) { toast.error(error.message); setSocialTasks(prev); }
+      return;
+    }
+
     // === DIVIDER being dragged ===
     if (activeIdStr.startsWith("divider-drag:")) {
       const dividerId = activeIdStr.slice("divider-drag:".length);
