@@ -62,13 +62,16 @@ const SOCIAL_PRIORITY_COLOR: Record<string, string> = {
 function SocialKanbanCard({ task }: { task: any }) {
   const navigate = useNavigate();
   const overdue = task.due_date && task.status !== "fait" && new Date(task.due_date) < new Date(new Date().toDateString());
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `social:${task.id}` });
   return (
-    <div className="group">
-      <Card
-        onClick={() => navigate(`/social/${task.client_id}`)}
-        className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg cursor-pointer"
-      >
-        <div className="flex items-start gap-2 mb-3">
+    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
+      <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
+        <div
+          {...listeners}
+          {...attributes}
+          onClick={() => { if (!isDragging) navigate(`/social/${task.client_id}`); }}
+          className="flex items-start gap-2 mb-3 cursor-grab active:cursor-grabbing"
+        >
           <span className="text-base leading-none mt-0.5">📱</span>
           <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
             {task.title}
