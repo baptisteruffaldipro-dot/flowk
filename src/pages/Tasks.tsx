@@ -46,6 +46,12 @@ const SOCIAL_STATUS_TO_KANBAN: Record<string, Status> = {
   a_faire: "a_faire",
   en_cours: "aujourdhui",
   fait: "archive",
+  aujourdhui: "aujourdhui",
+  envoye: "envoye",
+  bat: "bat",
+  impression: "impression",
+  a_facturer: "a_facturer",
+  archive: "archive",
 };
 
 const SOCIAL_PRIORITY_LABEL: Record<string, string> = {
@@ -61,7 +67,7 @@ const SOCIAL_PRIORITY_COLOR: Record<string, string> = {
 
 function SocialKanbanCard({ task }: { task: any }) {
   const navigate = useNavigate();
-  const overdue = task.due_date && task.status !== "fait" && new Date(task.due_date) < new Date(new Date().toDateString());
+  const overdue = task.due_date && task.status !== "archive" && task.status !== "fait" && new Date(task.due_date) < new Date(new Date().toDateString());
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `social:${task.id}` });
   return (
     <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
@@ -708,22 +714,14 @@ export default function Tasks() {
         targetCol = (d?.status as Status) ?? null;
       } else if (STATUSES.includes(overId as Status)) targetCol = overId as Status;
       if (!targetCol) return;
-      const KANBAN_TO_SOCIAL: Record<string, "a_faire" | "en_cours" | "fait"> = {
-        a_faire: "a_faire",
-        aujourdhui: "en_cours",
-        envoye: "en_cours",
-        bat: "en_cours",
-        impression: "en_cours",
-        a_facturer: "en_cours",
-        archive: "fait",
-      };
-      const newStatus = KANBAN_TO_SOCIAL[targetCol];
+      const newStatus = targetCol;
       if (!newStatus || newStatus === st.status) return;
+      const doneAt = newStatus === "archive" ? new Date().toISOString() : null;
       const prev = socialTasks;
-      setSocialTasks((arr) => arr.map((s) => s.id === socialId ? { ...s, status: newStatus, done_at: newStatus === "fait" ? new Date().toISOString() : null } : s));
+      setSocialTasks((arr) => arr.map((s) => s.id === socialId ? { ...s, status: newStatus, done_at: doneAt } : s));
       const { error } = await supabase.from("social_tasks" as any).update({
         status: newStatus,
-        done_at: newStatus === "fait" ? new Date().toISOString() : null,
+        done_at: doneAt,
       }).eq("id", socialId);
       if (error) { toast.error(error.message); setSocialTasks(prev); }
       return;
