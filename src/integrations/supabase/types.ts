@@ -1779,7 +1779,16 @@ export type Database = {
         | "publie"
         | "annule"
       social_task_priority: "basse" | "normale" | "haute"
-      social_task_status: "a_faire" | "en_cours" | "fait"
+      social_task_status:
+        | "a_faire"
+        | "en_cours"
+        | "fait"
+        | "aujourdhui"
+        | "envoye"
+        | "bat"
+        | "impression"
+        | "a_facturer"
+        | "archive"
       task_priority:
         | "en_priorite"
         | "secondaire"
@@ -2042,7 +2051,17 @@ export const Constants = {
         "annule",
       ],
       social_task_priority: ["basse", "normale", "haute"],
-      social_task_status: ["a_faire", "en_cours", "fait"],
+      social_task_status: [
+        "a_faire",
+        "en_cours",
+        "fait",
+        "aujourdhui",
+        "envoye",
+        "bat",
+        "impression",
+        "a_facturer",
+        "archive",
+      ],
       task_priority: [
         "en_priorite",
         "secondaire",
