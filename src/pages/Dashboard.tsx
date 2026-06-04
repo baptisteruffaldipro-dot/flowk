@@ -15,6 +15,7 @@ type Order = { id: string; description: string; status: string; clients?: { name
 type Inv = { id: string; label: string; amount: number; status: string; clients?: { name: string } | null };
 type Appt = { id: string; title: string; start_at: string; type: string; location: string | null; clients?: { name: string } | null };
 type Project = { id: string; name: string; type: string; clients?: { name: string } | null };
+type Lead = { id: string; name: string | null; email: string | null; phone: string | null; company: string | null; source: string | null; created_at: string };
 type Installment = {
   id: string;
   invoice_id: string;
