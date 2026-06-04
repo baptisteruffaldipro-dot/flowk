@@ -133,6 +133,7 @@ export default function Dashboard() {
       setInvoices((i.data as any) ?? []);
       setAppointments((a.data as any) ?? []);
       setProjects((p.data as any) ?? []);
+      setLeads((l.data as any) ?? []);
 
       // Compteurs globaux pour la barre de progression
       const allTasksRes = await supabase.from("tasks").select("status", { count: "exact" });
