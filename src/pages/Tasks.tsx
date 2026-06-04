@@ -1141,6 +1141,14 @@ export default function Tasks() {
       })
     : socialTasks;
 
+  const filteredLeads = q
+    ? leads.filter((lead) => {
+        const h = [lead.name, lead.company, lead.email, lead.phone, lead.source, lead.message, lead.status, LEAD_STATUS_LABEL[lead.status]]
+          .filter(Boolean).join(" ").toLowerCase();
+        return h.includes(q);
+      })
+    : leads;
+
   return (
     <div className="p-4 md:p-8">
       <PageHeader
@@ -1317,6 +1325,7 @@ export default function Tasks() {
                   status={s}
                   tasks={filteredTasks.filter((t) => t.status === s)}
                   socialTasks={filteredSocialTasks.filter((st) => SOCIAL_STATUS_TO_KANBAN[st.status] === s)}
+                  leads={filteredLeads.filter((lead) => leadKanbanStatus(lead) === s)}
                   clients={clients}
                   onUpdate={updateTask}
                   dividers={dividers.filter((d) => d.status === s)}
