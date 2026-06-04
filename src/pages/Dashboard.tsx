@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { fmtMoney, STATUS_LABEL, PRINT_STATUS_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
-import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban, CalendarClock } from "lucide-react";
+import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban, CalendarClock, UserPlus } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
 import WeekAgenda from "@/components/WeekAgenda";
 
@@ -15,6 +15,7 @@ type Order = { id: string; description: string; status: string; clients?: { name
 type Inv = { id: string; label: string; amount: number; status: string; clients?: { name: string } | null };
 type Appt = { id: string; title: string; start_at: string; type: string; location: string | null; clients?: { name: string } | null };
 type Project = { id: string; name: string; type: string; clients?: { name: string } | null };
+type Lead = { id: string; name: string | null; email: string | null; phone: string | null; company: string | null; source: string | null; created_at: string };
 type Installment = {
   id: string;
   invoice_id: string;
@@ -34,12 +35,13 @@ export default function Dashboard() {
   const [invoices, setInvoices] = useState<Inv[]>([]);
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [upcomingInstallments, setUpcomingInstallments] = useState<Installment[]>([]);
   const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, paidPresta: 0, paidBien: 0, monthRevenue: 0, monthPresta: 0, monthBien: 0, awaitingBat: 0 });
   const [monthly, setMonthly] = useState<{ key: string; label: string; presta: number; bien: number; total: number }[]>([]);
 
   const load = async () => {
-      const [t, todayT, o, i, a, paid, p, batsRelecture] = await Promise.all([
+      const [t, todayT, o, i, a, paid, p, batsRelecture, l] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").eq("status", "aujourdhui" as any),
         supabase.from("print_orders").select("id,description,status,payment_status,amount,clients(name)").not("status", "in", "(livre,livre_paye)").order("created_at", { ascending: false }).limit(50),
@@ -48,6 +50,7 @@ export default function Dashboard() {
         supabase.from("invoices").select("amount").eq("status", "payee"),
         supabase.from("projects").select("id,name,type,clients(name)").eq("archived", false).order("updated_at", { ascending: false }).limit(8),
         supabase.from("bats").select("id").eq("status", "en_relecture" as any),
+        supabase.from("leads").select("id,name,email,phone,company,source,created_at").is("read_at", null).order("created_at", { ascending: false }).limit(8),
       ]);
       const horizon = new Date();
       horizon.setDate(horizon.getDate() + 60);
@@ -130,6 +133,7 @@ export default function Dashboard() {
       setInvoices((i.data as any) ?? []);
       setAppointments((a.data as any) ?? []);
       setProjects((p.data as any) ?? []);
+      setLeads((l.data as any) ?? []);
 
       // Compteurs globaux pour la barre de progression
       const allTasksRes = await supabase.from("tasks").select("status", { count: "exact" });
@@ -180,7 +184,27 @@ export default function Dashboard() {
 
       {upcomingInstallments.length > 0 && <InstallmentsWidget items={upcomingInstallments} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Column title="Nouveaux leads" href="/leads" empty="Aucun nouveau lead">
+          {leads.map((lead) => {
+            const dateStr = new Date(lead.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+            return (
+              <Link key={lead.id} to={`/leads`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="text-sm font-medium leading-snug truncate inline-flex items-center gap-1.5">
+                    <UserPlus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    {lead.name || lead.email || lead.phone || "Nouveau lead"}
+                  </div>
+                  <Badge variant="outline" className="shrink-0 text-[10px] border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400">Nouveau</Badge>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 truncate">
+                  {lead.company ? `${lead.company} · ` : ""}{lead.source ?? "—"} · {dateStr}
+                </div>
+              </Link>
+            );
+          })}
+        </Column>
+
         <Column title="Projets en cours" href="/projets" empty="Aucun projet en cours">
           {projects.slice(0, 8).map((p) => (
             <Link key={p.id} to={`/projets/${p.id}`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
