@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Receipt, Archive } from "lucide-react";
+import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Receipt, Archive, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
@@ -32,6 +32,7 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  pointerWithin,
   PointerSensor,
   useDraggable,
   useDroppable,
@@ -46,6 +47,12 @@ const SOCIAL_STATUS_TO_KANBAN: Record<string, Status> = {
   a_faire: "a_faire",
   en_cours: "aujourdhui",
   fait: "archive",
+  aujourdhui: "aujourdhui",
+  envoye: "envoye",
+  bat: "bat",
+  impression: "impression",
+  a_facturer: "a_facturer",
+  archive: "archive",
 };
 
 const SOCIAL_PRIORITY_LABEL: Record<string, string> = {
@@ -59,9 +66,60 @@ const SOCIAL_PRIORITY_COLOR: Record<string, string> = {
   haute: "bg-red-100 text-red-700 border-red-300",
 };
 
+const LEAD_STATUS_LABEL: Record<string, string> = {
+  nouveau: "Nouveau",
+  contacte: "Contacté",
+  qualifie: "Qualifié",
+  converti: "Converti",
+  perdu: "Perdu",
+};
+
+const leadKanbanStatus = (lead: any): Status => {
+  const status = lead.metadata?.kanban_status;
+  return STATUSES.includes(status) ? status : "a_faire";
+};
+
+function LeadKanbanCard({ lead }: { lead: any }) {
+  const navigate = useNavigate();
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `lead:${lead.id}` });
+  const title = lead.name || lead.company || lead.email || lead.phone || "Nouveau lead";
+  return (
+    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
+      <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
+        <div
+          {...listeners}
+          {...attributes}
+          onClick={() => { if (!isDragging) navigate("/leads"); }}
+          className="flex items-start gap-2 mb-3 cursor-grab active:cursor-grabbing"
+        >
+          <UserPlus className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+          <div className="text-[15px] font-semibold leading-snug text-foreground flex-1 min-w-0 truncate">
+            {title}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5 border-primary/40 bg-primary/10 text-primary">
+            Lead
+          </Badge>
+          {lead.status && (
+            <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5">
+              {LEAD_STATUS_LABEL[lead.status] ?? lead.status}
+            </Badge>
+          )}
+          {lead.source && (
+            <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(lead.source)}`}>
+              {lead.source}
+            </Badge>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function SocialKanbanCard({ task }: { task: any }) {
   const navigate = useNavigate();
-  const overdue = task.due_date && task.status !== "fait" && new Date(task.due_date) < new Date(new Date().toDateString());
+  const overdue = task.due_date && task.status !== "archive" && task.status !== "fait" && new Date(task.due_date) < new Date(new Date().toDateString());
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `social:${task.id}` });
   return (
     <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
@@ -422,6 +480,7 @@ function KanbanColumn({
   status,
   tasks,
   socialTasks,
+  leads,
   clients,
   onUpdate,
   dividers,
@@ -435,6 +494,7 @@ function KanbanColumn({
   status: Status;
   tasks: any[];
   socialTasks: any[];
+  leads: any[];
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
   dividers: any[];
@@ -473,7 +533,7 @@ function KanbanColumn({
         <div className="flex items-center gap-2 mb-3 px-1">
           <span className="text-base leading-none">{meta.emoji}</span>
           <span className="text-sm font-semibold text-foreground flex-1 truncate">{STATUS_LABEL[status]}</span>
-          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length + socialTasks.length}</span>
+          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length + socialTasks.length + leads.length}</span>
         </div>
         <div className="space-y-1 min-h-[80px]">
           <DropSlot id={`slot:${status}:0`} />
@@ -494,6 +554,11 @@ function KanbanColumn({
           {socialTasks.map((st) => (
             <div key={`st-${st.id}`} className="mt-1">
               <SocialKanbanCard task={st} />
+            </div>
+          ))}
+          {leads.map((lead) => (
+            <div key={`lead-${lead.id}`} className="mt-1">
+              <LeadKanbanCard lead={lead} />
             </div>
           ))}
           {adding ? (
@@ -621,6 +686,7 @@ export default function Tasks() {
   const [dividers, setDividers] = useState<any[]>([]);
   const [paidTaskIds, setPaidTaskIds] = useState<Set<string>>(new Set());
   const [socialTasks, setSocialTasks] = useState<any[]>([]);
+  const [leads, setLeads] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -634,13 +700,14 @@ export default function Tasks() {
   });
 
   const load = async () => {
-    const [t, c, p, d, inv, st] = await Promise.all([
+    const [t, c, p, d, inv, st, l] = await Promise.all([
       supabase.from("tasks").select("*, clients(name), projects(name)").order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id"),
       supabase.from("kanban_dividers").select("*").order("position", { ascending: true }),
       supabase.from("invoices").select("task_id,status").eq("status", "payee").not("task_id", "is", null),
       supabase.from("social_tasks" as any).select("*").order("created_at", { ascending: false }),
+      supabase.from("leads" as any).select("*").neq("status", "perdu").order("created_at", { ascending: false }),
     ]);
     setTasks(t.data ?? []);
     setClients(c.data ?? []);
@@ -653,6 +720,7 @@ export default function Tasks() {
       clients: clientMap.get(row.client_id) ?? null,
     }));
     setSocialTasks(enriched);
+    setLeads((l.data as any[]) ?? []);
   };
   useEffect(() => {
     load();
@@ -708,24 +776,36 @@ export default function Tasks() {
         targetCol = (d?.status as Status) ?? null;
       } else if (STATUSES.includes(overId as Status)) targetCol = overId as Status;
       if (!targetCol) return;
-      const KANBAN_TO_SOCIAL: Record<string, "a_faire" | "en_cours" | "fait"> = {
-        a_faire: "a_faire",
-        aujourdhui: "en_cours",
-        envoye: "en_cours",
-        bat: "en_cours",
-        impression: "en_cours",
-        a_facturer: "en_cours",
-        archive: "fait",
-      };
-      const newStatus = KANBAN_TO_SOCIAL[targetCol];
+      const newStatus = targetCol;
       if (!newStatus || newStatus === st.status) return;
+      const doneAt = newStatus === "archive" ? new Date().toISOString() : null;
       const prev = socialTasks;
-      setSocialTasks((arr) => arr.map((s) => s.id === socialId ? { ...s, status: newStatus, done_at: newStatus === "fait" ? new Date().toISOString() : null } : s));
+      setSocialTasks((arr) => arr.map((s) => s.id === socialId ? { ...s, status: newStatus, done_at: doneAt } : s));
       const { error } = await supabase.from("social_tasks" as any).update({
         status: newStatus,
-        done_at: newStatus === "fait" ? new Date().toISOString() : null,
+        done_at: doneAt,
       }).eq("id", socialId);
       if (error) { toast.error(error.message); setSocialTasks(prev); }
+      return;
+    }
+
+    // === LEAD being dragged ===
+    if (activeIdStr.startsWith("lead:")) {
+      const leadId = activeIdStr.slice("lead:".length);
+      const lead = leads.find((l) => l.id === leadId);
+      if (!lead) return;
+      let targetCol: Status | null = null;
+      if (overId.startsWith("slot:")) targetCol = overId.split(":")[1] as Status;
+      else if (overId.startsWith("divider:")) {
+        const d = dividers.find((x) => x.id === overId.slice("divider:".length));
+        targetCol = (d?.status as Status) ?? null;
+      } else if (STATUSES.includes(overId as Status)) targetCol = overId as Status;
+      if (!targetCol || leadKanbanStatus(lead) === targetCol) return;
+      const metadata = { ...(lead.metadata ?? {}), kanban_status: targetCol };
+      const prev = leads;
+      setLeads((arr) => arr.map((l) => l.id === leadId ? { ...l, metadata } : l));
+      const { error } = await supabase.from("leads" as any).update({ metadata }).eq("id", leadId);
+      if (error) { toast.error(error.message); setLeads(prev); }
       return;
     }
 
@@ -913,6 +993,8 @@ export default function Tasks() {
   };
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
+  const activeSocialTask = activeId?.startsWith("social:") ? socialTasks.find((t) => t.id === activeId.slice("social:".length)) : null;
+  const activeLead = activeId?.startsWith("lead:") ? leads.find((lead) => lead.id === activeId.slice("lead:".length)) : null;
 
   const maxPositionFor = (status: Status) => {
     const taskMax = Math.max(0, ...tasks.filter((t) => t.status === status).map((t) => t.position ?? 0));
@@ -1061,6 +1143,14 @@ export default function Tasks() {
         return h.includes(q);
       })
     : socialTasks;
+
+  const filteredLeads = q
+    ? leads.filter((lead) => {
+        const h = [lead.name, lead.company, lead.email, lead.phone, lead.source, lead.message, lead.status, LEAD_STATUS_LABEL[lead.status]]
+          .filter(Boolean).join(" ").toLowerCase();
+        return h.includes(q);
+      })
+    : leads;
 
   return (
     <div className="p-4 md:p-8">
@@ -1230,7 +1320,7 @@ export default function Tasks() {
         </TabsContent>
 
         <TabsContent value="kanban" className="mt-4">
-          <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+          <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={onDragStart} onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
               {STATUSES.map((s) => (
                 <KanbanColumn
@@ -1238,6 +1328,7 @@ export default function Tasks() {
                   status={s}
                   tasks={filteredTasks.filter((t) => t.status === s)}
                   socialTasks={filteredSocialTasks.filter((st) => SOCIAL_STATUS_TO_KANBAN[st.status] === s)}
+                  leads={filteredLeads.filter((lead) => leadKanbanStatus(lead) === s)}
                   clients={clients}
                   onUpdate={updateTask}
                   dividers={dividers.filter((d) => d.status === s)}
@@ -1261,6 +1352,18 @@ export default function Tasks() {
                       {activeTask.clients.name}
                     </Badge>
                   )}
+                </Card>
+              ) : activeSocialTask ? (
+                <Card className="p-4 shadow-2xl cursor-grabbing rotate-2 border border-border">
+                  <div className="text-[15px] font-semibold leading-snug mb-2">{activeSocialTask.title}</div>
+                  <Badge variant="outline" className="text-[11px]">Réseaux sociaux</Badge>
+                </Card>
+              ) : activeLead ? (
+                <Card className="p-4 shadow-2xl cursor-grabbing rotate-2 border border-border">
+                  <div className="text-[15px] font-semibold leading-snug mb-2">
+                    {activeLead.name || activeLead.company || activeLead.email || activeLead.phone || "Nouveau lead"}
+                  </div>
+                  <Badge variant="outline" className="text-[11px] border-primary/40 bg-primary/10 text-primary">Lead</Badge>
                 </Card>
               ) : null}
             </DragOverlay>
