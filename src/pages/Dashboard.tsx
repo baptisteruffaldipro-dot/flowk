@@ -41,7 +41,7 @@ export default function Dashboard() {
   const [monthly, setMonthly] = useState<{ key: string; label: string; presta: number; bien: number; total: number }[]>([]);
 
   const load = async () => {
-      const [t, todayT, o, i, a, paid, p, batsRelecture] = await Promise.all([
+      const [t, todayT, o, i, a, paid, p, batsRelecture, l] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").not("status", "in", "(envoye,archive)").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
         supabase.from("tasks").select("id,title,status,deadline,clients(name)").eq("status", "aujourdhui" as any),
         supabase.from("print_orders").select("id,description,status,payment_status,amount,clients(name)").not("status", "in", "(livre,livre_paye)").order("created_at", { ascending: false }).limit(50),
@@ -50,6 +50,7 @@ export default function Dashboard() {
         supabase.from("invoices").select("amount").eq("status", "payee"),
         supabase.from("projects").select("id,name,type,clients(name)").eq("archived", false).order("updated_at", { ascending: false }).limit(8),
         supabase.from("bats").select("id").eq("status", "en_relecture" as any),
+        supabase.from("leads").select("id,name,email,phone,company,source,created_at").is("read_at", null).order("created_at", { ascending: false }).limit(8),
       ]);
       const horizon = new Date();
       horizon.setDate(horizon.getDate() + 60);
