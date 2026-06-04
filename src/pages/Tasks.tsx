@@ -32,6 +32,7 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  pointerWithin,
   PointerSensor,
   useDraggable,
   useDroppable,
@@ -992,6 +993,8 @@ export default function Tasks() {
   };
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
+  const activeSocialTask = activeId?.startsWith("social:") ? socialTasks.find((t) => t.id === activeId.slice("social:".length)) : null;
+  const activeLead = activeId?.startsWith("lead:") ? leads.find((lead) => lead.id === activeId.slice("lead:".length)) : null;
 
   const maxPositionFor = (status: Status) => {
     const taskMax = Math.max(0, ...tasks.filter((t) => t.status === status).map((t) => t.position ?? 0));
@@ -1317,7 +1320,7 @@ export default function Tasks() {
         </TabsContent>
 
         <TabsContent value="kanban" className="mt-4">
-          <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+          <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={onDragStart} onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
               {STATUSES.map((s) => (
                 <KanbanColumn
@@ -1349,6 +1352,18 @@ export default function Tasks() {
                       {activeTask.clients.name}
                     </Badge>
                   )}
+                </Card>
+              ) : activeSocialTask ? (
+                <Card className="p-4 shadow-2xl cursor-grabbing rotate-2 border border-border">
+                  <div className="text-[15px] font-semibold leading-snug mb-2">{activeSocialTask.title}</div>
+                  <Badge variant="outline" className="text-[11px]">Réseaux sociaux</Badge>
+                </Card>
+              ) : activeLead ? (
+                <Card className="p-4 shadow-2xl cursor-grabbing rotate-2 border border-border">
+                  <div className="text-[15px] font-semibold leading-snug mb-2">
+                    {activeLead.name || activeLead.company || activeLead.email || activeLead.phone || "Nouveau lead"}
+                  </div>
+                  <Badge variant="outline" className="text-[11px] border-primary/40 bg-primary/10 text-primary">Lead</Badge>
                 </Card>
               ) : null}
             </DragOverlay>
