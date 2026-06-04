@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Receipt, Archive } from "lucide-react";
+import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Receipt, Archive, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
@@ -64,6 +64,57 @@ const SOCIAL_PRIORITY_COLOR: Record<string, string> = {
   normale: "bg-blue-100 text-blue-700 border-blue-300",
   haute: "bg-red-100 text-red-700 border-red-300",
 };
+
+const LEAD_STATUS_LABEL: Record<string, string> = {
+  nouveau: "Nouveau",
+  contacte: "Contacté",
+  qualifie: "Qualifié",
+  converti: "Converti",
+  perdu: "Perdu",
+};
+
+const leadKanbanStatus = (lead: any): Status => {
+  const status = lead.metadata?.kanban_status;
+  return STATUSES.includes(status) ? status : "a_faire";
+};
+
+function LeadKanbanCard({ lead }: { lead: any }) {
+  const navigate = useNavigate();
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `lead:${lead.id}` });
+  const title = lead.name || lead.company || lead.email || lead.phone || "Nouveau lead";
+  return (
+    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
+      <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
+        <div
+          {...listeners}
+          {...attributes}
+          onClick={() => { if (!isDragging) navigate("/leads"); }}
+          className="flex items-start gap-2 mb-3 cursor-grab active:cursor-grabbing"
+        >
+          <UserPlus className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+          <div className="text-[15px] font-semibold leading-snug text-foreground flex-1 min-w-0 truncate">
+            {title}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5 border-primary/40 bg-primary/10 text-primary">
+            Lead
+          </Badge>
+          {lead.status && (
+            <Badge variant="outline" className="text-[11px] font-medium px-2 py-0.5">
+              {LEAD_STATUS_LABEL[lead.status] ?? lead.status}
+            </Badge>
+          )}
+          {lead.source && (
+            <Badge variant="outline" className={`text-[11px] font-medium px-2 py-0.5 ${tagColor(lead.source)}`}>
+              {lead.source}
+            </Badge>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 function SocialKanbanCard({ task }: { task: any }) {
   const navigate = useNavigate();
