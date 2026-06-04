@@ -479,6 +479,7 @@ function KanbanColumn({
   status,
   tasks,
   socialTasks,
+  leads,
   clients,
   onUpdate,
   dividers,
@@ -492,6 +493,7 @@ function KanbanColumn({
   status: Status;
   tasks: any[];
   socialTasks: any[];
+  leads: any[];
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
   dividers: any[];
@@ -530,7 +532,7 @@ function KanbanColumn({
         <div className="flex items-center gap-2 mb-3 px-1">
           <span className="text-base leading-none">{meta.emoji}</span>
           <span className="text-sm font-semibold text-foreground flex-1 truncate">{STATUS_LABEL[status]}</span>
-          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length + socialTasks.length}</span>
+          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length + socialTasks.length + leads.length}</span>
         </div>
         <div className="space-y-1 min-h-[80px]">
           <DropSlot id={`slot:${status}:0`} />
@@ -551,6 +553,11 @@ function KanbanColumn({
           {socialTasks.map((st) => (
             <div key={`st-${st.id}`} className="mt-1">
               <SocialKanbanCard task={st} />
+            </div>
+          ))}
+          {leads.map((lead) => (
+            <div key={`lead-${lead.id}`} className="mt-1">
+              <LeadKanbanCard lead={lead} />
             </div>
           ))}
           {adding ? (
