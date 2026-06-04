@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [invoices, setInvoices] = useState<Inv[]>([]);
   const [appointments, setAppointments] = useState<Appt[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [upcomingInstallments, setUpcomingInstallments] = useState<Installment[]>([]);
   const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, paidPresta: 0, paidBien: 0, monthRevenue: 0, monthPresta: 0, monthBien: 0, awaitingBat: 0 });
   const [monthly, setMonthly] = useState<{ key: string; label: string; presta: number; bien: number; total: number }[]>([]);
