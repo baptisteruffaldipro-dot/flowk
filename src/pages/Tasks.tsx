@@ -821,7 +821,7 @@ export default function Tasks() {
       const socialId = activeIdStr.slice("social:".length);
       const st = socialTasks.find((s) => s.id === socialId);
       if (!st) return;
-      const targetCol = statusFromDropTarget(overId, tasks, dividers);
+      const targetCol = statusFromDropTarget(overId, tasks, dividers, socialTasks, leads);
       if (!targetCol) return;
       const newStatus = targetCol;
       if (!newStatus || newStatus === st.status) return;
@@ -841,7 +841,7 @@ export default function Tasks() {
       const leadId = activeIdStr.slice("lead:".length);
       const lead = leads.find((l) => l.id === leadId);
       if (!lead) return;
-      const targetCol = statusFromDropTarget(overId, tasks, dividers);
+      const targetCol = statusFromDropTarget(overId, tasks, dividers, socialTasks, leads);
       if (!targetCol || leadKanbanStatus(lead) === targetCol) return;
       const metadata = { ...(lead.metadata ?? {}), kanban_status: targetCol };
       const prev = leads;
@@ -923,6 +923,24 @@ export default function Tasks() {
       const newPosition = positionForInsertIndex(sorted, targetIndex + (insertAfter ? 1 : 0));
 
       if (task.status === newStatus && task.position === newPosition) return;
+      const prev = tasks;
+      setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status: newStatus, position: newPosition } : t)));
+      const { error } = await supabase.from("tasks").update({ status: newStatus, position: newPosition }).eq("id", task.id);
+      if (error) {
+        toast.error(error.message);
+        setTasks(prev);
+      } else {
+        triggerBatIfNeeded(task.id, newStatus);
+        triggerTiimeIfNeeded(task.id, newStatus);
+        triggerPrintIfNeeded(task.id, newStatus);
+      }
+      return;
+    }
+
+    if (overId.startsWith("social-card:") || overId.startsWith("lead-card:")) {
+      const newStatus = statusFromDropTarget(overId, tasks, dividers, socialTasks, leads);
+      if (!newStatus || task.status === newStatus) return;
+      const newPosition = maxPositionFor(newStatus) + 10;
       const prev = tasks;
       setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status: newStatus, position: newPosition } : t)));
       const { error } = await supabase.from("tasks").update({ status: newStatus, position: newPosition }).eq("id", task.id);
