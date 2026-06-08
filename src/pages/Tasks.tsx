@@ -29,10 +29,12 @@ import NewPrintOrderDialog from "@/components/NewPrintOrderDialog";
 import SocialTasksAggregate from "@/components/SocialTasksAggregate";
 import {
   DndContext,
+  CollisionDetection,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
   pointerWithin,
+  rectIntersection,
   PointerSensor,
   useDraggable,
   useDroppable,
@@ -79,18 +81,62 @@ const leadKanbanStatus = (lead: any): Status => {
   return STATUSES.includes(status) ? status : "a_faire";
 };
 
+const isKanbanStatus = (value: string): value is Status => STATUSES.includes(value as Status);
+
+const positionForInsertIndex = (sorted: { pos: number }[], insertIndex: number) => {
+  const before = sorted[insertIndex - 1];
+  const after = sorted[insertIndex];
+  if (!before && !after) return 10;
+  if (!before) return after.pos - 5;
+  if (!after) return before.pos + 10;
+  return (before.pos + after.pos) / 2;
+};
+
+const kanbanCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  return pointerCollisions.length > 0 ? pointerCollisions : rectIntersection(args);
+};
+
+const statusFromDropTarget = (overId: string, tasks: any[], dividers: any[], socialTasks: any[] = [], leads: any[] = []): Status | null => {
+  if (overId.startsWith("slot:")) {
+    const status = overId.split(":")[1];
+    return isKanbanStatus(status) ? status : null;
+  }
+  if (overId.startsWith("divider:")) {
+    const divider = dividers.find((d) => d.id === overId.slice("divider:".length));
+    return divider && isKanbanStatus(divider.status) ? divider.status : null;
+  }
+  if (overId.startsWith("task:")) {
+    const task = tasks.find((t) => t.id === overId.slice("task:".length));
+    return task && isKanbanStatus(task.status) ? task.status : null;
+  }
+  if (overId.startsWith("social-card:")) {
+    const task = socialTasks.find((t) => t.id === overId.slice("social-card:".length));
+    const status = task ? SOCIAL_STATUS_TO_KANBAN[task.status] : null;
+    return status ?? null;
+  }
+  if (overId.startsWith("lead-card:")) {
+    const lead = leads.find((l) => l.id === overId.slice("lead-card:".length));
+    return lead ? leadKanbanStatus(lead) : null;
+  }
+  return isKanbanStatus(overId) ? overId : null;
+};
+
 function LeadKanbanCard({ lead }: { lead: any }) {
   const navigate = useNavigate();
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `lead:${lead.id}` });
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `lead-card:${lead.id}` });
+  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({ id: `lead:${lead.id}` });
   const title = lead.name || lead.company || lead.email || lead.phone || "Nouveau lead";
   return (
-    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
-      <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
+    <div ref={(node) => { setDropRef(node); setDragRef(node); }} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
+      <Card
+        {...listeners}
+        {...attributes}
+        onClick={() => { if (!isDragging) navigate("/leads"); }}
+        className={`p-4 bg-card/95 hover:bg-card border shadow-sm transition rounded-lg cursor-grab active:cursor-grabbing ${isOver ? "border-primary ring-1 ring-primary" : "border-border/60 hover:border-foreground/20"}`}
+      >
         <div
-          {...listeners}
-          {...attributes}
-          onClick={() => { if (!isDragging) navigate("/leads"); }}
-          className="flex items-start gap-2 mb-3 cursor-grab active:cursor-grabbing"
+          className="flex items-start gap-2 mb-3"
         >
           <UserPlus className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
           <div className="text-[15px] font-semibold leading-snug text-foreground flex-1 min-w-0 truncate">
@@ -120,15 +166,18 @@ function LeadKanbanCard({ lead }: { lead: any }) {
 function SocialKanbanCard({ task }: { task: any }) {
   const navigate = useNavigate();
   const overdue = task.due_date && task.status !== "archive" && task.status !== "fait" && new Date(task.due_date) < new Date(new Date().toDateString());
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `social:${task.id}` });
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `social-card:${task.id}` });
+  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({ id: `social:${task.id}` });
   return (
-    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
-      <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
+    <div ref={(node) => { setDropRef(node); setDragRef(node); }} style={{ opacity: isDragging ? 0.4 : 1 }} className="touch-none group">
+      <Card
+        {...listeners}
+        {...attributes}
+        onClick={() => { if (!isDragging) navigate(`/social/${task.client_id}`); }}
+        className={`p-4 bg-card/95 hover:bg-card border shadow-sm transition rounded-lg cursor-grab active:cursor-grabbing ${isOver ? "border-primary ring-1 ring-primary" : "border-border/60 hover:border-foreground/20"}`}
+      >
         <div
-          {...listeners}
-          {...attributes}
-          onClick={() => { if (!isDragging) navigate(`/social/${task.client_id}`); }}
-          className="flex items-start gap-2 mb-3 cursor-grab active:cursor-grabbing"
+          className="flex items-start gap-2 mb-3"
         >
           <span className="text-base leading-none mt-0.5">📱</span>
           <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
@@ -358,22 +407,25 @@ function KanbanCard({
   paid?: boolean;
   onComplete: (task: any, action: "bat" | "print" | "invoice" | "archive") => void;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id });
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `task:${task.id}` });
+  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({ id: task.id });
   const navigate = useNavigate();
   const projectName = task.title?.trim() ? task.title : (task.projects?.name ?? "Sans titre");
   const showPrestation = !!task.projects?.name;
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => { setDropRef(node); setDragRef(node); }}
       style={{ opacity: isDragging ? 0.4 : 1 }}
       className="touch-none group"
     >
-      <Card className="p-4 bg-card/95 hover:bg-card border border-border/60 hover:border-foreground/20 shadow-sm transition rounded-lg">
+      <Card
+        {...listeners}
+        {...attributes}
+        onClick={() => { if (!isDragging) navigate(`/taches/${task.id}`); }}
+        className={`p-4 bg-card/95 hover:bg-card border shadow-sm transition rounded-lg cursor-grab active:cursor-grabbing ${isOver ? "border-primary ring-1 ring-primary" : "border-border/60 hover:border-foreground/20"}`}
+      >
         <div
-          {...listeners}
-          {...attributes}
-          onClick={() => { if (!isDragging) navigate(`/taches/${task.id}`); }}
-          className="flex items-start gap-2 mb-3 cursor-grab active:cursor-grabbing"
+          className="flex items-start gap-2 mb-3"
         >
           <span className="text-base leading-none mt-0.5">📄</span>
           <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
@@ -603,7 +655,7 @@ function DropSlot({ id }: { id: string }) {
   return (
     <div
       ref={setNodeRef}
-      className={`transition-all rounded ${isOver ? "h-8 bg-primary/20 ring-1 ring-primary my-1" : "h-2"}`}
+      className={`transition-all rounded ${isOver ? "h-8 bg-primary/20 ring-1 ring-primary my-1" : "h-3"}`}
     />
   );
 }
@@ -769,12 +821,7 @@ export default function Tasks() {
       const socialId = activeIdStr.slice("social:".length);
       const st = socialTasks.find((s) => s.id === socialId);
       if (!st) return;
-      let targetCol: Status | null = null;
-      if (overId.startsWith("slot:")) targetCol = overId.split(":")[1] as Status;
-      else if (overId.startsWith("divider:")) {
-        const d = dividers.find((x) => x.id === overId.slice("divider:".length));
-        targetCol = (d?.status as Status) ?? null;
-      } else if (STATUSES.includes(overId as Status)) targetCol = overId as Status;
+      const targetCol = statusFromDropTarget(overId, tasks, dividers, socialTasks, leads);
       if (!targetCol) return;
       const newStatus = targetCol;
       if (!newStatus || newStatus === st.status) return;
@@ -794,12 +841,7 @@ export default function Tasks() {
       const leadId = activeIdStr.slice("lead:".length);
       const lead = leads.find((l) => l.id === leadId);
       if (!lead) return;
-      let targetCol: Status | null = null;
-      if (overId.startsWith("slot:")) targetCol = overId.split(":")[1] as Status;
-      else if (overId.startsWith("divider:")) {
-        const d = dividers.find((x) => x.id === overId.slice("divider:".length));
-        targetCol = (d?.status as Status) ?? null;
-      } else if (STATUSES.includes(overId as Status)) targetCol = overId as Status;
+      const targetCol = statusFromDropTarget(overId, tasks, dividers, socialTasks, leads);
       if (!targetCol || leadKanbanStatus(lead) === targetCol) return;
       const metadata = { ...(lead.metadata ?? {}), kanban_status: targetCol };
       const prev = leads;
@@ -861,6 +903,58 @@ export default function Tasks() {
     const task = tasks.find((t) => t.id === String(active.id));
     if (!task) return;
 
+    // Drop directly on another task card → insert before/after that card.
+    if (overId.startsWith("task:")) {
+      const targetTaskId = overId.slice("task:".length);
+      if (targetTaskId === task.id) return;
+      const targetTask = tasks.find((t) => t.id === targetTaskId);
+      if (!targetTask || !isKanbanStatus(targetTask.status)) return;
+      const newStatus = targetTask.status;
+      const colTasks = tasks.filter((t) => t.status === newStatus && t.id !== task.id);
+      const colDividers = dividers.filter((d) => d.status === newStatus);
+      const sorted = [
+        ...colTasks.map((t) => ({ kind: "task" as const, data: t, pos: t.position ?? 0 })),
+        ...colDividers.map((d) => ({ kind: "divider" as const, data: d, pos: d.position ?? 0 })),
+      ].sort((a, b) => a.pos - b.pos);
+      const targetIndex = sorted.findIndex((item) => item.kind === "task" && item.data.id === targetTaskId);
+      if (targetIndex < 0) return;
+      const draggedRect = active.rect.current.translated;
+      const insertAfter = draggedRect ? draggedRect.top + draggedRect.height / 2 > over.rect.top + over.rect.height / 2 : true;
+      const newPosition = positionForInsertIndex(sorted, targetIndex + (insertAfter ? 1 : 0));
+
+      if (task.status === newStatus && task.position === newPosition) return;
+      const prev = tasks;
+      setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status: newStatus, position: newPosition } : t)));
+      const { error } = await supabase.from("tasks").update({ status: newStatus, position: newPosition }).eq("id", task.id);
+      if (error) {
+        toast.error(error.message);
+        setTasks(prev);
+      } else {
+        triggerBatIfNeeded(task.id, newStatus);
+        triggerTiimeIfNeeded(task.id, newStatus);
+        triggerPrintIfNeeded(task.id, newStatus);
+      }
+      return;
+    }
+
+    if (overId.startsWith("social-card:") || overId.startsWith("lead-card:")) {
+      const newStatus = statusFromDropTarget(overId, tasks, dividers, socialTasks, leads);
+      if (!newStatus || task.status === newStatus) return;
+      const newPosition = maxPositionFor(newStatus) + 10;
+      const prev = tasks;
+      setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status: newStatus, position: newPosition } : t)));
+      const { error } = await supabase.from("tasks").update({ status: newStatus, position: newPosition }).eq("id", task.id);
+      if (error) {
+        toast.error(error.message);
+        setTasks(prev);
+      } else {
+        triggerBatIfNeeded(task.id, newStatus);
+        triggerTiimeIfNeeded(task.id, newStatus);
+        triggerPrintIfNeeded(task.id, newStatus);
+      }
+      return;
+    }
+
     // Drop on a slot between items → insert at exact position
     if (overId.startsWith("slot:")) {
       const [, statusStr, idxStr] = overId.split(":");
@@ -875,13 +969,7 @@ export default function Tasks() {
         ...colDividers.map((d) => ({ kind: "divider" as const, data: d, pos: d.position ?? 0 })),
       ].sort((a, b) => a.pos - b.pos);
 
-      const before = sorted[slotIndex - 1];
-      const after = sorted[slotIndex];
-      let newPosition: number;
-      if (!before && !after) newPosition = 10;
-      else if (!before) newPosition = (after!.pos) - 5;
-      else if (!after) newPosition = before.pos + 10;
-      else newPosition = (before.pos + after.pos) / 2;
+      const newPosition = positionForInsertIndex(sorted, slotIndex);
 
       // No-op check: same status and same effective position
       if (task.status === newStatus && task.position === newPosition) return;
@@ -1320,7 +1408,7 @@ export default function Tasks() {
         </TabsContent>
 
         <TabsContent value="kanban" className="mt-4">
-          <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+          <DndContext sensors={sensors} collisionDetection={kanbanCollisionDetection} onDragStart={onDragStart} onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
               {STATUSES.map((s) => (
                 <KanbanColumn
