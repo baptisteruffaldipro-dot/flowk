@@ -1402,6 +1402,23 @@ export default function Tasks() {
         )}
       </div>
 
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <Button
+          size="sm"
+          variant={focusMode ? "default" : "outline"}
+          onClick={() => setFocusMode((v) => !v)}
+          className="gap-1.5"
+        >
+          <Zap className="h-3.5 w-3.5" />
+          {focusMode ? "Focus du jour activé" : "Focus du jour"}
+        </Button>
+        {focusMode && (
+          <span className="text-xs text-muted-foreground">
+            Seule la colonne « Aujourd'hui » est affichée. Glisse 1 à 3 tâches dedans pour la journée.
+          </span>
+        )}
+      </div>
+
       <Tabs defaultValue="kanban">
         <TabsList>
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
