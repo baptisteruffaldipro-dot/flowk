@@ -515,6 +515,20 @@ function KanbanCard({
             )}
             <AddStickerMenu task={task} onUpdate={onUpdate} />
             {(() => {
+              const score = computePriorityScore(task);
+              if (score < 20) return null;
+              return (
+                <Badge
+                  variant="outline"
+                  className={`text-[11px] font-medium px-2 py-0.5 inline-flex items-center gap-0.5 ${priorityScoreColor(score)}`}
+                  title="Score de priorité (deadline + priorité + CA)"
+                >
+                  <Star className="h-3 w-3" />
+                  {score}
+                </Badge>
+              );
+            })()}
+            {(() => {
               const billing = computeTaskBilling(task);
               const amount = task.billing_type === "forfait" ? (task.flat_amount ?? 0) : billing.total;
               return amount > 0 ? (
