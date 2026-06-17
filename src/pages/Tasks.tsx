@@ -1204,7 +1204,19 @@ export default function Tasks() {
       toast.error(error.message);
       return;
     }
+    if (detectMultipleDeliverables(title)) {
+      toast("Plusieurs livrables détectés", {
+        description: "Cette tâche ressemble à un projet. Tu veux la transformer ?",
+        action: { label: "Créer projet", onClick: () => suggestConvertToProject(title) },
+      });
+    }
     await load();
+  };
+
+  const suggestConvertToProject = async (title: string) => {
+    // Just navigate to new project page with prefilled name via query param.
+    const params = new URLSearchParams({ name: title });
+    window.location.href = `/projets?new=1&${params.toString()}`;
   };
 
   const completeTask = async (task: any, action: "bat" | "print" | "invoice" | "archive") => {
