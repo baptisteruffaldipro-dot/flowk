@@ -427,9 +427,7 @@ function KanbanCard({
         className={`p-4 bg-card/95 hover:bg-card border shadow-sm transition rounded-lg cursor-grab active:cursor-grabbing ${
           isOver
             ? "border-primary ring-1 ring-primary"
-            : noBudget
-              ? "border-red-500/70 ring-1 ring-red-500/40 bg-red-500/5"
-              : "border-border/60 hover:border-foreground/20"
+            : "border-border/60 hover:border-foreground/20"
         }`}
       >
         <div
