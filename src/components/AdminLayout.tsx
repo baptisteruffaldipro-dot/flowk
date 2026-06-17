@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, CalendarCheck, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2, Target, TrendingUp, Mail } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2, Target, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -10,18 +10,16 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type NavItem = { to: string; icon: any; label: string; end?: boolean; badgeKey?: "leads" | "mails" };
+type NavItem = { to: string; icon: any; label: string; end?: boolean; badgeKey?: "leads" };
 const nav: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/inbox", icon: Inbox, label: "Inbox" },
-  { to: "/mails", icon: Mail, label: "Mails", badgeKey: "mails" },
   { to: "/leads", icon: UserPlus, label: "Leads", badgeKey: "leads" },
   { to: "/clients", icon: Users, label: "Clients" },
   { to: "/projets", icon: FolderKanban, label: "Projets" },
   { to: "/taches", icon: ListChecks, label: "Tâches" },
   { to: "/objectifs", icon: Target, label: "Objectifs" },
   { to: "/rdv", icon: CalendarDays, label: "Rendez-vous" },
-  { to: "/agenda", icon: CalendarCheck, label: "Agenda réalisations" },
   { to: "/questionnaires", icon: ClipboardList, label: "Questionnaires" },
   { to: "/strategies", icon: Sparkle, label: "Stratégies de marque" },
   { to: "/logos", icon: Palette, label: "Présentations logo" },
@@ -39,7 +37,6 @@ export default function AdminLayout() {
   const [captureOpen, setCaptureOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [unreadLeads, setUnreadLeads] = useState(0);
-  const [unreadMails, setUnreadMails] = useState(0);
 
   useEffect(() => {
     const loadCount = async () => {
@@ -65,23 +62,6 @@ export default function AdminLayout() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [navigate]);
-
-  useEffect(() => {
-    const loadMails = async () => {
-      const { count } = await supabase
-        .from("mails")
-        .select("id", { count: "exact", head: true })
-        .eq("is_read", false)
-        .eq("is_archived", false);
-      setUnreadMails(count ?? 0);
-    };
-    loadMails();
-    const channel = supabase
-      .channel("mails-sidebar")
-      .on("postgres_changes", { event: "*", schema: "public", table: "mails" }, () => loadMails())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -132,11 +112,6 @@ export default function AdminLayout() {
             {item.badgeKey === "leads" && unreadLeads > 0 && (
               <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-sky-500 text-white text-[10px] font-semibold">
                 {unreadLeads}
-              </span>
-            )}
-            {item.badgeKey === "mails" && unreadMails > 0 && (
-              <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">
-                {unreadMails}
               </span>
             )}
           </NavLink>

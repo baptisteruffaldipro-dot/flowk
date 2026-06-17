@@ -21,9 +21,7 @@ import Bats from "./pages/Bats";
 import BatDetail from "./pages/BatDetail";
 import Invoices from "./pages/Invoices";
 import Inbox from "./pages/Inbox";
-import Mails from "./pages/Mails";
 import Appointments from "./pages/Appointments";
-import Realizations from "./pages/Realizations";
 import Questionnaires from "./pages/Questionnaires";
 import QuestionnaireDetail from "./pages/QuestionnaireDetail";
 import QuestionnairePublic from "./pages/QuestionnairePublic";
@@ -81,9 +79,7 @@ const App = () => (
               <Route path="/bats/:id" element={<BatDetail />} />
               <Route path="/facturation" element={<Invoices />} />
               <Route path="/inbox" element={<Inbox />} />
-              <Route path="/mails" element={<Mails />} />
               <Route path="/rdv" element={<Appointments />} />
-              <Route path="/agenda" element={<Realizations />} />
               <Route path="/questionnaires" element={<Questionnaires />} />
               <Route path="/questionnaires/:id" element={<QuestionnaireDetail />} />
               <Route path="/telegram" element={<TelegramSettings />} />
