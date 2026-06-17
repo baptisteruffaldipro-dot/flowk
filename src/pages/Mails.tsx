@@ -122,7 +122,7 @@ export default function Mails() {
 
   return (
     <div className="p-4 md:p-6">
-      <PageHeader title="Boîte mail" subtitle="Centralisé dans l'app" />
+      <PageHeader title="Boîte mail" description="Centralisé dans l'app" />
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
           <TabsList>
@@ -357,7 +357,7 @@ function ConvertDialog({ kind, mail, onClose, onDone }: { kind: "task" | "projec
     if (kind === "task") {
       const { data, error } = await supabase
         .from("tasks")
-        .insert({ title, description, client_id: cid, status: "a_faire" })
+        .insert({ title, notes: description, client_id: cid, status: "a_faire" })
         .select("id")
         .single();
       if (error) { setSubmitting(false); toast.error(error.message); return; }
