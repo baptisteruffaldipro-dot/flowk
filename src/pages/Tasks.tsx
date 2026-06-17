@@ -1408,6 +1408,19 @@ export default function Tasks() {
                     <Input type="number" value={form.estimated_minutes} onChange={(e) => setForm({ ...form, estimated_minutes: e.target.value })} />
                   </div>
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Budget impression estimé (€)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0"
+                    value={form.estimated_print_amount}
+                    onChange={(e) => setForm({ ...form, estimated_print_amount: e.target.value })}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Laisse vide s'il n'y a pas d'impression. Une tâche sans budget prestation ni impression sera signalée en rouge.
+                  </p>
+                </div>
               </div>
               <DialogFooter><Button onClick={create}>Créer</Button></DialogFooter>
             </DialogContent>
