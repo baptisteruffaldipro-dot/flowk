@@ -19,13 +19,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Receipt, Archive, UserPlus, AlertTriangle, Zap, FolderPlus, Star } from "lucide-react";
+import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Archive, UserPlus, AlertTriangle, Zap, FolderPlus, Star } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
 import { computePriorityScore, priorityScoreColor, isColumnSaturated, WIP_LIMITS, detectMultipleDeliverables } from "@/lib/priority";
 import NewBatDialog from "@/components/NewBatDialog";
-import NewTiimeInvoiceDialog from "@/components/NewTiimeInvoiceDialog";
 import NewPrintOrderDialog from "@/components/NewPrintOrderDialog";
 import SocialTasksAggregate from "@/components/SocialTasksAggregate";
 import {
@@ -406,7 +405,7 @@ function KanbanCard({
   clients: { id: string; name: string }[];
   onUpdate: (id: string, patch: any) => void;
   paid?: boolean;
-  onComplete: (task: any, action: "bat" | "print" | "invoice" | "archive") => void;
+  onComplete: (task: any, action: "bat" | "print" | "archive") => void;
 }) {
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `task:${task.id}` });
   const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({ id: task.id });
@@ -456,9 +455,6 @@ function KanbanCard({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onComplete(task, "print")}>
                 <Printer className="h-3.5 w-3.5 mr-2" /> Impression
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onComplete(task, "invoice")}>
-                <Receipt className="h-3.5 w-3.5 mr-2" /> Facturation (Tiime)
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onComplete(task, "archive")}>
                 <Archive className="h-3.5 w-3.5 mr-2" /> Archivé
@@ -573,7 +569,7 @@ function KanbanColumn({
   onDeleteDivider: (id: string) => void;
   paidTaskIds: Set<string>;
   onQuickAdd: (status: Status, title: string) => Promise<void>;
-  onComplete: (task: any, action: "bat" | "print" | "invoice" | "archive") => void;
+  onComplete: (task: any, action: "bat" | "print" | "archive") => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const meta = STATUS_META[status];
@@ -777,7 +773,6 @@ export default function Tasks() {
   const [focusMode, setFocusMode] = useState(false);
   const [showProjectHint, setShowProjectHint] = useState(false);
   const [batForTask, setBatForTask] = useState<any | null>(null);
-  const [tiimeForTask, setTiimeForTask] = useState<any | null>(null);
   const [printForTask, setPrintForTask] = useState<any | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
@@ -822,20 +817,6 @@ export default function Tasks() {
     if (t && !t.bat_id) setBatForTask(t);
   };
 
-  const triggerTiimeIfNeeded = async (taskId: string, newStatus: Status) => {
-    if (newStatus !== "a_facturer") return;
-    const t = tasks.find((x) => x.id === taskId);
-    if (!t) return;
-    // Skip if a Tiime invoice already exists for this task.
-    const { data: existing } = await supabase
-      .from("invoices")
-      .select("id,tiime_invoice_id")
-      .eq("task_id", taskId)
-      .not("tiime_invoice_id", "is", null)
-      .maybeSingle();
-    if (existing) return;
-    setTiimeForTask(t);
-  };
 
   const triggerPrintIfNeeded = (taskId: string, newStatus: Status) => {
     if (newStatus !== "impression") return;
@@ -965,7 +946,6 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerTiimeIfNeeded(task.id, newStatus);
         triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
@@ -983,7 +963,6 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerTiimeIfNeeded(task.id, newStatus);
         triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
@@ -1022,7 +1001,6 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerTiimeIfNeeded(task.id, newStatus);
         triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
@@ -1084,7 +1062,6 @@ export default function Tasks() {
         setDividers(prev.dividers);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerTiimeIfNeeded(task.id, newStatus);
         triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
@@ -1108,7 +1085,6 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerTiimeIfNeeded(task.id, newStatus);
         triggerPrintIfNeeded(task.id, newStatus);
       }
     }
@@ -1231,8 +1207,6 @@ export default function Tasks() {
       setBatForTask(task);
     } else if (action === "print") {
       setPrintForTask(task);
-    } else if (action === "invoice") {
-      setTiimeForTask(task);
     } else if (action === "archive") {
       const { error } = await supabase.from("tasks").update({ status: "archive" } as any).eq("id", task.id);
       if (error) return toast.error(error.message);
@@ -1558,18 +1532,6 @@ export default function Tasks() {
             await supabase.from("tasks").update({ status: "bat" } as any).eq("id", batForTask.id);
           }
           setBatForTask(null);
-          load();
-        }}
-      />
-      <NewTiimeInvoiceDialog
-        task={tiimeForTask}
-        open={!!tiimeForTask}
-        onOpenChange={(v) => { if (!v) setTiimeForTask(null); }}
-        onCreated={async () => {
-          if (tiimeForTask) {
-            await supabase.from("tasks").update({ status: "a_facturer" } as any).eq("id", tiimeForTask.id);
-          }
-          setTiimeForTask(null);
           load();
         }}
       />
