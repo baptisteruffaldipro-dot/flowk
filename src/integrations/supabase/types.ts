@@ -422,6 +422,117 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_projects: {
+        Row: {
+          created_at: string
+          goal_id: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_projects_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_projects_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_tasks: {
+        Row: {
+          created_at: string
+          goal_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_tasks_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          archived: boolean
+          color: string | null
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          position: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived?: boolean
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          position?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          archived?: boolean
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          position?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoice_installments: {
         Row: {
           amount: number
@@ -1227,6 +1338,47 @@ export type Database = {
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subgoals: {
+        Row: {
+          created_at: string
+          done: boolean
+          done_at: string | null
+          goal_id: string
+          id: string
+          position: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          done_at?: string | null
+          goal_id: string
+          id?: string
+          position?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          done_at?: string | null
+          goal_id?: string
+          id?: string
+          position?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subgoals_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
             referencedColumns: ["id"]
           },
         ]

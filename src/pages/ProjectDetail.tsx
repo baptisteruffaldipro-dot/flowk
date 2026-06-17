@@ -19,6 +19,7 @@ import {
 import { PROJECT_TYPE_LABEL, STATUS_LABEL, PRINT_STATUS_LABEL, BAT_STATUS_LABEL, INVOICE_STATUS_LABEL, fmtDate, fmtDateTime, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
+import GoalsTagSelector from "@/components/GoalsTagSelector";
 
 const DONE_STATUSES = new Set(["envoye", "a_facturer", "facture_envoyee", "payee", "archive"]);
 
@@ -261,6 +262,10 @@ export default function ProjectDetail() {
             placeholder="Brief, indications du client, idées…"
           />
           <Button size="sm" className="mt-3" onClick={saveNotes}>Enregistrer</Button>
+          <div className="mt-4 pt-4 border-t">
+            <div className="text-xs font-semibold text-muted-foreground mb-2">Objectifs</div>
+            <GoalsTagSelector entityType="project" entityId={project.id} />
+          </div>
         </Card>
 
         <Card className="p-5">
