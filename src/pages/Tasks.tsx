@@ -1302,7 +1302,31 @@ export default function Tasks() {
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Titre *</Label>
-                  <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                  <Input
+                    value={form.title}
+                    onChange={(e) => {
+                      setForm({ ...form, title: e.target.value });
+                      setShowProjectHint(detectMultipleDeliverables(e.target.value));
+                    }}
+                  />
+                  {showProjectHint && (
+                    <div className="flex items-start gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs">
+                      <FolderPlus className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-amber-700 dark:text-amber-400 font-medium">Plusieurs livrables détectés</p>
+                        <p className="text-muted-foreground mt-0.5">Cette tâche ressemble à un projet. Tu pourrais la découper en plusieurs tâches sous un même projet.</p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[11px] shrink-0"
+                        onClick={() => { setOpen(false); window.location.href = `/projets?new=1&name=${encodeURIComponent(form.title)}`; }}
+                      >
+                        Créer un projet
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
