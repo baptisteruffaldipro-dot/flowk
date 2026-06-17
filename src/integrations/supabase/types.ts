@@ -808,6 +808,208 @@ export type Database = {
           },
         ]
       }
+      mail_accounts: {
+        Row: {
+          created_at: string
+          email: string
+          from_name: string | null
+          id: string
+          imap_host: string
+          imap_port: number
+          imap_tls: boolean
+          last_error: string | null
+          last_synced_at: string | null
+          last_uid_seen: number
+          signature: string | null
+          smtp_host: string
+          smtp_port: number
+          smtp_tls: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          from_name?: string | null
+          id?: string
+          imap_host: string
+          imap_port?: number
+          imap_tls?: boolean
+          last_error?: string | null
+          last_synced_at?: string | null
+          last_uid_seen?: number
+          signature?: string | null
+          smtp_host: string
+          smtp_port?: number
+          smtp_tls?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          from_name?: string | null
+          id?: string
+          imap_host?: string
+          imap_port?: number
+          imap_tls?: boolean
+          last_error?: string | null
+          last_synced_at?: string | null
+          last_uid_seen?: number
+          signature?: string | null
+          smtp_host?: string
+          smtp_port?: number
+          smtp_tls?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mail_attachments: {
+        Row: {
+          created_at: string
+          filename: string
+          id: string
+          mail_id: string
+          mime: string | null
+          size: number | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          filename: string
+          id?: string
+          mail_id: string
+          mime?: string | null
+          size?: number | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          filename?: string
+          id?: string
+          mail_id?: string
+          mime?: string | null
+          size?: number | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_attachments_mail_id_fkey"
+            columns: ["mail_id"]
+            isOneToOne: false
+            referencedRelation: "mails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mails: {
+        Row: {
+          account_id: string
+          body_html: string | null
+          body_text: string | null
+          cc_emails: string[]
+          client_id: string | null
+          created_at: string
+          from_email: string
+          from_name: string | null
+          id: string
+          in_reply_to: string | null
+          is_archived: boolean
+          is_read: boolean
+          is_starred: boolean
+          message_id: string | null
+          project_id: string | null
+          raw_headers: Json | null
+          received_at: string
+          snippet: string | null
+          subject: string | null
+          task_id: string | null
+          thread_key: string | null
+          to_emails: string[]
+          uid: number
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          client_id?: string | null
+          created_at?: string
+          from_email: string
+          from_name?: string | null
+          id?: string
+          in_reply_to?: string | null
+          is_archived?: boolean
+          is_read?: boolean
+          is_starred?: boolean
+          message_id?: string | null
+          project_id?: string | null
+          raw_headers?: Json | null
+          received_at: string
+          snippet?: string | null
+          subject?: string | null
+          task_id?: string | null
+          thread_key?: string | null
+          to_emails?: string[]
+          uid: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          body_html?: string | null
+          body_text?: string | null
+          cc_emails?: string[]
+          client_id?: string | null
+          created_at?: string
+          from_email?: string
+          from_name?: string | null
+          id?: string
+          in_reply_to?: string | null
+          is_archived?: boolean
+          is_read?: boolean
+          is_starred?: boolean
+          message_id?: string | null
+          project_id?: string | null
+          raw_headers?: Json | null
+          received_at?: string
+          snippet?: string | null
+          subject?: string | null
+          task_id?: string | null
+          thread_key?: string | null
+          to_emails?: string[]
+          uid?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mails_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "mail_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mails_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mails_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mails_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       phase_actions: {
         Row: {
           created_at: string
