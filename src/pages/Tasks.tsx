@@ -1470,7 +1470,7 @@ export default function Tasks() {
         <TabsContent value="kanban" className="mt-4">
           <DndContext sensors={sensors} collisionDetection={kanbanCollisionDetection} onDragStart={onDragStart} onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
-              {STATUSES.map((s) => (
+              {(focusMode ? (["aujourdhui"] as const) : STATUSES).map((s) => (
                 <KanbanColumn
                   key={s}
                   status={s}
