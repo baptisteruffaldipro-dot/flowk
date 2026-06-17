@@ -57,6 +57,20 @@ Deno.serve(async (req) => {
 
   try {
     const account = await ensureAccount(supabase);
+    console.log("account", { host: account.imap_host, port: account.imap_port, tls: account.imap_tls, user: USER });
+
+    // Quick probe: can we even open a raw TLS connection to the IMAP server?
+    try {
+      const t0 = Date.now();
+      const conn = await Deno.connectTls({ hostname: account.imap_host, port: account.imap_port });
+      const buf = new Uint8Array(256);
+      const n = await conn.read(buf);
+      console.log("tls greeting", Date.now() - t0, "ms:", new TextDecoder().decode(buf.subarray(0, n || 0)).trim());
+      conn.close();
+    } catch (probeErr) {
+      console.error("tls probe failed", probeErr);
+      throw probeErr;
+    }
 
     const client = new ImapFlow({
       host: account.imap_host,
@@ -64,18 +78,35 @@ Deno.serve(async (req) => {
       secure: account.imap_tls,
       auth: { user: USER, pass: PASS },
       logger: false,
+      socketTimeout: 30000,
+      greetingTimeout: 15000,
+      connectionTimeout: 15000,
     });
 
+    console.log("connecting...");
     await client.connect();
+    console.log("connected, opening INBOX...");
     const lock = await client.getMailboxLock("INBOX");
+    console.log("INBOX locked");
     let imported = 0;
     let maxUid = account.last_uid_seen || 0;
 
     try {
       const status = await client.status("INBOX", { uidNext: true, messages: true });
-      const fromUid = (account.last_uid_seen || 0) + 1;
-      const range = `${fromUid}:*`;
+      console.log("status", status);
+      const lastSeen = account.last_uid_seen || 0;
+      const uidNext = (status as any).uidNext || 1;
+      let range: string;
+      if (lastSeen === 0) {
+        const from = Math.max(1, uidNext - 10);
+        range = `${from}:*`;
+      } else {
+        range = `${lastSeen + 1}:*`;
+      }
+      console.log("fetching range", range);
 
+      const PER_RUN_LIMIT = 3;
+      let processed = 0;
       // Iterate UIDs greater than last seen
       for await (const msg of client.fetch(range, {
         uid: true,
@@ -84,6 +115,7 @@ Deno.serve(async (req) => {
         source: true,
       }, { uid: true })) {
         if (!msg.uid || msg.uid <= (account.last_uid_seen || 0)) continue;
+        console.log("processing uid", msg.uid);
 
         try {
           const parsed = await simpleParser(msg.source as Uint8Array);
@@ -143,6 +175,8 @@ Deno.serve(async (req) => {
 
           if (msg.uid > maxUid) maxUid = msg.uid;
           imported++;
+          processed++;
+          if (processed >= PER_RUN_LIMIT) break;
         } catch (e) {
           console.error("parse error", e);
         }
