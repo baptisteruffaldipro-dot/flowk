@@ -783,7 +783,7 @@ export default function Tasks() {
 
   const load = async () => {
     const [t, c, p, d, inv, st, l] = await Promise.all([
-      supabase.from("tasks").select("*, clients(name), projects(name)").order("position", { ascending: true }),
+      supabase.from("tasks").select("*, clients(name), projects(name), print_orders(id,amount,status)").order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id"),
       supabase.from("kanban_dividers").select("*").order("position", { ascending: true }),
