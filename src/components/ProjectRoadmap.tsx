@@ -155,7 +155,7 @@ export default function ProjectRoadmap({ projectId, clientId }: { projectId: str
     const next = !a.done;
     await updateAction(a.id, { done: next });
     if (a.task_id && tasksById[a.task_id]) {
-      const newStatus = next ? "envoye" : "en_cours";
+      const newStatus = next ? "envoye" : "a_faire";
       await supabase.from("tasks").update({ status: newStatus }).eq("id", a.task_id);
       setTasksById({ ...tasksById, [a.task_id]: { ...tasksById[a.task_id], status: newStatus } });
     }
