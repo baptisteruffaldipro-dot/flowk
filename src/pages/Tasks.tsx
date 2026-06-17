@@ -808,7 +808,7 @@ export default function Tasks() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
     title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire",
-    deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "",
+    deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "", estimated_print_amount: "",
   });
 
   const load = async () => {
