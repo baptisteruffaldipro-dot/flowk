@@ -1,71 +1,82 @@
-## Roadmap projet — Plan
+## Objectif
+Centraliser tes mails dans l'app (page `/mails`), pouvoir y répondre, transférer, archiver/marquer lu (sync 2 voies avec ta boîte), et convertir un mail en tâche ou projet.
 
-Transformer la fiche projet en **roadmap verticale par phases**, façon ta fiche Plat'O'Rama.
+## Compte à connecter
+Tu fourniras une fois les identifiants IMAP + SMTP de ta boîte :
+- Serveur IMAP (host, port, SSL)
+- Serveur SMTP (host, port, SSL/TLS)
+- Adresse + mot de passe (idéalement un **mot de passe d'application** si ton fournisseur le propose — bien plus sûr qu'un mdp principal)
 
-### 1. Modèle de données
+Stockés en secrets Lovable, jamais exposés au front.
 
-Deux nouvelles tables liées au projet :
-
-- `project_phases` : `project_id`, `title` (ex: "Phase 1 — Cadrage"), `objective` (texte court, le 🎯), `position`, `color` (vert/orange/gris auto selon progression), `collapsed`.
-- `phase_actions` : `phase_id`, `label`, `done` (bool), `position`, `task_id` (nullable, lien vers `tasks.id` si l'action a été promue en tâche).
-
-Les "livrables" ne sont pas une table séparée — ce sont des actions comme les autres (tu as choisi "Actions seulement"). On peut les distinguer via un flag optionnel `is_deliverable` si tu veux les styliser plus tard, mais V1 = simple liste plate.
-
-RLS : mêmes règles que `projects` (admin gère tout, client lit si projet visible).
-
-### 2. UI dans la fiche projet (`ProjectDetail.tsx`)
-
-Nouvel onglet/section **Roadmap** au-dessus du kanban de tâches, en **timeline verticale** :
+## Modèle de données
 
 ```text
-●──── Phase 1 — Cadrage & fondations          [75%] ▾
-│     🎯 Poser des bases solides
-│     ☑ Valider le nom commercial
-│     ☑ Valider le positionnement
-│     ☐ Définir l'offre V1            [→ créer tâche]
-│     [+ ajouter une action]
-│
-●──── Phase 2 — Identité & crédibilité        [0%]  ▸
-│
-[+ ajouter une phase]
+mail_accounts        — 1 ligne (ton compte connecté)
+  id, email, imap_host, imap_port, smtp_host, smtp_port, last_uid_seen, last_synced_at
+
+mails                — un mail importé
+  id, account_id, message_id, thread_id, uid (IMAP),
+  from_email, from_name, to_emails[], cc_emails[],
+  subject, body_text, body_html, snippet,
+  received_at, is_read, is_archived, is_starred,
+  client_id (auto-détecté), task_id, project_id,
+  raw_headers (jsonb)
+
+mail_attachments     — pièces jointes (stockées dans bucket "mails")
+  id, mail_id, filename, mime, size, storage_path
 ```
 
-Comportements :
-- Pastille colorée à gauche : verte (100%), orange (en cours), grise (0%).
-- Barre de progression par phase + barre globale projet en haut (somme des actions).
-- Phases pliables, drag-and-drop pour réordonner phases et actions.
-- Édition inline du titre, de l'objectif, du label d'action (comme sous-objectifs).
-- Bouton "→ créer tâche" sur une action : crée une tâche kanban liée à ce projet, stocke `task_id`. Cocher la tâche dans le kanban coche l'action, et inversement.
+RLS : admin only.
 
-### 3. Projets vs Objectifs — recommandation
+## Synchronisation (polling 5 min)
+Edge function `sync-mailbox` :
+- Connexion IMAP (lib Deno), INBOX, fetch des UID > `last_uid_seen`
+- Parse MIME → insert dans `mails` + upload pièces jointes
+- Auto-match `client_id` via `from_email` ↔ table `clients`
+- Cron pg_cron toutes les 5 min
 
-Vu ton doute, je propose une règle simple à garder en tête (et qu'on inscrira dans la mémoire projet) :
+Bouton "Rafraîchir maintenant" qui appelle la même fonction à la demande.
 
-- **Projet** = un livrable concret avec deadline (Plat'O'Rama, refonte site client X). Il a une roadmap.
-- **Objectif** = un résultat plus large, souvent transverse à plusieurs projets ("Atteindre 10k€ MRR", "Lancer 3 produits en 2026"). Il agrège.
+## UI — page `/mails`
+- Liste type inbox (3 colonnes : dossiers / liste mails / lecture)
+- Filtres : Non lus / Tous / Archivés / Par client
+- Recherche plein texte (sujet + expéditeur + corps)
+- Actions sur un mail :
+  - **Répondre / Transférer** → composer + envoi SMTP via edge function `send-mail`
+  - **Marquer lu/non lu** → patch IMAP (STORE flag \Seen) + update local
+  - **Archiver** → MOVE vers dossier "Archive" IMAP + flag local
+  - **→ Tâche** : ouvre dialog pré-rempli (titre = sujet, description = corps, client auto)
+  - **→ Projet** : idem, crée un projet rattaché au client
+- Badge non-lus dans la sidebar
 
-Donc on garde les deux séparés, **mais** : un projet peut être taggé à un ou plusieurs objectifs (comme les tâches le sont déjà via `GoalsTagSelector` — c'est déjà en place). La progression du projet (= % d'actions de roadmap cochées) remontera dans l'objectif lié, au même titre que les tâches/sous-projets.
+## Edge functions
+- `sync-mailbox` (IMAP fetch, cron + on-demand)
+- `send-mail` (SMTP, répondre/transférer/nouveau)
+- `mail-action` (mark read/unread, archive — actions IMAP)
 
-Pas de nouveau lien Phase↔Objectif en V1 : trop granulaire, on reste sur projet↔objectif.
+## Détails techniques
+- Lib IMAP Deno : `jsr:@workingdevshero/deno-imap` (ou équivalent maintenu)
+- SMTP : `denomailer`
+- Parsing MIME : `mailparser` via npm specifier
+- Pièces jointes : bucket privé `mails`, lien signé à la demande
+- Idempotence : unique `(account_id, uid)` pour éviter les doublons
 
-### 4. Migration des projets existants
+## Limites assumées (V1)
+- 1 seul compte mail
+- Pas de push temps réel (polling 5 min)
+- Pas d'éditeur HTML riche pour répondre (texte + signature simple) — possible d'ajouter ensuite
+- Pas de gestion multi-dossiers (INBOX + Archive seulement)
 
-Aucun projet n'aura de phase au début. La section Roadmap affichera un état vide avec un bouton "Créer la première phase" + un template optionnel "6 phases type lancement" pré-rempli (Cadrage / Identité / Preuve / Web / Stratégie / Lancement) inspiré de Plat'O'Rama.
+## Étapes d'implémentation
+1. Migration tables `mail_accounts`, `mails`, `mail_attachments` + bucket
+2. Demande des secrets IMAP/SMTP
+3. Edge function `sync-mailbox` + test manuel
+4. Cron pg_cron 5 min
+5. Edge functions `send-mail` et `mail-action`
+6. Page `/mails` (liste + lecture)
+7. Composer (répondre/transférer/nouveau)
+8. Convertir en tâche / projet
+9. Lien sidebar + badge non-lus
 
-### 5. Dashboard
-
-La carte Projet du dashboard affichera désormais la barre de progression issue de la roadmap (au lieu / en plus du compteur de tâches actuel).
-
-### Détails techniques
-
-- Migration Supabase : 2 tables + GRANT + RLS + trigger `updated_at`.
-- Composants : `ProjectRoadmap.tsx` (conteneur), `PhaseCard.tsx`, `PhaseAction.tsx`.
-- DnD : `@dnd-kit/sortable` (déjà utilisé dans le kanban si présent, sinon à ajouter).
-- Sync action↔tâche : quand `phase_actions.task_id` est défini, on lit `tasks.status` pour déterminer `done` (`done` si status = `termine`), et un toggle sur l'action met à jour la tâche.
-- `ProjectDetail.tsx` : la roadmap est insérée entre la grille de métadonnées et la liste de tâches/kanban.
-
-### Hors scope V1
-
-- Pas de Gantt / dates par phase (échéance reste au niveau projet).
-- Pas de templates personnalisables au-delà du template lancement fourni.
-- Pas de lien phase↔objectif (uniquement projet↔objectif).
+Prêt à lancer dès que tu valides — je te demanderai les identifiants IMAP/SMTP juste avant l'étape 3.
