@@ -49,7 +49,7 @@ export default function TaskDetail() {
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [newClientDialog, setNewClientDialog] = useState(false);
   const [batDialogOpen, setBatDialogOpen] = useState(false);
-  const [tiimeDialogOpen, setTiimeDialogOpen] = useState(false);
+  
   const [newClientName, setNewClientName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newClientCompany, setNewClientCompany] = useState("");
@@ -291,15 +291,6 @@ export default function TaskDetail() {
       setBatDialogOpen(true);
     }
     if (newStatus === "tiime") {
-      const { data: existing } = await supabase
-        .from("invoices")
-        .select("id,tiime_invoice_id")
-        .eq("task_id", task.id)
-        .not("tiime_invoice_id", "is", null)
-        .maybeSingle();
-      if (!existing) setTiimeDialogOpen(true);
-    }
-  };
 
   if (!task) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
@@ -722,12 +713,6 @@ export default function TaskDetail() {
         open={batDialogOpen}
         onOpenChange={setBatDialogOpen}
         onCreated={() => { setBatDialogOpen(false); load(); }}
-      />
-      <NewTiimeInvoiceDialog
-        task={task}
-        open={tiimeDialogOpen}
-        onOpenChange={setTiimeDialogOpen}
-        onCreated={() => { setTiimeDialogOpen(false); load(); }}
       />
     </div>
   );
