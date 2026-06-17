@@ -23,6 +23,7 @@ import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, Fil
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
+import { computeTaskBudget } from "@/lib/budget";
 import { computePriorityScore, priorityScoreColor, isColumnSaturated, WIP_LIMITS, detectMultipleDeliverables } from "@/lib/priority";
 import NewBatDialog from "@/components/NewBatDialog";
 import NewPrintOrderDialog from "@/components/NewPrintOrderDialog";
