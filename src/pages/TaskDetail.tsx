@@ -292,6 +292,7 @@ export default function TaskDetail() {
   };
 
 
+  if (!task) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
   const running = !!task.timer_started_at;
   const filteredProjects = projects.filter((p) => !task.client_id || p.client_id === task.client_id);
   const filteredQuestionnaires = questionnaires.filter((q) =>
