@@ -413,6 +413,8 @@ function KanbanCard({
   const navigate = useNavigate();
   const projectName = task.title?.trim() ? task.title : (task.projects?.name ?? "Sans titre");
   const showPrestation = !!task.projects?.name;
+  const budget = computeTaskBudget(task);
+  const noBudget = budget.hasNoEstimate;
   return (
     <div
       ref={(node) => { setDropRef(node); setDragRef(node); }}
@@ -423,7 +425,13 @@ function KanbanCard({
         {...listeners}
         {...attributes}
         onClick={() => { if (!isDragging) navigate(`/taches/${task.id}`); }}
-        className={`p-4 bg-card/95 hover:bg-card border shadow-sm transition rounded-lg cursor-grab active:cursor-grabbing ${isOver ? "border-primary ring-1 ring-primary" : "border-border/60 hover:border-foreground/20"}`}
+        className={`p-4 bg-card/95 hover:bg-card border shadow-sm transition rounded-lg cursor-grab active:cursor-grabbing ${
+          isOver
+            ? "border-primary ring-1 ring-primary"
+            : noBudget
+              ? "border-red-500/70 ring-1 ring-red-500/40 bg-red-500/5"
+              : "border-border/60 hover:border-foreground/20"
+        }`}
       >
         <div
           className="flex items-start gap-2 mb-3"
