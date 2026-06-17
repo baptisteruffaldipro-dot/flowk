@@ -8,12 +8,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FileText, Link2, Pencil, Trash2, CalendarClock, ClipboardCopy } from "lucide-react";
+import { Plus, FileText, Link2, Pencil, Trash2, CalendarClock } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { fmtMoney, INVOICE_STATUS_LABEL } from "@/lib/format";
 import InstallmentsManager from "@/components/InstallmentsManager";
-import NewTiimeInvoiceDialog from "@/components/NewTiimeInvoiceDialog";
+
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -22,7 +22,6 @@ export default function Invoices() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [installmentsFor, setInstallmentsFor] = useState<any | null>(null);
-  const [draftFor, setDraftFor] = useState<any | null>(null);
   const [form, setForm] = useState<any>({
     label: "", client_id: "", status: "a_facturer",
     billing_type: "forfait", amount: "", hours: "", hourly_rate: "", questionnaire_id: "",
@@ -286,13 +285,6 @@ export default function Invoices() {
                     </SelectContent>
                   </Select>
                   <Button
-                    variant="ghost" size="icon" className="h-8 w-8 shrink-0"
-                    title="Brouillon Tiime (copier-coller)"
-                    onClick={() => openDraft(i)}
-                  >
-                    <ClipboardCopy className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 shrink-0 relative"
@@ -420,12 +412,6 @@ export default function Invoices() {
         />
       )}
 
-      <NewTiimeInvoiceDialog
-        task={draftFor}
-        open={!!draftFor}
-        onOpenChange={(v) => { if (!v) setDraftFor(null); }}
-        prefillInvoice={draftFor?._invoice ?? null}
-      />
     </div>
   );
 }

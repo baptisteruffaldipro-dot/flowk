@@ -212,7 +212,7 @@ export default function DeliveryGateCard({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs">Lien de facture (Tiime, etc.)</Label>
+          <Label className="text-xs">Lien de facture</Label>
           <div className="flex gap-2">
             <Input
               type="url"
