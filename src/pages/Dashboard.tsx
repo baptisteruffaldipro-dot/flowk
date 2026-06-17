@@ -156,6 +156,31 @@ export default function Dashboard() {
       const awaitBatRows = ((batsRelecture.data as any) ?? []).length;
       const awaitBat = awaitPrintBat + awaitBatRows;
       setStats({ todoCount, doneCount, totalCount, pendingRevenue: pendingRev, paidRevenue: paidRev + paidPrintRev, paidPresta: paidRev, paidBien: paidPrintRev, monthRevenue: monthRev, monthPresta, monthBien, awaitingBat: awaitBat });
+
+      // Objectifs
+      const { data: goalsData } = await supabase
+        .from("goals")
+        .select("id,title,description,deadline,color,status,archived,created_at")
+        .eq("archived", false)
+        .order("created_at", { ascending: false });
+      const list = (goalsData as any[]) ?? [];
+      setGoals(list);
+      if (list.length) {
+        const ids = list.map((g) => g.id);
+        const [subs, gt, gp] = await Promise.all([
+          supabase.from("subgoals").select("goal_id,done").in("goal_id", ids),
+          supabase.from("goal_tasks").select("goal_id,tasks(status)").in("goal_id", ids),
+          supabase.from("goal_projects").select("goal_id,projects(archived)").in("goal_id", ids),
+        ]);
+        const map: Record<string, { done: number; total: number }> = {};
+        ids.forEach((id) => (map[id] = { done: 0, total: 0 }));
+        (subs.data ?? []).forEach((s: any) => { map[s.goal_id].total++; if (s.done) map[s.goal_id].done++; });
+        (gt.data ?? []).forEach((s: any) => { map[s.goal_id].total++; if (s.tasks?.status === "archive") map[s.goal_id].done++; });
+        (gp.data ?? []).forEach((s: any) => { map[s.goal_id].total++; if (s.projects?.archived) map[s.goal_id].done++; });
+        setGoalProgressMap(map);
+      } else {
+        setGoalProgressMap({});
+      }
   };
   useEffect(() => { load(); }, []);
 
