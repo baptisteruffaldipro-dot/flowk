@@ -1,0 +1,174 @@
+// deno-lint-ignore-file no-explicit-any
+import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { ImapFlow } from "npm:imapflow@1.0.164";
+import { simpleParser } from "npm:mailparser@3.7.1";
+import { corsHeaders } from "../_shared/cors.ts";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const IMAP_HOST = Deno.env.get("MAIL_IMAP_HOST")!;
+const IMAP_PORT = parseInt(Deno.env.get("MAIL_IMAP_PORT") || "993", 10);
+const SMTP_HOST = Deno.env.get("MAIL_SMTP_HOST")!;
+const SMTP_PORT = parseInt(Deno.env.get("MAIL_SMTP_PORT") || "465", 10);
+const USER = Deno.env.get("MAIL_USERNAME")!;
+const PASS = Deno.env.get("MAIL_PASSWORD")!;
+const FROM_NAME = Deno.env.get("MAIL_FROM_NAME") || null;
+
+async function ensureAccount(supabase: any) {
+  const { data: existing } = await supabase
+    .from("mail_accounts")
+    .select("*")
+    .eq("email", USER)
+    .maybeSingle();
+  if (existing) return existing;
+  const { data, error } = await supabase
+    .from("mail_accounts")
+    .insert({
+      email: USER,
+      imap_host: IMAP_HOST,
+      imap_port: IMAP_PORT,
+      imap_tls: IMAP_PORT === 993,
+      smtp_host: SMTP_HOST,
+      smtp_port: SMTP_PORT,
+      smtp_tls: SMTP_PORT === 465,
+      from_name: FROM_NAME,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+async function matchClient(supabase: any, email: string): Promise<string | null> {
+  if (!email) return null;
+  const { data } = await supabase
+    .from("clients")
+    .select("id")
+    .ilike("email", email)
+    .maybeSingle();
+  return data?.id || null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  try {
+    const account = await ensureAccount(supabase);
+
+    const client = new ImapFlow({
+      host: account.imap_host,
+      port: account.imap_port,
+      secure: account.imap_tls,
+      auth: { user: USER, pass: PASS },
+      logger: false,
+    });
+
+    await client.connect();
+    const lock = await client.getMailboxLock("INBOX");
+    let imported = 0;
+    let maxUid = account.last_uid_seen || 0;
+
+    try {
+      const status = await client.status("INBOX", { uidNext: true, messages: true });
+      const fromUid = (account.last_uid_seen || 0) + 1;
+      const range = `${fromUid}:*`;
+
+      // Iterate UIDs greater than last seen
+      for await (const msg of client.fetch(range, {
+        uid: true,
+        envelope: true,
+        flags: true,
+        source: true,
+      }, { uid: true })) {
+        if (!msg.uid || msg.uid <= (account.last_uid_seen || 0)) continue;
+
+        try {
+          const parsed = await simpleParser(msg.source as Uint8Array);
+          const fromAddr = parsed.from?.value?.[0];
+          const fromEmail = (fromAddr?.address || "").toLowerCase();
+          const fromName = fromAddr?.name || null;
+          const toEmails = (parsed.to?.value || []).map((a: any) => a.address).filter(Boolean);
+          const ccEmails = (parsed.cc?.value || []).map((a: any) => a.address).filter(Boolean);
+          const isRead = (msg.flags && (msg.flags as any).has?.("\\Seen")) || false;
+          const snippet = (parsed.text || "").slice(0, 240).replace(/\s+/g, " ").trim();
+          const clientId = await matchClient(supabase, fromEmail);
+
+          const { data: inserted, error: insErr } = await supabase
+            .from("mails")
+            .insert({
+              account_id: account.id,
+              uid: msg.uid,
+              message_id: parsed.messageId || null,
+              in_reply_to: parsed.inReplyTo || null,
+              thread_key: parsed.references
+                ? (Array.isArray(parsed.references) ? parsed.references[0] : parsed.references)
+                : parsed.messageId || null,
+              from_email: fromEmail || "unknown@unknown",
+              from_name: fromName,
+              to_emails: toEmails,
+              cc_emails: ccEmails,
+              subject: parsed.subject || "(sans objet)",
+              snippet,
+              body_text: parsed.text || null,
+              body_html: parsed.html || null,
+              received_at: parsed.date ? new Date(parsed.date).toISOString() : new Date().toISOString(),
+              is_read: isRead,
+              client_id: clientId,
+              raw_headers: parsed.headerLines ? Object.fromEntries(parsed.headerLines.map((h: any) => [h.key, h.line])) : null,
+            })
+            .select("id")
+            .single();
+
+          if (insErr) {
+            if (!String(insErr.message).includes("duplicate")) console.error("insert error", insErr);
+          } else if (inserted && parsed.attachments?.length) {
+            for (const att of parsed.attachments) {
+              const path = `${account.id}/${inserted.id}/${att.filename || "attachment"}`;
+              await supabase.storage.from("mails").upload(path, att.content, {
+                contentType: att.contentType,
+                upsert: true,
+              });
+              await supabase.from("mail_attachments").insert({
+                mail_id: inserted.id,
+                filename: att.filename || "attachment",
+                mime: att.contentType,
+                size: att.size,
+                storage_path: path,
+              });
+            }
+          }
+
+          if (msg.uid > maxUid) maxUid = msg.uid;
+          imported++;
+        } catch (e) {
+          console.error("parse error", e);
+        }
+      }
+    } finally {
+      lock.release();
+      await client.logout();
+    }
+
+    await supabase
+      .from("mail_accounts")
+      .update({
+        last_uid_seen: maxUid,
+        last_synced_at: new Date().toISOString(),
+        last_error: null,
+      })
+      .eq("id", account.id);
+
+    return new Response(JSON.stringify({ ok: true, imported, last_uid_seen: maxUid }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e: any) {
+    console.error("sync-mailbox error", e);
+    return new Response(JSON.stringify({ ok: false, error: e.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
