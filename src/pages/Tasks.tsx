@@ -537,13 +537,35 @@ function KanbanCard({
               );
             })()}
             {(() => {
-              const billing = computeTaskBilling(task);
-              const amount = task.billing_type === "forfait" ? (task.flat_amount ?? 0) : billing.total;
-              return amount > 0 ? (
-                <Badge variant="outline" className="text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums text-emerald-700 dark:text-emerald-400 border-emerald-300/50">
-                  {fmtMoney(amount)}
+              if (noBudget) {
+                return (
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10 inline-flex items-center gap-1"
+                    title="Aucune estimation financière (prestation + impression)"
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    Non budgétisé
+                  </Badge>
+                );
+              }
+              const overrun = budget.estimatedTotal > 0 && budget.realTotal > budget.estimatedTotal;
+              return (
+                <Badge
+                  variant="outline"
+                  className={`text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums inline-flex items-center gap-1 ${
+                    overrun
+                      ? "text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10"
+                      : "text-emerald-700 dark:text-emerald-400 border-emerald-300/50"
+                  }`}
+                  title={`Estimé ${fmtMoney(budget.estimatedTotal)} (presta ${fmtMoney(budget.estimatedPresta)} · impression ${fmtMoney(budget.estimatedPrint)}) · Réel ${fmtMoney(budget.realTotal)}`}
+                >
+                  {fmtMoney(budget.estimatedTotal)}
+                  {budget.realTotal > 0 && budget.realTotal !== budget.estimatedTotal && (
+                    <span className="opacity-70">→ {fmtMoney(budget.realTotal)}</span>
+                  )}
                 </Badge>
-              ) : null;
+              );
             })()}
           </div>
       </Card>
