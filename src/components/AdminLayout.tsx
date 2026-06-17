@@ -27,6 +27,7 @@ const nav: NavItem[] = [
   { to: "/social", icon: Share2, label: "Réseaux sociaux" },
   { to: "/impressions", icon: Printer, label: "Impressions" },
   { to: "/bats", icon: FileCheck2, label: "BAT" },
+  { to: "/ca", icon: TrendingUp, label: "Chiffre d'affaires" },
   { to: "/facturation", icon: Receipt, label: "Facturation" },
   { to: "/telegram", icon: Send, label: "Bot Telegram" },
 ];
