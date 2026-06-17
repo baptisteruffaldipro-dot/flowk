@@ -1190,12 +1190,13 @@ export default function Tasks() {
       hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
       flat_amount: form.flat_amount ? Number(form.flat_amount) : null,
       estimated_minutes: form.estimated_minutes ? Number(form.estimated_minutes) : 0,
+      estimated_print_amount: form.estimated_print_amount ? Number(form.estimated_print_amount) : null,
     };
     const { error } = await supabase.from("tasks").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Tâche créée");
     setOpen(false);
-    setForm({ title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
+    setForm({ title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "", estimated_print_amount: "" });
     load();
   };
 
