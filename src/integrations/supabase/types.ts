@@ -1547,6 +1547,7 @@ export type Database = {
           delivery_override_by: string | null
           delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
           estimated_minutes: number | null
+          estimated_print_amount: number | null
           extra_revision_rate: number | null
           flat_amount: number | null
           free_revisions: number
@@ -1583,6 +1584,7 @@ export type Database = {
           delivery_override_by?: string | null
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           estimated_minutes?: number | null
+          estimated_print_amount?: number | null
           extra_revision_rate?: number | null
           flat_amount?: number | null
           free_revisions?: number
@@ -1619,6 +1621,7 @@ export type Database = {
           delivery_override_by?: string | null
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           estimated_minutes?: number | null
+          estimated_print_amount?: number | null
           extra_revision_rate?: number | null
           flat_amount?: number | null
           free_revisions?: number

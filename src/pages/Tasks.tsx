@@ -22,7 +22,7 @@ import {
 import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Archive, UserPlus, AlertTriangle, Zap, FolderPlus, Star } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
-import { computeTaskBilling } from "@/lib/billing";
+import { computeTaskBudget } from "@/lib/budget";
 import { computePriorityScore, priorityScoreColor, isColumnSaturated, WIP_LIMITS, detectMultipleDeliverables } from "@/lib/priority";
 import NewBatDialog from "@/components/NewBatDialog";
 import NewPrintOrderDialog from "@/components/NewPrintOrderDialog";
@@ -412,6 +412,8 @@ function KanbanCard({
   const navigate = useNavigate();
   const projectName = task.title?.trim() ? task.title : (task.projects?.name ?? "Sans titre");
   const showPrestation = !!task.projects?.name;
+  const budget = computeTaskBudget(task);
+  const noBudget = budget.hasNoEstimate;
   return (
     <div
       ref={(node) => { setDropRef(node); setDragRef(node); }}
@@ -422,7 +424,13 @@ function KanbanCard({
         {...listeners}
         {...attributes}
         onClick={() => { if (!isDragging) navigate(`/taches/${task.id}`); }}
-        className={`p-4 bg-card/95 hover:bg-card border shadow-sm transition rounded-lg cursor-grab active:cursor-grabbing ${isOver ? "border-primary ring-1 ring-primary" : "border-border/60 hover:border-foreground/20"}`}
+        className={`p-4 bg-card/95 hover:bg-card border shadow-sm transition rounded-lg cursor-grab active:cursor-grabbing ${
+          isOver
+            ? "border-primary ring-1 ring-primary"
+            : noBudget
+              ? "border-red-500/70 ring-1 ring-red-500/40 bg-red-500/5"
+              : "border-border/60 hover:border-foreground/20"
+        }`}
       >
         <div
           className="flex items-start gap-2 mb-3"
@@ -528,13 +536,35 @@ function KanbanCard({
               );
             })()}
             {(() => {
-              const billing = computeTaskBilling(task);
-              const amount = task.billing_type === "forfait" ? (task.flat_amount ?? 0) : billing.total;
-              return amount > 0 ? (
-                <Badge variant="outline" className="text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums text-emerald-700 dark:text-emerald-400 border-emerald-300/50">
-                  {fmtMoney(amount)}
+              if (noBudget) {
+                return (
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10 inline-flex items-center gap-1"
+                    title="Aucune estimation financière (prestation + impression)"
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    Non budgétisé
+                  </Badge>
+                );
+              }
+              const overrun = budget.estimatedTotal > 0 && budget.realTotal > budget.estimatedTotal;
+              return (
+                <Badge
+                  variant="outline"
+                  className={`text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums inline-flex items-center gap-1 ${
+                    overrun
+                      ? "text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10"
+                      : "text-emerald-700 dark:text-emerald-400 border-emerald-300/50"
+                  }`}
+                  title={`Estimé ${fmtMoney(budget.estimatedTotal)} (presta ${fmtMoney(budget.estimatedPresta)} · impression ${fmtMoney(budget.estimatedPrint)}) · Réel ${fmtMoney(budget.realTotal)}`}
+                >
+                  {fmtMoney(budget.estimatedTotal)}
+                  {budget.realTotal > 0 && budget.realTotal !== budget.estimatedTotal && (
+                    <span className="opacity-70">→ {fmtMoney(budget.realTotal)}</span>
+                  )}
                 </Badge>
-              ) : null;
+              );
             })()}
           </div>
       </Card>
@@ -777,12 +807,12 @@ export default function Tasks() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
     title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire",
-    deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "",
+    deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "", estimated_print_amount: "",
   });
 
   const load = async () => {
     const [t, c, p, d, inv, st, l] = await Promise.all([
-      supabase.from("tasks").select("*, clients(name), projects(name)").order("position", { ascending: true }),
+      supabase.from("tasks").select("*, clients(name), projects(name), print_orders(id,amount,status)").order("position", { ascending: true }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("projects").select("id,name,client_id"),
       supabase.from("kanban_dividers").select("*").order("position", { ascending: true }),
@@ -1159,12 +1189,13 @@ export default function Tasks() {
       hourly_rate: form.hourly_rate ? Number(form.hourly_rate) : null,
       flat_amount: form.flat_amount ? Number(form.flat_amount) : null,
       estimated_minutes: form.estimated_minutes ? Number(form.estimated_minutes) : 0,
+      estimated_print_amount: form.estimated_print_amount ? Number(form.estimated_print_amount) : null,
     };
     const { error } = await supabase.from("tasks").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Tâche créée");
     setOpen(false);
-    setForm({ title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
+    setForm({ title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "", estimated_print_amount: "" });
     load();
   };
 
@@ -1375,6 +1406,19 @@ export default function Tasks() {
                     <Label className="text-xs">Estim. (min)</Label>
                     <Input type="number" value={form.estimated_minutes} onChange={(e) => setForm({ ...form, estimated_minutes: e.target.value })} />
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Budget impression estimé (€)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0"
+                    value={form.estimated_print_amount}
+                    onChange={(e) => setForm({ ...form, estimated_print_amount: e.target.value })}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Laisse vide s'il n'y a pas d'impression. Une tâche sans budget prestation ni impression sera signalée en rouge.
+                  </p>
                 </div>
               </div>
               <DialogFooter><Button onClick={create}>Créer</Button></DialogFooter>

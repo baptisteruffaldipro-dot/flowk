@@ -1,0 +1,2 @@
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS estimated_print_amount numeric;
+COMMENT ON COLUMN public.tasks.estimated_print_amount IS 'Budget impression estimé (€). Sert à budgétiser la part impression d''une tâche indépendamment d''un print_order lié.';
