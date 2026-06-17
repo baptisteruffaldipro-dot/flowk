@@ -808,6 +808,54 @@ export type Database = {
           },
         ]
       }
+      phase_actions: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          label: string
+          phase_id: string
+          position: number
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          label: string
+          phase_id: string
+          position?: number
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          label?: string
+          phase_id?: string
+          position?: number
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phase_actions_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "project_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phase_actions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       print_orders: {
         Row: {
           amount: number | null
@@ -948,6 +996,47 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      project_phases: {
+        Row: {
+          collapsed: boolean
+          created_at: string
+          id: string
+          objective: string | null
+          position: number
+          project_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          collapsed?: boolean
+          created_at?: string
+          id?: string
+          objective?: string | null
+          position?: number
+          project_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          collapsed?: boolean
+          created_at?: string
+          id?: string
+          objective?: string | null
+          position?: number
+          project_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_phases_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
