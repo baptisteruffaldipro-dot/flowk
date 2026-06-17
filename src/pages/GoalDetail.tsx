@@ -131,14 +131,7 @@ export default function GoalDetail() {
         <ArrowLeft className="h-3 w-3" /> Tous les objectifs
       </Link>
       <PageHeader
-        title={
-          <span className="inline-flex items-center gap-3">
-            <span className="h-8 w-8 rounded-lg inline-flex items-center justify-center" style={{ background: color + "20", color }}>
-              {reached ? <Trophy className="h-5 w-5" /> : <Target className="h-5 w-5" />}
-            </span>
-            {goal.title}
-          </span> as any
-        }
+        title={goal.title}
         description={goal.description ?? undefined}
         actions={
           <Button size="sm" variant="ghost" onClick={removeGoal} className="text-destructive">

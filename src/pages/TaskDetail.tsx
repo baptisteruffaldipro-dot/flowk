@@ -490,6 +490,10 @@ export default function TaskDetail() {
             placeholder="Notes, brief, références…"
           />
           <NoteAttachments task={task} onChange={load} />
+          <div className="mt-4 pt-4 border-t">
+            <div className="text-xs font-semibold text-muted-foreground mb-2">Objectifs</div>
+            <GoalsTagSelector entityType="task" entityId={task.id} />
+          </div>
         </Card>
 
         <Card className="p-4 sm:p-5 min-w-0">

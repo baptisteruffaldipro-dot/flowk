@@ -261,6 +261,10 @@ export default function ProjectDetail() {
             placeholder="Brief, indications du client, idées…"
           />
           <Button size="sm" className="mt-3" onClick={saveNotes}>Enregistrer</Button>
+          <div className="mt-4 pt-4 border-t">
+            <div className="text-xs font-semibold text-muted-foreground mb-2">Objectifs</div>
+            <GoalsTagSelector entityType="project" entityId={project.id} />
+          </div>
         </Card>
 
         <Card className="p-5">

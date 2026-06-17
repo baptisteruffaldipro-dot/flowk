@@ -28,6 +28,8 @@ import QuestionnairePublic from "./pages/QuestionnairePublic";
 import TelegramSettings from "./pages/TelegramSettings";
 import TiimeSettings from "./pages/TiimeSettings";
 import Leads from "./pages/Leads";
+import Goals from "./pages/Goals";
+import GoalDetail from "./pages/GoalDetail";
 import BrandStrategy from "./pages/BrandStrategy";
 import BrandStrategies from "./pages/BrandStrategies";
 import BrandStrategyPublic from "./pages/BrandStrategyPublic";
@@ -83,6 +85,8 @@ const App = () => (
               <Route path="/telegram" element={<TelegramSettings />} />
               <Route path="/parametres/tiime" element={<TiimeSettings />} />
               <Route path="/leads" element={<Leads />} />
+              <Route path="/objectifs" element={<Goals />} />
+              <Route path="/objectifs/:id" element={<GoalDetail />} />
               <Route path="/strategies" element={<BrandStrategies />} />
               <Route path="/strategie/:id" element={<BrandStrategy />} />
               <Route path="/logos" element={<LogoPresentations />} />
