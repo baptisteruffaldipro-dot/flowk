@@ -10,10 +10,10 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Trash2, Target, Trophy, TrendingUp, Calendar, FolderKanban, ListChecks } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Target, Trophy, Calendar, FolderKanban, ListChecks, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { fmtDate } from "@/lib/format";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaChart } from "recharts";
+
 
 export default function GoalDetail() {
   const { id } = useParams();
@@ -23,6 +23,8 @@ export default function GoalDetail() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [newSub, setNewSub] = useState("");
+  const [editingSubId, setEditingSubId] = useState<string | null>(null);
+  const [editingSubText, setEditingSubText] = useState("");
 
   const load = async () => {
     if (!id) return;
@@ -50,44 +52,6 @@ export default function GoalDetail() {
     return { items, total, done, pct };
   }, [subgoals, tasks, projects]);
 
-  const chartData = useMemo(() => {
-    const done = stats.items.filter((i) => i.done && i.date).map((i) => new Date(i.date!));
-    if (done.length === 0) {
-      const today = new Date();
-      return [
-        { date: new Date(today.getTime() - 7 * 86400000).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }), value: 0, pct: 0 },
-        { date: today.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }), value: 0, pct: 0 },
-      ];
-    }
-    done.sort((a, b) => a.getTime() - b.getTime());
-    const start = done[0];
-    const end = goal?.deadline ? new Date(goal.deadline) : new Date();
-    const points: { date: string; value: number; pct: number }[] = [];
-    const day = 86400000;
-    const cursor = new Date(start.getTime() - day);
-    let cumul = 0;
-    points.push({ date: cursor.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }), value: 0, pct: 0 });
-    const lastDate = new Date(Math.max(end.getTime(), done[done.length - 1].getTime()));
-    for (let t = start.getTime(); t <= lastDate.getTime(); t += day) {
-      const d = new Date(t);
-      const todayDone = done.filter((x) => x.toDateString() === d.toDateString()).length;
-      if (todayDone > 0) {
-        cumul += todayDone;
-        points.push({
-          date: d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }),
-          value: cumul,
-          pct: stats.total ? Math.round((cumul / stats.total) * 100) : 0,
-        });
-      }
-    }
-    points.push({
-      date: lastDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }),
-      value: cumul,
-      pct: stats.total ? Math.round((cumul / stats.total) * 100) : 0,
-    });
-    return points;
-  }, [stats, goal]);
-
   const addSub = async () => {
     const title = newSub.trim();
     if (!title || !id) return;
@@ -105,6 +69,24 @@ export default function GoalDetail() {
   const removeSub = async (sid: string) => {
     await supabase.from("subgoals").delete().eq("id", sid);
     load();
+  };
+
+  const startEditSub = (s: any) => {
+    setEditingSubId(s.id);
+    setEditingSubText(s.title);
+  };
+
+  const saveSubTitle = async (sid: string) => {
+    if (!editingSubText.trim()) return;
+    await supabase.from("subgoals").update({ title: editingSubText.trim() }).eq("id", sid);
+    setEditingSubId(null);
+    setEditingSubText("");
+    load();
+  };
+
+  const cancelEditSub = () => {
+    setEditingSubId(null);
+    setEditingSubText("");
   };
 
   const updateGoal = async (patch: any) => {
@@ -158,39 +140,12 @@ export default function GoalDetail() {
           {goal.deadline && <div className="text-xs text-muted-foreground mt-2">{fmtDate(goal.deadline)}</div>}
         </Card>
         <Card className="p-5">
-          <div className="text-xs text-muted-foreground mb-1 inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Élan</div>
+          <div className="text-xs text-muted-foreground mb-1 inline-flex items-center gap-1"><Target className="h-3 w-3" /> Élan</div>
           <div className="text-3xl font-bold">{stats.done}</div>
           <div className="text-xs text-muted-foreground mt-2">étape{stats.done > 1 ? "s" : ""} accomplie{stats.done > 1 ? "s" : ""}</div>
           {reached && <div className="mt-2 text-sm font-semibold text-emerald-600">🎉 Bravo, objectif atteint !</div>}
         </Card>
       </div>
-
-      <Card className="p-5 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold inline-flex items-center gap-2"><TrendingUp className="h-4 w-4" /> Courbe de progression</h2>
-          <span className="text-xs text-muted-foreground">% accompli dans le temps</span>
-        </div>
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 16, left: -10, bottom: 0 }}>
-              <defs>
-                <linearGradient id="goalGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.4} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" unit="%" />
-              <Tooltip
-                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                formatter={(v: any) => [`${v}%`, "Progression"]}
-              />
-              <Area type="monotone" dataKey="pct" stroke={color} strokeWidth={2.5} fill="url(#goalGrad)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-5 lg:col-span-1">
@@ -200,7 +155,29 @@ export default function GoalDetail() {
             {subgoals.map((s) => (
               <div key={s.id} className="flex items-center gap-2 group">
                 <Checkbox checked={s.done} onCheckedChange={() => toggleSub(s)} />
-                <span className={`flex-1 text-sm ${s.done ? "line-through text-muted-foreground" : ""}`}>{s.title}</span>
+                {editingSubId === s.id ? (
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <Input
+                      value={editingSubText}
+                      onChange={(e) => setEditingSubText(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") saveSubTitle(s.id); if (e.key === "Escape") cancelEditSub(); }}
+                      onBlur={() => saveSubTitle(s.id)}
+                      autoFocus
+                      className="h-7 text-sm py-0"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <span
+                      className={`flex-1 text-sm cursor-pointer select-none ${s.done ? "line-through text-muted-foreground" : ""}`}
+                      onClick={() => startEditSub(s)}
+                      title="Cliquer pour modifier"
+                    >{s.title}</span>
+                    <button onClick={() => startEditSub(s)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground">
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                  </>
+                )}
                 <button onClick={() => removeSub(s.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
