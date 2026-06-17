@@ -130,19 +130,6 @@ export default function Invoices() {
     load();
   };
 
-  const openDraft = (invoice: any) => {
-    setDraftFor({
-      // shape compatible avec le dialog (task-like)
-      id: invoice.id,
-      title: invoice.label,
-      client_id: invoice.client_id,
-      billing_type: invoice.billing_type ?? "forfait",
-      flat_amount: Number(invoice.amount ?? 0),
-      hourly_rate: invoice.hourly_rate ?? null,
-      total_minutes: invoice.hours ? Number(invoice.hours) * 60 : 0,
-      _invoice: { id: invoice.id, label: invoice.label, amount: Number(invoice.amount ?? 0) },
-    });
-  };
 
   const editFilteredQuestionnaires = editing?.client_id
     ? questionnaires.filter((q) => q.client_id === editing.client_id)
