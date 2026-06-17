@@ -19,10 +19,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Receipt, Archive, UserPlus } from "lucide-react";
+import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Receipt, Archive, UserPlus, AlertTriangle, Zap, FolderPlus, Star } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
+import { computePriorityScore, priorityScoreColor, isColumnSaturated, WIP_LIMITS, detectMultipleDeliverables } from "@/lib/priority";
 import NewBatDialog from "@/components/NewBatDialog";
 import NewTiimeInvoiceDialog from "@/components/NewTiimeInvoiceDialog";
 import NewPrintOrderDialog from "@/components/NewPrintOrderDialog";
@@ -514,6 +515,20 @@ function KanbanCard({
             )}
             <AddStickerMenu task={task} onUpdate={onUpdate} />
             {(() => {
+              const score = computePriorityScore(task);
+              if (score < 20) return null;
+              return (
+                <Badge
+                  variant="outline"
+                  className={`text-[11px] font-medium px-2 py-0.5 inline-flex items-center gap-0.5 ${priorityScoreColor(score)}`}
+                  title="Score de priorité (deadline + priorité + CA)"
+                >
+                  <Star className="h-3 w-3" />
+                  {score}
+                </Badge>
+              );
+            })()}
+            {(() => {
               const billing = computeTaskBilling(task);
               const amount = task.billing_type === "forfait" ? (task.flat_amount ?? 0) : billing.total;
               return amount > 0 ? (
@@ -561,6 +576,9 @@ function KanbanColumn({
   const meta = STATUS_META[status];
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
+  const totalCount = tasks.length + socialTasks.length + leads.length;
+  const saturated = isColumnSaturated(status, totalCount);
+  const wipLimit = WIP_LIMITS[status];
   const submitDraft = async () => {
     const t = draft.trim();
     if (!t) { setAdding(false); return; }
@@ -578,14 +596,25 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-xl overflow-hidden flex-shrink-0 w-80 ${meta.bg} ring-1 ${meta.ring} transition ${isOver ? "ring-2 ring-primary" : ""}`}
+      className={`rounded-xl overflow-hidden flex-shrink-0 w-80 ${meta.bg} ring-1 ${meta.ring} transition ${isOver ? "ring-2 ring-primary" : ""} ${saturated ? "ring-2 ring-red-400 dark:ring-red-500" : ""}`}
     >
-      <div className={`h-1 w-full ${meta.accent}`} />
+      <div className={`h-1 w-full ${saturated ? "bg-red-400" : meta.accent}`} />
       <div className="p-3">
         <div className="flex items-center gap-2 mb-3 px-1">
           <span className="text-base leading-none">{meta.emoji}</span>
           <span className="text-sm font-semibold text-foreground flex-1 truncate">{STATUS_LABEL[status]}</span>
-          <span className={`text-xs font-semibold tabular-nums ${meta.count}`}>{tasks.length + socialTasks.length + leads.length}</span>
+          {saturated && (
+            <AlertTriangle
+              className="h-3.5 w-3.5 text-red-500"
+              aria-label={`Colonne saturée (${totalCount}/${wipLimit})`}
+            />
+          )}
+          <span
+            className={`text-xs font-semibold tabular-nums ${saturated ? "text-red-600 dark:text-red-400" : meta.count}`}
+            title={wipLimit && wipLimit !== Infinity ? `Limite recommandée : ${wipLimit}` : undefined}
+          >
+            {totalCount}{wipLimit && wipLimit !== Infinity ? `/${wipLimit}` : ""}
+          </span>
         </div>
         <div className="space-y-1 min-h-[80px]">
           <DropSlot id={`slot:${status}:0`} />
@@ -742,6 +771,8 @@ export default function Tasks() {
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [focusMode, setFocusMode] = useState(false);
+  const [showProjectHint, setShowProjectHint] = useState(false);
   const [batForTask, setBatForTask] = useState<any | null>(null);
   const [tiimeForTask, setTiimeForTask] = useState<any | null>(null);
   const [printForTask, setPrintForTask] = useState<any | null>(null);
@@ -1173,7 +1204,19 @@ export default function Tasks() {
       toast.error(error.message);
       return;
     }
+    if (detectMultipleDeliverables(title)) {
+      toast("Plusieurs livrables détectés", {
+        description: "Cette tâche ressemble à un projet. Tu veux la transformer ?",
+        action: { label: "Créer projet", onClick: () => suggestConvertToProject(title) },
+      });
+    }
     await load();
+  };
+
+  const suggestConvertToProject = async (title: string) => {
+    // Just navigate to new project page with prefilled name via query param.
+    const params = new URLSearchParams({ name: title });
+    window.location.href = `/projets?new=1&${params.toString()}`;
   };
 
   const completeTask = async (task: any, action: "bat" | "print" | "invoice" | "archive") => {
@@ -1259,7 +1302,31 @@ export default function Tasks() {
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Titre *</Label>
-                  <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                  <Input
+                    value={form.title}
+                    onChange={(e) => {
+                      setForm({ ...form, title: e.target.value });
+                      setShowProjectHint(detectMultipleDeliverables(e.target.value));
+                    }}
+                  />
+                  {showProjectHint && (
+                    <div className="flex items-start gap-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/30 text-xs">
+                      <FolderPlus className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-amber-700 dark:text-amber-400 font-medium">Plusieurs livrables détectés</p>
+                        <p className="text-muted-foreground mt-0.5">Cette tâche ressemble à un projet. Tu pourrais la découper en plusieurs tâches sous un même projet.</p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[11px] shrink-0"
+                        onClick={() => { setOpen(false); window.location.href = `/projets?new=1&name=${encodeURIComponent(form.title)}`; }}
+                      >
+                        Créer un projet
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -1359,6 +1426,23 @@ export default function Tasks() {
         )}
       </div>
 
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <Button
+          size="sm"
+          variant={focusMode ? "default" : "outline"}
+          onClick={() => setFocusMode((v) => !v)}
+          className="gap-1.5"
+        >
+          <Zap className="h-3.5 w-3.5" />
+          {focusMode ? "Focus du jour activé" : "Focus du jour"}
+        </Button>
+        {focusMode && (
+          <span className="text-xs text-muted-foreground">
+            Seule la colonne « Aujourd'hui » est affichée. Glisse 1 à 3 tâches dedans pour la journée.
+          </span>
+        )}
+      </div>
+
       <Tabs defaultValue="kanban">
         <TabsList>
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
@@ -1410,7 +1494,7 @@ export default function Tasks() {
         <TabsContent value="kanban" className="mt-4">
           <DndContext sensors={sensors} collisionDetection={kanbanCollisionDetection} onDragStart={onDragStart} onDragEnd={onDragEnd}>
             <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
-              {STATUSES.map((s) => (
+              {(focusMode ? (["aujourdhui"] as const) : STATUSES).map((s) => (
                 <KanbanColumn
                   key={s}
                   status={s}
