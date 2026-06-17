@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ export default function Projects() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showArchived, setShowArchived] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const load = async () => {
     const [p, c] = await Promise.all([
@@ -38,6 +39,17 @@ export default function Projects() {
     setSelected(new Set());
   };
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      const prefillName = searchParams.get("name") ?? "";
+      setForm((f) => ({ ...f, name: prefillName }));
+      setOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("new"); next.delete("name");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const create = async () => {
     if (!form.name.trim()) return toast.error("Nom requis");
