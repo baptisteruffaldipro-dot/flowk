@@ -32,7 +32,6 @@ import { computeTaskBilling } from "@/lib/billing";
 import PrestationPicker from "@/components/PrestationPicker";
 import DeliveryGateCard from "@/components/DeliveryGateCard";
 import NewBatDialog from "@/components/NewBatDialog";
-import NewTiimeInvoiceDialog from "@/components/NewTiimeInvoiceDialog";
 import GoalsTagSelector from "@/components/GoalsTagSelector";
 
 export default function TaskDetail() {
