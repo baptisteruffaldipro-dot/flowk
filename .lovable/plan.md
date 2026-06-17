@@ -1,83 +1,71 @@
-## Le problème
+## Roadmap projet — Plan
 
-Tiime n'a pas d'API publique. Notre edge function se connecte en simulant l'app web (Auth0 / `password-realm`). Comme ton compte Tiime a la **double authentification activée**, Auth0 refuse ce mode de connexion et renvoie `mfa_required` → 409.
+Transformer la fiche projet en **roadmap verticale par phases**, façon ta fiche Plat'O'Rama.
 
-Désactiver la MFA sur Tiime serait la solution la plus simple, mais c'est dangereux pour un compte qui contient ta compta. On garde la MFA.
+### 1. Modèle de données
 
-## La solution : authentification par refresh_token
+Deux nouvelles tables liées au projet :
 
-Auth0 (utilisé par Tiime) accepte un **refresh_token** long-lived (scope `offline_access`, déjà demandé par l'app web Tiime). Une fois que tu t'es connecté **une fois manuellement** sur apps.tiime.fr (avec MFA), un refresh_token est stocké dans le navigateur. On le récupère, on le colle dans Lovable Cloud, et l'edge function s'en sert ensuite pour obtenir un access_token frais à chaque appel — sans jamais redemander la MFA.
+- `project_phases` : `project_id`, `title` (ex: "Phase 1 — Cadrage"), `objective` (texte court, le 🎯), `position`, `color` (vert/orange/gris auto selon progression), `collapsed`.
+- `phase_actions` : `phase_id`, `label`, `done` (bool), `position`, `task_id` (nullable, lien vers `tasks.id` si l'action a été promue en tâche).
 
-Le refresh_token rote à chaque utilisation. Donc on doit le **persister en base** (pas en secret), et le mettre à jour après chaque échange. S'il expire (typiquement après 30 jours d'inactivité), tu refais la capture une fois.
+Les "livrables" ne sont pas une table séparée — ce sont des actions comme les autres (tu as choisi "Actions seulement"). On peut les distinguer via un flag optionnel `is_deliverable` si tu veux les styliser plus tard, mais V1 = simple liste plate.
 
-L'objectif reste : créer une **facture en brouillon** dans Tiime, ouvrir l'URL renvoyée, et finir la validation / l'envoi côté Tiime.
+RLS : mêmes règles que `projects` (admin gère tout, client lit si projet visible).
 
-## Étapes
+### 2. UI dans la fiche projet (`ProjectDetail.tsx`)
 
-### 1. Stockage du refresh_token (base)
+Nouvel onglet/section **Roadmap** au-dessus du kanban de tâches, en **timeline verticale** :
 
-Nouvelle table `tiime_auth` (row unique, admin uniquement) :
-- `refresh_token` text
-- `access_token` text (cache court)
-- `access_token_expires_at` timestamptz
-- `updated_at`, `created_at`
+```text
+●──── Phase 1 — Cadrage & fondations          [75%] ▾
+│     🎯 Poser des bases solides
+│     ☑ Valider le nom commercial
+│     ☑ Valider le positionnement
+│     ☐ Définir l'offre V1            [→ créer tâche]
+│     [+ ajouter une action]
+│
+●──── Phase 2 — Identité & crédibilité        [0%]  ▸
+│
+[+ ajouter une phase]
+```
 
-RLS : lecture/écriture admin uniquement.
+Comportements :
+- Pastille colorée à gauche : verte (100%), orange (en cours), grise (0%).
+- Barre de progression par phase + barre globale projet en haut (somme des actions).
+- Phases pliables, drag-and-drop pour réordonner phases et actions.
+- Édition inline du titre, de l'objectif, du label d'action (comme sous-objectifs).
+- Bouton "→ créer tâche" sur une action : crée une tâche kanban liée à ce projet, stocke `task_id`. Cocher la tâche dans le kanban coche l'action, et inversement.
 
-### 2. Page admin "Connexion Tiime"
+### 3. Projets vs Objectifs — recommandation
 
-Nouvelle page `/parametres/tiime` (lien dans la sidebar admin) avec :
-- **État** : connecté ✅ / déconnecté ❌, dernière rotation du token
-- **Bouton "Tester la connexion"** : appelle l'edge function en mode `verify`, qui tente un refresh + un `GET /companies`
-- **Champ "Coller le refresh_token"** + bouton "Enregistrer"
-- **Notice pas-à-pas** pour récupérer le token :
-  1. Ouvrir https://apps.tiime.fr, se connecter (avec MFA)
-  2. F12 → onglet *Application* → *Local Storage* → `https://apps.tiime.fr`
-  3. Chercher la clé qui commence par `@@auth0spajs@@::iEbsbe3o66gcTBfGRa012kj1Rb6vjAND`
-  4. Copier la valeur de `body.refresh_token`
-  5. Coller dans le champ ci-dessus
+Vu ton doute, je propose une règle simple à garder en tête (et qu'on inscrira dans la mémoire projet) :
 
-### 3. Edge function refactorée
+- **Projet** = un livrable concret avec deadline (Plat'O'Rama, refonte site client X). Il a une roadmap.
+- **Objectif** = un résultat plus large, souvent transverse à plusieurs projets ("Atteindre 10k€ MRR", "Lancer 3 produits en 2026"). Il agrège.
 
-`supabase/functions/tiime-create-invoice/index.ts` :
-- Lit `refresh_token` depuis `tiime_auth` (au lieu d'utiliser `password-realm`)
-- Si `access_token` en cache encore valide (>5 min) → l'utilise
-- Sinon → POST Auth0 `/oauth/token` avec `grant_type=refresh_token` + `client_id` + `refresh_token`
-- Stocke le nouveau `access_token`, son expiration, et le **nouveau refresh_token rotaté** dans `tiime_auth`
-- Continue avec la création de facture (statut `draft` — déjà le cas)
-- Si Auth0 répond `invalid_grant` → erreur claire : "refresh_token expiré, refais la capture sur /parametres/tiime"
+Donc on garde les deux séparés, **mais** : un projet peut être taggé à un ou plusieurs objectifs (comme les tâches le sont déjà via `GoalsTagSelector` — c'est déjà en place). La progression du projet (= % d'actions de roadmap cochées) remontera dans l'objectif lié, au même titre que les tâches/sous-projets.
 
-Nouvelle action `verify` (query param `?action=verify`) : tente juste le refresh + `/companies` et renvoie l'état, sans créer de facture. Utilisé par le bouton de test.
+Pas de nouveau lien Phase↔Objectif en V1 : trop granulaire, on reste sur projet↔objectif.
 
-Les secrets `TIIME_EMAIL` / `TIIME_PASSWORD` ne sont plus utilisés (on peut les laisser ou les supprimer plus tard).
+### 4. Migration des projets existants
 
-### 4. UX côté Kanban / facturation
+Aucun projet n'aura de phase au début. La section Roadmap affichera un état vide avec un bouton "Créer la première phase" + un template optionnel "6 phases type lancement" pré-rempli (Cadrage / Identité / Preuve / Web / Stratégie / Lancement) inspiré de Plat'O'Rama.
 
-Inchangé : le bouton "Terminer → Facturation (Tiime)" ouvre toujours `NewTiimeInvoiceDialog`, qui appelle la même edge function. Si la connexion Tiime n'est pas configurée, on affiche un toast "Connecte Tiime dans Paramètres" avec un lien direct.
+### 5. Dashboard
 
-## Section technique
+La carte Projet du dashboard affichera désormais la barre de progression issue de la roadmap (au lieu / en plus du compteur de tâches actuel).
 
-**Fichiers à créer**
-- Migration : `tiime_auth` table + RLS admin
-- `src/pages/TiimeSettings.tsx` (page de connexion + statut + champ refresh_token)
-- Route dans `App.tsx` : `/parametres/tiime`
-- Lien dans la sidebar admin (sous "Paramètres")
+### Détails techniques
 
-**Fichiers à modifier**
-- `supabase/functions/tiime-create-invoice/index.ts` :
-  - Remplacer `tiimeLogin(email, password)` par `getAccessToken()` basé sur refresh_token de la DB
-  - Ajouter rotation/persistance du refresh_token
-  - Ajouter mode `verify`
-- `src/components/NewTiimeInvoiceDialog.tsx` : si erreur `tiime_not_configured` → toast avec lien vers `/parametres/tiime`
+- Migration Supabase : 2 tables + GRANT + RLS + trigger `updated_at`.
+- Composants : `ProjectRoadmap.tsx` (conteneur), `PhaseCard.tsx`, `PhaseAction.tsx`.
+- DnD : `@dnd-kit/sortable` (déjà utilisé dans le kanban si présent, sinon à ajouter).
+- Sync action↔tâche : quand `phase_actions.task_id` est défini, on lit `tasks.status` pour déterminer `done` (`done` si status = `termine`), et un toggle sur l'action met à jour la tâche.
+- `ProjectDetail.tsx` : la roadmap est insérée entre la grille de métadonnées et la liste de tâches/kanban.
 
-**Aucun secret API key supplémentaire requis** — tout passe par la DB.
+### Hors scope V1
 
-## Limites à connaître
-
-- Si Tiime invalide le refresh_token (changement de mot de passe, déconnexion forcée), il faudra refaire la capture. Le bouton "Tester la connexion" t'aide à le détecter avant de créer une facture.
-- Auth0 peut limiter la durée totale du refresh_token (absolute lifetime, souvent 30 jours sans usage). Une utilisation régulière le maintient en vie.
-- On reste dépendants des endpoints non documentés de Tiime — si Tiime change son auth, il faudra adapter.
-
-## Décision à prendre
-
-Tu valides cette approche (refresh_token capturé manuellement, stocké en base, page admin pour le gérer) ? Si oui je l'implémente.
+- Pas de Gantt / dates par phase (échéance reste au niveau projet).
+- Pas de templates personnalisables au-delà du template lancement fourni.
+- Pas de lien phase↔objectif (uniquement projet↔objectif).
