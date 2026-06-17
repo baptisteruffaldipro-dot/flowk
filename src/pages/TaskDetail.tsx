@@ -32,7 +32,6 @@ import { computeTaskBilling } from "@/lib/billing";
 import PrestationPicker from "@/components/PrestationPicker";
 import DeliveryGateCard from "@/components/DeliveryGateCard";
 import NewBatDialog from "@/components/NewBatDialog";
-import GoalsTagSelector from "@/components/GoalsTagSelector";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -429,10 +428,6 @@ export default function TaskDetail() {
               });
             }}
           />
-        </Card>
-        <Card className="p-4 min-w-0">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Objectifs</div>
-          <GoalsTagSelector entityType="task" entityId={task.id} />
         </Card>
         {!["envoye", "a_facturer", "facture_envoyee", "facturee", "payee", "archive"].includes(task.status) && (
           <Card className="p-4 min-w-0">

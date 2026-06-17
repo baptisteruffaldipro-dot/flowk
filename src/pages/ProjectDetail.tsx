@@ -19,7 +19,6 @@ import {
 import { PROJECT_TYPE_LABEL, STATUS_LABEL, PRINT_STATUS_LABEL, BAT_STATUS_LABEL, INVOICE_STATUS_LABEL, fmtDate, fmtDateTime, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
-import GoalsTagSelector from "@/components/GoalsTagSelector";
 import ProjectRoadmap from "@/components/ProjectRoadmap";
 
 const DONE_STATUSES = new Set(["envoye", "a_facturer", "facture_envoyee", "payee", "archive"]);
@@ -230,10 +229,6 @@ export default function ProjectDetail() {
               value={project.deadline ?? ""}
               onChange={(e) => updateField({ deadline: e.target.value || null })}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Objectifs</Label>
-            <GoalsTagSelector entityType="project" entityId={project.id} />
           </div>
         </div>
       </Card>
