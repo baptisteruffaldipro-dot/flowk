@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { STATUS_LABEL, PRINT_STATUS_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
-import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban, UserPlus, Target } from "lucide-react";
+import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban, UserPlus } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
 
 type Task = { id: string; title: string; status: string; deadline: string | null; clients?: { name: string } | null };
@@ -24,8 +24,6 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, awaitingBat: 0 });
-  const [goals, setGoals] = useState<any[]>([]);
-  const [goalProgressMap, setGoalProgressMap] = useState<Record<string, { done: number; total: number }>>({});
 
   const load = async () => {
       const [t, todayT, o, a, p, batsRelecture, l] = await Promise.all([
@@ -58,31 +56,6 @@ export default function Dashboard() {
       const awaitBatRows = ((batsRelecture.data as any) ?? []).length;
       const awaitBat = awaitPrintBat + awaitBatRows;
       setStats({ todoCount, doneCount, totalCount, awaitingBat: awaitBat });
-
-      // Objectifs
-      const { data: goalsData } = await supabase
-        .from("goals")
-        .select("id,title,description,deadline,color,status,archived,created_at")
-        .eq("archived", false)
-        .order("created_at", { ascending: false });
-      const list = (goalsData as any[]) ?? [];
-      setGoals(list);
-      if (list.length) {
-        const ids = list.map((g) => g.id);
-        const [subs, gt, gp] = await Promise.all([
-          supabase.from("subgoals").select("goal_id,done").in("goal_id", ids),
-          supabase.from("goal_tasks").select("goal_id,tasks(status)").in("goal_id", ids),
-          supabase.from("goal_projects").select("goal_id,projects(archived)").in("goal_id", ids),
-        ]);
-        const map: Record<string, { done: number; total: number }> = {};
-        ids.forEach((id) => (map[id] = { done: 0, total: 0 }));
-        (subs.data ?? []).forEach((s: any) => { map[s.goal_id].total++; if (s.done) map[s.goal_id].done++; });
-        (gt.data ?? []).forEach((s: any) => { map[s.goal_id].total++; if (s.tasks?.status === "archive") map[s.goal_id].done++; });
-        (gp.data ?? []).forEach((s: any) => { map[s.goal_id].total++; if (s.projects?.archived) map[s.goal_id].done++; });
-        setGoalProgressMap(map);
-      } else {
-        setGoalProgressMap({});
-      }
   };
   useEffect(() => { load(); }, []);
 
@@ -105,34 +78,6 @@ export default function Dashboard() {
         <StatCard label="Chiffre d'affaires" value="Voir le CA" href="/ca" />
         <StatCard label="Facturation" value="Voir factures" href="/facturation" />
       </div>
-
-      {goals.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-          {goals.map((g) => {
-            const p = goalProgressMap[g.id] ?? { done: 0, total: 0 };
-            const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
-            const reached = pct === 100 && p.total > 0;
-            return (
-              <Link key={g.id} to={`/objectifs/${g.id}`}>
-                <Card className="p-4 hover:shadow-md transition relative overflow-hidden">
-                  <div className="absolute top-0 left-0 right-0 h-1" style={{ background: g.color ?? "#6366f1" }} />
-                  <div className="flex items-start gap-2.5 mb-2">
-                    <div className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: (g.color ?? "#6366f1") + "20", color: g.color ?? "#6366f1" }}>
-                      {reached ? <Sun className="h-4 w-4" /> : <Target className="h-4 w-4" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{g.title}</div>
-                      <div className="text-[11px] text-muted-foreground tabular-nums">{p.done} / {p.total} terminé{p.done > 1 ? "s" : ""}</div>
-                    </div>
-                    <div className="text-sm font-semibold tabular-nums" style={{ color: g.color ?? "#6366f1" }}>{pct}%</div>
-                  </div>
-                  <Progress value={pct} className="h-1.5" />
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-      )}
 
       <TodayBoard tasks={tasks} printOrders={orders} />
 
