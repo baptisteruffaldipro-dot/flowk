@@ -460,6 +460,9 @@ function KanbanCard({
               <DropdownMenuItem onClick={() => onComplete(task, "invoice")}>
                 <Receipt className="h-3.5 w-3.5 mr-2" /> Facturation (Tiime)
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onComplete(task, "archive")}>
+                <Archive className="h-3.5 w-3.5 mr-2" /> Archivé
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onComplete(task, "archive")}>
                 <Archive className="h-3.5 w-3.5 mr-2" /> Marquer terminée
