@@ -73,8 +73,17 @@ Deno.serve(async (req) => {
 
     try {
       const status = await client.status("INBOX", { uidNext: true, messages: true });
-      const fromUid = (account.last_uid_seen || 0) + 1;
-      const range = `${fromUid}:*`;
+      const lastSeen = account.last_uid_seen || 0;
+      const uidNext = (status as any).uidNext || 1;
+      // First sync: only pull the last 50 messages to stay within the function time budget.
+      // Subsequent syncs: pull everything since last_uid_seen.
+      let range: string;
+      if (lastSeen === 0) {
+        const from = Math.max(1, uidNext - 50);
+        range = `${from}:*`;
+      } else {
+        range = `${lastSeen + 1}:*`;
+      }
 
       // Iterate UIDs greater than last seen
       for await (const msg of client.fetch(range, {
