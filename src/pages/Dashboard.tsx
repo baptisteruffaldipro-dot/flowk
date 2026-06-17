@@ -39,6 +39,8 @@ export default function Dashboard() {
   const [upcomingInstallments, setUpcomingInstallments] = useState<Installment[]>([]);
   const [stats, setStats] = useState({ todoCount: 0, doneCount: 0, totalCount: 0, pendingRevenue: 0, paidRevenue: 0, paidPresta: 0, paidBien: 0, monthRevenue: 0, monthPresta: 0, monthBien: 0, awaitingBat: 0 });
   const [monthly, setMonthly] = useState<{ key: string; label: string; presta: number; bien: number; total: number }[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
+  const [goalProgressMap, setGoalProgressMap] = useState<Record<string, { done: number; total: number }>>({});
 
   const load = async () => {
       const [t, todayT, o, i, a, paid, p, batsRelecture, l] = await Promise.all([
