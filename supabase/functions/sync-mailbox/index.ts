@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
       }
       console.log("fetching range", range);
 
-      const PER_RUN_LIMIT = 20;
+      const PER_RUN_LIMIT = 3;
       let processed = 0;
       // Iterate UIDs greater than last seen
       for await (const msg of client.fetch(range, {
