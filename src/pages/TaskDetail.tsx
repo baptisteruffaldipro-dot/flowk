@@ -406,7 +406,7 @@ export default function TaskDetail() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
         <Card className="p-4 min-w-0">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Statut</div>
           <Select value={task.status} onValueChange={(v) => updateStatusWithAutoBalance(v)}>
@@ -440,6 +440,10 @@ export default function TaskDetail() {
               });
             }}
           />
+        </Card>
+        <Card className="p-4 min-w-0">
+          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Objectifs</div>
+          <GoalsTagSelector entityType="task" entityId={task.id} />
         </Card>
         {!["envoye", "a_facturer", "facture_envoyee", "facturee", "payee", "archive"].includes(task.status) && (
           <Card className="p-4 min-w-0">
@@ -491,10 +495,6 @@ export default function TaskDetail() {
             placeholder="Notes, brief, références…"
           />
           <NoteAttachments task={task} onChange={load} />
-          <div className="mt-4 pt-4 border-t">
-            <div className="text-xs font-semibold text-muted-foreground mb-2">Objectifs</div>
-            <GoalsTagSelector entityType="task" entityId={task.id} />
-          </div>
         </Card>
 
         <Card className="p-4 sm:p-5 min-w-0">

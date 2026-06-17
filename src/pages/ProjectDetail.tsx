@@ -195,7 +195,7 @@ export default function ProjectDetail() {
       />
 
       <Card className="p-5 mb-4">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs">Nom</Label>
             <Input
@@ -230,6 +230,10 @@ export default function ProjectDetail() {
               onChange={(e) => updateField({ deadline: e.target.value || null })}
             />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Objectifs</Label>
+            <GoalsTagSelector entityType="project" entityId={project.id} />
+          </div>
         </div>
       </Card>
 
@@ -262,10 +266,6 @@ export default function ProjectDetail() {
             placeholder="Brief, indications du client, idées…"
           />
           <Button size="sm" className="mt-3" onClick={saveNotes}>Enregistrer</Button>
-          <div className="mt-4 pt-4 border-t">
-            <div className="text-xs font-semibold text-muted-foreground mb-2">Objectifs</div>
-            <GoalsTagSelector entityType="project" entityId={project.id} />
-          </div>
         </Card>
 
         <Card className="p-5">
