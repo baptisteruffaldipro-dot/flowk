@@ -151,11 +151,10 @@ export default function GlobalTimer() {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="shadow-lg bg-card h-11 w-11 sm:h-10 sm:w-auto sm:px-3 rounded-full sm:rounded-md p-0 flex items-center justify-center"
+                  className="shadow-lg bg-card h-11 w-11 rounded-full p-0 flex items-center justify-center"
                   aria-label="Créer rapidement"
                 >
                   <Plus className="h-5 w-5" />
-                  <span className="hidden sm:inline ml-1.5 text-sm font-medium">Créer</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-2 rounded-2xl shadow-xl border" align="end">
