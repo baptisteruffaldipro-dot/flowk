@@ -271,15 +271,13 @@ function RequestDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Canal</Label>
-            <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v })}>
+            <Label className="text-xs">Type de prestation</Label>
+            <Select value={form.prestation_type} onValueChange={(v) => setForm({ ...form, prestation_type: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="mail">Mail</SelectItem>
-                <SelectItem value="message">Message</SelectItem>
-                <SelectItem value="appel">Appel</SelectItem>
-                <SelectItem value="rdv">Rendez-vous</SelectItem>
-                <SelectItem value="autre">Autre</SelectItem>
+                {Object.entries(PRESTATION_LABEL).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
