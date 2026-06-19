@@ -130,6 +130,9 @@ export default function ClientRequests() {
                 </div>
               </div>
               <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setEditing(r); setOpen(true); }}>
+                  <Pencil className="h-3.5 w-3.5 mr-1" /> Modifier
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => copyLink(r.share_token)}>
                   <Copy className="h-3.5 w-3.5 mr-1" /> Copier le lien
                 </Button>
