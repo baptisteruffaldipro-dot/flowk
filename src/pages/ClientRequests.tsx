@@ -111,6 +111,11 @@ export default function ClientRequests() {
                   <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
                     {KIND_LABEL[r.kind] ?? r.kind}
                   </span>
+                  {r.prestation_type && (
+                    <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-secondary text-foreground">
+                      {PRESTATION_LABEL[r.prestation_type] ?? r.prestation_type}
+                    </span>
+                  )}
                   <button
                     onClick={() => { setEditing(r); setOpen(true); }}
                     className="font-medium text-left truncate hover:underline"
