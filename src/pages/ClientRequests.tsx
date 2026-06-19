@@ -193,7 +193,7 @@ export default function ClientRequests() {
                 <div className="text-xs text-muted-foreground mt-1 truncate">
                   {r.client_name_snapshot || clients.find((c) => c.id === r.client_id)?.name || "—"}
                   {r.deadline && <> · échéance {new Date(r.deadline).toLocaleDateString("fr-FR")}</>}
-                  {r.estimated_amount && <> · {Number(r.estimated_amount).toFixed(0)} €</>}
+                  {r.estimated_amount && <> · {Number(r.estimated_amount).toFixed(0)} € HT</>}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -419,7 +419,7 @@ function RequestDialog({
 
           {form.billing_type === "forfait" && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Montant estimé (€)</Label>
+              <Label className="text-xs">Montant estimé (€ HT)</Label>
               <Input
                 type="number" step="0.01" value={form.estimated_amount}
                 onChange={(e) => setForm({ ...form, estimated_amount: e.target.value })}
@@ -436,7 +436,7 @@ function RequestDialog({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Taux horaire (€)</Label>
+                <Label className="text-xs">Taux horaire (€ HT)</Label>
                 <Input
                   type="number" step="0.01" value={form.hourly_rate}
                   onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}

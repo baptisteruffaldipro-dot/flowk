@@ -143,13 +143,13 @@ export default function ClientRequestPublic() {
               r.billing_type === "horaire" ? "Au temps passé" : "À définir"
             } />
             {r.estimated_amount != null && (
-              <Info label="Montant estimé" value={`${Number(r.estimated_amount).toFixed(2)} €`} />
+              <Info label="Montant estimé" value={`${Number(r.estimated_amount).toFixed(2)} € HT`} />
             )}
             {r.estimated_minutes != null && (
               <Info label="Temps estimé" value={`${(r.estimated_minutes / 60).toFixed(2)} h`} />
             )}
             {r.hourly_rate != null && (
-              <Info label="Taux horaire" value={`${Number(r.hourly_rate).toFixed(2)} €`} />
+              <Info label="Taux horaire" value={`${Number(r.hourly_rate).toFixed(2)} € HT`} />
             )}
             {r.deadline && (
               <Info label="Échéance" value={new Date(r.deadline).toLocaleDateString("fr-FR")} />
@@ -232,7 +232,7 @@ export default function ClientRequestPublic() {
           <section className="rounded-xl border border-border/60 bg-card p-5 space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Frais</h2>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold">{currentTotal.toFixed(2)} €</span>
+              <span className="text-2xl font-semibold">{currentTotal.toFixed(2)} € HT</span>
               <span className="text-xs text-muted-foreground">total estimé / actuel</span>
             </div>
           </section>
@@ -251,7 +251,7 @@ export default function ClientRequestPublic() {
                       {inv.label || inv.number || "Facture"}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {inv.amount != null && <>{Number(inv.amount).toFixed(2)} €</>}
+                      {inv.amount != null && <>{Number(inv.amount).toFixed(2)} € HT</>}
                       {inv.status && <> · {inv.status}</>}
                     </div>
                   </div>
