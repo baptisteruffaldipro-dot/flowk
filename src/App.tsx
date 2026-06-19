@@ -36,6 +36,8 @@ import LogoPresentation from "./pages/LogoPresentation";
 import LogoPresentationPublic from "./pages/LogoPresentationPublic";
 import SocialMedia from "./pages/SocialMedia";
 import SocialMediaClient from "./pages/SocialMediaClient";
+import ClientRequests from "./pages/ClientRequests";
+import ClientRequestPublic from "./pages/ClientRequestPublic";
 import ClientPortal from "./pages/ClientPortal";
 import PortalTokenLanding from "./pages/PortalTokenLanding";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
@@ -57,6 +59,7 @@ const App = () => (
             <Route path="/q/:token" element={<QuestionnairePublic />} />
             <Route path="/p/strategie/:token" element={<BrandStrategyPublic />} />
             <Route path="/p/logo/:token" element={<LogoPresentationPublic />} />
+            <Route path="/p/demande/:token" element={<ClientRequestPublic />} />
             <Route path="/p/portail/:token" element={<PortalTokenLanding />} />
             <Route path="/portail" element={<ProtectedRoute requireRole="client"><ClientPortal /></ProtectedRoute>} />
             <Route path="/portail/projet/:id" element={<ProtectedRoute requireRole="client"><ClientProjectPortal /></ProtectedRoute>} />
@@ -83,6 +86,7 @@ const App = () => (
               <Route path="/telegram" element={<TelegramSettings />} />
               
               <Route path="/leads" element={<Leads />} />
+              <Route path="/demandes" element={<ClientRequests />} />
               <Route path="/strategies" element={<BrandStrategies />} />
               <Route path="/strategie/:id" element={<BrandStrategy />} />
               <Route path="/logos" element={<LogoPresentations />} />

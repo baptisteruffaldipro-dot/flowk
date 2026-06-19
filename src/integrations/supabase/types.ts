@@ -293,6 +293,158 @@ export type Database = {
           },
         ]
       }
+      client_request_messages: {
+        Row: {
+          author: string
+          body: string
+          created_at: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          author: string
+          body: string
+          created_at?: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          author?: string
+          body?: string
+          created_at?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_request_messages_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "client_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_requests: {
+        Row: {
+          billing_type: Database["public"]["Enums"]["client_request_billing"]
+          channel: Database["public"]["Enums"]["client_request_channel"]
+          client_id: string | null
+          client_name_snapshot: string | null
+          client_refusal_reason: string | null
+          client_refused_at: string | null
+          client_validated_at: string | null
+          converted_appointment_id: string | null
+          converted_print_order_id: string | null
+          converted_project_id: string | null
+          converted_task_id: string | null
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          description: string | null
+          estimated_amount: number | null
+          estimated_minutes: number | null
+          hourly_rate: number | null
+          id: string
+          is_published: boolean
+          kind: Database["public"]["Enums"]["client_request_kind"]
+          share_token: string
+          status: Database["public"]["Enums"]["client_request_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          billing_type?: Database["public"]["Enums"]["client_request_billing"]
+          channel?: Database["public"]["Enums"]["client_request_channel"]
+          client_id?: string | null
+          client_name_snapshot?: string | null
+          client_refusal_reason?: string | null
+          client_refused_at?: string | null
+          client_validated_at?: string | null
+          converted_appointment_id?: string | null
+          converted_print_order_id?: string | null
+          converted_project_id?: string | null
+          converted_task_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          estimated_amount?: number | null
+          estimated_minutes?: number | null
+          hourly_rate?: number | null
+          id?: string
+          is_published?: boolean
+          kind?: Database["public"]["Enums"]["client_request_kind"]
+          share_token?: string
+          status?: Database["public"]["Enums"]["client_request_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          billing_type?: Database["public"]["Enums"]["client_request_billing"]
+          channel?: Database["public"]["Enums"]["client_request_channel"]
+          client_id?: string | null
+          client_name_snapshot?: string | null
+          client_refusal_reason?: string | null
+          client_refused_at?: string | null
+          client_validated_at?: string | null
+          converted_appointment_id?: string | null
+          converted_print_order_id?: string | null
+          converted_project_id?: string | null
+          converted_task_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          estimated_amount?: number | null
+          estimated_minutes?: number | null
+          hourly_rate?: number | null
+          id?: string
+          is_published?: boolean
+          kind?: Database["public"]["Enums"]["client_request_kind"]
+          share_token?: string
+          status?: Database["public"]["Enums"]["client_request_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_requests_converted_appointment_id_fkey"
+            columns: ["converted_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_requests_converted_print_order_id_fkey"
+            columns: ["converted_print_order_id"]
+            isOneToOne: false
+            referencedRelation: "print_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_requests_converted_project_id_fkey"
+            columns: ["converted_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_requests_converted_task_id_fkey"
+            columns: ["converted_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -2027,6 +2179,14 @@ export type Database = {
         Args: { _entity_id: string; _entity_type: string }
         Returns: boolean
       }
+      client_request_add_message_by_token: {
+        Args: { _body: string; _token: string }
+        Returns: Json
+      }
+      client_request_decide_by_token: {
+        Args: { _decision: string; _reason?: string; _token: string }
+        Returns: Json
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -2058,6 +2218,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_client_request_by_token: { Args: { _token: string }; Returns: Json }
       get_logo_presentation_by_token: {
         Args: { _token: string }
         Returns: {
@@ -2130,6 +2291,16 @@ export type Database = {
         | "telephone"
         | "autre"
       capture_status: "a_traiter" | "traite" | "archive"
+      client_request_billing: "forfait" | "horaire" | "a_definir"
+      client_request_channel: "mail" | "message" | "appel" | "rdv" | "autre"
+      client_request_kind: "projet" | "tache" | "commande" | "rdv" | "autre"
+      client_request_status:
+        | "nouveau"
+        | "en_attente_client"
+        | "validee"
+        | "refusee"
+        | "convertie"
+        | "annulee"
       delivery_unlock_rule: "acompte" | "total" | "libre"
       invoice_billing_type: "forfait" | "horaire"
       invoice_status: "a_facturer" | "facturee" | "payee"
@@ -2396,6 +2567,17 @@ export const Constants = {
         "autre",
       ],
       capture_status: ["a_traiter", "traite", "archive"],
+      client_request_billing: ["forfait", "horaire", "a_definir"],
+      client_request_channel: ["mail", "message", "appel", "rdv", "autre"],
+      client_request_kind: ["projet", "tache", "commande", "rdv", "autre"],
+      client_request_status: [
+        "nouveau",
+        "en_attente_client",
+        "validee",
+        "refusee",
+        "convertie",
+        "annulee",
+      ],
       delivery_unlock_rule: ["acompte", "total", "libre"],
       invoice_billing_type: ["forfait", "horaire"],
       invoice_status: ["a_facturer", "facturee", "payee"],
