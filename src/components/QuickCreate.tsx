@@ -210,37 +210,51 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
 
   const filteredProjects = projects.filter((p) => !task.client_id || p.client_id === task.client_id);
 
+  const actions = [
+    { key: "client" as Mode, label: "Nouveau client", icon: UserPlus, color: "sky" },
+    { key: "task" as Mode, label: "Nouvelle tâche", icon: CheckSquare, color: "emerald" },
+    { key: "project" as Mode, label: "Nouveau projet", icon: FolderKanban, color: "violet" },
+    { key: "order" as Mode, label: "Commande", icon: Printer, color: "orange" },
+    { key: "appointment" as Mode, label: "Nouveau RDV", icon: CalendarPlus, color: "rose" },
+    { key: "request" as Mode, label: "Demande client", icon: FileQuestion, color: "indigo", onClick: () => navigate("/demandes") },
+    { key: "questionnaire" as Mode, label: "Questionnaire", icon: ClipboardList, color: "teal", onClick: () => navigate("/questionnaires") },
+  ];
+
   return (
     <>
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <div className="text-sm font-semibold tracking-tight">Créer rapidement</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Une tâche, un projet, une commande, une demande client ou un questionnaire</div>
-          </div>
+      <Card className="p-5">
+        <div className="mb-5">
+          <div className="text-sm font-semibold tracking-tight">Créer rapidement</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Une tâche, un projet, une commande, une demande client ou un questionnaire</div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
-          <Button variant="outline" size="sm" onClick={() => setMode("client")} className="justify-start min-w-0 px-2.5">
-            <UserPlus className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouveau client</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setMode("task")} className="justify-start min-w-0 px-2.5">
-            <CheckSquare className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouvelle tâche</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setMode("project")} className="justify-start min-w-0 px-2.5">
-            <FolderKanban className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouveau projet</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setMode("order")} className="justify-start min-w-0 px-2.5">
-            <Printer className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouvelle commande</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setMode("appointment")} className="justify-start min-w-0 px-2.5">
-            <CalendarPlus className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouveau RDV</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate("/demandes")} className="justify-start min-w-0 px-2.5">
-            <FileQuestion className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Demande client</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate("/questionnaires")} className="justify-start min-w-0 px-2.5">
-            <ClipboardList className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Questionnaire</span>
-          </Button>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {actions.map((a) => {
+            const Icon = a.icon;
+            const colorMap: Record<string, { bg: string; text: string; border: string; hoverBg: string }> = {
+              sky: { bg: "bg-sky-50", text: "text-sky-600", border: "hover:border-sky-200", hoverBg: "hover:bg-sky-50/40" },
+              emerald: { bg: "bg-emerald-50", text: "text-emerald-600", border: "hover:border-emerald-200", hoverBg: "hover:bg-emerald-50/40" },
+              violet: { bg: "bg-violet-50", text: "text-violet-600", border: "hover:border-violet-200", hoverBg: "hover:bg-violet-50/40" },
+              orange: { bg: "bg-orange-50", text: "text-orange-600", border: "hover:border-orange-200", hoverBg: "hover:bg-orange-50/40" },
+              rose: { bg: "bg-rose-50", text: "text-rose-600", border: "hover:border-rose-200", hoverBg: "hover:bg-rose-50/40" },
+              indigo: { bg: "bg-indigo-50", text: "text-indigo-600", border: "hover:border-indigo-200", hoverBg: "hover:bg-indigo-50/40" },
+              teal: { bg: "bg-teal-50", text: "text-teal-600", border: "hover:border-teal-200", hoverBg: "hover:bg-teal-50/40" },
+            };
+            const c = colorMap[a.color];
+            return (
+              <button
+                key={a.key}
+                onClick={a.onClick ?? (() => setMode(a.key))}
+                className={`group flex flex-col items-center gap-2.5 p-3.5 rounded-xl border border-border bg-card ${c.border} ${c.hoverBg} transition-all duration-200 cursor-pointer`}
+              >
+                <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${c.bg} ${c.text} group-hover:scale-105 transition-transform`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground text-center leading-tight">
+                  {a.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </Card>
 
