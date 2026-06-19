@@ -176,13 +176,18 @@ export default function ClientRequestPublic() {
                 </div>
               </div>
             ) : (
-              <div className="flex gap-2 flex-wrap">
-                <Button onClick={() => decide("valider")} disabled={busy}>
-                  <CheckCircle2 className="h-4 w-4 mr-1" /> Valider la demande
-                </Button>
-                <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
-                  <XCircle className="h-4 w-4 mr-1" /> Refuser
-                </Button>
+              <div className="space-y-2">
+                <div className="flex gap-2 flex-wrap">
+                  <Button onClick={() => decide("valider")} disabled={busy}>
+                    <CheckCircle2 className="h-4 w-4 mr-1" /> Valider la demande
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
+                    <XCircle className="h-4 w-4 mr-1" /> Refuser
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  En validant cette demande, vous acceptez les conditions : toute demande validée est ferme et engage une facturation selon le devis ou l’estimation communiqué(e). Aucun travail ne sera engagé sans cette validation préalable.
+                </p>
               </div>
             )}
           </section>
