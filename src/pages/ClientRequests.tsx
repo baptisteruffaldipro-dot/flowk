@@ -18,6 +18,11 @@ type ClientLite = { id: string; name: string; company?: string | null };
 const KIND_LABEL: Record<string, string> = {
   projet: "Projet", tache: "Tâche", commande: "Commande", rdv: "Rendez-vous", autre: "Autre",
 };
+const PRESTATION_LABEL: Record<string, string> = {
+  logo: "Logo", refonte: "Refonte", ajustements: "Ajustements",
+  conception_graphique: "Conception graphique", illustration: "Illustration",
+  impression: "Impression", autre: "Autre",
+};
 const STATUS_LABEL: Record<string, string> = {
   nouveau: "Nouveau", en_attente_client: "En attente client", validee: "Validée",
   refusee: "Refusée", convertie: "Convertie", annulee: "Annulée",
@@ -106,6 +111,11 @@ export default function ClientRequests() {
                   <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
                     {KIND_LABEL[r.kind] ?? r.kind}
                   </span>
+                  {r.prestation_type && (
+                    <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-secondary text-foreground">
+                      {PRESTATION_LABEL[r.prestation_type] ?? r.prestation_type}
+                    </span>
+                  )}
                   <button
                     onClick={() => { setEditing(r); setOpen(true); }}
                     className="font-medium text-left truncate hover:underline"
@@ -157,7 +167,7 @@ function RequestDialog({
   onSaved: () => void;
 }) {
   const empty = {
-    client_id: "", client_name_snapshot: "", channel: "mail", kind: "projet",
+    client_id: "", client_name_snapshot: "", prestation_type: "logo", kind: "projet",
     title: "", description: "",
     billing_type: "a_definir", estimated_amount: "", estimated_minutes: "", hourly_rate: "",
     deadline: "", status: "nouveau",
@@ -173,7 +183,7 @@ function RequestDialog({
       setForm({
         client_id: editing.client_id || "",
         client_name_snapshot: editing.client_name_snapshot || "",
-        channel: editing.channel || "mail",
+        prestation_type: editing.prestation_type || "logo",
         kind: editing.kind || "projet",
         title: editing.title || "",
         description: editing.description || "",
@@ -204,7 +214,7 @@ function RequestDialog({
       client_id: form.client_id || null,
       client_name_snapshot:
         form.client_name_snapshot || clients.find((c) => c.id === form.client_id)?.name || null,
-      channel: form.channel,
+      prestation_type: form.prestation_type,
       kind: form.kind,
       title: form.title.trim(),
       description: form.description?.trim() || null,
@@ -261,15 +271,13 @@ function RequestDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Canal</Label>
-            <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v })}>
+            <Label className="text-xs">Type de prestation</Label>
+            <Select value={form.prestation_type} onValueChange={(v) => setForm({ ...form, prestation_type: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="mail">Mail</SelectItem>
-                <SelectItem value="message">Message</SelectItem>
-                <SelectItem value="appel">Appel</SelectItem>
-                <SelectItem value="rdv">Rendez-vous</SelectItem>
-                <SelectItem value="autre">Autre</SelectItem>
+                {Object.entries(PRESTATION_LABEL).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

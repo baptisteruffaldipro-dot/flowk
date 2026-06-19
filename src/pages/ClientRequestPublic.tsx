@@ -8,8 +8,10 @@ import { CheckCircle2, XCircle, Clock, FileText, Download, Send } from "lucide-r
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 
-const KIND_LABEL: Record<string, string> = {
-  projet: "Projet", tache: "Tâche", commande: "Commande", rdv: "Rendez-vous", autre: "Demande",
+const PRESTATION_LABEL: Record<string, string> = {
+  logo: "Logo", refonte: "Refonte", ajustements: "Ajustements",
+  conception_graphique: "Conception graphique", illustration: "Illustration",
+  impression: "Impression", autre: "Autre",
 };
 const STATUS_LABEL: Record<string, string> = {
   nouveau: "En attente de votre validation",
@@ -116,9 +118,11 @@ export default function ClientRequestPublic() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-8">
         <header className="space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
-              {KIND_LABEL[r.kind] ?? r.kind}
-            </span>
+            {r.prestation_type && (
+              <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                {PRESTATION_LABEL[r.prestation_type] ?? r.prestation_type}
+              </span>
+            )}
             <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-secondary text-foreground">
               {STATUS_LABEL[r.status] ?? r.status}
             </span>

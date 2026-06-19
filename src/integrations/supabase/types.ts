@@ -328,7 +328,6 @@ export type Database = {
       client_requests: {
         Row: {
           billing_type: Database["public"]["Enums"]["client_request_billing"]
-          channel: Database["public"]["Enums"]["client_request_channel"]
           client_id: string | null
           client_name_snapshot: string | null
           client_refusal_reason: string | null
@@ -348,6 +347,7 @@ export type Database = {
           id: string
           is_published: boolean
           kind: Database["public"]["Enums"]["client_request_kind"]
+          prestation_type: string | null
           share_token: string
           status: Database["public"]["Enums"]["client_request_status"]
           title: string
@@ -355,7 +355,6 @@ export type Database = {
         }
         Insert: {
           billing_type?: Database["public"]["Enums"]["client_request_billing"]
-          channel?: Database["public"]["Enums"]["client_request_channel"]
           client_id?: string | null
           client_name_snapshot?: string | null
           client_refusal_reason?: string | null
@@ -375,6 +374,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           kind?: Database["public"]["Enums"]["client_request_kind"]
+          prestation_type?: string | null
           share_token?: string
           status?: Database["public"]["Enums"]["client_request_status"]
           title: string
@@ -382,7 +382,6 @@ export type Database = {
         }
         Update: {
           billing_type?: Database["public"]["Enums"]["client_request_billing"]
-          channel?: Database["public"]["Enums"]["client_request_channel"]
           client_id?: string | null
           client_name_snapshot?: string | null
           client_refusal_reason?: string | null
@@ -402,6 +401,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           kind?: Database["public"]["Enums"]["client_request_kind"]
+          prestation_type?: string | null
           share_token?: string
           status?: Database["public"]["Enums"]["client_request_status"]
           title?: string
