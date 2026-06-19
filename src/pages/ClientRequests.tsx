@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClientSelectField from "@/components/ClientSelectField";
-import { Plus, Link2, Copy, Pencil } from "lucide-react";
+import { Plus, Link2, Copy, Pencil, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 
@@ -65,6 +65,73 @@ export default function ClientRequests() {
     const url = `${window.location.origin}/p/demande/${token}`;
     navigator.clipboard.writeText(url);
     toast.success("Lien copié");
+  };
+
+  const remove = async (r: Req) => {
+    if (!confirm(`Supprimer la demande "${r.title}" ?`)) return;
+    const { error } = await supabase.from("client_requests" as any).delete().eq("id", r.id);
+    if (error) return toast.error(error.message);
+    toast.success("Demande supprimée");
+    load();
+  };
+
+  const convert = async (r: Req) => {
+    if (r.status !== "validee") return toast.error("La demande doit être validée");
+    if (r.converted_project_id || r.converted_task_id || r.converted_print_order_id || r.converted_appointment_id) {
+      return toast.error("Demande déjà convertie");
+    }
+    if (r.kind !== "autre" && !r.client_id) return toast.error("Client requis pour convertir");
+
+    try {
+      const update: any = { status: "convertie" };
+      if (r.kind === "projet") {
+        const { data, error } = await supabase
+          .from("projects")
+          .insert({ client_id: r.client_id, name: r.title, type: "autre", description: r.description ?? null, deadline: r.deadline ?? null } as any)
+          .select("id").single();
+        if (error) throw error;
+        update.converted_project_id = data.id;
+      } else if (r.kind === "tache") {
+        const prest = ["logo","refonte","ajustements","conception_graphique","illustration","impression","autre"].includes(r.prestation_type) ? r.prestation_type : "autre";
+        const { data, error } = await supabase
+          .from("tasks")
+          .insert({
+            client_id: r.client_id,
+            title: r.title,
+            description: r.description ?? null,
+            prestation: prest,
+            billing_type: r.billing_type === "a_definir" ? "horaire" : r.billing_type,
+            hourly_rate: r.hourly_rate ?? null,
+            total_minutes: r.estimated_minutes ?? 0,
+            deadline: r.deadline ?? null,
+            amount: r.estimated_amount ?? null,
+          } as any)
+          .select("id").single();
+        if (error) throw error;
+        update.converted_task_id = data.id;
+      } else if (r.kind === "commande") {
+        const { data, error } = await supabase
+          .from("print_orders")
+          .insert({ client_id: r.client_id, description: r.title + (r.description ? `\n\n${r.description}` : ""), amount: r.estimated_amount ?? null } as any)
+          .select("id").single();
+        if (error) throw error;
+        update.converted_print_order_id = data.id;
+      } else if (r.kind === "rdv") {
+        const start = r.deadline ? new Date(r.deadline).toISOString() : new Date().toISOString();
+        const { data, error } = await supabase
+          .from("appointments")
+          .insert({ client_id: r.client_id, title: r.title, start_at: start, duration_minutes: 60, type: "autre", status: "planifie", notes: r.description ?? null } as any)
+          .select("id").single();
+        if (error) throw error;
+        update.converted_appointment_id = data.id;
+      }
+      const { error: upErr } = await supabase.from("client_requests" as any).update(update).eq("id", r.id);
+      if (upErr) throw upErr;
+      toast.success("Demande convertie");
+      load();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur lors de la conversion");
+    }
   };
 
   return (
@@ -133,6 +200,11 @@ export default function ClientRequests() {
                 <Button variant="outline" size="sm" onClick={() => { setEditing(r); setOpen(true); }}>
                   <Pencil className="h-3.5 w-3.5 mr-1" /> Modifier
                 </Button>
+                {r.status === "validee" && !r.converted_project_id && !r.converted_task_id && !r.converted_print_order_id && !r.converted_appointment_id && r.kind !== "autre" && (
+                  <Button variant="outline" size="sm" onClick={() => convert(r)}>
+                    <Wand2 className="h-3.5 w-3.5 mr-1" /> Convertir en {KIND_LABEL[r.kind]?.toLowerCase()}
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={() => copyLink(r.share_token)}>
                   <Copy className="h-3.5 w-3.5 mr-1" /> Copier le lien
                 </Button>
@@ -140,6 +212,9 @@ export default function ClientRequests() {
                   <Link to={`/p/demande/${r.share_token}`} target="_blank">
                     <Link2 className="h-3.5 w-3.5 mr-1" /> Aperçu
                   </Link>
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => remove(r)} className="text-rose-400 hover:text-rose-300">
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
