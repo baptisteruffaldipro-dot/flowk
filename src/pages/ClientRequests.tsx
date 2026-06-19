@@ -8,12 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClientSelectField from "@/components/ClientSelectField";
-import { Plus, Link2, Copy, Pencil, Trash2, Wand2 } from "lucide-react";
+import { Plus, Link2, Copy, Pencil, Trash2, Wand2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 
 type Req = any;
-type ClientLite = { id: string; name: string; company?: string | null };
+type ClientLite = { id: string; name: string; company?: string | null; email?: string | null };
 
 const KIND_LABEL: Record<string, string> = {
   projet: "Projet", tache: "Tâche", commande: "Commande", rdv: "Rendez-vous", autre: "Autre",
@@ -48,7 +48,7 @@ export default function ClientRequests() {
     setLoading(true);
     const [{ data: reqs }, { data: cs }] = await Promise.all([
       supabase.from("client_requests" as any).select("*").order("created_at", { ascending: false }),
-      supabase.from("clients").select("id,name,company").order("name"),
+      supabase.from("clients").select("id,name,company,email").order("name"),
     ]);
     setItems((reqs as any) ?? []);
     setClients((cs as any) ?? []);
@@ -65,6 +65,39 @@ export default function ClientRequests() {
     const url = `${window.location.origin}/p/demande/${token}`;
     navigator.clipboard.writeText(url);
     toast.success("Lien copié");
+  };
+
+  const sendByEmail = async (r: Req) => {
+    const client = clients.find((c) => c.id === r.client_id);
+    const defaultEmail = client?.email || "";
+    const to = window.prompt("Envoyer à l'adresse :", defaultEmail);
+    if (!to) return;
+    if (!/^\S+@\S+\.\S+$/.test(to)) return toast.error("Adresse email invalide");
+    const url = `${window.location.origin}/p/demande/${r.share_token}`;
+    const name = r.client_name_snapshot || client?.name || "";
+    const deadline = r.deadline ? new Date(r.deadline).toLocaleDateString("fr-FR") : "";
+    const amount = r.estimated_amount ? Number(r.estimated_amount).toFixed(2) : "";
+    try {
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "client-request-link",
+          recipientEmail: to,
+          idempotencyKey: `client-request-${r.id}-${Date.now()}`,
+          templateData: {
+            name,
+            title: r.title,
+            description: r.description ?? "",
+            amount,
+            deadline,
+            url,
+          },
+        },
+      });
+      if (error) throw error;
+      toast.success("Email envoyé");
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur lors de l'envoi");
+    }
   };
 
   const remove = async (r: Req) => {
@@ -207,6 +240,9 @@ export default function ClientRequests() {
                 )}
                 <Button variant="outline" size="sm" onClick={() => copyLink(r.share_token)}>
                   <Copy className="h-3.5 w-3.5 mr-1" /> Copier le lien
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => sendByEmail(r)}>
+                  <Mail className="h-3.5 w-3.5 mr-1" /> Envoyer par email
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link to={`/p/demande/${r.share_token}`} target="_blank">
