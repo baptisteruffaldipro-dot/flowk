@@ -216,7 +216,7 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="text-sm font-semibold tracking-tight">Créer rapidement</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Une tâche, un projet, une commande ou un questionnaire client</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Une tâche, un projet, une commande, une demande client ou un questionnaire</div>
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
