@@ -172,7 +172,7 @@ function RequestDialog({
   const empty = {
     client_id: "", client_name_snapshot: "", prestation_type: "logo", kind: "projet",
     title: "", description: "",
-    billing_type: "a_definir", estimated_amount: "", estimated_minutes: "", hourly_rate: "",
+    billing_type: "a_definir", estimated_amount: "", estimated_hours: "", hourly_rate: "",
     deadline: "", status: "nouveau",
   };
   const [form, setForm] = useState<any>(empty);
