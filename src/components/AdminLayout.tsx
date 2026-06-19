@@ -64,6 +64,34 @@ export default function AdminLayout() {
   }, [navigate]);
 
   useEffect(() => {
+    const channel = supabase
+      .channel("client-requests-notify")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "client_requests" },
+        (payload: any) => {
+          const oldStatus = payload.old?.status;
+          const newStatus = payload.new?.status;
+          if (oldStatus === newStatus) return;
+          const r = payload.new;
+          if (newStatus === "validee") {
+            toast.success("Demande validée par le client", {
+              description: r?.title || r?.client_name_snapshot || "Demande client",
+              action: { label: "Voir", onClick: () => navigate("/demandes") },
+            });
+          } else if (newStatus === "refusee") {
+            toast.error("Demande refusée par le client", {
+              description: r?.title || r?.client_name_snapshot || "Demande client",
+              action: { label: "Voir", onClick: () => navigate("/demandes") },
+            });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [navigate]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
