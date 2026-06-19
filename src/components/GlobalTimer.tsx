@@ -137,7 +137,7 @@ export default function GlobalTimer() {
             </Button>
           </Card>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 items-center">
             {/* Bouton timer icône uniquement */}
             <Button onClick={openPicker} size="icon" variant="default" className="shadow-lg h-11 w-11 rounded-full" aria-label="Démarrer un timer">
               <TimerIcon className="h-5 w-5" />
