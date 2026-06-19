@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList, Sparkles, Loader2, Upload, X, UserPlus, CalendarPlus } from "lucide-react";
+import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList, Sparkles, Loader2, Upload, X, UserPlus, CalendarPlus, FileQuestion } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PRESTATION_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
@@ -216,10 +216,10 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
         <div className="flex items-center justify-between mb-3">
           <div>
             <div className="text-sm font-semibold tracking-tight">Créer rapidement</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Une tâche, un projet, une commande ou un questionnaire client</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Une tâche, un projet, une commande, une demande client ou un questionnaire</div>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
           <Button variant="outline" size="sm" onClick={() => setMode("client")} className="justify-start min-w-0 px-2.5">
             <UserPlus className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouveau client</span>
           </Button>
@@ -235,8 +235,11 @@ export default function QuickCreate({ onCreated }: { onCreated?: () => void }) {
           <Button variant="outline" size="sm" onClick={() => setMode("appointment")} className="justify-start min-w-0 px-2.5">
             <CalendarPlus className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Nouveau RDV</span>
           </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/demandes")} className="justify-start min-w-0 px-2.5">
+            <FileQuestion className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Demande client</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={() => navigate("/questionnaires")} className="justify-start min-w-0 px-2.5">
-            <ClipboardList className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Questionnaire client</span>
+            <ClipboardList className="h-4 w-4 mr-2 shrink-0" /> <span className="truncate">Questionnaire</span>
           </Button>
         </div>
       </Card>
