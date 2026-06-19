@@ -8,8 +8,10 @@ import { CheckCircle2, XCircle, Clock, FileText, Download, Send } from "lucide-r
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 
-const KIND_LABEL: Record<string, string> = {
-  projet: "Projet", tache: "Tâche", commande: "Commande", rdv: "Rendez-vous", autre: "Demande",
+const PRESTATION_LABEL: Record<string, string> = {
+  logo: "Logo", refonte: "Refonte", ajustements: "Ajustements",
+  conception_graphique: "Conception graphique", illustration: "Illustration",
+  impression: "Impression", autre: "Autre",
 };
 const STATUS_LABEL: Record<string, string> = {
   nouveau: "En attente de votre validation",
