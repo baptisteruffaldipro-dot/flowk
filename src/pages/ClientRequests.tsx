@@ -215,7 +215,7 @@ function RequestDialog({
     setBusy(true);
     const estimated_amount =
       form.billing_type === "horaire"
-        ? ((Number(form.estimated_minutes) || 0) / 60) * (Number(form.hourly_rate) || 0)
+        ? (Number(form.estimated_hours) || 0) * (Number(form.hourly_rate) || 0)
         : form.estimated_amount === ""
           ? null
           : Number(form.estimated_amount);
@@ -229,7 +229,7 @@ function RequestDialog({
       description: form.description?.trim() || null,
       billing_type: form.billing_type,
       estimated_amount: estimated_amount || null,
-      estimated_minutes: form.estimated_minutes === "" ? null : Number(form.estimated_minutes),
+      estimated_minutes: form.estimated_hours === "" ? null : Math.round(Number(form.estimated_hours) * 60),
       hourly_rate: form.hourly_rate === "" ? null : Number(form.hourly_rate),
       deadline: form.deadline || null,
       status: form.status,
