@@ -154,6 +154,18 @@ export default function ClientRequestPublic() {
             {r.deadline && (
               <Info label="Échéance" value={new Date(r.deadline).toLocaleDateString("fr-FR")} />
             )}
+            {(r.estimated_start_date || r.estimated_end_date) && (
+              <Info
+                label="Réalisation estimée"
+                value={
+                  r.estimated_start_date && r.estimated_end_date
+                    ? `Entre le ${new Date(r.estimated_start_date).toLocaleDateString("fr-FR")} et le ${new Date(r.estimated_end_date).toLocaleDateString("fr-FR")}`
+                    : r.estimated_start_date
+                      ? `À partir du ${new Date(r.estimated_start_date).toLocaleDateString("fr-FR")}`
+                      : `Jusqu'au ${new Date(r.estimated_end_date).toLocaleDateString("fr-FR")}`
+                }
+              />
+            )}
           </div>
         </section>
 
