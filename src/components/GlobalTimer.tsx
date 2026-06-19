@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Play, Square, Timer as TimerIcon, ExternalLink } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Play, Square, Timer as TimerIcon, ExternalLink, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { fmtMinutes } from "@/lib/format";
 import { useAuth } from "@/hooks/useAuth";
+import { QuickCreateMenu } from "@/components/QuickCreateMenu";
 
 type RunningTask = {
   id: string;
