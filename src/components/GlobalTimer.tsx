@@ -33,6 +33,7 @@ export default function GlobalTimer() {
   const { user } = useAuth();
   const [running, setRunning] = useState<RunningTask | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const [tasks, setTasks] = useState<any[]>([]);
 
