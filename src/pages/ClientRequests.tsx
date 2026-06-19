@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClientSelectField from "@/components/ClientSelectField";
-import { Plus, Link2, Copy } from "lucide-react";
+import { Plus, Link2, Copy, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 
