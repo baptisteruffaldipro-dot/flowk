@@ -15,6 +15,9 @@ import PageHeader from "@/components/PageHeader";
 type Req = any;
 type ClientLite = { id: string; name: string; company?: string | null };
 
+const KIND_LABEL: Record<string, string> = {
+  projet: "Projet", tache: "Tâche", commande: "Commande", rdv: "Rendez-vous", autre: "Autre",
+};
 const PRESTATION_LABEL: Record<string, string> = {
   logo: "Logo", refonte: "Refonte", ajustements: "Ajustements",
   conception_graphique: "Conception graphique", illustration: "Illustration",
