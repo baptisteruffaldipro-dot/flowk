@@ -361,6 +361,17 @@ function RequestDialog({
                   onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
                 />
               </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label className="text-xs">Prix total estimé</Label>
+                <div className="text-sm font-semibold">
+                  {(() => {
+                    const m = Number(form.estimated_minutes) || 0;
+                    const r = Number(form.hourly_rate) || 0;
+                    const total = (m / 60) * r;
+                    return total > 0 ? `${total.toFixed(2)} € HT` : "—";
+                  })()}
+                </div>
+              </div>
             </>
           )}
 
