@@ -118,9 +118,11 @@ export default function ClientRequestPublic() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-8">
         <header className="space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
-              {KIND_LABEL[r.kind] ?? r.kind}
-            </span>
+            {r.prestation_type && (
+              <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                {PRESTATION_LABEL[r.prestation_type] ?? r.prestation_type}
+              </span>
+            )}
             <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-secondary text-foreground">
               {STATUS_LABEL[r.status] ?? r.status}
             </span>
