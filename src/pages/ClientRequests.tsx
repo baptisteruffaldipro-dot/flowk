@@ -214,7 +214,7 @@ function RequestDialog({
       client_id: form.client_id || null,
       client_name_snapshot:
         form.client_name_snapshot || clients.find((c) => c.id === form.client_id)?.name || null,
-      channel: form.channel,
+      prestation_type: form.prestation_type,
       kind: form.kind,
       title: form.title.trim(),
       description: form.description?.trim() || null,
