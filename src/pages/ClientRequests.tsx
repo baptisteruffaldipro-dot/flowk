@@ -183,7 +183,7 @@ function RequestDialog({
       setForm({
         client_id: editing.client_id || "",
         client_name_snapshot: editing.client_name_snapshot || "",
-        channel: editing.channel || "mail",
+        prestation_type: editing.prestation_type || "logo",
         kind: editing.kind || "projet",
         title: editing.title || "",
         description: editing.description || "",
