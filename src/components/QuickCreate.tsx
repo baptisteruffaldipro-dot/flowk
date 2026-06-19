@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList, Sparkles, Loader2, Upload, X, UserPlus, CalendarPlus } from "lucide-react";
+import { CheckSquare, FolderKanban, Printer, Plus, ClipboardList, Sparkles, Loader2, Upload, X, UserPlus, CalendarPlus, FileQuestion } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { PRESTATION_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
