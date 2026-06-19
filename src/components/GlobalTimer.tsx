@@ -137,16 +137,33 @@ export default function GlobalTimer() {
             </Button>
           </Card>
         ) : (
-          <>
-            {/* Mobile: bouton icône seule */}
+          <div className="flex items-center gap-2">
+            {/* Mobile: bouton icône timer */}
             <Button onClick={openPicker} size="icon" variant="default" className="sm:hidden shadow-lg h-11 w-11 rounded-full" aria-label="Démarrer un timer">
               <TimerIcon className="h-5 w-5" />
             </Button>
-            {/* Desktop: bouton complet */}
+            {/* Desktop: bouton timer */}
             <Button onClick={openPicker} size="sm" variant="default" className="hidden sm:inline-flex shadow-lg gap-2 h-10">
               <TimerIcon className="h-4 w-4" /> Démarrer un timer
             </Button>
-          </>
+
+            <Popover open={quickOpen} onOpenChange={setQuickOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="shadow-lg bg-card h-11 w-11 sm:h-10 sm:w-auto sm:px-3 rounded-full sm:rounded-md p-0 flex items-center justify-center"
+                  aria-label="Créer rapidement"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="hidden sm:inline ml-1.5 text-sm font-medium">Créer</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto max-w-xl p-4" align="end">
+                <div className="text-sm font-semibold mb-3">Créer rapidement</div>
+                <QuickCreateMenu onCreated={() => setQuickOpen(false)} />
+              </PopoverContent>
+            </Popover>
+          </div>
         )}
       </div>
 
