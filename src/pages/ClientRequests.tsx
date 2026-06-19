@@ -213,6 +213,12 @@ function RequestDialog({
   const save = async () => {
     if (!form.title.trim()) return toast.error("Titre requis");
     setBusy(true);
+    const estimated_amount =
+      form.billing_type === "horaire"
+        ? ((Number(form.estimated_minutes) || 0) / 60) * (Number(form.hourly_rate) || 0)
+        : form.estimated_amount === ""
+          ? null
+          : Number(form.estimated_amount);
     const payload: any = {
       client_id: form.client_id || null,
       client_name_snapshot:
@@ -222,7 +228,7 @@ function RequestDialog({
       title: form.title.trim(),
       description: form.description?.trim() || null,
       billing_type: form.billing_type,
-      estimated_amount: form.estimated_amount === "" ? null : Number(form.estimated_amount),
+      estimated_amount: estimated_amount || null,
       estimated_minutes: form.estimated_minutes === "" ? null : Number(form.estimated_minutes),
       hourly_rate: form.hourly_rate === "" ? null : Number(form.hourly_rate),
       deadline: form.deadline || null,
