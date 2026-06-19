@@ -1,0 +1,1 @@
+ALTER TABLE public.client_requests ADD COLUMN IF NOT EXISTS estimated_start_date date, ADD COLUMN IF NOT EXISTS estimated_end_date date;

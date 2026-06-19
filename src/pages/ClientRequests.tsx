@@ -284,7 +284,7 @@ function RequestDialog({
     client_id: "", client_name_snapshot: "", prestation_type: "logo", kind: "projet",
     title: "", description: "",
     billing_type: "a_definir", estimated_amount: "", estimated_hours: "", hourly_rate: "",
-    deadline: "", status: "nouveau",
+    deadline: "", estimated_start_date: "", estimated_end_date: "", status: "nouveau",
   };
   const [form, setForm] = useState<any>(empty);
   const [busy, setBusy] = useState(false);
@@ -306,6 +306,8 @@ function RequestDialog({
         estimated_hours: editing.estimated_minutes ? String((editing.estimated_minutes / 60).toFixed(2)) : "",
         hourly_rate: editing.hourly_rate ?? "",
         deadline: editing.deadline || "",
+        estimated_start_date: editing.estimated_start_date || "",
+        estimated_end_date: editing.estimated_end_date || "",
         status: editing.status || "nouveau",
       });
       supabase
@@ -343,6 +345,8 @@ function RequestDialog({
       estimated_minutes: form.estimated_hours === "" ? null : Math.round(Number(form.estimated_hours) * 60),
       hourly_rate: form.hourly_rate === "" ? null : Number(form.hourly_rate),
       deadline: form.deadline || null,
+      estimated_start_date: form.estimated_start_date || null,
+      estimated_end_date: form.estimated_end_date || null,
       status: form.status,
     };
     let error;
@@ -451,6 +455,23 @@ function RequestDialog({
           <div className="space-y-1.5">
             <Label className="text-xs">Deadline</Label>
             <Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Réalisation estimée — début</Label>
+            <Input
+              type="date"
+              value={form.estimated_start_date}
+              onChange={(e) => setForm({ ...form, estimated_start_date: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Réalisation estimée — fin</Label>
+            <Input
+              type="date"
+              value={form.estimated_end_date}
+              onChange={(e) => setForm({ ...form, estimated_end_date: e.target.value })}
+            />
           </div>
 
           {form.billing_type === "forfait" && (
