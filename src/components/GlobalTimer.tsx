@@ -138,13 +138,9 @@ export default function GlobalTimer() {
           </Card>
         ) : (
           <div className="flex items-center gap-2">
-            {/* Mobile: bouton icône timer */}
-            <Button onClick={openPicker} size="icon" variant="default" className="sm:hidden shadow-lg h-11 w-11 rounded-full" aria-label="Démarrer un timer">
+            {/* Bouton timer icône uniquement */}
+            <Button onClick={openPicker} size="icon" variant="default" className="shadow-lg h-11 w-11 rounded-full" aria-label="Démarrer un timer">
               <TimerIcon className="h-5 w-5" />
-            </Button>
-            {/* Desktop: bouton timer */}
-            <Button onClick={openPicker} size="sm" variant="default" className="hidden sm:inline-flex shadow-lg gap-2 h-10">
-              <TimerIcon className="h-4 w-4" /> Démarrer un timer
             </Button>
 
             <Popover open={quickOpen} onOpenChange={setQuickOpen}>
