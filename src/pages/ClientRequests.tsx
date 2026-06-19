@@ -457,6 +457,23 @@ function RequestDialog({
             <Input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
           </div>
 
+          <div className="space-y-1.5">
+            <Label className="text-xs">Réalisation estimée — début</Label>
+            <Input
+              type="date"
+              value={form.estimated_start_date}
+              onChange={(e) => setForm({ ...form, estimated_start_date: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Réalisation estimée — fin</Label>
+            <Input
+              type="date"
+              value={form.estimated_end_date}
+              onChange={(e) => setForm({ ...form, estimated_end_date: e.target.value })}
+            />
+          </div>
+
           {form.billing_type === "forfait" && (
             <div className="space-y-1.5">
               <Label className="text-xs">Montant estimé (€ HT)</Label>
