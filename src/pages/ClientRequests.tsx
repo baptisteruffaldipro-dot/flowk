@@ -135,9 +135,9 @@ export default function ClientRequests() {
             prestation: prest,
             billing_type: r.billing_type === "a_definir" ? "horaire" : r.billing_type,
             hourly_rate: r.hourly_rate ?? null,
-            total_minutes: r.estimated_minutes ?? 0,
+            estimated_minutes: r.estimated_minutes ?? 0,
             deadline: r.deadline ?? null,
-            amount: r.estimated_amount ?? null,
+            flat_amount: r.billing_type === "forfait" ? (r.estimated_amount ?? null) : null,
           } as any)
           .select("id").single();
         if (error) throw error;
