@@ -172,7 +172,7 @@ function RequestDialog({
   const empty = {
     client_id: "", client_name_snapshot: "", prestation_type: "logo", kind: "projet",
     title: "", description: "",
-    billing_type: "a_definir", estimated_amount: "", estimated_minutes: "", hourly_rate: "",
+    billing_type: "a_definir", estimated_amount: "", estimated_hours: "", hourly_rate: "",
     deadline: "", status: "nouveau",
   };
   const [form, setForm] = useState<any>(empty);
@@ -192,7 +192,7 @@ function RequestDialog({
         description: editing.description || "",
         billing_type: editing.billing_type || "a_definir",
         estimated_amount: editing.estimated_amount ?? "",
-        estimated_minutes: editing.estimated_minutes ?? "",
+        estimated_hours: editing.estimated_minutes ? String((editing.estimated_minutes / 60).toFixed(2)) : "",
         hourly_rate: editing.hourly_rate ?? "",
         deadline: editing.deadline || "",
         status: editing.status || "nouveau",
@@ -215,7 +215,7 @@ function RequestDialog({
     setBusy(true);
     const estimated_amount =
       form.billing_type === "horaire"
-        ? ((Number(form.estimated_minutes) || 0) / 60) * (Number(form.hourly_rate) || 0)
+        ? (Number(form.estimated_hours) || 0) * (Number(form.hourly_rate) || 0)
         : form.estimated_amount === ""
           ? null
           : Number(form.estimated_amount);
@@ -229,7 +229,7 @@ function RequestDialog({
       description: form.description?.trim() || null,
       billing_type: form.billing_type,
       estimated_amount: estimated_amount || null,
-      estimated_minutes: form.estimated_minutes === "" ? null : Number(form.estimated_minutes),
+      estimated_minutes: form.estimated_hours === "" ? null : Math.round(Number(form.estimated_hours) * 60),
       hourly_rate: form.hourly_rate === "" ? null : Number(form.hourly_rate),
       deadline: form.deadline || null,
       status: form.status,
@@ -354,10 +354,10 @@ function RequestDialog({
           {form.billing_type === "horaire" && (
             <>
               <div className="space-y-1.5">
-                <Label className="text-xs">Durée estimée (min)</Label>
+                <Label className="text-xs">Durée estimée (h)</Label>
                 <Input
-                  type="number" value={form.estimated_minutes}
-                  onChange={(e) => setForm({ ...form, estimated_minutes: e.target.value })}
+                  type="number" step="0.01" value={form.estimated_hours}
+                  onChange={(e) => setForm({ ...form, estimated_hours: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -371,9 +371,9 @@ function RequestDialog({
                 <Label className="text-xs">Prix total estimé</Label>
                 <div className="text-sm font-semibold">
                   {(() => {
-                    const m = Number(form.estimated_minutes) || 0;
+                    const h = Number(form.estimated_hours) || 0;
                     const r = Number(form.hourly_rate) || 0;
-                    const total = (m / 60) * r;
+                    const total = h * r;
                     return total > 0 ? `${total.toFixed(2)} € HT` : "—";
                   })()}
                 </div>

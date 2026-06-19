@@ -146,7 +146,7 @@ export default function ClientRequestPublic() {
               <Info label="Montant estimé" value={`${Number(r.estimated_amount).toFixed(2)} €`} />
             )}
             {r.estimated_minutes != null && (
-              <Info label="Temps estimé" value={`${Math.round((r.estimated_minutes/60)*10)/10} h`} />
+              <Info label="Temps estimé" value={`${(r.estimated_minutes / 60).toFixed(2)} h`} />
             )}
             {r.hourly_rate != null && (
               <Info label="Taux horaire" value={`${Number(r.hourly_rate).toFixed(2)} €`} />
