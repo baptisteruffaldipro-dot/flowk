@@ -222,35 +222,62 @@ export function QuickCreateMenu({ onCreated, variant = "grid" }: { onCreated?: (
 
   return (
     <>
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        {actions.map((a) => {
-          const Icon = a.icon;
-          const colorMap: Record<string, { bg: string; text: string; border: string; hoverBg: string }> = {
-            sky: { bg: "bg-sky-50", text: "text-sky-600", border: "hover:border-sky-200", hoverBg: "hover:bg-sky-50/40" },
-            emerald: { bg: "bg-emerald-50", text: "text-emerald-600", border: "hover:border-emerald-200", hoverBg: "hover:bg-emerald-50/40" },
-            violet: { bg: "bg-violet-50", text: "text-violet-600", border: "hover:border-violet-200", hoverBg: "hover:bg-violet-50/40" },
-            orange: { bg: "bg-orange-50", text: "text-orange-600", border: "hover:border-orange-200", hoverBg: "hover:bg-orange-50/40" },
-            rose: { bg: "bg-rose-50", text: "text-rose-600", border: "hover:border-rose-200", hoverBg: "hover:bg-rose-50/40" },
-            indigo: { bg: "bg-indigo-50", text: "text-indigo-600", border: "hover:border-indigo-200", hoverBg: "hover:bg-indigo-50/40" },
-            teal: { bg: "bg-teal-50", text: "text-teal-600", border: "hover:border-teal-200", hoverBg: "hover:bg-teal-50/40" },
-          };
-          const c = colorMap[a.color];
-          return (
-            <button
-              key={a.key}
-              onClick={a.onClick ?? (() => setMode(a.key))}
-              className={`group flex flex-col items-center gap-2.5 p-3.5 rounded-xl border border-border bg-card ${c.border} ${c.hoverBg} transition-all duration-200 cursor-pointer`}
-            >
-              <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${c.bg} ${c.text} group-hover:scale-105 transition-transform`}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground text-center leading-tight">
-                {a.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {variant === "list" ? (
+        <div className="flex flex-col gap-0.5 min-w-[200px]">
+          {actions.map((a) => {
+            const Icon = a.icon;
+            const colorMap: Record<string, string> = {
+              sky: "text-sky-600",
+              emerald: "text-emerald-600",
+              violet: "text-violet-600",
+              orange: "text-orange-600",
+              rose: "text-rose-600",
+              indigo: "text-indigo-600",
+              teal: "text-teal-600",
+            };
+            return (
+              <button
+                key={a.key}
+                onClick={a.onClick ?? (() => setMode(a.key))}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-colors cursor-pointer text-left"
+              >
+                <Icon className={`h-4 w-4 shrink-0 ${colorMap[a.color]}`} />
+                <span className="text-sm font-medium">{a.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {actions.map((a) => {
+            const Icon = a.icon;
+            const colorMap: Record<string, { bg: string; text: string; border: string; hoverBg: string }> = {
+              sky: { bg: "bg-sky-50", text: "text-sky-600", border: "hover:border-sky-200", hoverBg: "hover:bg-sky-50/40" },
+              emerald: { bg: "bg-emerald-50", text: "text-emerald-600", border: "hover:border-emerald-200", hoverBg: "hover:bg-emerald-50/40" },
+              violet: { bg: "bg-violet-50", text: "text-violet-600", border: "hover:border-violet-200", hoverBg: "hover:bg-violet-50/40" },
+              orange: { bg: "bg-orange-50", text: "text-orange-600", border: "hover:border-orange-200", hoverBg: "hover:bg-orange-50/40" },
+              rose: { bg: "bg-rose-50", text: "text-rose-600", border: "hover:border-rose-200", hoverBg: "hover:bg-rose-50/40" },
+              indigo: { bg: "bg-indigo-50", text: "text-indigo-600", border: "hover:border-indigo-200", hoverBg: "hover:bg-indigo-50/40" },
+              teal: { bg: "bg-teal-50", text: "text-teal-600", border: "hover:border-teal-200", hoverBg: "hover:bg-teal-50/40" },
+            };
+            const c = colorMap[a.color];
+            return (
+              <button
+                key={a.key}
+                onClick={a.onClick ?? (() => setMode(a.key))}
+                className={`group flex flex-col items-center gap-2.5 p-3.5 rounded-xl border border-border bg-card ${c.border} ${c.hoverBg} transition-all duration-200 cursor-pointer`}
+              >
+                <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${c.bg} ${c.text} group-hover:scale-105 transition-transform`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground text-center leading-tight">
+                  {a.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* TASK */}
       <Dialog open={mode === "task"} onOpenChange={(o) => !o && close()}>
