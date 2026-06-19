@@ -15,7 +15,7 @@ import ClientSelectField from "@/components/ClientSelectField";
 
 type Mode = null | "task" | "project" | "order" | "client" | "appointment";
 
-export function QuickCreateMenu({ onCreated }: { onCreated?: () => void }) {
+export function QuickCreateMenu({ onCreated, variant = "grid" }: { onCreated?: () => void; variant?: "grid" | "list" }) {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>(null);
   const [clients, setClients] = useState<any[]>([]);
