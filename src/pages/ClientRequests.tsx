@@ -213,6 +213,12 @@ function RequestDialog({
   const save = async () => {
     if (!form.title.trim()) return toast.error("Titre requis");
     setBusy(true);
+    const estimated_amount =
+      form.billing_type === "horaire"
+        ? ((Number(form.estimated_minutes) || 0) / 60) * (Number(form.hourly_rate) || 0)
+        : form.estimated_amount === ""
+          ? null
+          : Number(form.estimated_amount);
     const payload: any = {
       client_id: form.client_id || null,
       client_name_snapshot:
@@ -222,7 +228,7 @@ function RequestDialog({
       title: form.title.trim(),
       description: form.description?.trim() || null,
       billing_type: form.billing_type,
-      estimated_amount: form.estimated_amount === "" ? null : Number(form.estimated_amount),
+      estimated_amount: estimated_amount || null,
       estimated_minutes: form.estimated_minutes === "" ? null : Number(form.estimated_minutes),
       hourly_rate: form.hourly_rate === "" ? null : Number(form.hourly_rate),
       deadline: form.deadline || null,
@@ -360,6 +366,17 @@ function RequestDialog({
                   type="number" step="0.01" value={form.hourly_rate}
                   onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })}
                 />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label className="text-xs">Prix total estimé</Label>
+                <div className="text-sm font-semibold">
+                  {(() => {
+                    const m = Number(form.estimated_minutes) || 0;
+                    const r = Number(form.hourly_rate) || 0;
+                    const total = (m / 60) * r;
+                    return total > 0 ? `${total.toFixed(2)} € HT` : "—";
+                  })()}
+                </div>
               </div>
             </>
           )}
