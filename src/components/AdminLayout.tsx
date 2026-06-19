@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2, TrendingUp, MailQuestion } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ type NavItem = { to: string; icon: any; label: string; end?: boolean; badgeKey?:
 const nav: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/inbox", icon: Inbox, label: "Inbox" },
+  { to: "/demandes", icon: MailQuestion, label: "Demandes clients" },
   { to: "/leads", icon: UserPlus, label: "Leads", badgeKey: "leads" },
   { to: "/clients", icon: Users, label: "Clients" },
   { to: "/projets", icon: FolderKanban, label: "Projets" },
