@@ -158,9 +158,8 @@ export default function GlobalTimer() {
                   <span className="hidden sm:inline ml-1.5 text-sm font-medium">Créer</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto max-w-xl p-4" align="end">
-                <div className="text-sm font-semibold mb-3">Créer rapidement</div>
-                <QuickCreateMenu onCreated={() => setQuickOpen(false)} />
+              <PopoverContent className="w-auto p-2 rounded-2xl shadow-xl border" align="end">
+                <QuickCreateMenu variant="list" onCreated={() => setQuickOpen(false)} />
               </PopoverContent>
             </Popover>
           </div>
