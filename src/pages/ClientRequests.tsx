@@ -131,7 +131,7 @@ export default function ClientRequests() {
           .insert({
             client_id: r.client_id,
             title: r.title,
-            description: r.description ?? null,
+            notes: r.description ?? null,
             prestation: prest,
             billing_type: r.billing_type === "a_definir" ? "horaire" : r.billing_type,
             hourly_rate: r.hourly_rate ?? null,
