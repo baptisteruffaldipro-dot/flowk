@@ -192,7 +192,7 @@ function RequestDialog({
         description: editing.description || "",
         billing_type: editing.billing_type || "a_definir",
         estimated_amount: editing.estimated_amount ?? "",
-        estimated_minutes: editing.estimated_minutes ?? "",
+        estimated_hours: editing.estimated_minutes ? String((editing.estimated_minutes / 60).toFixed(2)) : "",
         hourly_rate: editing.hourly_rate ?? "",
         deadline: editing.deadline || "",
         status: editing.status || "nouveau",
