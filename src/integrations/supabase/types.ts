@@ -342,7 +342,9 @@ export type Database = {
           deadline: string | null
           description: string | null
           estimated_amount: number | null
+          estimated_end_date: string | null
           estimated_minutes: number | null
+          estimated_start_date: string | null
           hourly_rate: number | null
           id: string
           is_published: boolean
@@ -369,7 +371,9 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           estimated_amount?: number | null
+          estimated_end_date?: string | null
           estimated_minutes?: number | null
+          estimated_start_date?: string | null
           hourly_rate?: number | null
           id?: string
           is_published?: boolean
@@ -396,7 +400,9 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           estimated_amount?: number | null
+          estimated_end_date?: string | null
           estimated_minutes?: number | null
+          estimated_start_date?: string | null
           hourly_rate?: number | null
           id?: string
           is_published?: boolean
