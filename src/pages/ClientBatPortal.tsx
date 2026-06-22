@@ -81,7 +81,6 @@ export default function ClientBatPortal() {
         <h2 className="text-sm font-semibold mb-3">Spécifications</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
           {[
-            ["Quantité", bat.quantity],
             ["Nombre de modèles", bat.models_count],
             ["Format", bat.format],
             ["Support", bat.support],
@@ -107,7 +106,7 @@ export default function ClientBatPortal() {
         )}
         {Array.isArray(bat.price_tiers) && bat.price_tiers.length > 0 && (
           <div className="mt-4">
-            <div className="text-xs text-muted-foreground mb-2">Tarifs par quantité (HT)</div>
+            <div className="text-xs text-muted-foreground mb-2">Tarifs par quantité et par modèle (HT)</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-sm">
               {bat.price_tiers
                 .filter((t: any) => t?.quantity && t?.price != null)

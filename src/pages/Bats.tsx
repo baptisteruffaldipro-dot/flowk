@@ -128,10 +128,6 @@ export default function Bats() {
                   <Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} maxLength={50} placeholder="BAT-2026-001" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Quantité</Label>
-                  <Input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
-                </div>
-                <div className="space-y-1.5">
                   <Label className="text-xs">Nombre de modèles</Label>
                   <Input type="number" value={form.models_count} onChange={(e) => setForm({ ...form, models_count: e.target.value })} />
                 </div>
