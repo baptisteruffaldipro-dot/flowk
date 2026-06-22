@@ -21,6 +21,7 @@ import PriceTiersEditor, { type PriceTier } from "@/components/PriceTiersEditor"
 const FIELDS: { key: string; label: string; placeholder?: string; type?: string }[] = [
   { key: "reference", label: "Référence" },
   { key: "quantity", label: "Quantité", type: "number" },
+  { key: "models_count", label: "Nombre de modèles", type: "number" },
   { key: "format", label: "Format", placeholder: "A4, 100×200mm…" },
   { key: "support", label: "Support / papier", placeholder: "Couché 300g…" },
   { key: "colors", label: "Couleurs", placeholder: "Quadri R°/V°" },
