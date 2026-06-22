@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, FileText, Upload } from "lucide-react";
+import PriceTiersEditor, { type PriceTier } from "@/components/PriceTiersEditor";
 import { toast } from "sonner";
 import { BAT_STATUS_LABEL, fmtDate } from "@/lib/format";
 
