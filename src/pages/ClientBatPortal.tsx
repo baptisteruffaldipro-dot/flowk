@@ -86,6 +86,11 @@ export default function ClientBatPortal() {
             ["Support", bat.support],
             ["Couleurs", bat.colors],
             ["Finitions", bat.finitions],
+            ["Face imprimée", bat.printed_face],
+            ["Coins", bat.corners],
+            ["Pelliculage", bat.lamination],
+            ["Dorure à chaud", bat.hot_foil],
+            ["Couleur de la dorure", bat.foil_color],
           ].map(([label, val]) => (
             <div key={label as string}>
               <div className="text-xs text-muted-foreground">{label}</div>
