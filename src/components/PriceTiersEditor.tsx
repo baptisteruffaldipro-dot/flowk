@@ -29,7 +29,7 @@ export default function PriceTiersEditor({ value, onChange, onBlur }: Props) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-xs">Tarifs par quantité (HT)</Label>
+        <Label className="text-xs">Tarifs par quantité et par modèle (HT)</Label>
         <Button type="button" size="sm" variant="ghost" onClick={add} className="h-7 px-2">
           <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
         </Button>
