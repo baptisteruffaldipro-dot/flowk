@@ -12,7 +12,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Upload, Send, CheckCircle2, XCircle, Trash2, FileText } from "lucide-react";
+import { ArrowLeft, Upload, Send, CheckCircle2, XCircle, Trash2, FileText, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import BatViewer from "@/components/BatViewer";
 import { BAT_STATUS_LABEL, fmtDateTime } from "@/lib/format";
@@ -66,8 +66,8 @@ export default function BatDetail() {
 
   const sendForReview = async () => {
     if (!bat?.file_path) return toast.error("Upload d'abord le PDF");
-    if (!bat?.clients?.portal_user_id) return toast.error("Le client n'a pas d'accès au portail");
     await update({ status: "en_relecture", sent_at: new Date().toISOString() });
+    const publicUrl = `${window.location.origin}/p/bat/${bat.share_token}`;
     if (bat?.clients?.email) {
       const { error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
@@ -77,14 +77,14 @@ export default function BatDetail() {
           templateData: {
             name: bat.clients.name,
             description: bat.title,
-            portalUrl: `${window.location.origin}/portail`,
+            portalUrl: publicUrl,
           },
         },
       });
       if (error) toast.warning("BAT envoyé, mais email indisponible");
-      else toast.success("BAT envoyé au client (email + portail)");
+      else toast.success("BAT envoyé au client par email");
     } else {
-      toast.success("BAT envoyé au portail client (pas d'email renseigné)");
+      toast.success("BAT marqué comme envoyé. Copiez le lien public pour le transmettre.");
     }
   };
 
@@ -115,6 +115,15 @@ export default function BatDetail() {
             {bat.file_path && bat.status === "brouillon" && (
               <Button size="sm" onClick={sendForReview}>
                 <Send className="h-4 w-4 mr-1" /> Envoyer au client
+              </Button>
+            )}
+            {bat.share_token && (
+              <Button size="sm" variant="outline" onClick={() => {
+                const url = `${window.location.origin}/p/bat/${bat.share_token}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Lien public copié");
+              }}>
+                <LinkIcon className="h-4 w-4 mr-1" /> Copier le lien
               </Button>
             )}
             <AlertDialog>

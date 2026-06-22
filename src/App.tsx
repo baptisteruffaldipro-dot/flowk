@@ -43,6 +43,7 @@ import PortalTokenLanding from "./pages/PortalTokenLanding";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
 import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
 import ClientBatPortal from "./pages/ClientBatPortal";
+import ClientBatPublic from "./pages/ClientBatPublic";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/p/strategie/:token" element={<BrandStrategyPublic />} />
             <Route path="/p/logo/:token" element={<LogoPresentationPublic />} />
             <Route path="/p/demande/:token" element={<ClientRequestPublic />} />
+            <Route path="/p/bat/:token" element={<ClientBatPublic />} />
             <Route path="/p/portail/:token" element={<PortalTokenLanding />} />
             <Route path="/portail" element={<ProtectedRoute requireRole="client"><ClientPortal /></ProtectedRoute>} />
             <Route path="/portail/projet/:id" element={<ProtectedRoute requireRole="client"><ClientProjectPortal /></ProtectedRoute>} />
