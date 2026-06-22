@@ -39,6 +39,11 @@ export default function Bats() {
     finitions: "",
     colors: "",
     observations: "",
+    printed_face: "",
+    corners: "",
+    lamination: "",
+    hot_foil: "",
+    foil_color: "",
     price_tiers: [] as PriceTier[],
   });
 
@@ -71,6 +76,11 @@ export default function Bats() {
       finitions: form.finitions.trim() || null,
       colors: form.colors.trim() || null,
       observations: form.observations.trim() || null,
+      printed_face: form.printed_face.trim() || null,
+      corners: form.corners.trim() || null,
+      lamination: form.lamination.trim() || null,
+      hot_foil: form.hot_foil.trim() || null,
+      foil_color: form.foil_color.trim() || null,
       price_tiers: (form.price_tiers || []).filter((t: PriceTier) => t.quantity && t.price != null),
     }).select().single();
     if (error || !inserted) { setUploading(false); return toast.error(error?.message ?? "Erreur"); }
@@ -86,7 +96,7 @@ export default function Bats() {
     }
     setUploading(false);
     toast.success("BAT créé");
-    setForm({ title: "", reference: "", client_id: "", project_id: "", quantity: "", format: "", support: "", finitions: "", colors: "", observations: "", price_tiers: [] });
+    setForm({ title: "", reference: "", client_id: "", project_id: "", quantity: "", format: "", support: "", finitions: "", colors: "", observations: "", printed_face: "", corners: "", lamination: "", hot_foil: "", foil_color: "", price_tiers: [] });
     setFile(null);
     setOpen(false);
     load();
@@ -152,6 +162,26 @@ export default function Bats() {
                 <div className="space-y-1.5">
                   <Label className="text-xs">Finitions</Label>
                   <Input value={form.finitions} onChange={(e) => setForm({ ...form, finitions: e.target.value })} placeholder="Pelliculage mat, vernis sélectif…" maxLength={150} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Face imprimée</Label>
+                  <Input value={form.printed_face} onChange={(e) => setForm({ ...form, printed_face: e.target.value })} placeholder="Recto / Recto-Verso…" maxLength={100} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Coins</Label>
+                  <Input value={form.corners} onChange={(e) => setForm({ ...form, corners: e.target.value })} placeholder="Droits, arrondis…" maxLength={100} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Pelliculage</Label>
+                  <Input value={form.lamination} onChange={(e) => setForm({ ...form, lamination: e.target.value })} placeholder="Soft touch, mat…" maxLength={150} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Dorure à chaud</Label>
+                  <Input value={form.hot_foil} onChange={(e) => setForm({ ...form, hot_foil: e.target.value })} placeholder="Recto, R°/V°, non…" maxLength={100} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Couleur de la dorure</Label>
+                  <Input value={form.foil_color} onChange={(e) => setForm({ ...form, foil_color: e.target.value })} placeholder="Or, argent, cuivre…" maxLength={100} />
                 </div>
                 <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">Observations</Label>
