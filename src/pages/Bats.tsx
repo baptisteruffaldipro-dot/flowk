@@ -34,6 +34,7 @@ export default function Bats() {
     client_id: "",
     project_id: "",
     quantity: "",
+    models_count: "",
     format: "",
     support: "",
     finitions: "",
@@ -71,6 +72,7 @@ export default function Bats() {
       client_id: form.client_id,
       project_id: form.project_id || null,
       quantity: form.quantity ? Number(form.quantity) : null,
+      models_count: form.models_count ? Number(form.models_count) : null,
       format: form.format.trim() || null,
       support: form.support.trim() || null,
       finitions: form.finitions.trim() || null,
@@ -96,7 +98,7 @@ export default function Bats() {
     }
     setUploading(false);
     toast.success("BAT créé");
-    setForm({ title: "", reference: "", client_id: "", project_id: "", quantity: "", format: "", support: "", finitions: "", colors: "", observations: "", printed_face: "", corners: "", lamination: "", hot_foil: "", foil_color: "", price_tiers: [] });
+    setForm({ title: "", reference: "", client_id: "", project_id: "", quantity: "", models_count: "", format: "", support: "", finitions: "", colors: "", observations: "", printed_face: "", corners: "", lamination: "", hot_foil: "", foil_color: "", price_tiers: [] });
     setFile(null);
     setOpen(false);
     load();
@@ -128,6 +130,10 @@ export default function Bats() {
                 <div className="space-y-1.5">
                   <Label className="text-xs">Quantité</Label>
                   <Input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nombre de modèles</Label>
+                  <Input type="number" value={form.models_count} onChange={(e) => setForm({ ...form, models_count: e.target.value })} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Client *</Label>
