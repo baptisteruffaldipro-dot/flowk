@@ -66,8 +66,8 @@ export default function BatDetail() {
 
   const sendForReview = async () => {
     if (!bat?.file_path) return toast.error("Upload d'abord le PDF");
-    if (!bat?.clients?.portal_user_id) return toast.error("Le client n'a pas d'accès au portail");
     await update({ status: "en_relecture", sent_at: new Date().toISOString() });
+    const publicUrl = `${window.location.origin}/p/bat/${bat.share_token}`;
     if (bat?.clients?.email) {
       const { error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
@@ -77,14 +77,14 @@ export default function BatDetail() {
           templateData: {
             name: bat.clients.name,
             description: bat.title,
-            portalUrl: `${window.location.origin}/portail`,
+            portalUrl: publicUrl,
           },
         },
       });
       if (error) toast.warning("BAT envoyé, mais email indisponible");
-      else toast.success("BAT envoyé au client (email + portail)");
+      else toast.success("BAT envoyé au client par email");
     } else {
-      toast.success("BAT envoyé au portail client (pas d'email renseigné)");
+      toast.success("BAT marqué comme envoyé. Copiez le lien public pour le transmettre.");
     }
   };
 
