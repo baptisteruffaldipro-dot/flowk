@@ -25,6 +25,11 @@ const FIELDS: { key: string; label: string; placeholder?: string; type?: string 
   { key: "support", label: "Support / papier", placeholder: "Couché 300g…" },
   { key: "colors", label: "Couleurs", placeholder: "Quadri R°/V°" },
   { key: "finitions", label: "Finitions", placeholder: "Pelliculage, vernis…" },
+  { key: "printed_face", label: "Face imprimée", placeholder: "Recto / Recto-Verso…" },
+  { key: "corners", label: "Coins", placeholder: "Droits, arrondis…" },
+  { key: "lamination", label: "Pelliculage", placeholder: "Soft touch, mat, brillant…" },
+  { key: "hot_foil", label: "Dorure à chaud", placeholder: "Recto, R°/V°, non…" },
+  { key: "foil_color", label: "Couleur de la dorure", placeholder: "Or, argent, cuivre…" },
 ];
 
 export default function BatDetail() {

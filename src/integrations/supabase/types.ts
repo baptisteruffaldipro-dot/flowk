@@ -148,16 +148,21 @@ export type Database = {
         Row: {
           client_id: string
           colors: string | null
+          corners: string | null
           created_at: string
           description: string | null
           file_path: string | null
           file_uploaded_at: string | null
           finitions: string | null
+          foil_color: string | null
           format: string | null
+          hot_foil: string | null
           id: string
+          lamination: string | null
           observations: string | null
           price_tiers: Json
           print_status: Database["public"]["Enums"]["bat_print_status"] | null
+          printed_face: string | null
           project_id: string | null
           quantity: number | null
           reference: string | null
@@ -175,16 +180,21 @@ export type Database = {
         Insert: {
           client_id: string
           colors?: string | null
+          corners?: string | null
           created_at?: string
           description?: string | null
           file_path?: string | null
           file_uploaded_at?: string | null
           finitions?: string | null
+          foil_color?: string | null
           format?: string | null
+          hot_foil?: string | null
           id?: string
+          lamination?: string | null
           observations?: string | null
           price_tiers?: Json
           print_status?: Database["public"]["Enums"]["bat_print_status"] | null
+          printed_face?: string | null
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
@@ -202,16 +212,21 @@ export type Database = {
         Update: {
           client_id?: string
           colors?: string | null
+          corners?: string | null
           created_at?: string
           description?: string | null
           file_path?: string | null
           file_uploaded_at?: string | null
           finitions?: string | null
+          foil_color?: string | null
           format?: string | null
+          hot_foil?: string | null
           id?: string
+          lamination?: string | null
           observations?: string | null
           price_tiers?: Json
           print_status?: Database["public"]["Enums"]["bat_print_status"] | null
+          printed_face?: string | null
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
