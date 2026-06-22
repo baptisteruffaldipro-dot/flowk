@@ -104,22 +104,10 @@ export default function ClientBatPortal() {
             <div className="text-sm whitespace-pre-wrap">{bat.observations}</div>
           </div>
         )}
-        {Array.isArray(bat.price_tiers) && bat.price_tiers.length > 0 && (
+        {bat.pricing_text && (
           <div className="mt-4">
-            <div className="text-xs text-muted-foreground mb-2">Tarifs par quantité (HT)</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-sm">
-              {bat.price_tiers
-                .filter((t: any) => t?.quantity && t?.price != null)
-                .sort((a: any, b: any) => Number(a.quantity) - Number(b.quantity))
-                .map((t: any, i: number) => (
-                  <div key={i} className="flex items-baseline justify-between border-b border-border/40 py-0.5">
-                    <span>
-                      {t.quantity} ex.
-                    </span>
-                    <span className="font-medium">{Number(t.price).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} € HT</span>
-                  </div>
-                ))}
-            </div>
+            <div className="text-xs text-muted-foreground mb-2">Tarifs (HT)</div>
+            <div className="text-sm whitespace-pre-wrap">{bat.pricing_text}</div>
           </div>
         )}
       </Card>

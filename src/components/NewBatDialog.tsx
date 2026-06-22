@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
-import PriceTiersEditor, { type PriceTier } from "@/components/PriceTiersEditor";
 
 type Task = {
   id: string;
@@ -42,14 +41,13 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
     lamination: "",
     hot_foil: "",
     foil_color: "",
+    pricing_text: "",
   });
-  const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
 
   useEffect(() => {
     if (open && task) {
       setForm((f) => ({ ...f, title: task.title ?? "" }));
       setFile(null);
-      setPriceTiers([]);
     }
   }, [open, task?.id]);
 
@@ -79,7 +77,7 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
         lamination: form.lamination.trim() || null,
         hot_foil: form.hot_foil.trim() || null,
         foil_color: form.foil_color.trim() || null,
-        price_tiers: priceTiers.filter((t) => t.quantity && t.price != null),
+        pricing_text: form.pricing_text?.trim() || null,
       }).select().single();
       if (error || !inserted) { toast.error(error?.message ?? "Erreur"); return; }
 
@@ -163,8 +161,14 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
             <Textarea rows={2} value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} />
           </div>
 
-          <div className="col-span-2 border rounded-md p-3">
-            <PriceTiersEditor value={priceTiers} onChange={setPriceTiers} />
+          <div className="space-y-1.5 col-span-2">
+            <Label className="text-xs">Tarifs (HT)</Label>
+            <Textarea
+              rows={6}
+              value={form.pricing_text}
+              onChange={(e) => setForm({ ...form, pricing_text: e.target.value })}
+              placeholder={"25 ex. = 60 € HT\n50 ex. = 68 € HT\n100 ex. = 74 € HT"}
+            />
           </div>
 
           <div className="space-y-1.5 col-span-2">
