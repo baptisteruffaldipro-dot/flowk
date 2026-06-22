@@ -39,6 +39,7 @@ export default function Bats() {
     finitions: "",
     colors: "",
     observations: "",
+    price_tiers: [] as PriceTier[],
   });
 
   const load = async () => {
@@ -70,6 +71,7 @@ export default function Bats() {
       finitions: form.finitions.trim() || null,
       colors: form.colors.trim() || null,
       observations: form.observations.trim() || null,
+      price_tiers: (form.price_tiers || []).filter((t: PriceTier) => t.quantity && t.price != null),
     }).select().single();
     if (error || !inserted) { setUploading(false); return toast.error(error?.message ?? "Erreur"); }
     if (file) {
@@ -84,7 +86,7 @@ export default function Bats() {
     }
     setUploading(false);
     toast.success("BAT créé");
-    setForm({ title: "", reference: "", client_id: "", project_id: "", quantity: "", format: "", support: "", finitions: "", colors: "", observations: "" });
+    setForm({ title: "", reference: "", client_id: "", project_id: "", quantity: "", format: "", support: "", finitions: "", colors: "", observations: "", price_tiers: [] });
     setFile(null);
     setOpen(false);
     load();
@@ -154,6 +156,12 @@ export default function Bats() {
                 <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">Observations</Label>
                   <Input value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} maxLength={500} />
+                </div>
+                <div className="col-span-2 border rounded-md p-3">
+                  <PriceTiersEditor
+                    value={form.price_tiers}
+                    onChange={(v) => setForm({ ...form, price_tiers: v })}
+                  />
                 </div>
                 <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">Fichier PDF</Label>
