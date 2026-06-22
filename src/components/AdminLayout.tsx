@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2, TrendingUp, MailQuestion } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,11 +10,11 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type NavItem = { to: string; icon: any; label: string; end?: boolean; badgeKey?: "leads" };
+type NavItem = { to: string; icon: any; label: string; end?: boolean; badgeKey?: "leads" | "demandes" };
 const nav: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
   { to: "/inbox", icon: Inbox, label: "Inbox" },
-  { to: "/demandes", icon: MailQuestion, label: "Demandes clients" },
+  { to: "/demandes", icon: MailQuestion, label: "Demandes clients", badgeKey: "demandes" },
   { to: "/leads", icon: UserPlus, label: "Leads", badgeKey: "leads" },
   { to: "/clients", icon: Users, label: "Clients" },
   { to: "/projets", icon: FolderKanban, label: "Projets" },
@@ -37,6 +37,8 @@ export default function AdminLayout() {
   const [captureOpen, setCaptureOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [unreadLeads, setUnreadLeads] = useState(0);
+  const [unreadDemandes, setUnreadDemandes] = useState(0);
+  const location = useLocation();
 
   useEffect(() => {
     const loadCount = async () => {
@@ -79,17 +81,39 @@ export default function AdminLayout() {
               description: r?.title || r?.client_name_snapshot || "Demande client",
               action: { label: "Voir", onClick: () => navigate("/demandes") },
             });
+            setUnreadDemandes((n) => n + 1);
           } else if (newStatus === "refusee") {
             toast.error("Demande refusée par le client", {
               description: r?.title || r?.client_name_snapshot || "Demande client",
               action: { label: "Voir", onClick: () => navigate("/demandes") },
             });
+            setUnreadDemandes((n) => n + 1);
           }
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [navigate]);
+
+  useEffect(() => {
+    const loadDemandes = async () => {
+      const lastSeen = localStorage.getItem("demandes-last-seen") || "1970-01-01T00:00:00Z";
+      const { count } = await supabase
+        .from("client_requests")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["validee", "refusee"])
+        .or(`client_validated_at.gt.${lastSeen},client_refused_at.gt.${lastSeen}`);
+      setUnreadDemandes(count ?? 0);
+    };
+    loadDemandes();
+  }, []);
+
+  useEffect(() => {
+    if (location.pathname === "/demandes") {
+      localStorage.setItem("demandes-last-seen", new Date().toISOString());
+      setUnreadDemandes(0);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -140,6 +164,11 @@ export default function AdminLayout() {
             {item.badgeKey === "leads" && unreadLeads > 0 && (
               <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-sky-500 text-white text-[10px] font-semibold">
                 {unreadLeads}
+              </span>
+            )}
+            {item.badgeKey === "demandes" && unreadDemandes > 0 && (
+              <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-semibold">
+                {unreadDemandes}
               </span>
             )}
           </NavLink>
