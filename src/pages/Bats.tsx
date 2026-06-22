@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, FileText, Upload } from "lucide-react";
-import PriceTiersEditor, { type PriceTier } from "@/components/PriceTiersEditor";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { BAT_STATUS_LABEL, fmtDate } from "@/lib/format";
 
@@ -45,7 +45,7 @@ export default function Bats() {
     lamination: "",
     hot_foil: "",
     foil_color: "",
-    price_tiers: [] as PriceTier[],
+    pricing_text: "",
   });
 
   const load = async () => {
@@ -83,7 +83,7 @@ export default function Bats() {
       lamination: form.lamination.trim() || null,
       hot_foil: form.hot_foil.trim() || null,
       foil_color: form.foil_color.trim() || null,
-      price_tiers: (form.price_tiers || []).filter((t: PriceTier) => t.quantity && t.price != null),
+      pricing_text: form.pricing_text?.trim() || null,
     }).select().single();
     if (error || !inserted) { setUploading(false); return toast.error(error?.message ?? "Erreur"); }
     if (file) {
@@ -98,7 +98,7 @@ export default function Bats() {
     }
     setUploading(false);
     toast.success("BAT créé");
-    setForm({ title: "", reference: "", client_id: "", project_id: "", quantity: "", models_count: "", format: "", support: "", finitions: "", colors: "", observations: "", printed_face: "", corners: "", lamination: "", hot_foil: "", foil_color: "", price_tiers: [] });
+    setForm({ title: "", reference: "", client_id: "", project_id: "", quantity: "", models_count: "", format: "", support: "", finitions: "", colors: "", observations: "", printed_face: "", corners: "", lamination: "", hot_foil: "", foil_color: "", pricing_text: "" });
     setFile(null);
     setOpen(false);
     load();
@@ -189,10 +189,13 @@ export default function Bats() {
                   <Label className="text-xs">Observations</Label>
                   <Input value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} maxLength={500} />
                 </div>
-                <div className="col-span-2 border rounded-md p-3">
-                  <PriceTiersEditor
-                    value={form.price_tiers}
-                    onChange={(v) => setForm({ ...form, price_tiers: v })}
+                <div className="space-y-1.5 col-span-2">
+                  <Label className="text-xs">Tarifs (HT)</Label>
+                  <Textarea
+                    rows={6}
+                    value={form.pricing_text}
+                    onChange={(e) => setForm({ ...form, pricing_text: e.target.value })}
+                    placeholder={"25 ex. = 60 € HT\n50 ex. = 68 € HT\n100 ex. = 74 € HT"}
                   />
                 </div>
                 <div className="space-y-1.5 col-span-2">
