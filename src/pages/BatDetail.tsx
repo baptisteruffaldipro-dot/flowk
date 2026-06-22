@@ -16,7 +16,6 @@ import { ArrowLeft, Upload, Send, CheckCircle2, XCircle, Trash2, FileText } from
 import { toast } from "sonner";
 import BatViewer from "@/components/BatViewer";
 import { BAT_STATUS_LABEL, fmtDateTime } from "@/lib/format";
-import PriceTiersEditor, { type PriceTier } from "@/components/PriceTiersEditor";
 
 const FIELDS: { key: string; label: string; placeholder?: string; type?: string }[] = [
   { key: "reference", label: "Référence" },
@@ -169,17 +168,14 @@ export default function BatDetail() {
                 maxLength={1000}
               />
             </div>
-            <div className="col-span-2 border rounded-md p-3">
-              <PriceTiersEditor
-                value={(bat.price_tiers as PriceTier[]) ?? []}
-                onChange={(v) => setBat({ ...bat, price_tiers: v })}
-                onBlur={() =>
-                  update({
-                    price_tiers: ((bat.price_tiers as PriceTier[]) ?? []).filter(
-                      (t) => t.quantity && t.price != null,
-                    ),
-                  })
-                }
+            <div className="space-y-1.5 col-span-2">
+              <Label className="text-xs">Tarifs (HT)</Label>
+              <Textarea
+                rows={8}
+                value={bat.pricing_text ?? ""}
+                onChange={(e) => setBat({ ...bat, pricing_text: e.target.value })}
+                onBlur={() => update({ pricing_text: bat.pricing_text || null })}
+                placeholder={"25 ex. = 60 € HT\n50 ex. = 68 € HT\n100 ex. = 74 € HT"}
               />
             </div>
           </div>
