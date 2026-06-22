@@ -23,3 +23,5 @@ project_id = "mfboxlbczltwsgobylwn"
     verify_jwt = false
   [functions.submit-lead]
     verify_jwt = false
+  [functions.bat-public]
+    verify_jwt = false
