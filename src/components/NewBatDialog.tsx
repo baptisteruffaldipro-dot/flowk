@@ -36,6 +36,11 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
     finitions: "",
     colors: "",
     observations: "",
+    printed_face: "",
+    corners: "",
+    lamination: "",
+    hot_foil: "",
+    foil_color: "",
   });
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
 
@@ -67,6 +72,11 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
         finitions: form.finitions.trim() || null,
         colors: form.colors.trim() || null,
         observations: form.observations.trim() || null,
+        printed_face: form.printed_face.trim() || null,
+        corners: form.corners.trim() || null,
+        lamination: form.lamination.trim() || null,
+        hot_foil: form.hot_foil.trim() || null,
+        foil_color: form.foil_color.trim() || null,
         price_tiers: priceTiers.filter((t) => t.quantity && t.price != null),
       }).select().single();
       if (error || !inserted) { toast.error(error?.message ?? "Erreur"); return; }
@@ -125,6 +135,26 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
           <div className="space-y-1.5">
             <Label className="text-xs">Finitions</Label>
             <Input value={form.finitions} onChange={(e) => setForm({ ...form, finitions: e.target.value })} placeholder="Pelliculage mat…" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Face imprimée</Label>
+            <Input value={form.printed_face} onChange={(e) => setForm({ ...form, printed_face: e.target.value })} placeholder="Recto / Recto-Verso…" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Coins</Label>
+            <Input value={form.corners} onChange={(e) => setForm({ ...form, corners: e.target.value })} placeholder="Droits, arrondis…" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Pelliculage</Label>
+            <Input value={form.lamination} onChange={(e) => setForm({ ...form, lamination: e.target.value })} placeholder="Soft touch, mat…" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Dorure à chaud</Label>
+            <Input value={form.hot_foil} onChange={(e) => setForm({ ...form, hot_foil: e.target.value })} placeholder="Recto, R°/V°, non…" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Couleur de la dorure</Label>
+            <Input value={form.foil_color} onChange={(e) => setForm({ ...form, foil_color: e.target.value })} placeholder="Or, argent, cuivre…" />
           </div>
           <div className="space-y-1.5 col-span-2">
             <Label className="text-xs">Observations</Label>
