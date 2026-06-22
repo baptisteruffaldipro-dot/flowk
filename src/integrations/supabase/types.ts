@@ -158,6 +158,7 @@ export type Database = {
           format: string | null
           hot_foil: string | null
           id: string
+          is_published: boolean
           lamination: string | null
           models_count: number | null
           observations: string | null
@@ -171,6 +172,7 @@ export type Database = {
           rejected_at: string | null
           rejection_reason: string | null
           sent_at: string | null
+          share_token: string
           signed_at: string | null
           signed_by_name: string | null
           status: Database["public"]["Enums"]["bat_status"]
@@ -192,6 +194,7 @@ export type Database = {
           format?: string | null
           hot_foil?: string | null
           id?: string
+          is_published?: boolean
           lamination?: string | null
           models_count?: number | null
           observations?: string | null
@@ -205,6 +208,7 @@ export type Database = {
           rejected_at?: string | null
           rejection_reason?: string | null
           sent_at?: string | null
+          share_token?: string
           signed_at?: string | null
           signed_by_name?: string | null
           status?: Database["public"]["Enums"]["bat_status"]
@@ -226,6 +230,7 @@ export type Database = {
           format?: string | null
           hot_foil?: string | null
           id?: string
+          is_published?: boolean
           lamination?: string | null
           models_count?: number | null
           observations?: string | null
@@ -239,6 +244,7 @@ export type Database = {
           rejected_at?: string | null
           rejection_reason?: string | null
           sent_at?: string | null
+          share_token?: string
           signed_at?: string | null
           signed_by_name?: string | null
           status?: Database["public"]["Enums"]["bat_status"]
