@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, X } from "lucide-react";
 
-export type PriceTier = { quantity: number | null; price: number | null };
+export type PriceTier = { quantity: number | null; models: number | null; price: number | null };
 
 type Props = {
   value: PriceTier[];
@@ -23,7 +23,7 @@ export default function PriceTiersEditor({ value, onChange, onBlur }: Props) {
     onBlur?.();
   };
   const add = () => {
-    onChange([...tiers, { quantity: null, price: null }]);
+    onChange([...tiers, { quantity: null, models: null, price: null }]);
   };
 
   return (
@@ -35,7 +35,7 @@ export default function PriceTiersEditor({ value, onChange, onBlur }: Props) {
         </Button>
       </div>
       {tiers.length === 0 && (
-        <p className="text-xs text-muted-foreground">Aucun tarif. Ex&nbsp;: 100&nbsp;ex.&nbsp;= 74&nbsp;€ HT</p>
+        <p className="text-xs text-muted-foreground">Aucun tarif. Ex&nbsp;: 100&nbsp;ex. × 1&nbsp;modèle = 74&nbsp;€ HT</p>
       )}
       {tiers.map((t, i) => (
         <div key={i} className="flex items-center gap-2">
@@ -48,7 +48,17 @@ export default function PriceTiersEditor({ value, onChange, onBlur }: Props) {
             placeholder="Quantité"
             className="h-8"
           />
-          <span className="text-xs text-muted-foreground">ex. =</span>
+          <span className="text-xs text-muted-foreground">ex. ×</span>
+          <Input
+            type="number"
+            min={1}
+            value={t.models ?? ""}
+            onChange={(e) => update(i, { models: e.target.value ? Number(e.target.value) : null })}
+            onBlur={onBlur}
+            placeholder="Modèles"
+            className="h-8"
+          />
+          <span className="text-xs text-muted-foreground">mod. =</span>
           <Input
             type="number"
             min={0}
