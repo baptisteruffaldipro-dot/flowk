@@ -101,7 +101,7 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nouveau Bon à Tirer</DialogTitle>
           <DialogDescription>
