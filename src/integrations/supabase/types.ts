@@ -156,6 +156,7 @@ export type Database = {
           format: string | null
           id: string
           observations: string | null
+          price_tiers: Json
           print_status: Database["public"]["Enums"]["bat_print_status"] | null
           project_id: string | null
           quantity: number | null
@@ -182,6 +183,7 @@ export type Database = {
           format?: string | null
           id?: string
           observations?: string | null
+          price_tiers?: Json
           print_status?: Database["public"]["Enums"]["bat_print_status"] | null
           project_id?: string | null
           quantity?: number | null
@@ -208,6 +210,7 @@ export type Database = {
           format?: string | null
           id?: string
           observations?: string | null
+          price_tiers?: Json
           print_status?: Database["public"]["Enums"]["bat_print_status"] | null
           project_id?: string | null
           quantity?: number | null

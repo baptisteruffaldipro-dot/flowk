@@ -16,6 +16,7 @@ import { ArrowLeft, Upload, Send, CheckCircle2, XCircle, Trash2, FileText } from
 import { toast } from "sonner";
 import BatViewer from "@/components/BatViewer";
 import { BAT_STATUS_LABEL, fmtDateTime } from "@/lib/format";
+import PriceTiersEditor, { type PriceTier } from "@/components/PriceTiersEditor";
 
 const FIELDS: { key: string; label: string; placeholder?: string; type?: string }[] = [
   { key: "reference", label: "Référence" },
@@ -161,6 +162,19 @@ export default function BatDetail() {
                 onChange={(e) => setBat({ ...bat, observations: e.target.value })}
                 onBlur={() => update({ observations: bat.observations || null })}
                 maxLength={1000}
+              />
+            </div>
+            <div className="col-span-2 border rounded-md p-3">
+              <PriceTiersEditor
+                value={(bat.price_tiers as PriceTier[]) ?? []}
+                onChange={(v) => setBat({ ...bat, price_tiers: v })}
+                onBlur={() =>
+                  update({
+                    price_tiers: ((bat.price_tiers as PriceTier[]) ?? []).filter(
+                      (t) => t.quantity && t.price != null,
+                    ),
+                  })
+                }
               />
             </div>
           </div>

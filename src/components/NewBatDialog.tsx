@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
+import PriceTiersEditor, { type PriceTier } from "@/components/PriceTiersEditor";
 
 type Task = {
   id: string;
@@ -36,11 +37,13 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
     colors: "",
     observations: "",
   });
+  const [priceTiers, setPriceTiers] = useState<PriceTier[]>([]);
 
   useEffect(() => {
     if (open && task) {
       setForm((f) => ({ ...f, title: task.title ?? "" }));
       setFile(null);
+      setPriceTiers([]);
     }
   }, [open, task?.id]);
 
@@ -64,6 +67,7 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
         finitions: form.finitions.trim() || null,
         colors: form.colors.trim() || null,
         observations: form.observations.trim() || null,
+        price_tiers: priceTiers.filter((t) => t.quantity && t.price != null),
       }).select().single();
       if (error || !inserted) { toast.error(error?.message ?? "Erreur"); return; }
 
@@ -125,6 +129,10 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
           <div className="space-y-1.5 col-span-2">
             <Label className="text-xs">Observations</Label>
             <Textarea rows={2} value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} />
+          </div>
+
+          <div className="col-span-2 border rounded-md p-3">
+            <PriceTiersEditor value={priceTiers} onChange={setPriceTiers} />
           </div>
 
           <div className="space-y-1.5 col-span-2">
