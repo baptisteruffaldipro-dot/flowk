@@ -116,7 +116,7 @@ export default function Bats() {
             <DialogTrigger asChild>
               <Button size="sm" disabled={clients.length === 0}><Plus className="h-4 w-4 mr-1" /> Nouveau BAT</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Nouveau Bon à Tirer</DialogTitle></DialogHeader>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5 col-span-2">
