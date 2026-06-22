@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import QuickCapture from "@/components/QuickCapture";
 import GlobalTimer from "@/components/GlobalTimer";
+import NotificationsBell from "@/components/NotificationsBell";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -66,36 +67,6 @@ export default function AdminLayout() {
   }, [navigate]);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("client-requests-notify")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "client_requests" },
-        (payload: any) => {
-          const oldStatus = payload.old?.status;
-          const newStatus = payload.new?.status;
-          if (oldStatus === newStatus) return;
-          const r = payload.new;
-          if (newStatus === "validee") {
-            toast.success("Demande validée par le client", {
-              description: r?.title || r?.client_name_snapshot || "Demande client",
-              action: { label: "Voir", onClick: () => navigate("/demandes") },
-            });
-            setUnreadDemandes((n) => n + 1);
-          } else if (newStatus === "refusee") {
-            toast.error("Demande refusée par le client", {
-              description: r?.title || r?.client_name_snapshot || "Demande client",
-              action: { label: "Voir", onClick: () => navigate("/demandes") },
-            });
-            setUnreadDemandes((n) => n + 1);
-          }
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [navigate]);
-
-  useEffect(() => {
     const loadDemandes = async () => {
       const lastSeen = localStorage.getItem("demandes-last-seen") || "1970-01-01T00:00:00Z";
       const { count } = await supabase
@@ -142,6 +113,9 @@ export default function AdminLayout() {
           <Sparkles className="h-4 w-4" /> Capture rapide
           <span className="ml-auto text-[10px] opacity-70 hidden md:inline">⌘K</span>
         </Button>
+      </div>
+      <div className="px-3 mb-2">
+        <NotificationsBell />
       </div>
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
         {nav.map((item) => (
