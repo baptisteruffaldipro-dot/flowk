@@ -12,7 +12,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Upload, Send, CheckCircle2, XCircle, Trash2, FileText } from "lucide-react";
+import { ArrowLeft, Upload, Send, CheckCircle2, XCircle, Trash2, FileText, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import BatViewer from "@/components/BatViewer";
 import { BAT_STATUS_LABEL, fmtDateTime } from "@/lib/format";
@@ -115,6 +115,15 @@ export default function BatDetail() {
             {bat.file_path && bat.status === "brouillon" && (
               <Button size="sm" onClick={sendForReview}>
                 <Send className="h-4 w-4 mr-1" /> Envoyer au client
+              </Button>
+            )}
+            {bat.share_token && (
+              <Button size="sm" variant="outline" onClick={() => {
+                const url = `${window.location.origin}/p/bat/${bat.share_token}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Lien public copié");
+              }}>
+                <LinkIcon className="h-4 w-4 mr-1" /> Copier le lien
               </Button>
             )}
             <AlertDialog>
