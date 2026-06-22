@@ -31,6 +31,7 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
     title: "",
     reference: "",
     quantity: "",
+    models_count: "",
     format: "",
     support: "",
     finitions: "",
@@ -67,6 +68,7 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
         client_id: task.client_id,
         project_id: task.project_id || null,
         quantity: form.quantity ? Number(form.quantity) : null,
+        models_count: form.models_count ? Number(form.models_count) : null,
         format: form.format.trim() || null,
         support: form.support.trim() || null,
         finitions: form.finitions.trim() || null,
@@ -119,6 +121,10 @@ export default function NewBatDialog({ task, open, onOpenChange, onCreated }: Pr
           <div className="space-y-1.5">
             <Label className="text-xs">Quantité</Label>
             <Input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Nombre de modèles</Label>
+            <Input type="number" value={form.models_count} onChange={(e) => setForm({ ...form, models_count: e.target.value })} />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Format</Label>

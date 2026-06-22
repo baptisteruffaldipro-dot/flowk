@@ -159,6 +159,7 @@ export type Database = {
           hot_foil: string | null
           id: string
           lamination: string | null
+          models_count: number | null
           observations: string | null
           price_tiers: Json
           print_status: Database["public"]["Enums"]["bat_print_status"] | null
@@ -191,6 +192,7 @@ export type Database = {
           hot_foil?: string | null
           id?: string
           lamination?: string | null
+          models_count?: number | null
           observations?: string | null
           price_tiers?: Json
           print_status?: Database["public"]["Enums"]["bat_print_status"] | null
@@ -223,6 +225,7 @@ export type Database = {
           hot_foil?: string | null
           id?: string
           lamination?: string | null
+          models_count?: number | null
           observations?: string | null
           price_tiers?: Json
           print_status?: Database["public"]["Enums"]["bat_print_status"] | null

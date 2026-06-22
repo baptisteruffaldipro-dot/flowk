@@ -82,6 +82,7 @@ export default function ClientBatPortal() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
           {[
             ["Quantité", bat.quantity],
+            ["Nombre de modèles", bat.models_count],
             ["Format", bat.format],
             ["Support", bat.support],
             ["Couleurs", bat.colors],
