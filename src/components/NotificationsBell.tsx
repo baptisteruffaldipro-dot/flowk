@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Bell, Check, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,7 @@ export default function NotificationsBell() {
   const navigate = useNavigate();
   const [items, setItems] = useState<Notif[]>([]);
   const [open, setOpen] = useState(false);
+  const instanceId = useId();
 
   const load = async () => {
     const { data } = await supabase
@@ -42,7 +43,7 @@ export default function NotificationsBell() {
   useEffect(() => {
     load();
     const channel = supabase
-      .channel("notifications-bell")
+      .channel(`notifications-bell-${instanceId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications" },
