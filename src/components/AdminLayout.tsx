@@ -86,6 +86,22 @@ export default function AdminLayout() {
     }
   }, [location.pathname]);
 
+  // Safety: reset body pointer-events that Radix Dialog/Sheet may leave stuck
+  // after a dialog closes too quickly (known Radix issue). Without this, the
+  // mobile burger button becomes unclickable.
+  useEffect(() => {
+    document.body.style.pointerEvents = "";
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) {
+      const t = setTimeout(() => {
+        document.body.style.pointerEvents = "";
+      }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [mobileNavOpen]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -173,7 +189,7 @@ export default function AdminLayout() {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar mobile */}
-        <header className="md:hidden sticky top-0 z-30 flex items-center gap-2 px-3 h-14 border-b border-border bg-card/95 backdrop-blur">
+        <header className="md:hidden sticky top-0 z-40 flex items-center gap-2 px-3 h-14 border-b border-border bg-card/95 backdrop-blur">
           <Button variant="ghost" size="icon" onClick={() => setMobileNavOpen(true)} aria-label="Ouvrir le menu">
             <Menu className="h-5 w-5" />
           </Button>
