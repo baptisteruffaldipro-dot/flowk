@@ -86,6 +86,22 @@ export default function AdminLayout() {
     }
   }, [location.pathname]);
 
+  // Safety: reset body pointer-events that Radix Dialog/Sheet may leave stuck
+  // after a dialog closes too quickly (known Radix issue). Without this, the
+  // mobile burger button becomes unclickable.
+  useEffect(() => {
+    document.body.style.pointerEvents = "";
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) {
+      const t = setTimeout(() => {
+        document.body.style.pointerEvents = "";
+      }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [mobileNavOpen]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
