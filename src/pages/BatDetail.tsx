@@ -16,6 +16,7 @@ import { ArrowLeft, Upload, Send, CheckCircle2, XCircle, Trash2, FileText, Link 
 import { toast } from "sonner";
 import BatViewer from "@/components/BatViewer";
 import { BAT_STATUS_LABEL, fmtDateTime } from "@/lib/format";
+import { getPublicAppUrl } from "@/lib/publicUrl";
 
 const FIELDS: { key: string; label: string; placeholder?: string; type?: string }[] = [
   { key: "reference", label: "Référence" },
@@ -67,7 +68,7 @@ export default function BatDetail() {
   const sendForReview = async () => {
     if (!bat?.file_path) return toast.error("Upload d'abord le PDF");
     await update({ status: "en_relecture", sent_at: new Date().toISOString() });
-    const publicUrl = `${window.location.origin}/p/bat/${bat.share_token}`;
+    const publicUrl = `${getPublicAppUrl()}/p/bat/${bat.share_token}`;
     if (bat?.clients?.email) {
       const { error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
@@ -119,7 +120,7 @@ export default function BatDetail() {
             )}
             {bat.share_token && (
               <Button size="sm" variant="outline" onClick={() => {
-                const url = `${window.location.origin}/p/bat/${bat.share_token}`;
+                const url = `${getPublicAppUrl()}/p/bat/${bat.share_token}`;
                 navigator.clipboard.writeText(url);
                 toast.success("Lien public copié");
               }}>
