@@ -29,7 +29,7 @@ const BatReadyEmail = ({ name, description, portalUrl }: BatReadyProps) => (
         </Text>
         {portalUrl && (
           <Button style={button} href={portalUrl}>
-            Accéder au portail
+            Consulter et valider le BAT
           </Button>
         )}
         <Text style={footer}>— {SITE_NAME}</Text>
