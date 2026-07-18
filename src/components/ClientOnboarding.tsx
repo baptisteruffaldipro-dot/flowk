@@ -189,8 +189,10 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
           const done = pTasks.filter((t) => t.delivered_at || ["payee", "facturee", "facture_envoyee"].includes(t.status)).length;
           const pct = pTasks.length ? Math.round((done / pTasks.length) * 100) : (isBriefDone(p) ? 10 : 0);
           const late = pTasks.some((t) => t.deadline && !t.delivered_at && new Date(t.deadline) < today);
+          const portal = portalFor("project", p.id);
           return (
-            <Link key={p.id} to={projHref(p)} className="block p-3 hover:bg-secondary/60 transition">
+            <div key={p.id} className="p-3 hover:bg-secondary/60 transition">
+              <Link to={projHref(p)} className="block">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="min-w-0">
                   <div className="text-sm font-medium truncate">{p.name}</div>
@@ -210,7 +212,9 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
                 </div>
                 <div className="text-[10px] text-muted-foreground tabular-nums w-16 text-right">{done}/{pTasks.length} · {pct}%</div>
               </div>
-            </Link>
+              </Link>
+              {portal && <PortalStrip portal={portal} />}
+            </div>
           );
         })}
       </Section>
@@ -218,8 +222,10 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       <Section icon={<ListChecks className="h-4 w-4" />} title="Tâches en cours" count={tasksInProgress.length}>
         {tasksInProgress.length === 0 ? <Empty text="Aucune tâche en cours" /> : tasksInProgress.map((t) => {
           const late = t.deadline && new Date(t.deadline) < today;
+          const portal = portalFor("task", t.id);
           return (
-            <Link key={t.id} to={taskHref(t)} className="flex items-center justify-between p-3 hover:bg-secondary/60 transition">
+            <div key={t.id} className="p-3 hover:bg-secondary/60 transition">
+              <Link to={taskHref(t)} className="flex items-center justify-between">
               <div className="min-w-0">
                 <div className="text-sm truncate">{t.title}</div>
                 {t.deadline && <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {fmtDate(t.deadline)}</div>}
@@ -228,7 +234,9 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
                 {late && <Badge className="bg-rose-500 hover:bg-rose-500 text-[10px]">En retard</Badge>}
                 <Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status] ?? t.status}</Badge>
               </div>
-            </Link>
+              </Link>
+              {portal && <PortalStrip portal={portal} />}
+            </div>
           );
         })}
       </Section>
