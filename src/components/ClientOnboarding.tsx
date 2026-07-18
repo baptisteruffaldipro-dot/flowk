@@ -161,18 +161,6 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
 
   return (
     <div className="space-y-6">
-      {mode === "admin" && (
-        <div className="flex items-center justify-end gap-2">
-          <Button size="sm" variant="outline" onClick={copyPortalLink}>
-            {copiedPortal ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
-            Copier le lien onboarding
-          </Button>
-          <Button size="sm" variant="outline" onClick={sendOnboardingEmail} disabled={sendingOnboarding || !clientInfo?.email}>
-            <Mail className="h-4 w-4 mr-1" />
-            {sendingOnboarding ? "Envoi…" : "Notifier que l'onboarding est prêt"}
-          </Button>
-        </div>
-      )}
       {/* Bandeaux d'alerte */}
       {batsToValidate.length > 0 && (
         <div className="grid gap-3 md:grid-cols-2">
