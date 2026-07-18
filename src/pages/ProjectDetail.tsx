@@ -20,6 +20,7 @@ import { PROJECT_TYPE_LABEL, STATUS_LABEL, PRINT_STATUS_LABEL, BAT_STATUS_LABEL,
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 import ProjectRoadmap from "@/components/ProjectRoadmap";
+import PortalPanel from "@/components/PortalPanel";
 
 const DONE_STATUSES = new Set(["envoye", "a_facturer", "facture_envoyee", "payee", "archive"]);
 
@@ -234,6 +235,10 @@ export default function ProjectDetail() {
       </Card>
 
       <ProjectRoadmap projectId={project.id} clientId={project.client_id ?? null} />
+
+      <div className="mb-4">
+        <PortalPanel entityType="project" entityId={project.id} clientId={project.client_id ?? null} />
+      </div>
 
       {tasks.length > 0 && (
         <Card className="p-5 mb-4">

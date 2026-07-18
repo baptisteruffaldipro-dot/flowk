@@ -323,6 +323,162 @@ export type Database = {
           },
         ]
       }
+      client_portal_events: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          payload: Json | null
+          portal_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          payload?: Json | null
+          portal_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          payload?: Json | null
+          portal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_events_portal_id_fkey"
+            columns: ["portal_id"]
+            isOneToOne: false
+            referencedRelation: "client_portals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_portal_messages: {
+        Row: {
+          author: string
+          body: string
+          created_at: string
+          id: string
+          portal_id: string
+        }
+        Insert: {
+          author: string
+          body: string
+          created_at?: string
+          id?: string
+          portal_id: string
+        }
+        Update: {
+          author?: string
+          body?: string
+          created_at?: string
+          id?: string
+          portal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_messages_portal_id_fkey"
+            columns: ["portal_id"]
+            isOneToOne: false
+            referencedRelation: "client_portals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_portals: {
+        Row: {
+          admin_confirmed_paid_at: string | null
+          admin_notes: string | null
+          client_declared_paid_at: string | null
+          client_declared_paid_note: string | null
+          client_id: string | null
+          client_refused_at: string | null
+          client_validated_at: string | null
+          created_at: string
+          delivered_at: string | null
+          delivery_override: boolean
+          delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["client_portal_entity"]
+          id: string
+          is_published: boolean
+          payment_link_sent_at: string | null
+          payment_link_url: string | null
+          payment_method_requested:
+            | Database["public"]["Enums"]["client_portal_payment_method"]
+            | null
+          published_at: string | null
+          refusal_reason: string | null
+          share_token: string
+          status: Database["public"]["Enums"]["client_portal_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_confirmed_paid_at?: string | null
+          admin_notes?: string | null
+          client_declared_paid_at?: string | null
+          client_declared_paid_note?: string | null
+          client_id?: string | null
+          client_refused_at?: string | null
+          client_validated_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          delivery_override?: boolean
+          delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["client_portal_entity"]
+          id?: string
+          is_published?: boolean
+          payment_link_sent_at?: string | null
+          payment_link_url?: string | null
+          payment_method_requested?:
+            | Database["public"]["Enums"]["client_portal_payment_method"]
+            | null
+          published_at?: string | null
+          refusal_reason?: string | null
+          share_token?: string
+          status?: Database["public"]["Enums"]["client_portal_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_confirmed_paid_at?: string | null
+          admin_notes?: string | null
+          client_declared_paid_at?: string | null
+          client_declared_paid_note?: string | null
+          client_id?: string | null
+          client_refused_at?: string | null
+          client_validated_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          delivery_override?: boolean
+          delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["client_portal_entity"]
+          id?: string
+          is_published?: boolean
+          payment_link_sent_at?: string | null
+          payment_link_url?: string | null
+          payment_method_requested?:
+            | Database["public"]["Enums"]["client_portal_payment_method"]
+            | null
+          published_at?: string | null
+          refusal_reason?: string | null
+          share_token?: string
+          status?: Database["public"]["Enums"]["client_portal_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_request_messages: {
         Row: {
           author: string
@@ -1237,6 +1393,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_settings: {
+        Row: {
+          account_holder: string | null
+          bank_name: string | null
+          bic: string | null
+          iban: string | null
+          id: number
+          transfer_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_holder?: string | null
+          bank_name?: string | null
+          bic?: string | null
+          iban?: string | null
+          id?: number
+          transfer_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_holder?: string | null
+          bank_name?: string | null
+          bic?: string | null
+          iban?: string | null
+          id?: number
+          transfer_note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       phase_actions: {
         Row: {
           created_at: string
@@ -1476,6 +1662,7 @@ export type Database = {
           client_id: string
           created_at: string
           deadline: string | null
+          deliverable_files: Json
           description: string | null
           id: string
           name: string
@@ -1491,6 +1678,7 @@ export type Database = {
           client_id: string
           created_at?: string
           deadline?: string | null
+          deliverable_files?: Json
           description?: string | null
           id?: string
           name: string
@@ -1506,6 +1694,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           deadline?: string | null
+          deliverable_files?: Json
           description?: string | null
           id?: string
           name?: string
@@ -1969,6 +2158,7 @@ export type Database = {
           client_revisions_count: number
           created_at: string
           deadline: string | null
+          deliverable_files: Json
           deliverables: Json
           delivered_at: string | null
           delivery_override: boolean
@@ -2006,6 +2196,7 @@ export type Database = {
           client_revisions_count?: number
           created_at?: string
           deadline?: string | null
+          deliverable_files?: Json
           deliverables?: Json
           delivered_at?: string | null
           delivery_override?: boolean
@@ -2043,6 +2234,7 @@ export type Database = {
           client_revisions_count?: number
           created_at?: string
           deadline?: string | null
+          deliverable_files?: Json
           deliverables?: Json
           delivered_at?: string | null
           delivery_override?: boolean
@@ -2294,6 +2486,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_client_portal_by_token: { Args: { _token: string }; Returns: Json }
       get_client_request_by_token: { Args: { _token: string }; Returns: Json }
       get_logo_presentation_by_token: {
         Args: { _token: string }
@@ -2342,6 +2535,11 @@ export type Database = {
         }
         Returns: number
       }
+      portal_action_by_token: {
+        Args: { _action: string; _payload?: Json; _token: string }
+        Returns: Json
+      }
+      portal_deliverables_by_token: { Args: { _token: string }; Returns: Json }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -2367,6 +2565,17 @@ export type Database = {
         | "telephone"
         | "autre"
       capture_status: "a_traiter" | "traite" | "archive"
+      client_portal_entity: "task" | "project"
+      client_portal_payment_method: "transfer" | "link"
+      client_portal_status:
+        | "draft"
+        | "awaiting_validation"
+        | "validated"
+        | "refused"
+        | "payment_pending"
+        | "payment_link_requested"
+        | "paid"
+        | "delivered"
       client_request_billing: "forfait" | "horaire" | "a_definir"
       client_request_channel: "mail" | "message" | "appel" | "rdv" | "autre"
       client_request_kind: "projet" | "tache" | "commande" | "rdv" | "autre"
@@ -2643,6 +2852,18 @@ export const Constants = {
         "autre",
       ],
       capture_status: ["a_traiter", "traite", "archive"],
+      client_portal_entity: ["task", "project"],
+      client_portal_payment_method: ["transfer", "link"],
+      client_portal_status: [
+        "draft",
+        "awaiting_validation",
+        "validated",
+        "refused",
+        "payment_pending",
+        "payment_link_requested",
+        "paid",
+        "delivered",
+      ],
       client_request_billing: ["forfait", "horaire", "a_definir"],
       client_request_channel: ["mail", "message", "appel", "rdv", "autre"],
       client_request_kind: ["projet", "tache", "commande", "rdv", "autre"],
