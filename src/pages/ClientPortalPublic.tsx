@@ -136,7 +136,7 @@ export default function ClientPortalPublic() {
           <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
             <h2 className="text-sm font-semibold">Validation</h2>
             <p className="text-xs text-muted-foreground">
-              En validant, vous confirmez le brief et le tarif indiqués. Toute prestation validée est ferme et engage une facturation. Le téléchargement des livrables sera débloqué après réception du paiement.
+              En validant, vous confirmez le tarif indiqué.
             </p>
             {showRefuse ? (
               <div className="space-y-2">
@@ -154,6 +154,13 @@ export default function ClientPortalPublic() {
                 <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
                   <XCircle className="h-4 w-4 mr-1" /> Refuser
                 </Button>
+                {p.payment_link_url && (
+                  <Button variant="secondary" asChild>
+                    <a href={p.payment_link_url} target="_blank" rel="noreferrer">
+                      <CreditCard className="h-4 w-4 mr-1" /> Payer <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                    </a>
+                  </Button>
+                )}
               </div>
             )}
           </section>
