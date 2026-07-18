@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Copy, Link as LinkIcon, Plus, Trash2, CheckCircle2, Lock, Unlock, RefreshCcw } from "lucide-react";
+import { Copy, Link as LinkIcon, Plus, Trash2, CheckCircle2, Lock, Unlock, RefreshCcw, Upload, FileText, ExternalLink, Send } from "lucide-react";
 import { toast } from "sonner";
 import { getPublicAppUrl } from "@/lib/publicUrl";
 
@@ -63,16 +63,35 @@ export default function PortalPanel({
   entityType,
   entityId,
   clientId,
+  clientEmail,
+  clientName,
+  notifyTemplate,
+  notifyContext,
 }: {
   entityType: EntityType;
   entityId: string;
   clientId?: string | null;
+  clientEmail?: string | null;
+  clientName?: string | null;
+  notifyTemplate?: "files-delivered" | "logo-ready";
+  notifyContext?: { description?: string; portalUrl?: string };
 }) {
   const [portal, setPortal] = useState<Portal | null>(null);
   const [loading, setLoading] = useState(true);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [invoiceUrl, setInvoiceUrl] = useState<string>("");
+  const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const invoiceInput = useRef<HTMLInputElement>(null);
+
+  const table = entityType === "task" ? "tasks" : "projects";
+  const bucket = "livrables";
+  const SIGNED_URL_TTL = 60 * 60 * 24 * 365; // 1 an
 
   const load = async () => {
     setLoading(true);
@@ -94,8 +113,10 @@ export default function PortalPanel({
       setPortal(created as any);
     }
     const table = entityType === "task" ? "tasks" : "projects";
-    const { data: e } = await supabase.from(table).select("deliverable_files").eq("id", entityId).maybeSingle();
+    const { data: e } = await supabase.from(table).select("deliverable_files,invoice_url,invoice_file_path").eq("id", entityId).maybeSingle();
     setDeliverables(((e as any)?.deliverable_files as Deliverable[]) ?? []);
+    setInvoiceUrl(((e as any)?.invoice_url as string) ?? "");
+    setInvoiceFilePath(((e as any)?.invoice_file_path as string) ?? null);
     setLoading(false);
   };
 
@@ -166,6 +187,89 @@ export default function PortalPanel({
     setNewName(""); setNewUrl("");
   };
 
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const next = [...deliverables];
+      for (const file of Array.from(files)) {
+        const path = `${entityId}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+        const { error } = await supabase.storage.from(bucket).upload(path, file);
+        if (error) { toast.error(error.message); continue; }
+        const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(path, SIGNED_URL_TTL);
+        if (signed?.signedUrl) next.push({ name: file.name, url: signed.signedUrl });
+      }
+      await saveDeliverables(next);
+      toast.success("Fichier(s) ajouté(s)");
+    } finally {
+      setUploading(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
+
+  const updateEntity = async (patch: Record<string, any>) => {
+    const { error } = await supabase.from(table).update(patch).eq("id", entityId);
+    if (error) toast.error(error.message);
+  };
+
+  const uploadInvoice = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingInvoice(true);
+    try {
+      if (invoiceFilePath) {
+        await supabase.storage.from(bucket).remove([invoiceFilePath]);
+      }
+      const file = files[0];
+      const path = `${entityId}/facture-${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+      const { error } = await supabase.storage.from(bucket).upload(path, file);
+      if (error) { toast.error(error.message); return; }
+      await updateEntity({ invoice_file_path: path });
+      setInvoiceFilePath(path);
+      toast.success("Facture ajoutée");
+    } finally {
+      setUploadingInvoice(false);
+      if (invoiceInput.current) invoiceInput.current.value = "";
+    }
+  };
+
+  const openInvoice = async () => {
+    if (!invoiceFilePath) return;
+    const { data } = await supabase.storage.from(bucket).createSignedUrl(invoiceFilePath, 60 * 5);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
+  const removeInvoice = async () => {
+    if (invoiceFilePath) await supabase.storage.from(bucket).remove([invoiceFilePath]);
+    await updateEntity({ invoice_file_path: null });
+    setInvoiceFilePath(null);
+  };
+
+  const sendNotice = async () => {
+    if (!clientEmail) return toast.error("Pas d'email client");
+    if (!isUnlocked) return toast.error("Livraison verrouillée — débloquez d'abord");
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: notifyTemplate ?? "files-delivered",
+          recipientEmail: clientEmail,
+          idempotencyKey: `${notifyTemplate ?? "files-delivered"}-${entityId}-${Date.now()}`,
+          templateData: {
+            name: clientName ?? "",
+            description: notifyContext?.description ?? "",
+            portalUrl: notifyContext?.portalUrl ?? publicUrl,
+          },
+        },
+      });
+      if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
+      toast.success("Email envoyé au client");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur d'envoi");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const isUnlocked =
     portal.delivery_override ||
     portal.admin_confirmed_paid_at !== null ||
@@ -177,7 +281,7 @@ export default function PortalPanel({
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-sm font-semibold">Portail client</h2>
+            <h2 className="text-sm font-semibold">Livraison &amp; portail client</h2>
             <Badge className={`text-[10px] ${STATUS_TONE[portal.status] ?? ""}`} variant="outline">
               {STATUS_LABEL[portal.status] ?? portal.status}
             </Badge>
@@ -192,6 +296,53 @@ export default function PortalPanel({
         <div className="flex items-center gap-2">
           <Switch checked={portal.is_published} onCheckedChange={publish} />
           <span className="text-xs text-muted-foreground">{portal.is_published ? "Publié" : "Non publié"}</span>
+        </div>
+      </div>
+
+      {/* Facture */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Lien de facture</Label>
+          <div className="flex gap-2">
+            <Input
+              type="url"
+              placeholder="https://…"
+              value={invoiceUrl}
+              onChange={(e) => setInvoiceUrl(e.target.value)}
+              onBlur={() => updateEntity({ invoice_url: invoiceUrl || null })}
+            />
+            {invoiceUrl && (
+              <Button variant="outline" size="icon" asChild>
+                <a href={invoiceUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /></a>
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Ou uploader la facture (PDF)</Label>
+          <div className="flex items-center gap-2">
+            <input
+              ref={invoiceInput}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={(e) => uploadInvoice(e.target.files)}
+            />
+            <Button size="sm" variant="outline" onClick={() => invoiceInput.current?.click()} disabled={uploadingInvoice}>
+              <Upload className="h-3.5 w-3.5 mr-1.5" />
+              {uploadingInvoice ? "Upload…" : invoiceFilePath ? "Remplacer" : "Uploader le PDF"}
+            </Button>
+            {invoiceFilePath && (
+              <>
+                <Button size="sm" variant="ghost" onClick={openInvoice}>
+                  <FileText className="h-3.5 w-3.5 mr-1" /> Voir
+                </Button>
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={removeInvoice}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -275,7 +426,7 @@ export default function PortalPanel({
       <div className="space-y-2">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Livrables</div>
         {deliverables.length === 0 && (
-          <div className="text-xs text-muted-foreground">Aucun fichier. Ajoute une URL (WeTransfer, Drive, S3 signé…)</div>
+          <div className="text-xs text-muted-foreground">Aucun fichier. Uploade un fichier ou ajoute une URL (WeTransfer, Drive…).</div>
         )}
         <div className="space-y-1">
           {deliverables.map((d, i) => (
@@ -292,6 +443,18 @@ export default function PortalPanel({
           <Input placeholder="Nom du fichier" value={newName} onChange={(e) => setNewName(e.target.value)} />
           <Input placeholder="URL" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} />
           <Button size="sm" variant="outline" onClick={addDeliverable}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <input ref={fileInput} type="file" multiple className="hidden" onChange={(e) => uploadFiles(e.target.files)} />
+          <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={uploading}>
+            <Upload className="h-3.5 w-3.5 mr-1.5" /> {uploading ? "Upload…" : "Uploader un fichier"}
+          </Button>
+          {notifyTemplate && clientEmail && (
+            <Button size="sm" variant="outline" onClick={sendNotice} disabled={sending || !isUnlocked}>
+              <Send className="h-3.5 w-3.5 mr-1.5" />
+              {sending ? "Envoi…" : "Notifier le client"}
+            </Button>
+          )}
         </div>
       </div>
 
