@@ -1,6 +1,15 @@
 export const fmtMoney = (n?: number | null) =>
   n == null ? "—" : new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(n);
 
+// Returns true if the email is an internally-generated portal placeholder
+// (created by the portal-token-exchange edge function) and shouldn't be shown.
+export const isPlaceholderEmail = (email?: string | null) =>
+  !!email && /^portal\+[a-f0-9]+@flowk\.local$/i.test(email);
+
+// Returns the email only if it's a real user-facing address.
+export const displayEmail = (email?: string | null) =>
+  isPlaceholderEmail(email) ? null : email ?? null;
+
 export const fmtMinutes = (m?: number | null) => {
   if (!m) return "0min";
   const h = Math.floor(m / 60);

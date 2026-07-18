@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import ClientOnboarding from "@/components/ClientOnboarding";
 import { computeTaskBilling } from "@/lib/billing";
-import { fmtMoney } from "@/lib/format";
+import { fmtMoney, displayEmail } from "@/lib/format";
 
 export default function ClientDetail() {
   const { id } = useParams();
@@ -182,7 +182,7 @@ export default function ClientDetail() {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <EditableCard label="Email" field="email" value={client.email}
+        <EditableCard label="Email" field="email" value={displayEmail(client.email)}
           editing={editing === "email"} draft={draft} setDraft={setDraft} saving={saving}
           onStart={() => startEdit("email")} onSave={saveField} onCancel={() => setEditing(null)} type="email" />
         <EditableCard label="Téléphone" field="phone" value={client.phone}
