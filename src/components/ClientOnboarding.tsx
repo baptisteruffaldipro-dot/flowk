@@ -454,6 +454,31 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   );
 }
 
+function PortalStrip({ portal }: { portal: any }) {
+  const url = `${window.location.origin}/p/c/${portal.share_token}`;
+  const paid = !!portal.admin_confirmed_paid_at;
+  const unlocked = paid || portal.delivery_override || portal.delivery_unlock_rule === "libre" || portal.status === "delivered";
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5">
+      {unlocked ? (
+        <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px] gap-1"><Download className="h-3 w-3" /> Livrables prêts</Badge>
+      ) : (
+        <Badge variant="outline" className="text-[10px] gap-1"><Lock className="h-3 w-3" /> Paiement requis</Badge>
+      )}
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+      >
+        <CreditCard className="h-3.5 w-3.5" />
+        {unlocked ? "Télécharger" : "Payer / Voir le portail"}
+        <ExternalLink className="h-3 w-3" />
+      </a>
+    </div>
+  );
+}
+
 function Section({ icon, title, count, right, children }: { icon: React.ReactNode; title: string; count: number; right?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
