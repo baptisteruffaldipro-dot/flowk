@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette, Copy, Check, HelpCircle, Sparkles } from "lucide-react";
+import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette, Copy, Check, HelpCircle, Sparkles, CreditCard, Download, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   fmtMoney,
@@ -31,6 +31,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const [logoPresentations, setLogoPresentations] = useState<any[]>([]);
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [strategies, setStrategies] = useState<any[]>([]);
+  const [portals, setPortals] = useState<any[]>([]);
   const [sendingOnboarding, setSendingOnboarding] = useState(false);
   const [clientInfo, setClientInfo] = useState<{ name: string | null; email: string | null } | null>(null);
   const [copiedPortal, setCopiedPortal] = useState(false);
@@ -60,6 +61,11 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       setLogoPresentations((lp as any).data ?? []);
       setQuestionnaires(q.data ?? []);
       setStrategies(bs.data ?? []);
+      const { data: cp } = await supabase
+        .from("client_portals" as any)
+        .select("id,entity_type,entity_id,share_token,is_published,status,delivery_unlock_rule,delivery_override,admin_confirmed_paid_at")
+        .eq("client_id", clientId);
+      setPortals((cp as any) ?? []);
       setLoading(false);
     })();
   }, [clientId]);
@@ -157,6 +163,9 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const orderHref = (o: any) => mode === "admin" ? `/impressions/${o.id}` : `/portail/impression/${o.id}`;
   const batHref = (b: any) => mode === "admin" ? `/bats/${b.id}` : `/portail/bat/${b.id}`;
 
+  const portalFor = (kind: "task" | "project", id: string) =>
+    portals.find((p) => p.entity_type === kind && p.entity_id === id && p.is_published);
+
   if (loading) return <div className="text-sm text-muted-foreground py-8 text-center">Chargement…</div>;
 
   return (
@@ -180,8 +189,10 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
           const done = pTasks.filter((t) => t.delivered_at || ["payee", "facturee", "facture_envoyee"].includes(t.status)).length;
           const pct = pTasks.length ? Math.round((done / pTasks.length) * 100) : (isBriefDone(p) ? 10 : 0);
           const late = pTasks.some((t) => t.deadline && !t.delivered_at && new Date(t.deadline) < today);
+          const portal = portalFor("project", p.id);
           return (
-            <Link key={p.id} to={projHref(p)} className="block p-3 hover:bg-secondary/60 transition">
+            <div key={p.id} className="p-3 hover:bg-secondary/60 transition">
+              <Link to={projHref(p)} className="block">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="min-w-0">
                   <div className="text-sm font-medium truncate">{p.name}</div>
@@ -201,7 +212,9 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
                 </div>
                 <div className="text-[10px] text-muted-foreground tabular-nums w-16 text-right">{done}/{pTasks.length} · {pct}%</div>
               </div>
-            </Link>
+              </Link>
+              {portal && <PortalStrip portal={portal} />}
+            </div>
           );
         })}
       </Section>
@@ -209,8 +222,10 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       <Section icon={<ListChecks className="h-4 w-4" />} title="Tâches en cours" count={tasksInProgress.length}>
         {tasksInProgress.length === 0 ? <Empty text="Aucune tâche en cours" /> : tasksInProgress.map((t) => {
           const late = t.deadline && new Date(t.deadline) < today;
+          const portal = portalFor("task", t.id);
           return (
-            <Link key={t.id} to={taskHref(t)} className="flex items-center justify-between p-3 hover:bg-secondary/60 transition">
+            <div key={t.id} className="p-3 hover:bg-secondary/60 transition">
+              <Link to={taskHref(t)} className="flex items-center justify-between">
               <div className="min-w-0">
                 <div className="text-sm truncate">{t.title}</div>
                 {t.deadline && <div className="text-[11px] text-muted-foreground inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {fmtDate(t.deadline)}</div>}
@@ -219,7 +234,9 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
                 {late && <Badge className="bg-rose-500 hover:bg-rose-500 text-[10px]">En retard</Badge>}
                 <Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status] ?? t.status}</Badge>
               </div>
-            </Link>
+              </Link>
+              {portal && <PortalStrip portal={portal} />}
+            </div>
           );
         })}
       </Section>
@@ -433,6 +450,31 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
           );
         })}
       </Section>
+    </div>
+  );
+}
+
+function PortalStrip({ portal }: { portal: any }) {
+  const url = `${window.location.origin}/p/c/${portal.share_token}`;
+  const paid = !!portal.admin_confirmed_paid_at;
+  const unlocked = paid || portal.delivery_override || portal.delivery_unlock_rule === "libre" || portal.status === "delivered";
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5">
+      {unlocked ? (
+        <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px] gap-1"><Download className="h-3 w-3" /> Livrables prêts</Badge>
+      ) : (
+        <Badge variant="outline" className="text-[10px] gap-1"><Lock className="h-3 w-3" /> Paiement requis</Badge>
+      )}
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+      >
+        <CreditCard className="h-3.5 w-3.5" />
+        {unlocked ? "Télécharger" : "Payer / Voir le portail"}
+        <ExternalLink className="h-3 w-3" />
+      </a>
     </div>
   );
 }

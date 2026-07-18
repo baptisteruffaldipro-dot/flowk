@@ -30,7 +30,6 @@ import { useNavigate } from "react-router-dom";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, fmtMinutes, fmtMoney, fmtDate } from "@/lib/format";
 import { computeTaskBilling } from "@/lib/billing";
 import PrestationPicker from "@/components/PrestationPicker";
-import DeliveryGateCard from "@/components/DeliveryGateCard";
 import NewBatDialog from "@/components/NewBatDialog";
 import PortalPanel from "@/components/PortalPanel";
 
@@ -629,20 +628,15 @@ export default function TaskDetail() {
       </Card>
 
       <div className="mb-4">
-        <DeliveryGateCard
+        <PortalPanel
           entityType="task"
-          table="tasks"
-          row={task}
+          entityId={task.id}
+          clientId={task.client_id ?? null}
           clientEmail={(task as any).clients?.email ?? null}
           clientName={(task as any).clients?.name ?? null}
           notifyTemplate="files-delivered"
-          notifyContext={{ description: task.title, portalUrl: `${window.location.origin}/portail` }}
-          onUpdated={load}
+          notifyContext={{ description: task.title }}
         />
-      </div>
-
-      <div className="mb-4">
-        <PortalPanel entityType="task" entityId={task.id} clientId={task.client_id ?? null} />
       </div>
 
       {entries.length > 0 && (
