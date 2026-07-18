@@ -32,6 +32,7 @@ import { computeTaskBilling } from "@/lib/billing";
 import PrestationPicker from "@/components/PrestationPicker";
 import DeliveryGateCard from "@/components/DeliveryGateCard";
 import NewBatDialog from "@/components/NewBatDialog";
+import PortalPanel from "@/components/PortalPanel";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -638,6 +639,10 @@ export default function TaskDetail() {
           notifyContext={{ description: task.title, portalUrl: `${window.location.origin}/portail` }}
           onUpdated={load}
         />
+      </div>
+
+      <div className="mb-4">
+        <PortalPanel entityType="task" entityId={task.id} clientId={task.client_id ?? null} />
       </div>
 
       {entries.length > 0 && (
