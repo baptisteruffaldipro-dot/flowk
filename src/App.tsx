@@ -40,6 +40,8 @@ import ClientRequests from "./pages/ClientRequests";
 import ClientRequestPublic from "./pages/ClientRequestPublic";
 import ClientPortal from "./pages/ClientPortal";
 import PortalTokenLanding from "./pages/PortalTokenLanding";
+import ClientPortalPublic from "./pages/ClientPortalPublic";
+import PaymentSettings from "./pages/PaymentSettings";
 import ClientProjectPortal from "./pages/ClientProjectPortal";
 import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
 import ClientBatPortal from "./pages/ClientBatPortal";
@@ -64,6 +66,7 @@ const App = () => (
             <Route path="/p/demande/:token" element={<ClientRequestPublic />} />
             <Route path="/p/bat/:token" element={<ClientBatPublic />} />
             <Route path="/p/portail/:token" element={<PortalTokenLanding />} />
+            <Route path="/p/c/:token" element={<ClientPortalPublic />} />
             <Route path="/portail" element={<ProtectedRoute requireRole="client"><ClientPortal /></ProtectedRoute>} />
             <Route path="/portail/projet/:id" element={<ProtectedRoute requireRole="client"><ClientProjectPortal /></ProtectedRoute>} />
             <Route path="/portail/impression/:id" element={<ProtectedRoute requireRole="client"><ClientPrintOrderPortal /></ProtectedRoute>} />
@@ -96,6 +99,7 @@ const App = () => (
               <Route path="/logo/:id" element={<LogoPresentation />} />
               <Route path="/social" element={<SocialMedia />} />
               <Route path="/social/:clientId" element={<SocialMediaClient />} />
+              <Route path="/parametres/paiement" element={<PaymentSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
