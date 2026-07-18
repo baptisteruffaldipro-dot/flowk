@@ -14,6 +14,7 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { detectDuplicatePlan, executeMergePlan, type MergePlan } from "@/lib/mergeDuplicates";
+import { displayEmail } from "@/lib/format";
 
 type Client = { id: string; name: string; company: string | null; email: string | null; phone: string | null };
 
@@ -250,7 +251,7 @@ export default function Clients() {
                     <div className="font-medium">{c.name}</div>
                     {c.company && <div className="text-xs text-muted-foreground">{c.company}</div>}
                   </div>
-                  <div className="text-sm text-muted-foreground">{c.email}</div>
+                  <div className="text-sm text-muted-foreground">{displayEmail(c.email)}</div>
                 </div>
               </div>
             ))}
