@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette, Copy, Check, HelpCircle, Sparkles } from "lucide-react";
+import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette, Copy, Check, HelpCircle, Sparkles, CreditCard, Download, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   fmtMoney,
@@ -31,6 +31,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const [logoPresentations, setLogoPresentations] = useState<any[]>([]);
   const [questionnaires, setQuestionnaires] = useState<any[]>([]);
   const [strategies, setStrategies] = useState<any[]>([]);
+  const [portals, setPortals] = useState<any[]>([]);
   const [sendingOnboarding, setSendingOnboarding] = useState(false);
   const [clientInfo, setClientInfo] = useState<{ name: string | null; email: string | null } | null>(null);
   const [copiedPortal, setCopiedPortal] = useState(false);
@@ -60,6 +61,11 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       setLogoPresentations((lp as any).data ?? []);
       setQuestionnaires(q.data ?? []);
       setStrategies(bs.data ?? []);
+      const { data: cp } = await supabase
+        .from("client_portals" as any)
+        .select("id,entity_type,entity_id,share_token,is_published,status,delivery_unlock_rule,delivery_override,admin_confirmed_paid_at")
+        .eq("client_id", clientId);
+      setPortals((cp as any) ?? []);
       setLoading(false);
     })();
   }, [clientId]);
@@ -156,6 +162,9 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const projHref = (p: any) => mode === "admin" ? `/projets/${p.id}` : `/portail/projet/${p.id}`;
   const orderHref = (o: any) => mode === "admin" ? `/impressions/${o.id}` : `/portail/impression/${o.id}`;
   const batHref = (b: any) => mode === "admin" ? `/bats/${b.id}` : `/portail/bat/${b.id}`;
+
+  const portalFor = (kind: "task" | "project", id: string) =>
+    portals.find((p) => p.entity_type === kind && p.entity_id === id && p.is_published);
 
   if (loading) return <div className="text-sm text-muted-foreground py-8 text-center">Chargement…</div>;
 
