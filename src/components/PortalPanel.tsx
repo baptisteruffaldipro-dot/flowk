@@ -208,7 +208,7 @@ export default function PortalPanel({
   };
 
   const updateEntity = async (patch: Record<string, any>) => {
-    const { error } = await supabase.from(table).update(patch).eq("id", entityId);
+    const { error } = await supabase.from(table as any).update(patch as any).eq("id", entityId);
     if (error) toast.error(error.message);
   };
 
