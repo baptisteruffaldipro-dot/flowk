@@ -107,6 +107,16 @@ export default function ClientPortalPublic() {
             {entity.deadline && (
               <Info label="Échéance" value={new Date(entity.deadline).toLocaleDateString("fr-FR")} />
             )}
+            {isTask && (entity.client_revisions_count != null || entity.free_revisions != null) && (
+              <Info
+                label="Retours envoyés"
+                value={
+                  entity.free_revisions
+                    ? `${entity.client_revisions_count ?? 0} / ${entity.free_revisions} inclus`
+                    : `${entity.client_revisions_count ?? 0}`
+                }
+              />
+            )}
           </div>
           {subtasks.length > 0 && (
             <div className="pt-2 space-y-1">
