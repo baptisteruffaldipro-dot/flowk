@@ -151,11 +151,21 @@ export default function PortalPanel({
     const bytes = new Uint8Array(24);
     crypto.getRandomValues(bytes);
     const token = Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
-    await update({ share_token: token } as any);
+    await update({
+      share_token: token,
+      is_published: true,
+      status: portal.status === "draft" ? ("awaiting_validation" as any) : portal.status,
+    } as any);
     toast.success("Nouveau lien généré");
   };
 
-  const copy = () => {
+  const copy = async () => {
+    if (!portal.is_published) {
+      await update({
+        is_published: true,
+        status: portal.status === "draft" ? ("awaiting_validation" as any) : portal.status,
+      } as any);
+    }
     navigator.clipboard.writeText(publicUrl);
     toast.success("Lien copié");
   };
