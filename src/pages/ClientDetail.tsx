@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import ClientOnboarding from "@/components/ClientOnboarding";
 import { computeTaskBilling } from "@/lib/billing";
-import { fmtMoney, displayEmail, isPlaceholderEmail } from "@/lib/format";
+import { fmtMoney, displayEmail } from "@/lib/format";
 
 export default function ClientDetail() {
   const { id } = useParams();
