@@ -36,7 +36,7 @@ export default function PaymentSettings() {
 
   return (
     <div className="p-6 max-w-2xl">
-      <PageHeader title="Paramètres de paiement" subtitle="Coordonnées bancaires affichées sur les portails clients" />
+      <PageHeader title="Paramètres de paiement" description="Coordonnées bancaires affichées sur les portails clients" />
       <Card className="p-5 space-y-4">
         <div className="grid sm:grid-cols-2 gap-3">
           <Field label="Titulaire du compte" value={row.account_holder} onChange={(v) => setRow({ ...row, account_holder: v })} />
