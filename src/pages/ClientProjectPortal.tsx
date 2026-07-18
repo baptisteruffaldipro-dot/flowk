@@ -296,45 +296,6 @@ export default function ClientProjectPortal() {
           </Card>
         )}
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold">Questionnaire / Brief</h2>
-            {submitted && (
-              <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">
-                <CheckCircle2 className="h-3 w-3 mr-1" /> Envoyé {fmtDateTime(project.brief_submitted_at)}
-              </Badge>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {BRIEF_FIELDS.map((f) => (
-              <div key={f.key} className="space-y-1.5">
-                <Label className="text-xs">{f.label}</Label>
-                {f.type === "textarea" ? (
-                  <Textarea
-                    value={brief[f.key] ?? ""}
-                    onChange={(e) => setBrief({ ...brief, [f.key]: e.target.value })}
-                    rows={3}
-                  />
-                ) : (
-                  <Input
-                    value={brief[f.key] ?? ""}
-                    onChange={(e) => setBrief({ ...brief, [f.key]: e.target.value })}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-2 mt-6">
-            <Button variant="outline" size="sm" onClick={() => saveBrief(false)} disabled={saving}>
-              Enregistrer brouillon
-            </Button>
-            <Button size="sm" onClick={() => saveBrief(true)} disabled={saving}>
-              {submitted ? "Mettre à jour" : "Envoyer le brief"}
-            </Button>
-          </div>
-        </Card>
       </div>
     </div>
   );
