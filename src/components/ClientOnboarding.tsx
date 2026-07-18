@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette, Copy, Check } from "lucide-react";
+import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette, Copy, Check, HelpCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   fmtMoney,
@@ -29,6 +29,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const [invoices, setInvoices] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [logoPresentations, setLogoPresentations] = useState<any[]>([]);
+  const [questionnaires, setQuestionnaires] = useState<any[]>([]);
+  const [strategies, setStrategies] = useState<any[]>([]);
   const [sendingOnboarding, setSendingOnboarding] = useState(false);
   const [clientInfo, setClientInfo] = useState<{ name: string | null; email: string | null } | null>(null);
   const [copiedPortal, setCopiedPortal] = useState(false);
@@ -38,7 +40,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
     (async () => {
       setLoading(true);
       const nowIso = new Date().toISOString();
-      const [p, t, o, b, i, a, lp] = await Promise.all([
+      const [p, t, o, b, i, a, lp, q, bs] = await Promise.all([
         supabase.from("projects").select("*").eq("client_id", clientId).eq("archived", false).order("created_at", { ascending: false }),
         supabase.from("tasks").select("id,title,status,deadline,project_id,delivered_at,priority").eq("client_id", clientId).order("deadline", { ascending: true, nullsFirst: false }),
         supabase.from("print_orders").select("id,description,status,amount,estimated_delivery_date,bat_file_path,bat_validated_at,bat_rejected_at").eq("client_id", clientId).order("created_at", { ascending: false }),
@@ -46,6 +48,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
         supabase.from("invoices").select("*, tasks(id, project_id)").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("appointments").select("id,title,start_at,duration_minutes,location,type,status").eq("client_id", clientId).gte("start_at", nowIso).order("start_at", { ascending: true }),
         supabase.from("logo_presentations" as any).select("id,project_name,version,is_published,share_token,updated_at").eq("client_id", clientId).order("updated_at", { ascending: false }),
+        supabase.from("questionnaires").select("id,title,template,status,share_token,submitted_at,updated_at").eq("client_id", clientId).order("updated_at", { ascending: false }),
+        supabase.from("brand_strategies").select("id,project_name,version,is_published,share_token,updated_at").eq("client_id", clientId).order("updated_at", { ascending: false }),
       ]);
       setProjects(p.data ?? []);
       setTasks(t.data ?? []);
@@ -54,6 +58,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       setInvoices(i.data ?? []);
       setAppointments(a.data ?? []);
       setLogoPresentations((lp as any).data ?? []);
+      setQuestionnaires(q.data ?? []);
+      setStrategies(bs.data ?? []);
       setLoading(false);
     })();
   }, [clientId]);
@@ -379,6 +385,63 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
             <Link key={lp.id} to={href} className="flex items-center justify-between p-3 hover:bg-secondary/60 transition">{content}</Link>
           ) : (
             <div key={lp.id} className="flex items-center justify-between p-3 opacity-70">{content}</div>
+          );
+        })}
+      </Section>
+
+      <Section icon={<HelpCircle className="h-4 w-4" />} title="Questionnaires" count={questionnaires.length}>
+        {questionnaires.length === 0 ? <Empty text="Aucun questionnaire" /> : questionnaires.map((q) => {
+          const href = mode === "admin"
+            ? `/questionnaires/${q.id}`
+            : (q.share_token ? `/q/${q.share_token}` : null);
+          const label = q.status === "soumis" ? "Envoyé" : q.status === "en_cours" ? "En cours" : "À remplir";
+          const variant = q.status === "soumis" ? "bg-emerald-500 hover:bg-emerald-500" : q.status === "en_cours" ? "bg-amber-500 hover:bg-amber-500" : "bg-sky-500 hover:bg-sky-500";
+          const content = (
+            <>
+              <div className="min-w-0">
+                <div className="text-sm truncate">{q.title}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {q.template ?? "Personnalisé"}
+                  {q.submitted_at && ` · soumis ${fmtDate(q.submitted_at)}`}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge className={`${variant} text-[10px]`}>{label}</Badge>
+                {href && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+              </div>
+            </>
+          );
+          return href ? (
+            <Link key={q.id} to={href} className="flex items-center justify-between p-3 hover:bg-secondary/60 transition">{content}</Link>
+          ) : (
+            <div key={q.id} className="flex items-center justify-between p-3 opacity-70">{content}</div>
+          );
+        })}
+      </Section>
+
+      <Section icon={<Sparkles className="h-4 w-4" />} title="Stratégies de marque" count={strategies.length}>
+        {strategies.length === 0 ? <Empty text="Aucune stratégie" /> : strategies.map((s) => {
+          const href = mode === "admin"
+            ? `/strategie/${s.id}`
+            : (s.is_published && s.share_token ? `/p/strategie/${s.share_token}` : null);
+          const content = (
+            <>
+              <div className="min-w-0">
+                <div className="text-sm truncate">{s.project_name}</div>
+                <div className="text-[11px] text-muted-foreground">Version {s.version} · MAJ {fmtDate(s.updated_at)}</div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {s.is_published
+                  ? <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Publiée</Badge>
+                  : <Badge variant="outline" className="text-[10px]">Brouillon</Badge>}
+                {href && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+              </div>
+            </>
+          );
+          return href ? (
+            <Link key={s.id} to={href} className="flex items-center justify-between p-3 hover:bg-secondary/60 transition">{content}</Link>
+          ) : (
+            <div key={s.id} className="flex items-center justify-between p-3 opacity-70">{content}</div>
           );
         })}
       </Section>
