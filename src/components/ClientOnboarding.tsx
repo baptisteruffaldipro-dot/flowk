@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette, Copy, Check } from "lucide-react";
+import { FolderOpen, ListChecks, Printer, ClipboardList, FileCheck2, Receipt, CalendarClock, ChevronRight, AlertCircle, ExternalLink, Mail, Palette, Copy, Check, HelpCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   fmtMoney,
@@ -29,6 +29,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const [invoices, setInvoices] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [logoPresentations, setLogoPresentations] = useState<any[]>([]);
+  const [questionnaires, setQuestionnaires] = useState<any[]>([]);
+  const [strategies, setStrategies] = useState<any[]>([]);
   const [sendingOnboarding, setSendingOnboarding] = useState(false);
   const [clientInfo, setClientInfo] = useState<{ name: string | null; email: string | null } | null>(null);
   const [copiedPortal, setCopiedPortal] = useState(false);
@@ -38,7 +40,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
     (async () => {
       setLoading(true);
       const nowIso = new Date().toISOString();
-      const [p, t, o, b, i, a, lp] = await Promise.all([
+      const [p, t, o, b, i, a, lp, q, bs] = await Promise.all([
         supabase.from("projects").select("*").eq("client_id", clientId).eq("archived", false).order("created_at", { ascending: false }),
         supabase.from("tasks").select("id,title,status,deadline,project_id,delivered_at,priority").eq("client_id", clientId).order("deadline", { ascending: true, nullsFirst: false }),
         supabase.from("print_orders").select("id,description,status,amount,estimated_delivery_date,bat_file_path,bat_validated_at,bat_rejected_at").eq("client_id", clientId).order("created_at", { ascending: false }),
@@ -46,6 +48,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
         supabase.from("invoices").select("*, tasks(id, project_id)").eq("client_id", clientId).order("created_at", { ascending: false }),
         supabase.from("appointments").select("id,title,start_at,duration_minutes,location,type,status").eq("client_id", clientId).gte("start_at", nowIso).order("start_at", { ascending: true }),
         supabase.from("logo_presentations" as any).select("id,project_name,version,is_published,share_token,updated_at").eq("client_id", clientId).order("updated_at", { ascending: false }),
+        supabase.from("questionnaires").select("id,title,template,status,share_token,submitted_at,updated_at").eq("client_id", clientId).order("updated_at", { ascending: false }),
+        supabase.from("brand_strategies").select("id,project_name,version,is_published,share_token,updated_at").eq("client_id", clientId).order("updated_at", { ascending: false }),
       ]);
       setProjects(p.data ?? []);
       setTasks(t.data ?? []);
@@ -54,6 +58,8 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       setInvoices(i.data ?? []);
       setAppointments(a.data ?? []);
       setLogoPresentations((lp as any).data ?? []);
+      setQuestionnaires(q.data ?? []);
+      setStrategies(bs.data ?? []);
       setLoading(false);
     })();
   }, [clientId]);
