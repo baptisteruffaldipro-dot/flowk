@@ -1,0 +1,70 @@
+import { useEffect, useMemo, useState } from "react";
+import PageHeader from "@/components/PageHeader";
+import FinanceNav from "@/components/finance/FinanceNav";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { fmtDate, fmtMoney } from "@/lib/format";
+
+export default function FinanceExpenses() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [q, setQ] = useState("");
+  useEffect(() => { (async () => {
+    const { data } = await supabase.from("finance_transactions")
+      .select("*, clients(name), projects(name), tasks(title)")
+      .eq("kind", "expense").order("date", { ascending: false });
+    setRows(data ?? []);
+  })(); }, []);
+
+  const filtered = useMemo(() => {
+    const term = q.toLowerCase();
+    if (!term) return rows;
+    return rows.filter((r) =>
+      [r.counterparty, r.label, r.clients?.name, r.projects?.name, r.tasks?.title].some((v) => (v ?? "").toString().toLowerCase().includes(term)),
+    );
+  }, [rows, q]);
+
+  const total = filtered.reduce((a, r) => a + Number(r.amount_ht || 0), 0);
+
+  return (
+    <div className="p-6 md:p-8">
+      <PageHeader title="Dépenses" description="Fournisseurs, projets, tâches — filtre à ta guise." />
+      <FinanceNav />
+      <div className="flex items-center gap-2 mb-4">
+        <Input placeholder="Rechercher fournisseur, projet, client…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
+        <div className="text-sm text-muted-foreground">Total : <span className="font-medium text-foreground">{fmtMoney(total)}</span> HT</div>
+      </div>
+      <Card className="p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-xs text-muted-foreground border-b bg-muted/40">
+              <tr>
+                <th className="text-left px-3 py-2">Date</th>
+                <th className="text-left px-3 py-2">Fournisseur</th>
+                <th className="text-left px-3 py-2">Libellé</th>
+                <th className="text-left px-3 py-2">Projet / Tâche</th>
+                <th className="text-right px-3 py-2">HT</th>
+                <th className="text-right px-3 py-2">TVA</th>
+                <th className="text-right px-3 py-2">TTC</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => (
+                <tr key={r.id} className="border-b last:border-0 hover:bg-muted/30">
+                  <td className="px-3 py-2 whitespace-nowrap">{fmtDate(r.date)}</td>
+                  <td className="px-3 py-2">{r.counterparty ?? "—"}</td>
+                  <td className="px-3 py-2 max-w-xs truncate" title={r.label}>{r.label ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{[r.projects?.name, r.tasks?.title].filter(Boolean).join(" · ") || "—"}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.amount_ht || 0))}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtMoney(Number(r.vat_amount || 0))}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(Number(r.amount_ttc || 0))}</td>
+                </tr>
+              ))}
+              {filtered.length === 0 && <tr><td colSpan={7} className="px-3 py-8 text-center text-sm text-muted-foreground">Aucune dépense</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
