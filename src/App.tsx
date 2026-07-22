@@ -47,6 +47,15 @@ import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
 import ClientBatPortal from "./pages/ClientBatPortal";
 import ClientBatPublic from "./pages/ClientBatPublic";
 import NotFound from "./pages/NotFound";
+import FinanceDashboard from "./pages/finance/FinanceDashboard";
+import FinanceImport from "./pages/finance/FinanceImport";
+import FinanceCA from "./pages/finance/FinanceCA";
+import FinanceExpenses from "./pages/finance/FinanceExpenses";
+import FinanceVAT from "./pages/finance/FinanceVAT";
+import FinanceTreasury from "./pages/finance/FinanceTreasury";
+import FinanceForecasts from "./pages/finance/FinanceForecasts";
+import FinanceProfitability from "./pages/finance/FinanceProfitability";
+import FinanceReports from "./pages/finance/FinanceReports";
 
 const queryClient = new QueryClient();
 
@@ -100,6 +109,15 @@ const App = () => (
               <Route path="/social" element={<SocialMedia />} />
               <Route path="/social/:clientId" element={<SocialMediaClient />} />
               <Route path="/parametres/paiement" element={<PaymentSettings />} />
+              <Route path="/finance" element={<FinanceDashboard />} />
+              <Route path="/finance/import" element={<FinanceImport />} />
+              <Route path="/finance/tresorerie" element={<FinanceTreasury />} />
+              <Route path="/finance/ca" element={<FinanceCA />} />
+              <Route path="/finance/depenses" element={<FinanceExpenses />} />
+              <Route path="/finance/tva" element={<FinanceVAT />} />
+              <Route path="/finance/previsions" element={<FinanceForecasts />} />
+              <Route path="/finance/rentabilite" element={<FinanceProfitability />} />
+              <Route path="/finance/rapports" element={<FinanceReports />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
