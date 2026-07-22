@@ -1,112 +1,96 @@
 
-## Objectif
+# Module Finance & Pilotage
 
-Un lien unique par tâche ou projet (partageable, sans compte) qui accompagne le client de bout en bout : brief → récap → validation → paiement → livraison. Les portails BAT et Demande client existants deviennent des vues intégrées dans ce portail unifié.
+Nouveau menu `Finance` s'ajoutant à la sidebar existante, sans toucher aux modules déjà en place. Les données financières viennent d'imports Tiime (Excel/CSV), rapprochées automatiquement avec `clients`, `projects`, `tasks` et `invoices` déjà présents.
 
-## Parcours client (une seule URL `/p/c/{token}`)
+> Prérequis : upload d'un fichier d'export Tiime réel (anonymisé si besoin) avant de coder l'import — la détection auto et le mapping seront calibrés dessus. Sans échantillon, je pars sur un mapping générique et tu ajustes via l'UI.
 
-```text
-Brief & récap → Validation devis → Paiement (RIB + lien) → Livraison verrouillée
-    │              │                    │                        │
-    │              signe engagement     tu confirmes manuel      téléchargement débloqué
-    │                                                            après confirmation
-    visionneuse BAT / aperçus (watermark, pas de DL)
-```
+## Architecture données
 
-Sections empilées sur la même page publique :
+Une seule source pour la finance : les lignes importées. On garde `invoices`/`print_orders` intacts et on ajoute un lien optionnel vers les factures Tiime pour la fusion.
 
-1. **En-tête** — nom du projet/tâche, statut, client, deadline estimée.
-2. **Brief & infos** — description, notes visibles client, sous-tâches (checklist en lecture), prestation, deadline, plage de réalisation estimée.
-3. **Estimation & budget** — temps estimé, forfait/horaire, montant HT, mention légale d'engagement.
-4. **Validation devis** — bouton « Valider » / « Refuser » (avec motif). Statut verrouillé une fois validé.
-5. **BAT & aperçus** — visionneuse intégrée (image/PDF via iframe + watermark CSS « APERÇU », `oncontextmenu` désactivé, URL signée courte 5 min). Bouton valider/annoter BAT si présent.
-6. **Commande d'impression** — récap produits, quantités, prix, date livraison estimée si liée.
-7. **Paiement** — s'affiche après validation :
-   - Onglet **Virement** : IBAN/BIC/référence à copier
-   - Onglet **Lien de paiement** : bouton « Demander un lien » → notif admin, tu colles ton lien externe (Stripe/PayPal/Tiime) qui s'affiche ensuite
-   - Bouton client « J'ai payé » (déclaratif, informatif)
-8. **Livrables** — cadenassés tant que tu n'as pas coché « Paiement reçu » côté admin. Ensuite téléchargement débloqué (fichiers `livrables` bucket, URL signée).
-9. **Fil d'échanges** — messages client ↔ toi (comme demande client).
+### Nouvelles tables (public, avec RLS admin)
 
-## Génération du lien
+- `tiime_imports` : trace chaque import (fichier, hash, date, nb lignes, statut, `rolled_back_at`). Permet retour arrière.
+- `tiime_column_mappings` : sauvegarde le mapping colonnes → champs canoniques (mémorisé par type de fichier).
+- `finance_transactions` : ligne unique factures vente / factures achat / mouvements. Champs : `import_id`, `kind` (sale/expense/bank), `doc_number`, `date`, `due_date`, `paid_date`, `label`, `counterparty` (fournisseur/client), `amount_ht`, `vat_amount`, `amount_ttc`, `vat_rate`, `account_code`, `category` (`prestation` | `achat_revente` | `expense` | `bank`), `client_id` (fk clients, nullable), `project_id`, `task_id`, `invoice_id`, `supplier_cost_ht`, `raw` (jsonb). Unicité `(kind, doc_number, date, amount_ttc)` pour éviter doublons.
+- `finance_category_rules` : règles mots-clés (`pattern`, `field` libellé/compte, `category`, `priority`). Utilisées à l'import pour trancher Prestation vs Achat/Revente, éditables.
+- `finance_link_rules` : associations mémorisées (`counterparty_normalized` → `client_id`, `keyword` → `project_id`/`task_id`).
+- `bank_balances` : historique de solde (`as_of_date`, `amount`, `source` import/manuel). Alimenté par la colonne solde de l'export Tiime en priorité, saisie manuelle en fallback.
+- `vat_adjustments` : ajustements manuels TVA + réserve TVA.
+- `finance_forecasts` : simulations de dépenses futures.
 
-- À chaque `INSERT` dans `tasks` ou `projects` : trigger DB crée une ligne `client_portals` avec `share_token`, `is_published=false`.
-- Bouton « Publier & copier le lien » sur la fiche admin.
-- Bouton « Envoyer par email » (template `client-portal-link`) réutilisant `getPublicAppUrl()`.
+### Fusion avec l'existant
 
-## Côté admin
+À l'import d'une facture de vente Tiime : matching sur `invoices.number` (ou montant + date proche) ; si trouvé, on remplit `finance_transactions.invoice_id` et on marque `invoices.tiime_synced_at`. Pas de duplication de la facture — l'UI Facturation continue d'afficher les `invoices`, la Finance affiche les `finance_transactions`.
 
-- Nouveau bloc **Portail client** sur les pages `/taches/:id` et `/projets/:id` :
-  - Lien public + copier + prévisualiser + envoyer par email
-  - Toggle « Publier »
-  - Choix règle de déblocage : `libre` / `acompte` / `solde total` (réutilise `delivery_unlock_rule` existant)
-  - RIB affiché au client (config globale dans nouveau `payment_settings` singleton : IBAN, BIC, titulaire, référence par défaut)
-  - Champ « Lien de paiement externe » (collable quand client le demande)
-  - Bouton **« Marquer paiement reçu »** → débloque livrables, notif client par email
-  - Timeline des événements (vue, validé, paiement demandé, payé, téléchargé)
-- Notifications (cloche existante) : validation, refus, demande de lien, confirmation « j'ai payé », téléchargement.
+## Nouveau menu (sidebar)
 
-## Modèle de données
+Section `Finance` avec sous-items :
+- Tableau de bord
+- Import Tiime
+- Trésorerie
+- Chiffre d'affaires
+- Dépenses
+- TVA
+- Prévisions
+- Rentabilité
+- Rapports
 
-Nouvelle table `client_portals` :
-- `entity_type` (`task` | `project`), `entity_id`, `client_id`
-- `share_token` unique, `is_published`, `published_at`
-- `status` : `draft`, `awaiting_validation`, `validated`, `refused`, `payment_pending`, `payment_link_requested`, `paid`, `delivered`
-- `client_validated_at`, `client_refused_at`, `refusal_reason`
-- `payment_method_requested` (`transfer` | `link`), `payment_link_url`, `client_declared_paid_at`, `admin_confirmed_paid_at`
-- `delivery_unlock_rule`, `delivery_override`
+Style, composants (`Card`, `Table`, `PageHeader`, `NavLink`), couleurs et navigation identiques aux pages existantes.
 
-Table `client_portal_messages` (comme `client_request_messages`).
+## Pages
 
-Table `client_portal_events` (audit : vue, action, timestamp, ip).
+### Import Tiime (`/finance/import`)
+- Drop de fichier `.xlsx`/`.csv`, parsing côté client (SheetJS) + edge function `tiime-import` pour normaliser et insérer par batch.
+- Détection auto colonnes via heuristiques + mapping mémorisé. Si colonne inconnue → écran de mapping (select par colonne), sauvegardé dans `tiime_column_mappings`.
+- Prévisualisation avant validation : nb factures vente, factures achat, mouvements bancaires, doublons détectés, lignes non catégorisées.
+- Rapprochement automatique client/projet via `finance_link_rules`. Écran de résolution pour les lignes non appariées.
+- Historique des imports + bouton "Annuler cet import" (soft-delete des `finance_transactions` liées).
 
-Table `payment_settings` (singleton admin : IBAN, BIC, titulaire, notes virement).
+### Tableau de bord (`/finance`)
+Cartes : solde bancaire, dispo réel (solde − réserve TVA − paiements dus 30j), encaissements à venir, paiements à venir, TVA estimée, trésorerie prévisionnelle 30j, CA mois, CA année, dépenses mois, résultat estimé, alertes (retards paiement, TVA due, trésorerie tendue). Toggle Prestation / Achat-Revente sur les cartes CA/marge.
 
-Trigger `after insert on tasks/projects` → crée portail brouillon.
+### Chiffre d'affaires (`/finance/ca`)
+Deux blocs strictement séparés : **Prestations** et **Achats / Reventes**. Tableau + graphes mensuels. Pour Achat/Revente : marge brute, taux de marge (`marge / PV`), taux de marque (`marge / PA`).
 
-RPC `SECURITY DEFINER` publiques par token : `get_portal_by_token`, `portal_validate`, `portal_refuse`, `portal_request_payment_link`, `portal_declare_paid`, `portal_add_message`.
+### Dépenses (`/finance/depenses`)
+Table avec filtres fournisseur / client / projet / tâche / catégorie / période. Édition de la catégorie + association projet/tâche mémorisée.
 
-## Visionneuse protégée (niveau léger)
+### TVA (`/finance/tva`)
+Mensuel/trimestriel/annuel : TVA collectée, déductible, nette. Ajustements manuels. Réserve TVA (curseur %). Estimation TVA due affichée aussi sur le dashboard.
 
-- PDF/image affichés via `<iframe>` ou `<img>` avec URL signée 5 min
-- Overlay CSS filigrane « APERÇU — {nom client} — {date} » répété
-- `onContextMenu`, `onDragStart` bloqués + `user-select: none`
-- Pas de bouton téléchargement tant que non payé
+### Trésorerie (`/finance/tresorerie`)
+Vue courbe (recharts) 30/60/90j/6 mois. Colonnes : solde, entrées, sorties, TVA future, dispo réel. Historique des soldes.
 
-## Livrables
+### Prévisions (`/finance/previsions`)
+Simulateur : montant, date, catégorie, récurrence. Calcule impact tréso / TVA / résultat et affiche pastille 🟢 🟠 🔴 selon dispo réel projeté.
 
-Nouveau champ `deliverable_files` (jsonb : `[{path, name, size}]`) sur `tasks` et `projects`, upload dans bucket `livrables` existant. Téléchargement via URL signée uniquement si `client_portals.status = 'delivered'` (vérifié par fonction `can_download` étendue).
+### Rentabilité (`/finance/rentabilite`)
+Vues par client / projet / tâche. Pour chaque tâche : CA (via `finance_transactions` reliées ou `invoices` liées), dépenses affectées, coût interne (`total_minutes / 60 × hourly_rate` réutilisé depuis `computeTaskBilling`), marge, résultat. Rollup automatique tâche → projet → client.
 
-## Emails
+### Rapports (`/finance/rapports`)
+Graphiques modernes (recharts, tokens de couleur existants) : évolution CA, prestations vs achats/reventes, TVA, tréso, dépenses, marge, rentabilité, mensuel/annuel. Export CSV.
 
-Nouveaux templates app :
-- `client-portal-ready` (envoi initial)
-- `client-portal-validated` (confirmation au client)
-- `client-portal-payment-link` (quand tu envoies le lien)
-- `client-portal-delivered` (livrables débloqués)
+## Catégorisation Prestation vs Achat/Revente
 
-## Portails existants
+Règles mots-clés éditables (`finance_category_rules`), appliquées à l'import sur libellé + compte. Chaque ligne garde `category_source` (rule/manual). Recatégorisation manuelle possible partout, et sauvegardée comme nouvelle règle proposée.
 
-- BAT et Demande client restent techniquement mais deviennent des **vues embarquées** dans le portail unifié quand liés à la même tâche/projet.
-- Ancienne route `/p/bat/{token}` conservée pour rétrocompat.
+## Contraintes respectées
 
-## Idées bonus (à valider avant implém, non incluses par défaut)
+- Aucun module existant modifié (juste ajout d'items sidebar + éventuel `tiime_synced_at` sur `invoices`).
+- Aucune 2ᵉ base : réutilise `clients`, `projects`, `tasks`, `invoices`.
+- RLS admin uniquement sur toutes les nouvelles tables, GRANT `authenticated` + `service_role`.
+- Architecture extensible : `finance_transactions.source` (`tiime_import` | futur `tiime_api` | `stripe` | `bank_api`) permet d'ajouter des connecteurs plus tard sans refactor.
 
-- **Signature en ligne** du devis (case à cocher + IP + timestamp = valeur légale suffisante pour freelance FR).
-- **Relances auto** : email J+3, J+7, J+14 si paiement non confirmé.
-- **CGV attachées** au moment de la validation (checkbox obligatoire).
-- **Acompte 30% par défaut** avant démarrage, solde avant livraison — 2 phases de paiement dans le même portail.
-- **Timeline visible client** avec jalons cochés (rassure sur l'avancement).
-- **QR code** du lien pour envoi WhatsApp/SMS facile.
-- **Verrou anti-modif** : une fois validé, le client voit clairement que toute nouvelle demande = avenant facturé.
-- **Score « client fiable »** interne (délai moyen de paiement, litiges) pour prioriser tes prochains projets.
+## Étapes de livraison
 
-Dis-moi si tu veux inclure certains bonus (signature, relances, acompte 30/solde) directement dans la V1, ou si on garde la V1 minimale et on itère.
+1. Migration SQL : tables + RLS + GRANT + index sur `(date, category, client_id)`.
+2. Ajout menu Finance dans `AdminLayout` + routes protégées admin dans `App.tsx`.
+3. Page **Import Tiime** (parser SheetJS, écran de mapping, edge function `tiime-import`, historique + rollback).
+4. Page **Tableau de bord** Finance.
+5. Pages **CA**, **Dépenses**, **TVA**, **Trésorerie**.
+6. Pages **Rentabilité**, **Prévisions**, **Rapports**.
+7. Réglages : règles catégorisation, associations, réserve TVA.
 
-## Détails techniques
-
-- Migration : `client_portals`, `client_portal_messages`, `client_portal_events`, `payment_settings`, colonne `deliverable_files` sur `tasks`/`projects`, trigger auto-create, RPC publiques, extension `can_download`.
-- Pages : `src/pages/ClientPortalPublic.tsx` (nouvelle), bloc `PortalPanel` réutilisable dans `TaskDetail.tsx` / `ProjectDetail.tsx`, page `src/pages/PaymentSettings.tsx`.
-- Edge functions : nouveau template `client-portal-ready` + variantes, réutilise `send-transactional-email`.
-- Route : `/p/c/:token` (client), `/parametres/paiement` (admin RIB).
-- Sécurité : toutes les mutations passent par RPC `SECURITY DEFINER` avec vérif du token ; téléchargement livrables via fonction serveur qui vérifie `admin_confirmed_paid_at`.
+Uploade un export Tiime pour caler l'étape 3 sur ton format réel — sans ça je pars sur un mapping générique modifiable via l'UI.
