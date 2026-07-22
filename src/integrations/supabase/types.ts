@@ -80,6 +80,47 @@ export type Database = {
           },
         ]
       }
+      bank_balances: {
+        Row: {
+          amount: number
+          as_of_date: string
+          created_at: string
+          id: string
+          import_id: string | null
+          note: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          as_of_date: string
+          created_at?: string
+          id?: string
+          import_id?: string | null
+          note?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          as_of_date?: string
+          created_at?: string
+          id?: string
+          import_id?: string | null
+          note?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_balances_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "tiime_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bat_annotations: {
         Row: {
           author_id: string | null
@@ -765,6 +806,259 @@ export type Database = {
           used_at?: string | null
         }
         Relationships: []
+      }
+      finance_category_rules: {
+        Row: {
+          active: boolean
+          category: Database["public"]["Enums"]["finance_category"]
+          created_at: string
+          field: string
+          id: string
+          match_kind: Database["public"]["Enums"]["finance_kind"] | null
+          pattern: string
+          priority: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category: Database["public"]["Enums"]["finance_category"]
+          created_at?: string
+          field?: string
+          id?: string
+          match_kind?: Database["public"]["Enums"]["finance_kind"] | null
+          pattern: string
+          priority?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: Database["public"]["Enums"]["finance_category"]
+          created_at?: string
+          field?: string
+          id?: string
+          match_kind?: Database["public"]["Enums"]["finance_kind"] | null
+          pattern?: string
+          priority?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      finance_forecasts: {
+        Row: {
+          amount_ttc: number
+          created_at: string
+          id: string
+          kind: string
+          label: string
+          note: string | null
+          planned_date: string
+          recurrence: string | null
+          updated_at: string
+          vat_rate: number | null
+        }
+        Insert: {
+          amount_ttc: number
+          created_at?: string
+          id?: string
+          kind?: string
+          label: string
+          note?: string | null
+          planned_date: string
+          recurrence?: string | null
+          updated_at?: string
+          vat_rate?: number | null
+        }
+        Update: {
+          amount_ttc?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string
+          note?: string | null
+          planned_date?: string
+          recurrence?: string | null
+          updated_at?: string
+          vat_rate?: number | null
+        }
+        Relationships: []
+      }
+      finance_link_rules: {
+        Row: {
+          client_id: string | null
+          counterparty_normalized: string
+          created_at: string
+          id: string
+          project_id: string | null
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          counterparty_normalized: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          counterparty_normalized?: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_link_rules_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_link_rules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_link_rules_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_transactions: {
+        Row: {
+          account_code: string | null
+          amount_ht: number
+          amount_ttc: number
+          category: Database["public"]["Enums"]["finance_category"]
+          category_source: string | null
+          client_id: string | null
+          counterparty: string | null
+          counterparty_normalized: string | null
+          created_at: string
+          date: string
+          dedupe_key: string | null
+          doc_number: string | null
+          due_date: string | null
+          id: string
+          import_id: string | null
+          invoice_id: string | null
+          kind: Database["public"]["Enums"]["finance_kind"]
+          label: string | null
+          paid_date: string | null
+          project_id: string | null
+          raw: Json | null
+          source: string
+          supplier_cost_ht: number | null
+          task_id: string | null
+          updated_at: string
+          vat_amount: number
+          vat_rate: number | null
+        }
+        Insert: {
+          account_code?: string | null
+          amount_ht?: number
+          amount_ttc?: number
+          category?: Database["public"]["Enums"]["finance_category"]
+          category_source?: string | null
+          client_id?: string | null
+          counterparty?: string | null
+          counterparty_normalized?: string | null
+          created_at?: string
+          date: string
+          dedupe_key?: string | null
+          doc_number?: string | null
+          due_date?: string | null
+          id?: string
+          import_id?: string | null
+          invoice_id?: string | null
+          kind: Database["public"]["Enums"]["finance_kind"]
+          label?: string | null
+          paid_date?: string | null
+          project_id?: string | null
+          raw?: Json | null
+          source?: string
+          supplier_cost_ht?: number | null
+          task_id?: string | null
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number | null
+        }
+        Update: {
+          account_code?: string | null
+          amount_ht?: number
+          amount_ttc?: number
+          category?: Database["public"]["Enums"]["finance_category"]
+          category_source?: string | null
+          client_id?: string | null
+          counterparty?: string | null
+          counterparty_normalized?: string | null
+          created_at?: string
+          date?: string
+          dedupe_key?: string | null
+          doc_number?: string | null
+          due_date?: string | null
+          id?: string
+          import_id?: string | null
+          invoice_id?: string | null
+          kind?: Database["public"]["Enums"]["finance_kind"]
+          label?: string | null
+          paid_date?: string | null
+          project_id?: string | null
+          raw?: Json | null
+          source?: string
+          supplier_cost_ht?: number | null
+          task_id?: string | null
+          updated_at?: string
+          vat_amount?: number
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "tiime_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goal_projects: {
         Row: {
@@ -2378,6 +2672,81 @@ export type Database = {
         }
         Relationships: []
       }
+      tiime_column_mappings: {
+        Row: {
+          created_at: string
+          headers_signature: string | null
+          id: string
+          kind: Database["public"]["Enums"]["finance_kind"] | null
+          mapping: Json
+          profile_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          headers_signature?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["finance_kind"] | null
+          mapping?: Json
+          profile_name?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          headers_signature?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["finance_kind"] | null
+          mapping?: Json
+          profile_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tiime_imports: {
+        Row: {
+          created_at: string
+          duplicate_count: number
+          file_hash: string | null
+          filename: string
+          id: string
+          imported_by: string | null
+          inserted_count: number
+          notes: string | null
+          rolled_back_at: string | null
+          row_count: number
+          status: Database["public"]["Enums"]["tiime_import_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duplicate_count?: number
+          file_hash?: string | null
+          filename: string
+          id?: string
+          imported_by?: string | null
+          inserted_count?: number
+          notes?: string | null
+          rolled_back_at?: string | null
+          row_count?: number
+          status?: Database["public"]["Enums"]["tiime_import_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duplicate_count?: number
+          file_hash?: string | null
+          filename?: string
+          id?: string
+          imported_by?: string | null
+          inserted_count?: number
+          notes?: string | null
+          rolled_back_at?: string | null
+          row_count?: number
+          status?: Database["public"]["Enums"]["tiime_import_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       time_entries: {
         Row: {
           created_at: string
@@ -2434,6 +2803,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vat_adjustments: {
+        Row: {
+          adjustment: number
+          created_at: string
+          id: string
+          note: string | null
+          period_month: string
+          reserve_pct: number | null
+          updated_at: string
+        }
+        Insert: {
+          adjustment?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          period_month: string
+          reserve_pct?: number | null
+          updated_at?: string
+        }
+        Update: {
+          adjustment?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          period_month?: string
+          reserve_pct?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2587,6 +2986,13 @@ export type Database = {
         | "convertie"
         | "annulee"
       delivery_unlock_rule: "acompte" | "total" | "libre"
+      finance_category:
+        | "prestation"
+        | "achat_revente"
+        | "expense"
+        | "bank"
+        | "other"
+      finance_kind: "sale" | "expense" | "bank"
       invoice_billing_type: "forfait" | "horaire"
       invoice_status: "a_facturer" | "facturee" | "payee"
       lead_status: "nouveau" | "contacte" | "qualifie" | "perdu" | "converti"
@@ -2709,6 +3115,7 @@ export type Database = {
         | "bat"
         | "tiime"
         | "impression"
+      tiime_import_status: "pending" | "completed" | "rolled_back" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2876,6 +3283,14 @@ export const Constants = {
         "annulee",
       ],
       delivery_unlock_rule: ["acompte", "total", "libre"],
+      finance_category: [
+        "prestation",
+        "achat_revente",
+        "expense",
+        "bank",
+        "other",
+      ],
+      finance_kind: ["sale", "expense", "bank"],
       invoice_billing_type: ["forfait", "horaire"],
       invoice_status: ["a_facturer", "facturee", "payee"],
       lead_status: ["nouveau", "contacte", "qualifie", "perdu", "converti"],
@@ -3007,6 +3422,7 @@ export const Constants = {
         "tiime",
         "impression",
       ],
+      tiime_import_status: ["pending", "completed", "rolled_back", "failed"],
     },
   },
 } as const

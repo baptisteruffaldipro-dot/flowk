@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2, TrendingUp, MailQuestion, Landmark } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2, TrendingUp, MailQuestion, Landmark, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const nav: NavItem[] = [
   { to: "/bats", icon: FileCheck2, label: "BAT" },
   { to: "/ca", icon: TrendingUp, label: "Chiffre d'affaires" },
   { to: "/facturation", icon: Receipt, label: "Facturation" },
+  { to: "/finance", icon: Wallet, label: "Finance & pilotage" },
   { to: "/parametres/paiement", icon: Landmark, label: "Paiement (RIB)" },
   { to: "/telegram", icon: Send, label: "Bot Telegram" },
 ];
