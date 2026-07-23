@@ -4,25 +4,34 @@ import FinanceNav from "@/components/finance/FinanceNav";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtMoney } from "@/lib/format";
-import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, ArrowUpRight, ArrowDownRight, Sparkles } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, ArrowUpRight, ArrowDownRight, Sparkles, CalendarClock } from "lucide-react";
 
 type Stats = {
   bankBalance: number | null;
   bankAsOf: string | null;
   reservePct: number;
+  vatDue: number;
+  currentMonthLabel: string;
+  nextMonthLabel: string;
+  // Mois en cours
+  caMonth: { presta: number; achat: number };
+  expensesMonth: number;
+  fixedThisMonth: number;
+  vatCurrentMonth: number;
+  marginMonth: number;
   upcomingIn: number;
   upcomingOut: number;
-  vatDue: number;
+  // Estimation mois prochain
+  caNextEst: number;
+  expensesNextEst: number;
   vatNextMonth: number;
-  vatNextMonthLabel: string;
-  caMonth: { presta: number; achat: number };
-  caYear: { presta: number; achat: number };
-  expensesMonth: number;
-  fixedMonthly: number;
-  ccDirigeant: number;
   financingNextMonth: number;
   soldeRequisNext: number;
-  margin: number;
+  soldeFinNextEst: number;
+  // Contextuel
+  caYear: { presta: number; achat: number };
+  fixedMonthly: number;
+  ccDirigeant: number;
   alerts: string[];
 };
 
@@ -37,6 +46,7 @@ export default function FinanceDashboard() {
       const mEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
       const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+      const currentMonthLabel = now.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
       const nextMonthLabel = nextMonthStart.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
       const in30 = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
 
@@ -54,7 +64,6 @@ export default function FinanceDashboard() {
       const reservePct = Number(vat.data?.[0]?.reserve_pct ?? 0);
       const rows = (tx.data as any[]) ?? [];
 
-      const isMonth = (d: string) => d && d >= mStart;
       const isThisMonth = (d: string) => d && d >= mStart && d <= mEnd;
       const caYear = { presta: 0, achat: 0 };
       const caMonth = { presta: 0, achat: 0 };
@@ -69,12 +78,12 @@ export default function FinanceDashboard() {
         if (r.kind === "sale") {
           const bucket = r.category === "achat_revente" ? "achat" : "presta";
           caYear[bucket] += ht;
-          if (isMonth(r.date)) caMonth[bucket] += ht;
+          if (isThisMonth(r.date)) caMonth[bucket] += ht;
           vatCollected += tva;
           if (isThisMonth(r.date)) vatCollectedMonth += tva;
           if (!r.paid_date && r.due_date && r.due_date <= in30) upcomingIn += ttc;
         } else if (r.kind === "expense") {
-          if (isMonth(r.date)) expensesMonth += ht;
+          if (isThisMonth(r.date)) expensesMonth += ht;
           vatDeductible += tva;
           if (isThisMonth(r.date)) vatDeductibleMonth += tva;
           if (!r.paid_date && r.due_date && r.due_date <= in30) upcomingOut += ttc;
@@ -91,6 +100,23 @@ export default function FinanceDashboard() {
       const fixedSum = fixedRows.reduce((a, r) => a + Number(r.amount_ttc || 0), 0);
       const months = Math.max(1, Math.min(6, new Set(fixedRows.map((r) => r.date.slice(0, 7))).size));
       const fixedMonthly = months > 0 ? fixedSum / months : 0;
+
+      // Frais fixes déjà passés ce mois-ci
+      const fixedThisMonth = allRows
+        .filter((r) => r.category === "frais_fixe" && r.kind === "expense" && r.date >= mStart && r.date <= mEnd)
+        .reduce((a, r) => a + Math.abs(Number(r.amount_ttc || 0)), 0);
+
+      // Estimation mois prochain : moyenne CA / dépenses sur les 3 derniers mois complets
+      const threeAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().slice(0, 10);
+      const past3Sales = allRows.filter((r) => r.kind === "sale" && r.date >= threeAgo && r.date < mStart);
+      const past3Exp = allRows.filter((r) => r.kind === "expense" && r.date >= threeAgo && r.date < mStart);
+      const salesMonths = Math.max(1, new Set(past3Sales.map((r) => r.date.slice(0, 7))).size);
+      const expMonths = Math.max(1, new Set(past3Exp.map((r) => r.date.slice(0, 7))).size);
+      const caNextEst = past3Sales.reduce((a, r) => a + Number(r.amount_ht || 0), 0) / salesMonths;
+      const expensesNextEst = Math.max(
+        fixedMonthly,
+        past3Exp.reduce((a, r) => a + Number(r.amount_ht || 0), 0) / expMonths,
+      );
 
       // Compte courant dirigeant : apports − retraits (bank flows signés)
       const ccDirigeant = allRows
@@ -119,6 +145,7 @@ export default function FinanceDashboard() {
       }
 
       const soldeRequisNext = fixedMonthly + vatNextMonth + financingNextMonth;
+      const soldeFinNextEst = (bankAmt ?? 0) + caNextEst - expensesNextEst - vatNextMonth - financingNextMonth;
 
       const alerts: string[] = [];
       if (bankAmt != null && bankAmt - (reservePct / 100) * vatNet - upcomingOut - forecastOut - financingOut + financingIn < 0) alerts.push("Trésorerie tendue sur 30 jours");
@@ -129,19 +156,25 @@ export default function FinanceDashboard() {
         bankBalance: bankAmt,
         bankAsOf: bankDate,
         reservePct,
+        vatDue: vatNet,
+        currentMonthLabel,
+        nextMonthLabel,
+        caMonth,
+        expensesMonth,
+        fixedThisMonth,
+        vatCurrentMonth: vatNextMonth,
+        marginMonth: caMonth.presta + caMonth.achat - expensesMonth,
         upcomingIn: upcomingIn + financingIn,
         upcomingOut: upcomingOut + forecastOut + financingOut,
-        vatDue: vatNet,
+        caNextEst,
+        expensesNextEst,
         vatNextMonth,
-        vatNextMonthLabel: nextMonthLabel,
-        caMonth,
-        caYear,
-        expensesMonth,
-        fixedMonthly,
-        ccDirigeant,
         financingNextMonth,
         soldeRequisNext,
-        margin: caMonth.presta + caMonth.achat - expensesMonth,
+        soldeFinNextEst,
+        caYear,
+        fixedMonthly,
+        ccDirigeant,
         alerts,
       });
     })();
@@ -166,30 +199,48 @@ export default function FinanceDashboard() {
         </Card>
       )}
 
-      {/* Projection mois prochain */}
-      <Card className="p-4 mb-4">
-        <div className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Projection — {s.vatNextMonthLabel}</div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MiniStat label={`TVA à payer (mois en cours)`} value={fmtMoney(s.vatNextMonth)} hint="collectée − déductible du mois" />
-          <MiniStat label="Frais fixes mensuels (moy. 6 mois)" value={fmtMoney(s.fixedMonthly)} hint="catégorie « Frais fixe »" />
-          <MiniStat label="Remboursements crédits" value={fmtMoney(s.financingNextMonth)} hint="mensualités actives" />
-          <MiniStat label="Solde requis mois prochain" value={fmtMoney(s.soldeRequisNext)} accent={(s.bankBalance ?? 0) < s.soldeRequisNext ? "text-red-600" : "text-emerald-600"} hint="TVA + frais fixes + crédits" />
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Vue transverse */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <KPI icon={Wallet} label="Solde bancaire" value={fmtMoney(s.bankBalance ?? 0)} hint={s.bankAsOf ? `au ${s.bankAsOf}` : "aucun import"} />
         <KPI icon={PiggyBank} label="Argent réellement disponible" value={fmtMoney(dispo)} hint={`réserve TVA ${s.reservePct}%`} accent={dispo < 0 ? "text-red-600" : dispo < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={PiggyBank} label="Dispo après remb. compte courant" value={fmtMoney(dispoApresCC)} hint={detteDirigeant > 0 ? `dette dirigeant : ${fmtMoney(detteDirigeant)}` : "aucune dette dirigeant"} accent={dispoApresCC < 0 ? "text-red-600" : dispoApresCC < 500 ? "text-amber-600" : "text-emerald-600"} />
-        <KPI icon={ArrowUpRight} label="Encaissements 30j" value={fmtMoney(s.upcomingIn)} accent="text-emerald-600" />
-        <KPI icon={ArrowDownRight} label="Paiements 30j" value={fmtMoney(s.upcomingOut)} accent="text-red-600" />
-        <KPI icon={Percent} label="TVA estimée à payer" value={fmtMoney(s.vatDue)} />
-        <KPI icon={TrendingUp} label="CA du mois (presta)" value={fmtMoney(s.caMonth.presta)} />
-        <KPI icon={TrendingUp} label="CA du mois (achat/revente)" value={fmtMoney(s.caMonth.achat)} />
-        <KPI icon={TrendingDown} label="Dépenses du mois" value={fmtMoney(s.expensesMonth)} />
-        <KPI icon={Sparkles} label="CA année (presta)" value={fmtMoney(s.caYear.presta)} />
-        <KPI icon={Sparkles} label="CA année (achat/revente)" value={fmtMoney(s.caYear.achat)} />
-        <KPI icon={TrendingUp} label="Résultat mois (estimé)" value={fmtMoney(s.margin)} accent={s.margin < 0 ? "text-red-600" : "text-emerald-600"} />
+        <KPI icon={Percent} label="TVA estimée à payer (cumul)" value={fmtMoney(s.vatDue)} />
+      </div>
+
+      {/* Mois en cours */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <CalendarClock className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide">Mois en cours — {s.currentMonthLabel}</h2>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPI icon={TrendingUp} label="CA (presta)" value={fmtMoney(s.caMonth.presta)} />
+          <KPI icon={TrendingUp} label="CA (achat/revente)" value={fmtMoney(s.caMonth.achat)} />
+          <KPI icon={TrendingDown} label="Dépenses" value={fmtMoney(s.expensesMonth)} hint={`dont frais fixes : ${fmtMoney(s.fixedThisMonth)}`} />
+          <KPI icon={TrendingUp} label="Résultat (estimé)" value={fmtMoney(s.marginMonth)} accent={s.marginMonth < 0 ? "text-red-600" : "text-emerald-600"} />
+          <KPI icon={Percent} label="TVA du mois" value={fmtMoney(s.vatCurrentMonth)} hint="collectée − déductible" />
+          <KPI icon={ArrowUpRight} label="Encaissements 30j" value={fmtMoney(s.upcomingIn)} accent="text-emerald-600" />
+          <KPI icon={ArrowDownRight} label="Paiements 30j" value={fmtMoney(s.upcomingOut)} accent="text-red-600" />
+          <KPI icon={Sparkles} label="CA cumulé année" value={fmtMoney(s.caYear.presta + s.caYear.achat)} hint={`presta ${fmtMoney(s.caYear.presta)}`} />
+        </div>
+      </div>
+
+      {/* Estimation mois prochain */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide">Estimation — {s.nextMonthLabel}</h2>
+          <span className="text-[11px] text-muted-foreground">basé sur la moyenne des 3 derniers mois</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPI icon={TrendingUp} label="CA estimé" value={fmtMoney(s.caNextEst)} accent="text-emerald-600" />
+          <KPI icon={TrendingDown} label="Dépenses estimées" value={fmtMoney(s.expensesNextEst)} hint={`frais fixes ${fmtMoney(s.fixedMonthly)}`} />
+          <KPI icon={Percent} label="TVA à payer" value={fmtMoney(s.vatNextMonth)} hint="basée sur le mois en cours" />
+          <KPI icon={ArrowDownRight} label="Mensualités crédits" value={fmtMoney(s.financingNextMonth)} />
+          <KPI icon={AlertTriangle} label="Solde requis" value={fmtMoney(s.soldeRequisNext)} accent={(s.bankBalance ?? 0) < s.soldeRequisNext ? "text-red-600" : "text-emerald-600"} hint="frais fixes + TVA + crédits" />
+          <KPI icon={Wallet} label="Solde estimé fin de mois" value={fmtMoney(s.soldeFinNextEst)} accent={s.soldeFinNextEst < 0 ? "text-red-600" : s.soldeFinNextEst < 500 ? "text-amber-600" : "text-emerald-600"} hint="solde + CA − dépenses − TVA − crédits" />
+          <KPI icon={TrendingUp} label="Résultat estimé" value={fmtMoney(s.caNextEst - s.expensesNextEst)} accent={s.caNextEst - s.expensesNextEst < 0 ? "text-red-600" : "text-emerald-600"} />
+        </div>
       </div>
     </div>
   );
@@ -202,15 +253,5 @@ function KPI({ icon: Icon, label, value, hint, accent }: { icon: any; label: str
       <div className={`text-xl font-semibold ${accent ?? ""}`}>{value}</div>
       {hint && <div className="text-[11px] text-muted-foreground mt-0.5">{hint}</div>}
     </Card>
-  );
-}
-
-function MiniStat({ label, value, hint, accent }: { label: string; value: string; hint?: string; accent?: string }) {
-  return (
-    <div>
-      <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className={`text-lg font-semibold ${accent ?? ""}`}>{value}</div>
-      {hint && <div className="text-[11px] text-muted-foreground mt-0.5">{hint}</div>}
-    </div>
   );
 }
