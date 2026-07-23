@@ -9,23 +9,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
+import TransactionDialog, { TxRow } from "@/components/finance/TransactionDialog";
+import { Plus, Pencil } from "lucide-react";
 
 export default function FinanceTreasury() {
   const [balances, setBalances] = useState<any[]>([]);
   const [tx, setTx] = useState<any[]>([]);
   const [forecasts, setForecasts] = useState<any[]>([]);
+  const [movements, setMovements] = useState<any[]>([]);
   const [manualAmount, setManualAmount] = useState<string>("");
   const [manualDate, setManualDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<TxRow | null>(null);
 
   const load = async () => {
-    const [b, t, f] = await Promise.all([
+    const [b, t, f, m] = await Promise.all([
       supabase.from("bank_balances").select("*").order("as_of_date", { ascending: false }),
       supabase.from("finance_transactions").select("kind, amount_ttc, due_date, paid_date, date").in("kind", ["sale", "expense"]),
       supabase.from("finance_forecasts").select("*").order("planned_date"),
+      supabase.from("finance_transactions").select("*").eq("kind", "bank").order("date", { ascending: false }),
     ]);
     setBalances(b.data ?? []);
     setTx(t.data ?? []);
     setForecasts(f.data ?? []);
+    setMovements(m.data ?? []);
   };
   useEffect(() => { load(); }, []);
 
@@ -86,6 +93,30 @@ export default function FinanceTreasury() {
         </ResponsiveContainer>
       </Card>
 
+      <Card className="p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-medium">Mouvements bancaires manuels</div>
+          <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Ajouter un mouvement
+          </Button>
+        </div>
+        <div className="divide-y text-sm">
+          {movements.map((m) => (
+            <div key={m.id} className="py-2 flex items-center gap-3">
+              <div className="w-24 text-xs text-muted-foreground">{fmtDate(m.date)}</div>
+              <div className="flex-1 truncate">{m.label ?? "—"}</div>
+              <div className={`tabular-nums font-medium ${Number(m.amount_ttc) < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                {Number(m.amount_ttc) >= 0 ? "+" : ""}{fmtMoney(Number(m.amount_ttc))}
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => { setEditing(m); setOpen(true); }}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+          {movements.length === 0 && <div className="text-sm text-muted-foreground py-6 text-center">Aucun mouvement manuel.</div>}
+        </div>
+      </Card>
+
       <Card className="p-5">
         <div className="text-sm font-medium mb-3">Historique des soldes</div>
         <div className="divide-y text-sm">
@@ -98,6 +129,8 @@ export default function FinanceTreasury() {
           {balances.length === 0 && <div className="text-sm text-muted-foreground py-6 text-center">Aucun solde. Importe un fichier Tiime ou saisis-en un manuellement.</div>}
         </div>
       </Card>
+
+      <TransactionDialog open={open} onOpenChange={setOpen} kind="bank" initial={editing} onSaved={load} />
     </div>
   );
 }
