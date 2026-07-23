@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtDate, fmtMoney } from "@/lib/format";
 import TransactionDialog, { TxRow } from "@/components/finance/TransactionDialog";
 import { Plus, Pencil } from "lucide-react";
+import RecurringExpensesSuggestions from "@/components/finance/RecurringExpensesSuggestions";
 
 export default function FinanceExpenses() {
   const [rows, setRows] = useState<any[]>([]);
@@ -36,6 +37,7 @@ export default function FinanceExpenses() {
     <div className="p-6 md:p-8">
       <PageHeader title="Dépenses" description="Fournisseurs, projets, tâches — filtre à ta guise." />
       <FinanceNav />
+      <RecurringExpensesSuggestions onChange={load} />
       <div className="flex items-center gap-2 mb-4">
         <Input placeholder="Rechercher fournisseur, projet, client…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
         <div className="text-sm text-muted-foreground">Total : <span className="font-medium text-foreground">{fmtMoney(total)}</span> HT</div>
