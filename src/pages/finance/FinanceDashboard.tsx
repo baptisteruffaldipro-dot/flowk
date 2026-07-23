@@ -118,15 +118,17 @@ export default function FinanceDashboard() {
         .filter((r) => r.category === "frais_fixe" && r.kind === "expense" && r.date >= mStart && r.date <= mEnd)
         .reduce((a, r) => a + Math.abs(Number(r.amount_ttc || 0)), 0);
 
-      // Estimation mois prochain : moyenne CA / dépenses sur les 3 derniers mois complets
+      // Estimation mois prochain : moyenne CA facturé × ratio d'encaissement réel sur 3 mois
       const threeAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().slice(0, 10);
-      // CA "cash" : uniquement les ventes réellement encaissées (paid_date) sur les 3 derniers mois
-      // → évite le double-comptage avec l'encours clients (dettes clients non payées)
-      const past3Sales = allRows.filter((r) => r.kind === "sale" && !!r.paid_date && r.paid_date >= threeAgo && r.paid_date < mStart);
+      const past3SalesAll = allRows.filter((r) => r.kind === "sale" && r.date >= threeAgo && r.date < mStart);
       const past3Exp = allRows.filter((r) => r.kind === "expense" && r.date >= threeAgo && r.date < mStart);
-      const salesMonths = Math.max(1, new Set(past3Sales.map((r) => (r.paid_date as string).slice(0, 7))).size);
+      const salesMonths = Math.max(1, new Set(past3SalesAll.map((r) => (r.date as string).slice(0, 7))).size);
       const expMonths = Math.max(1, new Set(past3Exp.map((r) => r.date.slice(0, 7))).size);
-      const caNextEst = past3Sales.reduce((a, r) => a + Number(r.amount_ht || 0), 0) / salesMonths;
+      const invoicedHt = past3SalesAll.reduce((a, r) => a + Number(r.amount_ht || 0), 0);
+      const invoicedTtc = past3SalesAll.reduce((a, r) => a + Number(r.amount_ttc || 0), 0);
+      const paidTtc = past3SalesAll.filter((r) => !!r.paid_date).reduce((a, r) => a + Number(r.amount_ttc || 0), 0);
+      const collectionRatio = invoicedTtc > 0 ? Math.min(1, paidTtc / invoicedTtc) : 1;
+      const caNextEst = (invoicedHt / salesMonths) * collectionRatio;
       const expensesNextEst = Math.max(
         fixedMonthly,
         past3Exp.reduce((a, r) => a + Number(r.amount_ht || 0), 0) / expMonths,
@@ -144,6 +146,9 @@ export default function FinanceDashboard() {
       const nmStartISO = nextMonthStart.toISOString().slice(0, 10);
       const nmEndISO = nextMonthEnd.toISOString().slice(0, 10);
       for (const f of (financings.data ?? []) as any[]) {
+        // On ignore les dettes fournisseurs (kind='other') : elles sont déjà
+        // agrégées dans "Dettes fournisseurs" et souvent dans les frais fixes.
+        if (f.kind === "other") continue;
         if (f.received_date > now.toISOString().slice(0, 10) && f.received_date <= in30ISO) {
           financingIn += Number(f.principal_amount || 0);
         }
@@ -169,8 +174,12 @@ export default function FinanceDashboard() {
         }));
       const supplierDebt = supplierDebts.reduce((a, d) => a + d.remaining, 0);
 
-      const soldeRequisNext = fixedMonthly + vatNextMonth + financingNextMonth;
-      const soldeFinNextEst = (bankAmt ?? 0) + caNextEst - expensesNextEst - vatNextMonth - financingNextMonth;
+      // Mensualité loyer/fournisseur du mois prochain (au moins 1 échéance si dette ouverte)
+      const supplierNextMonth = ((financings.data ?? []) as any[])
+        .filter((f) => f.kind === "other" && Number(f.remaining_installments) > 0)
+        .reduce((a, f) => a + Number(f.monthly_payment || 0), 0);
+      const soldeRequisNext = fixedMonthly + vatNextMonth + financingNextMonth + supplierNextMonth;
+      const soldeFinNextEst = (bankAmt ?? 0) + caNextEst - expensesNextEst - vatNextMonth - financingNextMonth - supplierNextMonth;
 
       // Encours clients (dernier snapshot par client)
       const seen = new Set<string>();
@@ -200,6 +209,9 @@ export default function FinanceDashboard() {
       if (bankAmt != null && bankAmt - (reservePct / 100) * vatNet - upcomingOut - forecastOut - financingOut + financingIn < 0) alerts.push("Trésorerie tendue sur 30 jours");
       if (vatNet > 3000) alerts.push(`TVA importante à provisionner : ${fmtMoney(vatNet)}`);
       if (bankAmt != null && bankAmt < soldeRequisNext) alerts.push(`Solde insuffisant pour couvrir ${nextMonthLabel} (besoin ${fmtMoney(soldeRequisNext)})`);
+      for (const d of supplierDebts) {
+        if (d.installments >= 2) alerts.push(`${d.label} — ${d.installments} échéances en retard (${fmtMoney(d.remaining)})`);
+      }
 
       setS({
         bankBalance: bankAmt,
