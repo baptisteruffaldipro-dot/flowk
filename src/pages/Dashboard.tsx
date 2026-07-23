@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { STATUS_LABEL, PRINT_STATUS_LABEL, PROJECT_TYPE_LABEL } from "@/lib/format";
 import { ArrowRight, Sun, AlertTriangle, Calendar, Video, MapPin, Phone, CalendarDays, Printer, FolderKanban, UserPlus } from "lucide-react";
 import QuickCreate from "@/components/QuickCreate";
+import VacationWindows from "@/components/finance/VacationWindows";
 
 type Task = { id: string; title: string; status: string; deadline: string | null; clients?: { name: string } | null };
 type Order = { id: string; description: string; status: string; clients?: { name: string } | null };
@@ -151,6 +152,10 @@ export default function Dashboard() {
             );
           })}
         </Column>
+      </div>
+
+      <div className="mt-6">
+        <VacationWindows />
       </div>
     </div>
   );

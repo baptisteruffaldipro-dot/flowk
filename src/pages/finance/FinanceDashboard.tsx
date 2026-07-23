@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CashflowProjection from "@/components/finance/CashflowProjection";
-import VacationWindows from "@/components/finance/VacationWindows";
 
 type Stats = {
   bankBalance: number | null;
@@ -427,10 +426,6 @@ export default function FinanceDashboard() {
 
       <div className="mt-6">
         <CashflowProjection />
-      </div>
-
-      <div className="mt-6">
-        <VacationWindows />
       </div>
     </div>
   );
