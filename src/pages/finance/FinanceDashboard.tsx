@@ -423,6 +423,10 @@ export default function FinanceDashboard() {
           <KPI icon={TrendingUp} label="Résultat estimé" value={fmtMoney(s.caNextEst - s.expensesNextEst)} accent={s.caNextEst - s.expensesNextEst < 0 ? "text-red-600" : "text-emerald-600"} />
         </div>
       </div>
+
+      <div className="mt-6">
+        <CashflowProjection />
+      </div>
     </div>
   );
 }
