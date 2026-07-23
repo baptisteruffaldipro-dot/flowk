@@ -1039,6 +1039,8 @@ export type Database = {
         Row: {
           account_code: string | null
           amount_ht: number
+          amount_ht_achat: number | null
+          amount_ht_presta: number | null
           amount_ttc: number
           category: Database["public"]["Enums"]["finance_category"]
           category_source: string | null
@@ -1059,6 +1061,7 @@ export type Database = {
           project_id: string | null
           raw: Json | null
           source: string
+          split_reviewed: boolean
           supplier_cost_ht: number | null
           task_id: string | null
           updated_at: string
@@ -1068,6 +1071,8 @@ export type Database = {
         Insert: {
           account_code?: string | null
           amount_ht?: number
+          amount_ht_achat?: number | null
+          amount_ht_presta?: number | null
           amount_ttc?: number
           category?: Database["public"]["Enums"]["finance_category"]
           category_source?: string | null
@@ -1088,6 +1093,7 @@ export type Database = {
           project_id?: string | null
           raw?: Json | null
           source?: string
+          split_reviewed?: boolean
           supplier_cost_ht?: number | null
           task_id?: string | null
           updated_at?: string
@@ -1097,6 +1103,8 @@ export type Database = {
         Update: {
           account_code?: string | null
           amount_ht?: number
+          amount_ht_achat?: number | null
+          amount_ht_presta?: number | null
           amount_ttc?: number
           category?: Database["public"]["Enums"]["finance_category"]
           category_source?: string | null
@@ -1117,6 +1125,7 @@ export type Database = {
           project_id?: string | null
           raw?: Json | null
           source?: string
+          split_reviewed?: boolean
           supplier_cost_ht?: number | null
           task_id?: string | null
           updated_at?: string
