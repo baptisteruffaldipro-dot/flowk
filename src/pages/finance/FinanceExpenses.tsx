@@ -3,18 +3,24 @@ import PageHeader from "@/components/PageHeader";
 import FinanceNav from "@/components/finance/FinanceNav";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtDate, fmtMoney } from "@/lib/format";
+import TransactionDialog, { TxRow } from "@/components/finance/TransactionDialog";
+import { Plus, Pencil } from "lucide-react";
 
 export default function FinanceExpenses() {
   const [rows, setRows] = useState<any[]>([]);
   const [q, setQ] = useState("");
-  useEffect(() => { (async () => {
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<TxRow | null>(null);
+  const load = async () => {
     const { data } = await supabase.from("finance_transactions")
       .select("*, clients(name), projects(name), tasks(title)")
       .eq("kind", "expense").order("date", { ascending: false });
     setRows(data ?? []);
-  })(); }, []);
+  };
+  useEffect(() => { load(); }, []);
 
   const filtered = useMemo(() => {
     const term = q.toLowerCase();
@@ -33,6 +39,11 @@ export default function FinanceExpenses() {
       <div className="flex items-center gap-2 mb-4">
         <Input placeholder="Rechercher fournisseur, projet, client…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
         <div className="text-sm text-muted-foreground">Total : <span className="font-medium text-foreground">{fmtMoney(total)}</span> HT</div>
+        <div className="ml-auto">
+          <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Ajouter une dépense
+          </Button>
+        </div>
       </div>
       <Card className="p-0 overflow-hidden">
         <div className="overflow-x-auto">
@@ -46,6 +57,7 @@ export default function FinanceExpenses() {
                 <th className="text-right px-3 py-2">HT</th>
                 <th className="text-right px-3 py-2">TVA</th>
                 <th className="text-right px-3 py-2">TTC</th>
+                <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody>
@@ -58,13 +70,19 @@ export default function FinanceExpenses() {
                   <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.amount_ht || 0))}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtMoney(Number(r.vat_amount || 0))}</td>
                   <td className="px-3 py-2 text-right tabular-nums font-medium">{fmtMoney(Number(r.amount_ttc || 0))}</td>
+                  <td className="px-3 py-2 text-right">
+                    <Button size="icon" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={7} className="px-3 py-8 text-center text-sm text-muted-foreground">Aucune dépense</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={8} className="px-3 py-8 text-center text-sm text-muted-foreground">Aucune dépense</td></tr>}
             </tbody>
           </table>
         </div>
       </Card>
+      <TransactionDialog open={open} onOpenChange={setOpen} kind="expense" initial={editing} onSaved={load} />
     </div>
   );
 }
