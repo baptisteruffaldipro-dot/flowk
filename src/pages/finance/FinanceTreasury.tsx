@@ -134,10 +134,39 @@ export default function FinanceTreasury() {
     return data;
   }, [balances, tx, forecasts, financings]);
 
+  const compteCourant = useMemo(() => {
+    const apports = movements.filter((m: any) => m.category === "apport_perso").reduce((s, m) => s + Number(m.amount_ttc || 0), 0);
+    const retraits = movements.filter((m: any) => m.category === "retrait_perso").reduce((s, m) => s + Number(m.amount_ttc || 0), 0);
+    return { apports, retraits, solde: apports + retraits };
+  }, [movements]);
+
+  const soldeActuel = balances[0]?.amount ?? 0;
+  const soldeActuelDate = balances[0]?.as_of_date;
+
   return (
     <div className="p-6 md:p-8">
       <PageHeader title="Trésorerie" description="Vue solde + prévisions 30/60/90 jours et 6 mois." />
       <FinanceNav />
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="p-5">
+          <div className="text-xs text-muted-foreground">Solde bancaire</div>
+          <div className="text-2xl font-semibold tabular-nums mt-1">{fmtMoney(Number(soldeActuel))}</div>
+          {soldeActuelDate && <div className="text-[11px] text-muted-foreground mt-1">au {fmtDate(soldeActuelDate)}</div>}
+        </Card>
+        <Card className="p-5">
+          <div className="text-xs text-muted-foreground">Compte courant dirigeant (dette envers moi-même)</div>
+          <div className={`text-2xl font-semibold tabular-nums mt-1 ${compteCourant.solde >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmtMoney(compteCourant.solde)}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">
+            Apports {fmtMoney(compteCourant.apports)} · Retraits {fmtMoney(compteCourant.retraits)}
+          </div>
+        </Card>
+        <Card className="p-5">
+          <div className="text-xs text-muted-foreground">Financements actifs</div>
+          <div className="text-2xl font-semibold tabular-nums mt-1">{financings.filter(f => f.active).length}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">Crédits & apports en compte courant</div>
+        </Card>
+      </div>
 
       <Card className="p-5 mb-6">
         <div className="text-sm font-medium mb-2">Ajouter un solde manuel</div>
