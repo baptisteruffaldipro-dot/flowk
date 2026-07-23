@@ -50,6 +50,7 @@ import NotFound from "./pages/NotFound";
 import FinanceDashboard from "./pages/finance/FinanceDashboard";
 import FinanceImport from "./pages/finance/FinanceImport";
 import FinanceCA from "./pages/finance/FinanceCA";
+import FinanceSplit from "./pages/finance/FinanceSplit";
 import FinanceExpenses from "./pages/finance/FinanceExpenses";
 import FinanceVAT from "./pages/finance/FinanceVAT";
 import FinanceTreasury from "./pages/finance/FinanceTreasury";
@@ -113,6 +114,7 @@ const App = () => (
               <Route path="/finance/import" element={<FinanceImport />} />
               <Route path="/finance/tresorerie" element={<FinanceTreasury />} />
               <Route path="/finance/ca" element={<FinanceCA />} />
+              <Route path="/finance/split" element={<FinanceSplit />} />
               <Route path="/finance/depenses" element={<FinanceExpenses />} />
               <Route path="/finance/tva" element={<FinanceVAT />} />
               <Route path="/finance/previsions" element={<FinanceForecasts />} />
