@@ -520,6 +520,53 @@ export type Database = {
           },
         ]
       }
+      client_receivables: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          invoiced_ttc: number
+          notes: string | null
+          outstanding_ttc: number
+          paid_ttc: number
+          snapshot_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          invoiced_ttc?: number
+          notes?: string | null
+          outstanding_ttc?: number
+          paid_ttc?: number
+          snapshot_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          invoiced_ttc?: number
+          notes?: string | null
+          outstanding_ttc?: number
+          paid_ttc?: number
+          snapshot_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_receivables_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_request_messages: {
         Row: {
           author: string

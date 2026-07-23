@@ -4,7 +4,7 @@ import FinanceNav from "@/components/finance/FinanceNav";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtMoney } from "@/lib/format";
-import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, ArrowUpRight, ArrowDownRight, Sparkles, CalendarClock } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, ArrowUpRight, ArrowDownRight, Sparkles, CalendarClock, Users } from "lucide-react";
 
 type Stats = {
   bankBalance: number | null;
@@ -33,6 +33,8 @@ type Stats = {
   fixedMonthly: number;
   ccDirigeant: number;
   alerts: string[];
+  receivables: { client: string; invoiced: number; paid: number; outstanding: number; status: string }[];
+  receivablesTotal: number;
 };
 
 export default function FinanceDashboard() {
@@ -50,13 +52,17 @@ export default function FinanceDashboard() {
       const nextMonthLabel = nextMonthStart.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
       const in30 = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
 
-      const [bank, tx, vat, forecasts, financings, allTx] = await Promise.all([
+      const [bank, tx, vat, forecasts, financings, allTx, receivables] = await Promise.all([
         supabase.from("bank_balances").select("amount, as_of_date").order("as_of_date", { ascending: false }).limit(1),
         supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ttc, vat_amount, date, due_date, paid_date").gte("date", yStart),
         supabase.from("vat_adjustments").select("adjustment, reserve_pct").order("period_month", { ascending: false }).limit(1),
         supabase.from("finance_forecasts").select("amount_ttc, planned_date, kind").gte("planned_date", now.toISOString().slice(0, 10)).lte("planned_date", in30),
         (supabase as any).from("finance_financings").select("*").eq("active", true),
         supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ttc, vat_amount, date"),
+        (supabase as any)
+          .from("client_receivables")
+          .select("snapshot_date, invoiced_ttc, paid_ttc, outstanding_ttc, status, clients(name)")
+          .order("snapshot_date", { ascending: false }),
       ]);
 
       const bankAmt = bank.data?.[0]?.amount ?? null;
@@ -147,7 +153,29 @@ export default function FinanceDashboard() {
       const soldeRequisNext = fixedMonthly + vatNextMonth + financingNextMonth;
       const soldeFinNextEst = (bankAmt ?? 0) + caNextEst - expensesNextEst - vatNextMonth - financingNextMonth;
 
+      // Encours clients (dernier snapshot par client)
+      const seen = new Set<string>();
+      const recRows: any[] = (receivables.data as any[]) ?? [];
+      const latestPerClient = recRows.filter((r) => {
+        const name = r.clients?.name || "—";
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+      });
+      const recList = latestPerClient
+        .map((r) => ({
+          client: r.clients?.name || "—",
+          invoiced: Number(r.invoiced_ttc || 0),
+          paid: Number(r.paid_ttc || 0),
+          outstanding: Number(r.outstanding_ttc || 0),
+          status: r.status || "en_retard",
+        }))
+        .filter((r) => r.outstanding > 0)
+        .sort((a, b) => b.outstanding - a.outstanding);
+      const receivablesTotal = recList.reduce((a, r) => a + r.outstanding, 0);
+
       const alerts: string[] = [];
+      if (receivablesTotal > 0) alerts.push(`Encours clients en retard : ${fmtMoney(receivablesTotal)}`);
       if (bankAmt != null && bankAmt - (reservePct / 100) * vatNet - upcomingOut - forecastOut - financingOut + financingIn < 0) alerts.push("Trésorerie tendue sur 30 jours");
       if (vatNet > 3000) alerts.push(`TVA importante à provisionner : ${fmtMoney(vatNet)}`);
       if (bankAmt != null && bankAmt < soldeRequisNext) alerts.push(`Solde insuffisant pour couvrir ${nextMonthLabel} (besoin ${fmtMoney(soldeRequisNext)})`);
@@ -176,6 +204,8 @@ export default function FinanceDashboard() {
         fixedMonthly,
         ccDirigeant,
         alerts,
+        receivables: recList,
+        receivablesTotal,
       });
     })();
   }, []);
@@ -205,7 +235,53 @@ export default function FinanceDashboard() {
         <KPI icon={PiggyBank} label="Argent réellement disponible" value={fmtMoney(dispo)} hint={`réserve TVA ${s.reservePct}%`} accent={dispo < 0 ? "text-red-600" : dispo < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={PiggyBank} label="Dispo après remb. compte courant" value={fmtMoney(dispoApresCC)} hint={detteDirigeant > 0 ? `dette dirigeant : ${fmtMoney(detteDirigeant)}` : "aucune dette dirigeant"} accent={dispoApresCC < 0 ? "text-red-600" : dispoApresCC < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={Percent} label="TVA estimée à payer (cumul)" value={fmtMoney(s.vatDue)} />
+        <KPI icon={Users} label="Encours clients" value={fmtMoney(s.receivablesTotal)} hint={`${s.receivables.length} client(s) en retard`} accent={s.receivablesTotal > 0 ? "text-red-600" : "text-emerald-600"} />
       </div>
+
+      {/* Encours clients */}
+      {s.receivables.length > 0 && (
+        <Card className="p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide">Dettes clients — encours</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs text-muted-foreground">
+                <tr className="border-b">
+                  <th className="text-left py-2">Client</th>
+                  <th className="text-right py-2">Facturé TTC</th>
+                  <th className="text-right py-2">Encaissé</th>
+                  <th className="text-right py-2">Encours</th>
+                  <th className="text-right py-2">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {s.receivables.map((r) => (
+                  <tr key={r.client} className="border-b last:border-0">
+                    <td className="py-2 font-medium">{r.client}</td>
+                    <td className="py-2 text-right">{fmtMoney(r.invoiced)}</td>
+                    <td className="py-2 text-right">{fmtMoney(r.paid)}</td>
+                    <td className="py-2 text-right font-semibold">{fmtMoney(r.outstanding)}</td>
+                    <td className="py-2 text-right">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${r.status === "en_retard" ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"}`}>
+                        {r.status === "en_retard" ? "En retard" : "OK"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="font-semibold">
+                  <td className="py-2">Total</td>
+                  <td className="py-2 text-right">{fmtMoney(s.receivables.reduce((a, r) => a + r.invoiced, 0))}</td>
+                  <td className="py-2 text-right">{fmtMoney(s.receivables.reduce((a, r) => a + r.paid, 0))}</td>
+                  <td className="py-2 text-right text-red-600">{fmtMoney(s.receivablesTotal)}</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* Mois en cours */}
       <div className="mb-6">
