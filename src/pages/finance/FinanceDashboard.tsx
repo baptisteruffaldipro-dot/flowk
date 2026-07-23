@@ -35,6 +35,8 @@ type Stats = {
   caYear: { presta: number; achat: number };
   fixedMonthly: number;
   ccDirigeant: number;
+  supplierDebt: number;
+  supplierDebts: { label: string; remaining: number; monthly: number; installments: number }[];
   alerts: string[];
   receivables: { id: string; client: string; invoiced: number; paid: number; outstanding: number; status: string; expected_payment_date: string | null }[];
   receivablesTotal: number;
@@ -156,6 +158,17 @@ export default function FinanceDashboard() {
         }
       }
 
+      // Dettes fournisseurs (kind='other' → loyers, factures en retard, etc.)
+      const supplierDebts = ((financings.data ?? []) as any[])
+        .filter((f) => f.kind === "other" && Number(f.remaining_installments) > 0)
+        .map((f) => ({
+          label: f.label as string,
+          remaining: Number(f.monthly_payment) * Number(f.remaining_installments),
+          monthly: Number(f.monthly_payment),
+          installments: Number(f.remaining_installments),
+        }));
+      const supplierDebt = supplierDebts.reduce((a, d) => a + d.remaining, 0);
+
       const soldeRequisNext = fixedMonthly + vatNextMonth + financingNextMonth;
       const soldeFinNextEst = (bankAmt ?? 0) + caNextEst - expensesNextEst - vatNextMonth - financingNextMonth;
 
@@ -211,6 +224,8 @@ export default function FinanceDashboard() {
         caYear,
         fixedMonthly,
         ccDirigeant,
+        supplierDebt,
+        supplierDebts,
         alerts,
         receivables: recList,
         receivablesTotal,
@@ -229,7 +244,8 @@ export default function FinanceDashboard() {
 
   const dispo = (s.bankBalance ?? 0) - (s.reservePct / 100) * s.vatDue - s.upcomingOut;
   const detteDirigeant = Math.max(0, s.ccDirigeant);
-  const dispoApresCC = dispo - detteDirigeant;
+  const detteTotale = detteDirigeant + s.supplierDebt;
+  const dispoApresCC = dispo - detteDirigeant - s.supplierDebt;
 
   return (
     <div className="p-6 md:p-8">
@@ -250,7 +266,7 @@ export default function FinanceDashboard() {
         <KPI icon={PiggyBank} label="Argent réellement disponible" value={fmtMoney(dispo)} hint={`réserve TVA ${s.reservePct}%`} accent={dispo < 0 ? "text-red-600" : dispo < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={PiggyBank} label="Dispo après remb. compte courant" value={fmtMoney(dispoApresCC)} hint="après remboursement" accent={dispoApresCC < 0 ? "text-red-600" : dispoApresCC < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={Percent} label="Prochaine TVA estimée à payer" value={fmtMoney(s.vatNextMonth)} hint="mois prochain" />
-        <KPI icon={Banknote} label="Dette en cours" value={fmtMoney(detteDirigeant)} hint="compte courant dirigeant" accent={detteDirigeant > 0 ? "text-red-600" : "text-emerald-600"} />
+        <KPI icon={Banknote} label="Dette en cours" value={fmtMoney(detteTotale)} hint={`${fmtMoney(detteDirigeant)} compte courant + ${fmtMoney(s.supplierDebt)} fournisseurs`} accent={detteTotale > 0 ? "text-red-600" : "text-emerald-600"} />
         <KPI icon={Users} label="Encours clients" value={fmtMoney(s.receivablesTotal)} hint={`${s.receivables.length} client(s) en retard`} accent={s.receivablesTotal > 0 ? "text-red-600" : "text-emerald-600"} />
       </div>
 
@@ -302,6 +318,44 @@ export default function FinanceDashboard() {
                   <td className="py-2 text-right text-red-600">{fmtMoney(s.receivablesTotal)}</td>
                   <td></td>
                   <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Dettes fournisseurs (loyers, factures en retard, ...) */}
+      {s.supplierDebts.length > 0 && (
+        <Card className="p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Banknote className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide">Dettes fournisseurs — restant dû</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs text-muted-foreground">
+                <tr className="border-b">
+                  <th className="text-left py-2">Libellé</th>
+                  <th className="text-right py-2">Mensualité</th>
+                  <th className="text-right py-2">Échéances restantes</th>
+                  <th className="text-right py-2">Restant dû</th>
+                </tr>
+              </thead>
+              <tbody>
+                {s.supplierDebts.map((d) => (
+                  <tr key={d.label} className="border-b last:border-0">
+                    <td className="py-2 font-medium">{d.label}</td>
+                    <td className="py-2 text-right">{fmtMoney(d.monthly)}</td>
+                    <td className="py-2 text-right">{d.installments}</td>
+                    <td className="py-2 text-right font-semibold text-red-600">{fmtMoney(d.remaining)}</td>
+                  </tr>
+                ))}
+                <tr className="font-semibold">
+                  <td className="py-2">Total</td>
+                  <td></td>
+                  <td></td>
+                  <td className="py-2 text-right text-red-600">{fmtMoney(s.supplierDebt)}</td>
                 </tr>
               </tbody>
             </table>
