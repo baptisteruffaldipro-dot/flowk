@@ -105,9 +105,13 @@ export function normalizeRow(row: Record<string, any>, mapping: ColumnMapping): 
     const key = Object.keys(mapping).find((k) => mapping[k] === field);
     return key ? row[key] : null;
   };
-  const ht = toNumber(get("amount_ht"));
-  const tva = toNumber(get("vat_amount"));
-  let ttc = toNumber(get("amount_ttc"));
+  const sumOf = (field: CanonicalField) =>
+    Object.keys(mapping)
+      .filter((k) => mapping[k] === field)
+      .reduce((acc, k) => acc + toNumber(row[k]), 0);
+  const ht = sumOf("amount_ht");
+  const tva = sumOf("vat_amount");
+  let ttc = sumOf("amount_ttc");
   if (!ttc && (ht || tva)) ttc = ht + tva;
   return {
     date: toDate(get("date")),
