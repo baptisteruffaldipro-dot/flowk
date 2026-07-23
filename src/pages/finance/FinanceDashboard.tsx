@@ -114,9 +114,11 @@ export default function FinanceDashboard() {
 
       // Estimation mois prochain : moyenne CA / dépenses sur les 3 derniers mois complets
       const threeAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().slice(0, 10);
-      const past3Sales = allRows.filter((r) => r.kind === "sale" && r.date >= threeAgo && r.date < mStart);
+      // CA "cash" : uniquement les ventes réellement encaissées (paid_date) sur les 3 derniers mois
+      // → évite le double-comptage avec l'encours clients (dettes clients non payées)
+      const past3Sales = allRows.filter((r) => r.kind === "sale" && !!r.paid_date && r.paid_date >= threeAgo && r.paid_date < mStart);
       const past3Exp = allRows.filter((r) => r.kind === "expense" && r.date >= threeAgo && r.date < mStart);
-      const salesMonths = Math.max(1, new Set(past3Sales.map((r) => r.date.slice(0, 7))).size);
+      const salesMonths = Math.max(1, new Set(past3Sales.map((r) => (r.paid_date as string).slice(0, 7))).size);
       const expMonths = Math.max(1, new Set(past3Exp.map((r) => r.date.slice(0, 7))).size);
       const caNextEst = past3Sales.reduce((a, r) => a + Number(r.amount_ht || 0), 0) / salesMonths;
       const expensesNextEst = Math.max(
@@ -310,7 +312,7 @@ export default function FinanceDashboard() {
           <span className="text-[11px] text-muted-foreground">basé sur la moyenne des 3 derniers mois</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KPI icon={TrendingUp} label="CA estimé" value={fmtMoney(s.caNextEst)} accent="text-emerald-600" />
+          <KPI icon={TrendingUp} label="CA encaissé estimé" value={fmtMoney(s.caNextEst)} accent="text-emerald-600" hint="moyenne des ventes réellement encaissées (hors dettes clients)" />
           <KPI icon={TrendingDown} label="Dépenses estimées" value={fmtMoney(s.expensesNextEst)} hint={`frais fixes ${fmtMoney(s.fixedMonthly)}`} />
           <KPI icon={Percent} label="TVA à payer" value={fmtMoney(s.vatNextMonth)} hint="basée sur le mois en cours" />
           <KPI icon={ArrowDownRight} label="Mensualités crédits" value={fmtMoney(s.financingNextMonth)} />
