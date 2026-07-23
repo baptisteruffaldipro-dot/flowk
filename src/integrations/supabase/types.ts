@@ -843,6 +843,57 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_financings: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          first_payment_date: string | null
+          id: string
+          interest_rate: number | null
+          kind: Database["public"]["Enums"]["financing_kind"]
+          label: string
+          monthly_payment: number
+          note: string | null
+          principal_amount: number
+          received_date: string
+          remaining_installments: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          first_payment_date?: string | null
+          id?: string
+          interest_rate?: number | null
+          kind?: Database["public"]["Enums"]["financing_kind"]
+          label: string
+          monthly_payment?: number
+          note?: string | null
+          principal_amount?: number
+          received_date?: string
+          remaining_installments?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          first_payment_date?: string | null
+          id?: string
+          interest_rate?: number | null
+          kind?: Database["public"]["Enums"]["financing_kind"]
+          label?: string
+          monthly_payment?: number
+          note?: string | null
+          principal_amount?: number
+          received_date?: string
+          remaining_installments?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       finance_forecasts: {
         Row: {
           amount_ttc: number
@@ -2996,6 +3047,7 @@ export type Database = {
         | "bank"
         | "other"
       finance_kind: "sale" | "expense" | "bank"
+      financing_kind: "credit" | "shareholder_loan" | "other"
       invoice_billing_type: "forfait" | "horaire"
       invoice_status: "a_facturer" | "facturee" | "payee"
       lead_status: "nouveau" | "contacte" | "qualifie" | "perdu" | "converti"
@@ -3294,6 +3346,7 @@ export const Constants = {
         "other",
       ],
       finance_kind: ["sale", "expense", "bank"],
+      financing_kind: ["credit", "shareholder_loan", "other"],
       invoice_billing_type: ["forfait", "horaire"],
       invoice_status: ["a_facturer", "facturee", "payee"],
       lead_status: ["nouveau", "contacte", "qualifie", "perdu", "converti"],
