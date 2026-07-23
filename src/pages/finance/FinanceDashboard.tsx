@@ -233,8 +233,9 @@ export default function FinanceDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <KPI icon={Wallet} label="Solde bancaire" value={fmtMoney(s.bankBalance ?? 0)} hint={s.bankAsOf ? `au ${s.bankAsOf}` : "aucun import"} />
         <KPI icon={PiggyBank} label="Argent réellement disponible" value={fmtMoney(dispo)} hint={`réserve TVA ${s.reservePct}%`} accent={dispo < 0 ? "text-red-600" : dispo < 500 ? "text-amber-600" : "text-emerald-600"} />
-        <KPI icon={PiggyBank} label="Dispo après remb. compte courant" value={fmtMoney(dispoApresCC)} hint={detteDirigeant > 0 ? `dette dirigeant : ${fmtMoney(detteDirigeant)}` : "aucune dette dirigeant"} accent={dispoApresCC < 0 ? "text-red-600" : dispoApresCC < 500 ? "text-amber-600" : "text-emerald-600"} />
+        <KPI icon={PiggyBank} label="Dispo après remb. compte courant" value={fmtMoney(dispoApresCC)} hint="après remboursement" accent={dispoApresCC < 0 ? "text-red-600" : dispoApresCC < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={Percent} label="Prochaine TVA estimée à payer" value={fmtMoney(s.vatNextMonth)} hint="mois prochain" />
+        <KPI icon={Banknote} label="Dette en cours" value={fmtMoney(detteDirigeant)} hint="compte courant dirigeant" accent={detteDirigeant > 0 ? "text-red-600" : "text-emerald-600"} />
         <KPI icon={Users} label="Encours clients" value={fmtMoney(s.receivablesTotal)} hint={`${s.receivables.length} client(s) en retard`} accent={s.receivablesTotal > 0 ? "text-red-600" : "text-emerald-600"} />
       </div>
 
