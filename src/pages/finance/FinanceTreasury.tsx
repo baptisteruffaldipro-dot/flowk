@@ -10,7 +10,37 @@ import { fmtDate, fmtMoney } from "@/lib/format";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import TransactionDialog, { TxRow } from "@/components/finance/TransactionDialog";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Trash2, Landmark } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type Financing = {
+  id?: string;
+  kind: "credit" | "shareholder_loan" | "other";
+  label: string;
+  principal_amount: number;
+  received_date: string;
+  monthly_payment: number;
+  remaining_installments: number;
+  first_payment_date: string | null;
+  interest_rate: number | null;
+  note: string | null;
+  active: boolean;
+};
+
+const FIN_KIND_LABEL: Record<Financing["kind"], string> = {
+  credit: "Crédit de trésorerie",
+  shareholder_loan: "Apport en compte courant",
+  other: "Autre financement",
+};
+
+function emptyFinancing(): Financing {
+  return {
+    kind: "credit", label: "", principal_amount: 0,
+    received_date: new Date().toISOString().slice(0, 10),
+    monthly_payment: 0, remaining_installments: 0,
+    first_payment_date: null, interest_rate: null, note: null, active: true,
+  };
+}
 
 export default function FinanceTreasury() {
   const [balances, setBalances] = useState<any[]>([]);
@@ -21,20 +51,43 @@ export default function FinanceTreasury() {
   const [manualDate, setManualDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TxRow | null>(null);
+  const [financings, setFinancings] = useState<Financing[]>([]);
+  const [finForm, setFinForm] = useState<Financing | null>(null);
 
   const load = async () => {
-    const [b, t, f, m] = await Promise.all([
+    const [b, t, f, m, fin] = await Promise.all([
       supabase.from("bank_balances").select("*").order("as_of_date", { ascending: false }),
       supabase.from("finance_transactions").select("kind, amount_ttc, due_date, paid_date, date").in("kind", ["sale", "expense"]),
       supabase.from("finance_forecasts").select("*").order("planned_date"),
       supabase.from("finance_transactions").select("*").eq("kind", "bank").order("date", { ascending: false }),
+      (supabase as any).from("finance_financings").select("*").order("received_date", { ascending: false }),
     ]);
     setBalances(b.data ?? []);
     setTx(t.data ?? []);
     setForecasts(f.data ?? []);
     setMovements(m.data ?? []);
+    setFinancings((fin.data ?? []) as Financing[]);
   };
   useEffect(() => { load(); }, []);
+
+  const saveFinancing = async () => {
+    if (!finForm) return;
+    if (!finForm.label) { toast.error("Nom obligatoire"); return; }
+    const payload = { ...finForm };
+    if (finForm.id) {
+      await (supabase as any).from("finance_financings").update(payload).eq("id", finForm.id);
+    } else {
+      await (supabase as any).from("finance_financings").insert(payload);
+    }
+    toast.success("Enregistré");
+    setFinForm(null);
+    load();
+  };
+  const removeFinancing = async (id: string) => {
+    if (!confirm("Supprimer ce financement ?")) return;
+    await (supabase as any).from("finance_financings").delete().eq("id", id);
+    load();
+  };
 
   const addManual = async () => {
     if (!manualAmount || !manualDate) return;
@@ -56,6 +109,21 @@ export default function FinanceTreasury() {
       ...forecasts.filter((f: any) => f.planned_date > startDate).map((f: any) => ({
         date: f.planned_date, delta: f.kind === "income" ? Number(f.amount_ttc) : -Number(f.amount_ttc),
       })),
+      ...financings.filter((f) => f.active).flatMap((f) => {
+        const items: { date: string; delta: number }[] = [];
+        if (f.received_date > startDate && Number(f.principal_amount) > 0) {
+          items.push({ date: f.received_date, delta: Number(f.principal_amount) });
+        }
+        if (Number(f.monthly_payment) > 0 && f.first_payment_date && f.remaining_installments > 0) {
+          const first = new Date(f.first_payment_date);
+          for (let i = 0; i < f.remaining_installments; i++) {
+            const d = new Date(first); d.setMonth(d.getMonth() + i);
+            const iso = d.toISOString().slice(0, 10);
+            if (iso > startDate) items.push({ date: iso, delta: -Number(f.monthly_payment) });
+          }
+        }
+        return items;
+      }),
     ].sort((a, b) => a.date.localeCompare(b.date));
     const horizon = new Date(startDate); horizon.setDate(horizon.getDate() + 180);
     for (const e of events) {
@@ -64,7 +132,7 @@ export default function FinanceTreasury() {
       data.push({ day: e.date, solde: running });
     }
     return data;
-  }, [balances, tx, forecasts]);
+  }, [balances, tx, forecasts, financings]);
 
   return (
     <div className="p-6 md:p-8">
@@ -131,6 +199,65 @@ export default function FinanceTreasury() {
       </Card>
 
       <TransactionDialog open={open} onOpenChange={setOpen} kind="bank" initial={editing} onSaved={load} />
+
+      <Card className="p-5 mt-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-sm font-medium flex items-center gap-2"><Landmark className="h-4 w-4" /> Crédits & apports en compte courant</div>
+          <Button size="sm" onClick={() => setFinForm(emptyFinancing())}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+        </div>
+        <div className="divide-y text-sm">
+          {financings.map((f) => (
+            <div key={f.id} className="py-3 flex items-start gap-3">
+              <div className="flex-1">
+                <div className="font-medium">{f.label} <span className="text-xs text-muted-foreground ml-2">{FIN_KIND_LABEL[f.kind]}</span></div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Reçu le {fmtDate(f.received_date)} · Principal {fmtMoney(Number(f.principal_amount))}
+                  {Number(f.monthly_payment) > 0 && ` · ${fmtMoney(Number(f.monthly_payment))}/mois × ${f.remaining_installments} restantes`}
+                  {!f.active && " · (soldé)"}
+                </div>
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => setFinForm(f)}><Pencil className="h-3.5 w-3.5" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => removeFinancing(f.id!)}><Trash2 className="h-3.5 w-3.5 text-red-600" /></Button>
+            </div>
+          ))}
+          {financings.length === 0 && <div className="text-sm text-muted-foreground py-6 text-center">Aucun financement. Ajoute un crédit de trésorerie ou un apport en compte courant.</div>}
+        </div>
+      </Card>
+
+      {finForm && (
+        <Card className="p-5 mt-4 border-primary/40">
+          <div className="text-sm font-medium mb-3">{finForm.id ? "Modifier" : "Nouveau"} financement</div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Type</Label>
+              <Select value={finForm.kind} onValueChange={(v) => setFinForm({ ...finForm, kind: v as Financing["kind"] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="credit">Crédit de trésorerie</SelectItem>
+                  <SelectItem value="shareholder_loan">Apport en compte courant</SelectItem>
+                  <SelectItem value="other">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label className="text-xs">Nom</Label><Input value={finForm.label} onChange={(e) => setFinForm({ ...finForm, label: e.target.value })} placeholder="Prêt BPI 2026" /></div>
+            <div><Label className="text-xs">Montant total reçu (€)</Label><Input type="number" step="0.01" value={finForm.principal_amount} onChange={(e) => setFinForm({ ...finForm, principal_amount: Number(e.target.value) })} /></div>
+            <div><Label className="text-xs">Date de réception</Label><Input type="date" value={finForm.received_date} onChange={(e) => setFinForm({ ...finForm, received_date: e.target.value })} /></div>
+            <div><Label className="text-xs">Mensualité (€) — 0 si pas de remboursement</Label><Input type="number" step="0.01" value={finForm.monthly_payment} onChange={(e) => setFinForm({ ...finForm, monthly_payment: Number(e.target.value) })} /></div>
+            <div><Label className="text-xs">Mensualités restantes</Label><Input type="number" value={finForm.remaining_installments} onChange={(e) => setFinForm({ ...finForm, remaining_installments: Number(e.target.value) })} /></div>
+            <div><Label className="text-xs">1ʳᵉ mensualité</Label><Input type="date" value={finForm.first_payment_date ?? ""} onChange={(e) => setFinForm({ ...finForm, first_payment_date: e.target.value || null })} /></div>
+            <div><Label className="text-xs">Taux annuel (%) — optionnel</Label><Input type="number" step="0.01" value={finForm.interest_rate ?? ""} onChange={(e) => setFinForm({ ...finForm, interest_rate: e.target.value ? Number(e.target.value) : null })} /></div>
+            <div className="md:col-span-2"><Label className="text-xs">Note</Label><Input value={finForm.note ?? ""} onChange={(e) => setFinForm({ ...finForm, note: e.target.value })} /></div>
+            <div className="md:col-span-2 flex items-center gap-2">
+              <input type="checkbox" id="fin-active" checked={finForm.active} onChange={(e) => setFinForm({ ...finForm, active: e.target.checked })} />
+              <Label htmlFor="fin-active" className="text-xs">Actif (compté dans la trésorerie)</Label>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <Button onClick={saveFinancing}>Enregistrer</Button>
+            <Button variant="ghost" onClick={() => setFinForm(null)}>Annuler</Button>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
