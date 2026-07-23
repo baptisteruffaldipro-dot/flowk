@@ -30,11 +30,12 @@ export default function FinanceDashboard() {
       const mStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
       const in30 = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
 
-      const [bank, tx, vat, forecasts] = await Promise.all([
+      const [bank, tx, vat, forecasts, financings] = await Promise.all([
         supabase.from("bank_balances").select("amount, as_of_date").order("as_of_date", { ascending: false }).limit(1),
         supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ttc, vat_amount, date, due_date, paid_date").gte("date", yStart),
         supabase.from("vat_adjustments").select("adjustment, reserve_pct").order("period_month", { ascending: false }).limit(1),
         supabase.from("finance_forecasts").select("amount_ttc, planned_date, kind").gte("planned_date", now.toISOString().slice(0, 10)).lte("planned_date", in30),
+        (supabase as any).from("finance_financings").select("*").eq("active", true),
       ]);
 
       const bankAmt = bank.data?.[0]?.amount ?? null;
@@ -67,16 +68,32 @@ export default function FinanceDashboard() {
 
       const vatNet = Math.max(0, vatCollected - vatDeductible + Number(vat.data?.[0]?.adjustment ?? 0));
       const forecastOut = (forecasts.data ?? []).reduce((a: number, x: any) => a + Number(x.amount_ttc || 0), 0);
+      // Financing impact on next 30 days: incoming principals + outgoing monthly repayments
+      let financingIn = 0, financingOut = 0;
+      const in30ISO = in30;
+      for (const f of (financings.data ?? []) as any[]) {
+        if (f.received_date > now.toISOString().slice(0, 10) && f.received_date <= in30ISO) {
+          financingIn += Number(f.principal_amount || 0);
+        }
+        if (Number(f.monthly_payment) > 0 && f.first_payment_date && f.remaining_installments > 0) {
+          const first = new Date(f.first_payment_date);
+          for (let i = 0; i < f.remaining_installments; i++) {
+            const d = new Date(first); d.setMonth(d.getMonth() + i);
+            const iso = d.toISOString().slice(0, 10);
+            if (iso > now.toISOString().slice(0, 10) && iso <= in30ISO) financingOut += Number(f.monthly_payment);
+          }
+        }
+      }
       const alerts: string[] = [];
-      if (bankAmt != null && bankAmt - (reservePct / 100) * vatNet - upcomingOut - forecastOut < 0) alerts.push("Trésorerie tendue sur 30 jours");
+      if (bankAmt != null && bankAmt - (reservePct / 100) * vatNet - upcomingOut - forecastOut - financingOut + financingIn < 0) alerts.push("Trésorerie tendue sur 30 jours");
       if (vatNet > 3000) alerts.push(`TVA importante à provisionner : ${fmtMoney(vatNet)}`);
 
       setS({
         bankBalance: bankAmt,
         bankAsOf: bankDate,
         reservePct,
-        upcomingIn,
-        upcomingOut: upcomingOut + forecastOut,
+        upcomingIn: upcomingIn + financingIn,
+        upcomingOut: upcomingOut + forecastOut + financingOut,
         vatDue: vatNet,
         caMonth,
         caYear,
