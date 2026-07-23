@@ -1,12 +1,13 @@
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Upload, Wallet, TrendingUp, Receipt, Percent, Sparkles, PieChart, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Upload, Wallet, TrendingUp, Receipt, Percent, Sparkles, PieChart, BarChart3, SplitSquareHorizontal } from "lucide-react";
 
 const items = [
   { to: "/finance", label: "Tableau de bord", icon: LayoutDashboard, end: true },
   { to: "/finance/import", label: "Import Tiime", icon: Upload },
   { to: "/finance/tresorerie", label: "Trésorerie", icon: Wallet },
   { to: "/finance/ca", label: "Chiffre d'affaires", icon: TrendingUp },
+  { to: "/finance/split", label: "Répartition presta/achat", icon: SplitSquareHorizontal },
   { to: "/finance/depenses", label: "Dépenses", icon: Receipt },
   { to: "/finance/tva", label: "TVA", icon: Percent },
   { to: "/finance/previsions", label: "Prévisions", icon: Sparkles },
