@@ -312,7 +312,7 @@ export default function FinanceDashboard() {
           <span className="text-[11px] text-muted-foreground">basé sur la moyenne des 3 derniers mois</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KPI icon={TrendingUp} label="CA estimé" value={fmtMoney(s.caNextEst)} accent="text-emerald-600" />
+          <KPI icon={TrendingUp} label="CA encaissé estimé" value={fmtMoney(s.caNextEst)} accent="text-emerald-600" hint="moyenne des ventes réellement encaissées (hors dettes clients)" />
           <KPI icon={TrendingDown} label="Dépenses estimées" value={fmtMoney(s.expensesNextEst)} hint={`frais fixes ${fmtMoney(s.fixedMonthly)}`} />
           <KPI icon={Percent} label="TVA à payer" value={fmtMoney(s.vatNextMonth)} hint="basée sur le mois en cours" />
           <KPI icon={ArrowDownRight} label="Mensualités crédits" value={fmtMoney(s.financingNextMonth)} />
