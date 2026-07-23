@@ -135,6 +135,9 @@ export function normalizeRow(row: Record<string, any>, mapping: ColumnMapping): 
   const ht = sumOf("amount_ht");
   const tva = sumOf("vat_amount");
   let ttc = sumOf("amount_ttc");
+  const debit = sumOf("debit");
+  const credit = sumOf("credit");
+  if (!ttc && (debit || credit)) ttc = credit - debit;
   if (!ttc && (ht || tva)) ttc = ht + tva;
   return {
     date: toDate(get("date")),
