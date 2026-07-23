@@ -3049,6 +3049,7 @@ export type Database = {
         | "apport_perso"
         | "retrait_perso"
         | "frais_fixe"
+        | "remuneration_dirigeant"
       finance_kind: "sale" | "expense" | "bank"
       financing_kind: "credit" | "shareholder_loan" | "other"
       invoice_billing_type: "forfait" | "horaire"
@@ -3350,6 +3351,7 @@ export const Constants = {
         "apport_perso",
         "retrait_perso",
         "frais_fixe",
+        "remuneration_dirigeant",
       ],
       finance_kind: ["sale", "expense", "bank"],
       financing_kind: ["credit", "shareholder_loan", "other"],
