@@ -161,7 +161,7 @@ export default function FinanceImport() {
     loadImports();
   };
 
-  const canonicalFields: CanonicalField[] = ["ignore","date","due_date","paid_date","doc_number","label","counterparty","amount_ht","vat_amount","amount_ttc","vat_rate","account_code","supplier_cost_ht","bank_balance"];
+  const canonicalFields: CanonicalField[] = ["ignore","date","due_date","paid_date","doc_number","label","counterparty","amount_ht","vat_amount","amount_ttc","debit","credit","vat_rate","account_code","supplier_cost_ht","bank_balance"];
   const unknown = headers.filter((h) => !mapping[h] || mapping[h] === "ignore").length;
 
   return (
