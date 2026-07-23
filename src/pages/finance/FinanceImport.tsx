@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { autoDetectMapping, CANONICAL_LABELS, CanonicalField, categorize, ColumnMapping, dedupeKey, headersSignature, normalizeCounterparty, normalizeRow, parseFile } from "@/lib/finance/parseTiime";
-import { Upload, FileSpreadsheet, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Upload, FileSpreadsheet, RotateCcw, CheckCircle2, Wand2 } from "lucide-react";
 import { fmtDate } from "@/lib/format";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -37,7 +37,20 @@ export default function FinanceImport() {
     setRows(parsed.rows);
     const sig = headersSignature(parsed.headers);
     const { data: saved } = await supabase.from("tiime_column_mappings").select("*").eq("kind", kind).eq("headers_signature", sig).maybeSingle();
-    setMapping((saved?.mapping as ColumnMapping) ?? autoDetectMapping(parsed.headers));
+    const auto = autoDetectMapping(parsed.headers);
+    const savedMap = (saved?.mapping as ColumnMapping) ?? {};
+    // Merge: saved wins when explicit, but auto fills any column still on "ignore".
+    const merged: ColumnMapping = { ...auto };
+    for (const h of parsed.headers) {
+      if (savedMap[h] && savedMap[h] !== "ignore") merged[h] = savedMap[h];
+    }
+    setMapping(merged);
+  };
+
+  const redetect = () => {
+    if (headers.length === 0) return;
+    setMapping(autoDetectMapping(headers));
+    toast.success("Colonnes ré-associées automatiquement");
   };
 
   const runImport = async () => {
@@ -164,11 +177,16 @@ export default function FinanceImport() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm font-medium">Correspondance des colonnes</div>
-              {unknown > 0 ? (
-                <div className="text-xs text-amber-600">{unknown} colonne(s) non associée(s)</div>
-              ) : (
-                <div className="text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> Toutes les colonnes reconnues</div>
-              )}
+              <div className="flex items-center gap-3">
+                {unknown > 0 ? (
+                  <div className="text-xs text-amber-600">{unknown} colonne(s) non associée(s)</div>
+                ) : (
+                  <div className="text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> Toutes les colonnes reconnues</div>
+                )}
+                <Button size="sm" variant="ghost" onClick={redetect} className="h-7 text-xs">
+                  <Wand2 className="h-3.5 w-3.5 mr-1" /> Ré-détecter
+                </Button>
+              </div>
             </div>
             <div className="grid md:grid-cols-2 gap-2">
               {headers.map((h) => (
