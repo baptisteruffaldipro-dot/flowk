@@ -158,6 +158,17 @@ export default function FinanceDashboard() {
         }
       }
 
+      // Dettes fournisseurs (kind='other' → loyers, factures en retard, etc.)
+      const supplierDebts = ((financings.data ?? []) as any[])
+        .filter((f) => f.kind === "other" && Number(f.remaining_installments) > 0)
+        .map((f) => ({
+          label: f.label as string,
+          remaining: Number(f.monthly_payment) * Number(f.remaining_installments),
+          monthly: Number(f.monthly_payment),
+          installments: Number(f.remaining_installments),
+        }));
+      const supplierDebt = supplierDebts.reduce((a, d) => a + d.remaining, 0);
+
       const soldeRequisNext = fixedMonthly + vatNextMonth + financingNextMonth;
       const soldeFinNextEst = (bankAmt ?? 0) + caNextEst - expensesNextEst - vatNextMonth - financingNextMonth;
 
@@ -213,6 +224,8 @@ export default function FinanceDashboard() {
         caYear,
         fixedMonthly,
         ccDirigeant,
+        supplierDebt,
+        supplierDebts,
         alerts,
         receivables: recList,
         receivablesTotal,
