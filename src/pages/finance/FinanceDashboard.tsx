@@ -60,11 +60,11 @@ export default function FinanceDashboard() {
 
       const [bank, tx, vat, forecasts, financings, allTx, receivables] = await Promise.all([
         supabase.from("bank_balances").select("amount, as_of_date").order("as_of_date", { ascending: false }).limit(1),
-        supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ttc, vat_amount, date, due_date, paid_date").gte("date", yStart),
+        supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ht_presta, amount_ht_achat, split_reviewed, amount_ttc, vat_amount, date, due_date, paid_date").gte("date", yStart),
         supabase.from("vat_adjustments").select("adjustment, reserve_pct").order("period_month", { ascending: false }).limit(1),
         supabase.from("finance_forecasts").select("amount_ttc, planned_date, kind").gte("planned_date", now.toISOString().slice(0, 10)).lte("planned_date", in30),
         (supabase as any).from("finance_financings").select("*").eq("active", true),
-        supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ttc, vat_amount, date"),
+        supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ht_presta, amount_ht_achat, split_reviewed, amount_ttc, vat_amount, date"),
         (supabase as any)
           .from("client_receivables")
           .select("id, snapshot_date, invoiced_ttc, paid_ttc, outstanding_ttc, status, expected_payment_date, clients(name)")
@@ -88,9 +88,18 @@ export default function FinanceDashboard() {
         const tva = Number(r.vat_amount) || 0;
         const ttc = Number(r.amount_ttc) || 0;
         if (r.kind === "sale") {
-          const bucket = r.category === "achat_revente" ? "achat" : "presta";
-          caYear[bucket] += ht;
-          if (isThisMonth(r.date)) caMonth[bucket] += ht;
+          // Si la ligne a une répartition validée, on ventile ; sinon on retombe sur la catégorie.
+          if (r.split_reviewed) {
+            const p = Number(r.amount_ht_presta) || 0;
+            const a = Number(r.amount_ht_achat) || 0;
+            caYear.presta += p;
+            caYear.achat += a;
+            if (isThisMonth(r.date)) { caMonth.presta += p; caMonth.achat += a; }
+          } else {
+            const bucket = r.category === "achat_revente" ? "achat" : "presta";
+            caYear[bucket] += ht;
+            if (isThisMonth(r.date)) caMonth[bucket] += ht;
+          }
           vatCollected += tva;
           if (isThisMonth(r.date)) vatCollectedMonth += tva;
           if (!r.paid_date && r.due_date && r.due_date <= in30) upcomingIn += ttc;
