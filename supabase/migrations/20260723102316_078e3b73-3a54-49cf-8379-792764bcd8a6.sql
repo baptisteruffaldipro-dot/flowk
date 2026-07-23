@@ -1,0 +1,1 @@
+ALTER TYPE finance_category ADD VALUE IF NOT EXISTS 'frais_fixe';
