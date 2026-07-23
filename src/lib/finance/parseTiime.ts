@@ -207,6 +207,8 @@ export const CANONICAL_LABELS: Record<CanonicalField, string> = {
   amount_ht: "Montant HT",
   vat_amount: "Montant TVA",
   amount_ttc: "Montant TTC",
+  debit: "Débit (sortie)",
+  credit: "Crédit (entrée)",
   vat_rate: "Taux TVA",
   account_code: "Compte comptable",
   supplier_cost_ht: "Coût d'achat HT (fournisseur)",
