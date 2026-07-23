@@ -33,7 +33,7 @@ type Stats = {
   fixedMonthly: number;
   ccDirigeant: number;
   alerts: string[];
-  receivables: { client: string; invoiced: number; paid: number; outstanding: number; status: string }[];
+  receivables: { id: string; client: string; invoiced: number; paid: number; outstanding: number; status: string; expected_payment_date: string | null }[];
   receivablesTotal: number;
 };
 
@@ -61,7 +61,7 @@ export default function FinanceDashboard() {
         supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ttc, vat_amount, date"),
         (supabase as any)
           .from("client_receivables")
-          .select("snapshot_date, invoiced_ttc, paid_ttc, outstanding_ttc, status, clients(name)")
+          .select("id, snapshot_date, invoiced_ttc, paid_ttc, outstanding_ttc, status, expected_payment_date, clients(name)")
           .order("snapshot_date", { ascending: false }),
       ]);
 
@@ -166,13 +166,15 @@ export default function FinanceDashboard() {
       });
       const recList = latestPerClient
         .map((r) => ({
+          id: r.id,
           client: r.clients?.name || "—",
           invoiced: Number(r.invoiced_ttc || 0),
           paid: Number(r.paid_ttc || 0),
           outstanding: Number(r.outstanding_ttc || 0),
           status: r.status || "en_retard",
+          expected_payment_date: r.expected_payment_date || null,
         }))
-        .filter((r) => r.outstanding > 0)
+        .filter((r) => r.outstanding > 0 && r.status !== "paye")
         .sort((a, b) => b.outstanding - a.outstanding);
       const receivablesTotal = recList.reduce((a, r) => a + r.outstanding, 0);
 
