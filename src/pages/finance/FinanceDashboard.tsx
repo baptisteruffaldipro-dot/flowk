@@ -5,6 +5,9 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtMoney } from "@/lib/format";
 import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, ArrowUpRight, ArrowDownRight, Sparkles, CalendarClock, Users, Banknote } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type Stats = {
   bankBalance: number | null;
@@ -33,12 +36,13 @@ type Stats = {
   fixedMonthly: number;
   ccDirigeant: number;
   alerts: string[];
-  receivables: { client: string; invoiced: number; paid: number; outstanding: number; status: string }[];
+  receivables: { id: string; client: string; invoiced: number; paid: number; outstanding: number; status: string; expected_payment_date: string | null }[];
   receivablesTotal: number;
 };
 
 export default function FinanceDashboard() {
   const [s, setS] = useState<Stats | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -61,7 +65,7 @@ export default function FinanceDashboard() {
         supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ttc, vat_amount, date"),
         (supabase as any)
           .from("client_receivables")
-          .select("snapshot_date, invoiced_ttc, paid_ttc, outstanding_ttc, status, clients(name)")
+          .select("id, snapshot_date, invoiced_ttc, paid_ttc, outstanding_ttc, status, expected_payment_date, clients(name)")
           .order("snapshot_date", { ascending: false }),
       ]);
 
@@ -166,13 +170,15 @@ export default function FinanceDashboard() {
       });
       const recList = latestPerClient
         .map((r) => ({
+          id: r.id,
           client: r.clients?.name || "—",
           invoiced: Number(r.invoiced_ttc || 0),
           paid: Number(r.paid_ttc || 0),
           outstanding: Number(r.outstanding_ttc || 0),
           status: r.status || "en_retard",
+          expected_payment_date: r.expected_payment_date || null,
         }))
-        .filter((r) => r.outstanding > 0)
+        .filter((r) => r.outstanding > 0 && r.status !== "paye")
         .sort((a, b) => b.outstanding - a.outstanding);
       const receivablesTotal = recList.reduce((a, r) => a + r.outstanding, 0);
 
@@ -210,7 +216,14 @@ export default function FinanceDashboard() {
         receivablesTotal,
       });
     })();
-  }, []);
+  }, [reloadTick]);
+
+  async function updateReceivable(id: string, patch: Record<string, any>) {
+    const { error } = await (supabase as any).from("client_receivables").update(patch).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Mis à jour");
+    setReloadTick((t) => t + 1);
+  }
 
   if (!s) return <div className="p-6 md:p-8">Chargement…</div>;
 
@@ -256,7 +269,8 @@ export default function FinanceDashboard() {
                   <th className="text-right py-2">Facturé TTC</th>
                   <th className="text-right py-2">Encaissé</th>
                   <th className="text-right py-2">Encours</th>
-                  <th className="text-right py-2">Statut</th>
+                  <th className="text-right py-2">Paiement prévu</th>
+                  <th className="text-right py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,9 +281,17 @@ export default function FinanceDashboard() {
                     <td className="py-2 text-right">{fmtMoney(r.paid)}</td>
                     <td className="py-2 text-right font-semibold">{fmtMoney(r.outstanding)}</td>
                     <td className="py-2 text-right">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${r.status === "en_retard" ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"}`}>
-                        {r.status === "en_retard" ? "En retard" : "OK"}
-                      </span>
+                      <Input
+                        type="date"
+                        className="h-8 text-xs w-[140px] ml-auto"
+                        value={r.expected_payment_date || ""}
+                        onChange={(e) => updateReceivable(r.id, { expected_payment_date: e.target.value || null, status: e.target.value ? "a_venir" : "en_retard" })}
+                      />
+                    </td>
+                    <td className="py-2 text-right">
+                      <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => updateReceivable(r.id, { status: "paye", paid_ttc: r.invoiced, outstanding_ttc: 0 })}>
+                        Marquer payé
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -278,6 +300,7 @@ export default function FinanceDashboard() {
                   <td className="py-2 text-right">{fmtMoney(s.receivables.reduce((a, r) => a + r.invoiced, 0))}</td>
                   <td className="py-2 text-right">{fmtMoney(s.receivables.reduce((a, r) => a + r.paid, 0))}</td>
                   <td className="py-2 text-right text-red-600">{fmtMoney(s.receivablesTotal)}</td>
+                  <td></td>
                   <td></td>
                 </tr>
               </tbody>
