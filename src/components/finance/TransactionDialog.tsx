@@ -141,6 +141,7 @@ export default function TransactionDialog({
                   {isSale && <SelectItem value="prestation">Prestation</SelectItem>}
                   {isSale && <SelectItem value="achat_revente">Achat / Revente</SelectItem>}
                   {isExpense && <SelectItem value="expense">Dépense</SelectItem>}
+                  {isExpense && <SelectItem value="frais_fixe">Frais fixe (récurrent)</SelectItem>}
                   {isExpense && <SelectItem value="achat_revente">Achat (revente)</SelectItem>}
                   <SelectItem value="other">Autre</SelectItem>
                 </SelectContent>
