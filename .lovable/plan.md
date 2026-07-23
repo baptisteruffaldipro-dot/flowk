@@ -1,96 +1,55 @@
+## Analyse de cohérence
 
-# Module Finance & Pilotage
+### ✅ Ce qui est juste
+- **Solde bancaire** 1 270,44 € au 31/07 : cohérent avec les imports Tiime.
+- **Dette en cours** 2 884 € = 1 300 € (compte courant dirigeant) + 1 584 € (3 loyers Studio 130) ✓
+- **Encours clients** 3 657 € ✓ (somme des 5 lignes)
+- **Prochaine TVA** 718,83 € = TVA collectée − déductible sur juillet ✓
 
-Nouveau menu `Finance` s'ajoutant à la sidebar existante, sans toucher aux modules déjà en place. Les données financières viennent d'imports Tiime (Excel/CSV), rapprochées automatiquement avec `clients`, `projects`, `tasks` et `invoices` déjà présents.
+### ⚠️ Problèmes de calcul détectés
 
-> Prérequis : upload d'un fichier d'export Tiime réel (anonymisé si besoin) avant de coder l'import — la détection auto et le mapping seront calibrés dessus. Sans échantillon, je pars sur un mapping générique et tu ajustes via l'UI.
+1. **CA encaissé estimé = 0,00 €** — bug bloquant.
+   Le calcul filtre `paid_date IS NOT NULL` sur les 3 derniers mois. Or la majorité des ventes importées n'ont pas de `paid_date` renseigné → la moyenne tombe à 0. Il faut soit basculer sur `date` (date de facture), soit dériver le `paid_date` depuis les mouvements bancaires entrants.
 
-## Architecture données
+2. **Solde estimé fin de mois −1 681,82 €** — faussé par le point 1 (CA = 0). Dès que le CA est correctement estimé, ce chiffre remonte.
 
-Une seule source pour la finance : les lignes importées. On garde `invoices`/`print_orders` intacts et on ajoute un lien optionnel vers les factures Tiime pour la fusion.
+3. **Argent réellement disponible 1 178,63 € — réserve TVA 0 %** — la réserve TVA est à 0 %, donc les 718,83 € dus le mois prochain ne sont pas provisionnés. La ligne dit "réellement disponible" mais ne l'est pas. Deux options : forcer une provision par défaut (ex. 100 % de la TVA du mois) ou renommer en "Solde net upcoming 30 j".
 
-### Nouvelles tables (public, avec RLS admin)
+4. **Risque de double comptage loyer** — le loyer Studio 130 apparaît :
+   - dans **Dettes fournisseurs** (1 584 € restant dû)
+   - probablement aussi dans **Frais fixes** mensualisés (moyenne 6 mois)
+   → le loyer est compté 2 fois dans "Solde requis" du mois prochain. À dédupliquer (marquer les financements `other` liés à un frais fixe existant, ou exclure la catégorie `frais_fixe` du calcul quand une dette fournisseur du même libellé existe).
 
-- `tiime_imports` : trace chaque import (fichier, hash, date, nb lignes, statut, `rolled_back_at`). Permet retour arrière.
-- `tiime_column_mappings` : sauvegarde le mapping colonnes → champs canoniques (mémorisé par type de fichier).
-- `finance_transactions` : ligne unique factures vente / factures achat / mouvements. Champs : `import_id`, `kind` (sale/expense/bank), `doc_number`, `date`, `due_date`, `paid_date`, `label`, `counterparty` (fournisseur/client), `amount_ht`, `vat_amount`, `amount_ttc`, `vat_rate`, `account_code`, `category` (`prestation` | `achat_revente` | `expense` | `bank`), `client_id` (fk clients, nullable), `project_id`, `task_id`, `invoice_id`, `supplier_cost_ht`, `raw` (jsonb). Unicité `(kind, doc_number, date, amount_ttc)` pour éviter doublons.
-- `finance_category_rules` : règles mots-clés (`pattern`, `field` libellé/compte, `category`, `priority`). Utilisées à l'import pour trancher Prestation vs Achat/Revente, éditables.
-- `finance_link_rules` : associations mémorisées (`counterparty_normalized` → `client_id`, `keyword` → `project_id`/`task_id`).
-- `bank_balances` : historique de solde (`as_of_date`, `amount`, `source` import/manuel). Alimenté par la colonne solde de l'export Tiime en priorité, saisie manuelle en fallback.
-- `vat_adjustments` : ajustements manuels TVA + réserve TVA.
-- `finance_forecasts` : simulations de dépenses futures.
+5. **Dispo après remb. compte courant −1 705,37 €** — le libellé est trompeur : il retranche aussi les 1 584 € de dettes fournisseurs. À renommer en **"Dispo après remboursement total"** ou séparer en 2 KPI distincts.
 
-### Fusion avec l'existant
+6. **Alertes incomplètes** — aucune alerte sur les dettes fournisseurs en retard ni sur les loyers dus.
 
-À l'import d'une facture de vente Tiime : matching sur `invoices.number` (ou montant + date proche) ; si trouvé, on remplit `finance_transactions.invoice_id` et on marque `invoices.tiime_synced_at`. Pas de duplication de la facture — l'UI Facturation continue d'afficher les `invoices`, la Finance affiche les `finance_transactions`.
+## Plan de correction
 
-## Nouveau menu (sidebar)
+**Fichier : `src/pages/finance/FinanceDashboard.tsx`**
 
-Section `Finance` avec sous-items :
-- Tableau de bord
-- Import Tiime
-- Trésorerie
-- Chiffre d'affaires
-- Dépenses
-- TVA
-- Prévisions
-- Rentabilité
-- Rapports
+1. Corriger l'estimation du CA encaissé : utiliser `date` (fait générateur) plutôt que `paid_date`, et déduire un ratio d'encaissement moyen (ex. `caHT * (encaissé/facturé sur 3 mois)`).
+2. Renommer "Dispo après remb. compte courant" → "Dispo après remboursement total (CC + fournisseurs)" et ajouter le détail dans le hint.
+3. Ajouter une provision TVA par défaut : si `reserve_pct = 0`, afficher aussi une valeur "après provision TVA mois prochain".
+4. Dédupliquer le loyer : quand un `finance_financings` de type `other` a le même libellé qu'une catégorie récurrente, exclure ce montant de `fixedMonthly` pour éviter le double comptage.
+5. Ajouter alertes : "Loyer STUDIO 130 — 3 mois en retard" ; "Client X en retard depuis N jours".
 
-Style, composants (`Card`, `Table`, `PageHeader`, `NavLink`), couleurs et navigation identiques aux pages existantes.
+## Idées d'amélioration à ajouter
 
-## Pages
+**Priorité haute**
+- **Graphique trésorerie prévisionnelle 90 jours** (courbe solde jour par jour intégrant : encaissements attendus par `expected_payment_date`, dépenses récurrentes, TVA, mensualités crédit, loyers).
+- **DSO (Days Sales Outstanding)** : délai moyen d'encaissement client → aide à repérer les mauvais payeurs.
+- **Comparaison N vs N-1** sur chaque KPI (CA mois, dépenses, résultat).
 
-### Import Tiime (`/finance/import`)
-- Drop de fichier `.xlsx`/`.csv`, parsing côté client (SheetJS) + edge function `tiime-import` pour normaliser et insérer par batch.
-- Détection auto colonnes via heuristiques + mapping mémorisé. Si colonne inconnue → écran de mapping (select par colonne), sauvegardé dans `tiime_column_mappings`.
-- Prévisualisation avant validation : nb factures vente, factures achat, mouvements bancaires, doublons détectés, lignes non catégorisées.
-- Rapprochement automatique client/projet via `finance_link_rules`. Écran de résolution pour les lignes non appariées.
-- Historique des imports + bouton "Annuler cet import" (soft-delete des `finance_transactions` liées).
+**Priorité moyenne**
+- **Objectif CA mensuel** paramétrable avec barre de progression.
+- **Scénario "et si"** : simulateur (si j'encaisse X d'ici Y, mon solde devient…).
+- **Échéancier consolidé** : timeline des sorties d'argent des 60 prochains jours (TVA, URSSAF, loyer, crédit, fournisseurs).
+- **Ratio marge** par client / par projet (croisement `finance_transactions` × `projects`).
 
-### Tableau de bord (`/finance`)
-Cartes : solde bancaire, dispo réel (solde − réserve TVA − paiements dus 30j), encaissements à venir, paiements à venir, TVA estimée, trésorerie prévisionnelle 30j, CA mois, CA année, dépenses mois, résultat estimé, alertes (retards paiement, TVA due, trésorerie tendue). Toggle Prestation / Achat-Revente sur les cartes CA/marge.
+**Confort**
+- Export PDF/CSV du dashboard mensuel.
+- Toggle "HT/TTC" global.
+- Widget "Top 3 clients du mois" et "Top 3 postes de dépenses".
 
-### Chiffre d'affaires (`/finance/ca`)
-Deux blocs strictement séparés : **Prestations** et **Achats / Reventes**. Tableau + graphes mensuels. Pour Achat/Revente : marge brute, taux de marge (`marge / PV`), taux de marque (`marge / PA`).
-
-### Dépenses (`/finance/depenses`)
-Table avec filtres fournisseur / client / projet / tâche / catégorie / période. Édition de la catégorie + association projet/tâche mémorisée.
-
-### TVA (`/finance/tva`)
-Mensuel/trimestriel/annuel : TVA collectée, déductible, nette. Ajustements manuels. Réserve TVA (curseur %). Estimation TVA due affichée aussi sur le dashboard.
-
-### Trésorerie (`/finance/tresorerie`)
-Vue courbe (recharts) 30/60/90j/6 mois. Colonnes : solde, entrées, sorties, TVA future, dispo réel. Historique des soldes.
-
-### Prévisions (`/finance/previsions`)
-Simulateur : montant, date, catégorie, récurrence. Calcule impact tréso / TVA / résultat et affiche pastille 🟢 🟠 🔴 selon dispo réel projeté.
-
-### Rentabilité (`/finance/rentabilite`)
-Vues par client / projet / tâche. Pour chaque tâche : CA (via `finance_transactions` reliées ou `invoices` liées), dépenses affectées, coût interne (`total_minutes / 60 × hourly_rate` réutilisé depuis `computeTaskBilling`), marge, résultat. Rollup automatique tâche → projet → client.
-
-### Rapports (`/finance/rapports`)
-Graphiques modernes (recharts, tokens de couleur existants) : évolution CA, prestations vs achats/reventes, TVA, tréso, dépenses, marge, rentabilité, mensuel/annuel. Export CSV.
-
-## Catégorisation Prestation vs Achat/Revente
-
-Règles mots-clés éditables (`finance_category_rules`), appliquées à l'import sur libellé + compte. Chaque ligne garde `category_source` (rule/manual). Recatégorisation manuelle possible partout, et sauvegardée comme nouvelle règle proposée.
-
-## Contraintes respectées
-
-- Aucun module existant modifié (juste ajout d'items sidebar + éventuel `tiime_synced_at` sur `invoices`).
-- Aucune 2ᵉ base : réutilise `clients`, `projects`, `tasks`, `invoices`.
-- RLS admin uniquement sur toutes les nouvelles tables, GRANT `authenticated` + `service_role`.
-- Architecture extensible : `finance_transactions.source` (`tiime_import` | futur `tiime_api` | `stripe` | `bank_api`) permet d'ajouter des connecteurs plus tard sans refactor.
-
-## Étapes de livraison
-
-1. Migration SQL : tables + RLS + GRANT + index sur `(date, category, client_id)`.
-2. Ajout menu Finance dans `AdminLayout` + routes protégées admin dans `App.tsx`.
-3. Page **Import Tiime** (parser SheetJS, écran de mapping, edge function `tiime-import`, historique + rollback).
-4. Page **Tableau de bord** Finance.
-5. Pages **CA**, **Dépenses**, **TVA**, **Trésorerie**.
-6. Pages **Rentabilité**, **Prévisions**, **Rapports**.
-7. Réglages : règles catégorisation, associations, réserve TVA.
-
-Uploade un export Tiime pour caler l'étape 3 sur ton format réel — sans ça je pars sur un mapping générique modifiable via l'UI.
+Je propose de traiter d'abord les 5 corrections de calcul, puis on choisit ensemble 2-3 améliorations à implémenter.
