@@ -56,7 +56,7 @@ export function autoDetectMapping(headers: string[]): ColumnMapping {
   for (const h of headers) {
     const clean = h.trim();
     const hit = HEURISTICS.find((r) => r.pattern.test(clean));
-    map[clean] = hit ? hit.field : "ignore";
+    map[h] = hit ? hit.field : "ignore";
   }
   return map;
 }
