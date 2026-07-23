@@ -325,6 +325,44 @@ export default function FinanceDashboard() {
         </Card>
       )}
 
+      {/* Dettes fournisseurs (loyers, factures en retard, ...) */}
+      {s.supplierDebts.length > 0 && (
+        <Card className="p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Banknote className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide">Dettes fournisseurs — restant dû</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs text-muted-foreground">
+                <tr className="border-b">
+                  <th className="text-left py-2">Libellé</th>
+                  <th className="text-right py-2">Mensualité</th>
+                  <th className="text-right py-2">Échéances restantes</th>
+                  <th className="text-right py-2">Restant dû</th>
+                </tr>
+              </thead>
+              <tbody>
+                {s.supplierDebts.map((d) => (
+                  <tr key={d.label} className="border-b last:border-0">
+                    <td className="py-2 font-medium">{d.label}</td>
+                    <td className="py-2 text-right">{fmtMoney(d.monthly)}</td>
+                    <td className="py-2 text-right">{d.installments}</td>
+                    <td className="py-2 text-right font-semibold text-red-600">{fmtMoney(d.remaining)}</td>
+                  </tr>
+                ))}
+                <tr className="font-semibold">
+                  <td className="py-2">Total</td>
+                  <td></td>
+                  <td></td>
+                  <td className="py-2 text-right text-red-600">{fmtMoney(s.supplierDebt)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
       {/* Mois en cours */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
