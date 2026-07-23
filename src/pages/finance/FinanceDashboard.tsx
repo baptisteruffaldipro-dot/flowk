@@ -254,7 +254,9 @@ export default function FinanceDashboard() {
 
   if (!s) return <div className="p-6 md:p-8">Chargement…</div>;
 
-  const dispo = (s.bankBalance ?? 0) - (s.reservePct / 100) * s.vatDue - s.upcomingOut;
+  // Provision TVA : si réserve à 0 %, on provisionne quand même la prochaine TVA
+  const vatProvision = s.reservePct > 0 ? (s.reservePct / 100) * s.vatDue : s.vatNextMonth;
+  const dispo = (s.bankBalance ?? 0) - vatProvision - s.upcomingOut;
   const detteDirigeant = Math.max(0, s.ccDirigeant);
   const detteTotale = detteDirigeant + s.supplierDebt;
   const dispoApresCC = dispo - detteDirigeant - s.supplierDebt;
@@ -275,8 +277,8 @@ export default function FinanceDashboard() {
       {/* Vue transverse */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <KPI icon={Wallet} label="Solde bancaire" value={fmtMoney(s.bankBalance ?? 0)} hint={s.bankAsOf ? `au ${s.bankAsOf}` : "aucun import"} />
-        <KPI icon={PiggyBank} label="Argent réellement disponible" value={fmtMoney(dispo)} hint={`réserve TVA ${s.reservePct}%`} accent={dispo < 0 ? "text-red-600" : dispo < 500 ? "text-amber-600" : "text-emerald-600"} />
-        <KPI icon={PiggyBank} label="Dispo après remb. compte courant" value={fmtMoney(dispoApresCC)} hint="après remboursement" accent={dispoApresCC < 0 ? "text-red-600" : dispoApresCC < 500 ? "text-amber-600" : "text-emerald-600"} />
+        <KPI icon={PiggyBank} label="Argent réellement disponible" value={fmtMoney(dispo)} hint={s.reservePct > 0 ? `réserve TVA ${s.reservePct}%` : `TVA prochaine provisionnée (${fmtMoney(s.vatNextMonth)})`} accent={dispo < 0 ? "text-red-600" : dispo < 500 ? "text-amber-600" : "text-emerald-600"} />
+        <KPI icon={PiggyBank} label="Dispo après remboursement total" value={fmtMoney(dispoApresCC)} hint={`− ${fmtMoney(detteDirigeant)} compte courant − ${fmtMoney(s.supplierDebt)} fournisseurs`} accent={dispoApresCC < 0 ? "text-red-600" : dispoApresCC < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={Percent} label="Prochaine TVA estimée à payer" value={fmtMoney(s.vatNextMonth)} hint="mois prochain" />
         <KPI icon={Banknote} label="Dette en cours" value={fmtMoney(detteTotale)} hint={`${fmtMoney(detteDirigeant)} compte courant + ${fmtMoney(s.supplierDebt)} fournisseurs`} accent={detteTotale > 0 ? "text-red-600" : "text-emerald-600"} />
         <KPI icon={Users} label="Encours clients" value={fmtMoney(s.receivablesTotal)} hint={`${s.receivables.length} client(s) en retard`} accent={s.receivablesTotal > 0 ? "text-red-600" : "text-emerald-600"} />
