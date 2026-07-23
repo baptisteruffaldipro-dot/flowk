@@ -4,7 +4,7 @@ import FinanceNav from "@/components/finance/FinanceNav";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtMoney } from "@/lib/format";
-import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, ArrowUpRight, ArrowDownRight, Sparkles, CalendarClock, Users } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, ArrowUpRight, ArrowDownRight, Sparkles, CalendarClock, Users, Banknote } from "lucide-react";
 
 type Stats = {
   bankBalance: number | null;
