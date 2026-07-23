@@ -1,0 +1,1 @@
+ALTER TABLE public.tiime_imports ADD COLUMN IF NOT EXISTS period_month date;

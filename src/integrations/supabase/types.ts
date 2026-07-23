@@ -2712,6 +2712,7 @@ export type Database = {
           imported_by: string | null
           inserted_count: number
           notes: string | null
+          period_month: string | null
           rolled_back_at: string | null
           row_count: number
           status: Database["public"]["Enums"]["tiime_import_status"]
@@ -2726,6 +2727,7 @@ export type Database = {
           imported_by?: string | null
           inserted_count?: number
           notes?: string | null
+          period_month?: string | null
           rolled_back_at?: string | null
           row_count?: number
           status?: Database["public"]["Enums"]["tiime_import_status"]
@@ -2740,6 +2742,7 @@ export type Database = {
           imported_by?: string | null
           inserted_count?: number
           notes?: string | null
+          period_month?: string | null
           rolled_back_at?: string | null
           row_count?: number
           status?: Database["public"]["Enums"]["tiime_import_status"]

@@ -15,9 +15,21 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Kind = "sale" | "expense" | "bank";
 
+function currentMonthISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+function monthToDate(m: string) { return `${m}-01`; }
+function fmtMonth(iso: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+}
+
 export default function FinanceImport() {
   const [file, setFile] = useState<File | null>(null);
   const [kind, setKind] = useState<Kind>("sale");
+  const [periodMonth, setPeriodMonth] = useState<string>(currentMonthISO());
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<Record<string, any>[]>([]);
   const [mapping, setMapping] = useState<ColumnMapping>({});
@@ -65,7 +77,7 @@ export default function FinanceImport() {
 
       const user = (await supabase.auth.getUser()).data.user;
       const { data: imp, error: impErr } = await supabase.from("tiime_imports")
-        .insert({ filename: file.name, imported_by: user?.id, row_count: rows.length, status: "pending" })
+        .insert({ filename: file.name, imported_by: user?.id, row_count: rows.length, status: "pending", period_month: monthToDate(periodMonth) } as any)
         .select().single();
       if (impErr) throw impErr;
 
@@ -154,7 +166,7 @@ export default function FinanceImport() {
 
   return (
     <div className="p-6 md:p-8">
-      <PageHeader title="Import Tiime" description="Importe tes exports (Excel/CSV). Le mapping des colonnes est mémorisé pour la prochaine fois." />
+      <PageHeader title="Import Tiime" description="Importe tes exports mois par mois (Excel/CSV). Le mapping des colonnes est mémorisé pour la prochaine fois." />
       <FinanceNav />
 
       <Card className="p-5 mb-6">
@@ -165,7 +177,11 @@ export default function FinanceImport() {
             <TabsTrigger value="bank">Mouvements bancaires</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="period" className="text-sm">Mois de l'import</Label>
+            <Input id="period" type="month" value={periodMonth} onChange={(e) => setPeriodMonth(e.target.value)} className="w-[170px] h-9" />
+          </div>
           <Label htmlFor="file" className="inline-flex items-center gap-2 cursor-pointer px-4 py-2 border border-dashed rounded-md hover:bg-secondary/40">
             <Upload className="h-4 w-4" /> Choisir un fichier .xlsx / .csv
           </Label>
@@ -218,7 +234,10 @@ export default function FinanceImport() {
               <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
               <div className="flex-1 min-w-0">
                 <div className="truncate font-medium">{i.filename}</div>
-                <div className="text-xs text-muted-foreground">{fmtDate(i.created_at)} · {i.inserted_count} ajoutées · {i.duplicate_count} doublons · {i.status}</div>
+                <div className="text-xs text-muted-foreground">
+                  {i.period_month && <span className="mr-1 px-1.5 py-0.5 rounded bg-secondary text-secondary-foreground capitalize">{fmtMonth(i.period_month)}</span>}
+                  {fmtDate(i.created_at)} · {i.inserted_count} ajoutées · {i.duplicate_count} doublons · {i.status}
+                </div>
               </div>
               {i.status === "completed" && (
                 <Button size="sm" variant="ghost" onClick={() => rollback(i.id)}><RotateCcw className="h-3.5 w-3.5 mr-1" /> Annuler</Button>
