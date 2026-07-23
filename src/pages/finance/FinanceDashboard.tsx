@@ -8,6 +8,7 @@ import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, Ar
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import CashflowProjection from "@/components/finance/CashflowProjection";
 
 type Stats = {
   bankBalance: number | null;
