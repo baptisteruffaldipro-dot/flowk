@@ -99,6 +99,8 @@ export default function FinanceImport() {
 
       let inserted = 0, duplicates = 0;
       let latestBank: { date: string; amount: number } | null = null;
+      let bankNetMovement = 0;
+      let bankMaxDate: string | null = null;
 
       for (const row of rows) {
         const n = normalizeRow(row, mapping);
@@ -106,6 +108,10 @@ export default function FinanceImport() {
           if (!latestBank || n.date > latestBank.date) latestBank = { date: n.date, amount: n.bank_balance };
         }
         if (!n.date) continue;
+        if (kind === "bank") {
+          bankNetMovement += Number(n.amount_ttc || 0);
+          if (!bankMaxDate || n.date > bankMaxDate) bankMaxDate = n.date;
+        }
 
         const cat = categorize(kind, n, rules as any);
         const norm = normalizeCounterparty(n.counterparty);
@@ -137,6 +143,22 @@ export default function FinanceImport() {
       if (latestBank) {
         await supabase.from("bank_balances").insert({
           as_of_date: latestBank.date, amount: latestBank.amount, source: "tiime_import", import_id: imp.id,
+        });
+      } else if (kind === "bank" && bankMaxDate && bankNetMovement !== 0) {
+        // No "solde" column in the statement — compute snapshot from previous balance + net movement
+        const { data: prev } = await supabase
+          .from("bank_balances")
+          .select("amount")
+          .lte("as_of_date", bankMaxDate)
+          .order("as_of_date", { ascending: false })
+          .limit(1);
+        const start = Number(prev?.[0]?.amount ?? 0);
+        await supabase.from("bank_balances").insert({
+          as_of_date: bankMaxDate,
+          amount: start + bankNetMovement,
+          source: "tiime_import",
+          import_id: imp.id,
+          note: `Calculé depuis ${inserted} mouvements (net ${bankNetMovement.toFixed(2)} €)`,
         });
       }
 
