@@ -35,6 +35,8 @@ type Stats = {
   caYear: { presta: number; achat: number };
   fixedMonthly: number;
   ccDirigeant: number;
+  supplierDebt: number;
+  supplierDebts: { label: string; remaining: number; monthly: number; installments: number }[];
   alerts: string[];
   receivables: { id: string; client: string; invoiced: number; paid: number; outstanding: number; status: string; expected_payment_date: string | null }[];
   receivablesTotal: number;
