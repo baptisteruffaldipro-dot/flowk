@@ -21,14 +21,14 @@ export type ColumnMapping = Record<string, CanonicalField>;
 const HEURISTICS: Array<{ pattern: RegExp; field: CanonicalField }> = [
   { pattern: /date.*(paiement|regl|paye)/i, field: "paid_date" },
   { pattern: /date.*(ech|due)/i, field: "due_date" },
-  { pattern: /^date/i, field: "date" },
-  { pattern: /(numero|n[°o]|reference|piece|facture n)/i, field: "doc_number" },
+  { pattern: /\bdate\b/i, field: "date" },
+  { pattern: /(taux.*tva|vat.*rate|tva.*taux)/i, field: "vat_rate" },
+  { pattern: /(montant.*tva|tva.*montant|^tva\b|\btva\s*\d|vat.*amount)/i, field: "vat_amount" },
+  { pattern: /(montant.*ttc|total.*ttc|\bttc\b)/i, field: "amount_ttc" },
+  { pattern: /(montant.*ht|total.*ht|\bht\b)/i, field: "amount_ht" },
+  { pattern: /(numero|n[°o]\s|reference|piece|facture\s*n)/i, field: "doc_number" },
   { pattern: /(libell|description|objet|intitul)/i, field: "label" },
-  { pattern: /(client|fournisseur|tiers|contact)/i, field: "counterparty" },
-  { pattern: /(montant.*ht|total.*ht|ht$)/i, field: "amount_ht" },
-  { pattern: /(tva|vat).*(montant|amount)/i, field: "vat_amount" },
-  { pattern: /(taux.*tva|vat.*rate)/i, field: "vat_rate" },
-  { pattern: /(montant.*ttc|total.*ttc|ttc$|montant$)/i, field: "amount_ttc" },
+  { pattern: /(nom.*(client|fournisseur|tiers)|^client$|^fournisseur$|tiers|contact)/i, field: "counterparty" },
   { pattern: /(compte|account)/i, field: "account_code" },
   { pattern: /(cout.*achat|prix.*achat|purchase)/i, field: "supplier_cost_ht" },
   { pattern: /(solde|balance)/i, field: "bank_balance" },
@@ -105,9 +105,13 @@ export function normalizeRow(row: Record<string, any>, mapping: ColumnMapping): 
     const key = Object.keys(mapping).find((k) => mapping[k] === field);
     return key ? row[key] : null;
   };
-  const ht = toNumber(get("amount_ht"));
-  const tva = toNumber(get("vat_amount"));
-  let ttc = toNumber(get("amount_ttc"));
+  const sumOf = (field: CanonicalField) =>
+    Object.keys(mapping)
+      .filter((k) => mapping[k] === field)
+      .reduce((acc, k) => acc + toNumber(row[k]), 0);
+  const ht = sumOf("amount_ht");
+  const tva = sumOf("vat_amount");
+  let ttc = sumOf("amount_ttc");
   if (!ttc && (ht || tva)) ttc = ht + tva;
   return {
     date: toDate(get("date")),
