@@ -407,8 +407,8 @@ export default function FinanceDashboard() {
           <KPI icon={TrendingDown} label="Dépenses estimées" value={fmtMoney(s.expensesNextEst)} hint={`frais fixes ${fmtMoney(s.fixedMonthly)}`} />
           <KPI icon={Percent} label="TVA à payer" value={fmtMoney(s.vatNextMonth)} hint="basée sur le mois en cours" />
           <KPI icon={ArrowDownRight} label="Mensualités crédits" value={fmtMoney(s.financingNextMonth)} />
-          <KPI icon={AlertTriangle} label="Solde requis" value={fmtMoney(s.soldeRequisNext)} accent={(s.bankBalance ?? 0) < s.soldeRequisNext ? "text-red-600" : "text-emerald-600"} hint="frais fixes + TVA + crédits" />
-          <KPI icon={Wallet} label="Solde estimé fin de mois" value={fmtMoney(s.soldeFinNextEst)} accent={s.soldeFinNextEst < 0 ? "text-red-600" : s.soldeFinNextEst < 500 ? "text-amber-600" : "text-emerald-600"} hint="solde + CA − dépenses − TVA − crédits" />
+          <KPI icon={AlertTriangle} label="Solde requis" value={fmtMoney(s.soldeRequisNext)} accent={(s.bankBalance ?? 0) < s.soldeRequisNext ? "text-red-600" : "text-emerald-600"} hint="frais fixes + TVA + crédits + loyer" />
+          <KPI icon={Wallet} label="Solde estimé fin de mois" value={fmtMoney(s.soldeFinNextEst)} accent={s.soldeFinNextEst < 0 ? "text-red-600" : s.soldeFinNextEst < 500 ? "text-amber-600" : "text-emerald-600"} hint="solde + CA − dépenses − TVA − crédits − loyer" />
           <KPI icon={Wallet} label="Solde estimé si dettes clients réglées" value={fmtMoney(s.soldeFinNextEst + s.receivablesTotal)} accent={(s.soldeFinNextEst + s.receivablesTotal) < 0 ? "text-red-600" : (s.soldeFinNextEst + s.receivablesTotal) < 500 ? "text-amber-600" : "text-emerald-600"} hint={`+ encours clients ${fmtMoney(s.receivablesTotal)}`} />
           <KPI icon={TrendingUp} label="Résultat estimé" value={fmtMoney(s.caNextEst - s.expensesNextEst)} accent={s.caNextEst - s.expensesNextEst < 0 ? "text-red-600" : "text-emerald-600"} />
         </div>
