@@ -8,6 +8,7 @@ import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, Ar
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import CashflowProjection from "@/components/finance/CashflowProjection";
 
 type Stats = {
   bankBalance: number | null;
@@ -421,6 +422,10 @@ export default function FinanceDashboard() {
           <KPI icon={Wallet} label="Solde estimé si dettes clients réglées" value={fmtMoney(s.soldeFinNextEst + s.receivablesTotal)} accent={(s.soldeFinNextEst + s.receivablesTotal) < 0 ? "text-red-600" : (s.soldeFinNextEst + s.receivablesTotal) < 500 ? "text-amber-600" : "text-emerald-600"} hint={`+ encours clients ${fmtMoney(s.receivablesTotal)}`} />
           <KPI icon={TrendingUp} label="Résultat estimé" value={fmtMoney(s.caNextEst - s.expensesNextEst)} accent={s.caNextEst - s.expensesNextEst < 0 ? "text-red-600" : "text-emerald-600"} />
         </div>
+      </div>
+
+      <div className="mt-6">
+        <CashflowProjection />
       </div>
     </div>
   );
