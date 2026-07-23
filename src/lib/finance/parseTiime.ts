@@ -10,6 +10,8 @@ export type CanonicalField =
   | "amount_ht"
   | "vat_amount"
   | "amount_ttc"
+  | "debit"
+  | "credit"
   | "vat_rate"
   | "account_code"
   | "supplier_cost_ht"
@@ -40,8 +42,12 @@ const HEURISTICS: Array<{ pattern: RegExp; field: CanonicalField }> = [
   // Amounts (multi-TVA columns like "montant TVA 20%" all map to vat_amount and are summed)
   { pattern: /(taux.*tva|vat.*rate|tva.*taux)/i, field: "vat_rate" },
   { pattern: /(montant.*tva|tva.*montant|^tva\b|\btva\s*\d|tva\s*\d+([.,]\d+)?\s*%?|vat.*amount)/i, field: "vat_amount" },
+  // Bank statements: Débit / Crédit / Montant (signed)
+  { pattern: /(d[eé]bit|withdrawal|retrait|sortie)/i, field: "debit" },
+  { pattern: /(cr[eé]dit|deposit|d[eé]p[oô]t|entr[eé]e)/i, field: "credit" },
   { pattern: /(montant.*ttc|total.*ttc|\bttc\b)/i, field: "amount_ttc" },
   { pattern: /(montant.*ht|total.*ht|\bht\b)/i, field: "amount_ht" },
+  { pattern: /^montant$|^amount$/i, field: "amount_ttc" },
   // Identifiers & text
   { pattern: /(num[eé]ro.*facture|n[°o]\s*facture|reference|piece|facture\s*n)/i, field: "doc_number" },
   { pattern: /(libell|description|objet|intitul)/i, field: "label" },
