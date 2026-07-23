@@ -19,16 +19,33 @@ export type CanonicalField =
 export type ColumnMapping = Record<string, CanonicalField>;
 
 const HEURISTICS: Array<{ pattern: RegExp; field: CanonicalField }> = [
+  // Explicit ignores (Tiime exports)
+  { pattern: /^id$/i, field: "ignore" },
+  { pattern: /iban/i, field: "ignore" },
+  { pattern: /type.*op[eé]ration/i, field: "ignore" },
+  { pattern: /statut/i, field: "ignore" },
+  { pattern: /^pays/i, field: "ignore" },
+  { pattern: /^tags?$/i, field: "ignore" },
+  { pattern: /commentaire/i, field: "ignore" },
+  { pattern: /^re[cç]us?$/i, field: "ignore" },
+  { pattern: /^factures?$/i, field: "ignore" },
+  { pattern: /^source$/i, field: "ignore" },
+  { pattern: /date.*ajout/i, field: "ignore" },
+  { pattern: /date.*op[eé]ration/i, field: "ignore" },
+  { pattern: /transaction.*li[eé]|transactions?\s*bancaires?/i, field: "ignore" },
+  // Dates
   { pattern: /date.*(paiement|regl|paye)/i, field: "paid_date" },
   { pattern: /date.*(ech|due)/i, field: "due_date" },
-  { pattern: /\bdate\b/i, field: "date" },
+  { pattern: /date.*(document|facture|transaction)|\bdate\b/i, field: "date" },
+  // Amounts (multi-TVA columns like "montant TVA 20%" all map to vat_amount and are summed)
   { pattern: /(taux.*tva|vat.*rate|tva.*taux)/i, field: "vat_rate" },
-  { pattern: /(montant.*tva|tva.*montant|^tva\b|\btva\s*\d|vat.*amount)/i, field: "vat_amount" },
+  { pattern: /(montant.*tva|tva.*montant|^tva\b|\btva\s*\d|tva\s*\d+([.,]\d+)?\s*%?|vat.*amount)/i, field: "vat_amount" },
   { pattern: /(montant.*ttc|total.*ttc|\bttc\b)/i, field: "amount_ttc" },
   { pattern: /(montant.*ht|total.*ht|\bht\b)/i, field: "amount_ht" },
-  { pattern: /(numero|n[°o]\s|reference|piece|facture\s*n)/i, field: "doc_number" },
+  // Identifiers & text
+  { pattern: /(num[eé]ro.*facture|n[°o]\s*facture|reference|piece|facture\s*n)/i, field: "doc_number" },
   { pattern: /(libell|description|objet|intitul)/i, field: "label" },
-  { pattern: /(nom.*(client|fournisseur|tiers)|^client$|^fournisseur$|tiers|contact)/i, field: "counterparty" },
+  { pattern: /(nom.*(client|fournisseur|tiers)|^client$|^fournisseur$|tiers|contact|^label$)/i, field: "counterparty" },
   { pattern: /(compte|account)/i, field: "account_code" },
   { pattern: /(cout.*achat|prix.*achat|purchase)/i, field: "supplier_cost_ht" },
   { pattern: /(solde|balance)/i, field: "bank_balance" },
