@@ -244,7 +244,8 @@ export default function FinanceDashboard() {
 
   const dispo = (s.bankBalance ?? 0) - (s.reservePct / 100) * s.vatDue - s.upcomingOut;
   const detteDirigeant = Math.max(0, s.ccDirigeant);
-  const dispoApresCC = dispo - detteDirigeant;
+  const detteTotale = detteDirigeant + s.supplierDebt;
+  const dispoApresCC = dispo - detteDirigeant - s.supplierDebt;
 
   return (
     <div className="p-6 md:p-8">
@@ -265,7 +266,7 @@ export default function FinanceDashboard() {
         <KPI icon={PiggyBank} label="Argent réellement disponible" value={fmtMoney(dispo)} hint={`réserve TVA ${s.reservePct}%`} accent={dispo < 0 ? "text-red-600" : dispo < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={PiggyBank} label="Dispo après remb. compte courant" value={fmtMoney(dispoApresCC)} hint="après remboursement" accent={dispoApresCC < 0 ? "text-red-600" : dispoApresCC < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={Percent} label="Prochaine TVA estimée à payer" value={fmtMoney(s.vatNextMonth)} hint="mois prochain" />
-        <KPI icon={Banknote} label="Dette en cours" value={fmtMoney(detteDirigeant)} hint="compte courant dirigeant" accent={detteDirigeant > 0 ? "text-red-600" : "text-emerald-600"} />
+        <KPI icon={Banknote} label="Dette en cours" value={fmtMoney(detteTotale)} hint={`${fmtMoney(detteDirigeant)} compte courant + ${fmtMoney(s.supplierDebt)} fournisseurs`} accent={detteTotale > 0 ? "text-red-600" : "text-emerald-600"} />
         <KPI icon={Users} label="Encours clients" value={fmtMoney(s.receivablesTotal)} hint={`${s.receivables.length} client(s) en retard`} accent={s.receivablesTotal > 0 ? "text-red-600" : "text-emerald-600"} />
       </div>
 
