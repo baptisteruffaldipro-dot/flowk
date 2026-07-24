@@ -255,8 +255,9 @@ export default function FinanceDashboard() {
       }
 
       setS({
-        bankBalance: bankAmt,
-        bankAsOf: bankDate,
+        bankBalance: bankAmtToday,
+        bankAsOf: today,
+        bankSnapshotDate: bankDate,
         reservePct,
         vatDue: vatNet,
         currentMonthLabel,
