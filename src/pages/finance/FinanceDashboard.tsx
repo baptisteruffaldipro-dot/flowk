@@ -87,6 +87,24 @@ export default function FinanceDashboard() {
 
       const bankAmt = bank.data?.[0]?.amount ?? null;
       const bankDate = bank.data?.[0]?.as_of_date ?? null;
+      const today = now.toISOString().slice(0, 10);
+
+      // Balance actualisée au jour même : snapshot + mouvements payés postérieurs
+      let bankAmtToday: number | null = bankAmt;
+      if (bankAmt !== null && bankDate && bankDate < today) {
+        const { data: moves } = await supabase
+          .from("finance_transactions")
+          .select("kind, amount_ttc, paid_date")
+          .gt("paid_date", bankDate)
+          .lte("paid_date", today);
+        let delta = 0;
+        for (const m of (moves as any[]) ?? []) {
+          const ttc = Number(m.amount_ttc) || 0;
+          if (m.kind === "sale") delta += ttc;
+          else if (m.kind === "expense") delta -= ttc;
+        }
+        bankAmtToday = Number(bankAmt) + delta;
+      }
       const reservePct = Number(vat.data?.[0]?.reserve_pct ?? 0);
       const rows = (tx.data as any[]) ?? [];
 
@@ -237,8 +255,8 @@ export default function FinanceDashboard() {
       }
 
       setS({
-        bankBalance: bankAmt,
-        bankAsOf: bankDate,
+        bankBalance: bankAmtToday,
+        bankAsOf: today,
         reservePct,
         vatDue: vatNet,
         currentMonthLabel,
