@@ -8,7 +8,6 @@ import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, Ar
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import ClientSelectField from "@/components/ClientSelectField";
 import { toast } from "sonner";
 import CashflowProjection from "@/components/finance/CashflowProjection";
 
@@ -52,6 +51,14 @@ export default function FinanceDashboard() {
   const [newClientId, setNewClientId] = useState<string>("");
   const [newAmount, setNewAmount] = useState<string>("");
   const [newDue, setNewDue] = useState<string>("");
+  const [clientsList, setClientsList] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("clients").select("id, name").order("name");
+      setClientsList((data as any) ?? []);
+    })();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -343,7 +350,16 @@ export default function FinanceDashboard() {
           <div className="flex flex-wrap items-end gap-2 mb-4 p-3 rounded-md border bg-secondary/30">
             <div className="min-w-[220px] flex-1">
               <label className="text-xs text-muted-foreground">Client</label>
-              <ClientSelectField value={newClientId} onChange={setNewClientId} />
+              <select
+                className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                value={newClientId}
+                onChange={(e) => setNewClientId(e.target.value)}
+              >
+                <option value="">— Sélectionner —</option>
+                {clientsList.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-xs text-muted-foreground">Montant dû (TTC)</label>
