@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, CreditCard, Landmark, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, CreditCard, Landmark, Download, FileText, Printer, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -29,6 +29,8 @@ export default function ClientPortalPublic() {
   const [refuseReason, setRefuseReason] = useState("");
   const [showRefuse, setShowRefuse] = useState(false);
   const [paidNote, setPaidNote] = useState("");
+  const [openFile, setOpenFile] = useState<string | null>(null);
+  const [obs, setObs] = useState<Record<string, string>>({});
 
   const load = async () => {
     if (!token) return;
@@ -58,6 +60,26 @@ export default function ClientPortalPublic() {
   const subtasks: any[] = data.subtasks ?? [];
   const invoices: any[] = data.invoices ?? [];
   const pay = data.payment_settings ?? {};
+  const printOrder = data.print_order ?? null;
+  const invoiceDoc = data.invoice_doc ?? {};
+  const reviews: any[] = deliv?.reviews ?? [];
+  const methods: string[] = p.payment_methods ?? ["link", "transfer"];
+  const amountDue = p.amount_due_ttc != null ? Number(p.amount_due_ttc) : null;
+  const termsLabel =
+    p.payment_terms === "deposit_50"
+      ? "Acompte de 50 % à régler"
+      : p.payment_terms === "full"
+        ? "Solde total à régler"
+        : null;
+  const dueAmount =
+    amountDue != null ? (p.payment_terms === "deposit_50" ? amountDue / 2 : amountDue) : null;
+
+  const openInvoice = async () => {
+    if (invoiceDoc?.url) { window.open(invoiceDoc.url, "_blank"); return; }
+    const { data: res, error } = await supabase.functions.invoke("portal-invoice-url", { body: { token } });
+    if (error || (res as any)?.error) return toast.error("Facture indisponible");
+    window.open((res as any).url, "_blank");
+  };
 
   const isTask = p.entity_type === "task";
   const title = isTask ? entity.title : entity.name;
@@ -324,6 +346,43 @@ export default function ClientPortalPublic() {
     </div>
   );
 }
+
+  function PaymentSummary() {
+    if (!termsLabel && dueAmount == null && !printOrder && !invoiceDoc?.url && !invoiceDoc?.has_file) return null;
+    return (
+      <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
+        <h2 className="text-sm font-semibold">Règlement</h2>
+        {(termsLabel || dueAmount != null) && (
+          <p className="text-sm">
+            {termsLabel ?? "Montant à régler"}
+            {dueAmount != null && <> — <strong>{dueAmount.toFixed(2)} € TTC</strong></>}
+            {p.payment_terms === "deposit_50" && amountDue != null && (
+              <span className="text-muted-foreground"> (sur un total de {amountDue.toFixed(2)} € TTC)</span>
+            )}
+          </p>
+        )}
+        {printOrder && (
+          <p className="text-sm text-amber-700 dark:text-amber-400">
+            Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          {(invoiceDoc?.url || invoiceDoc?.has_file) && (
+            <Button size="sm" variant="outline" onClick={openInvoice}>
+              <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
+            </Button>
+          )}
+          {methods.includes("link") && p.payment_link_url && (
+            <Button size="sm" asChild>
+              <a href={p.payment_link_url} target="_blank" rel="noreferrer">
+                <CreditCard className="h-3.5 w-3.5 mr-1" /> Payer par carte
+              </a>
+            </Button>
+          )}
+        </div>
+      </section>
+    );
+  }
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
