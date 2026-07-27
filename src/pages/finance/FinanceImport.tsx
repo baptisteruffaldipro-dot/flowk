@@ -248,6 +248,13 @@ export default function FinanceImport() {
           {file && <div className="text-sm text-muted-foreground flex items-center gap-2"><FileSpreadsheet className="h-4 w-4" />{file.name} · {rows.length} lignes</div>}
         </div>
 
+        {kind === "sale" && (
+          <label className="mt-3 flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+            <input type="checkbox" className="h-4 w-4 accent-primary" checked={makeReceivables} onChange={(e) => setMakeReceivables(e.target.checked)} />
+            Créer les dettes clients pour les factures envoyées non réglées (sans date de paiement)
+          </label>
+        )}
+
         {headers.length > 0 && (
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
