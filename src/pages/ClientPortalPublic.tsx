@@ -359,7 +359,7 @@ export default function ClientPortalPublic() {
               })}
               {!deliv.unlocked && (
                 <p className="text-[11px] text-muted-foreground pt-1">
-                  Le téléchargement est désactivé pour le moment — il sera débloqué par le studio.
+                  Le téléchargement est désactivé pour le moment — il sera débloqué après paiement du solde dû.
                 </p>
               )}
             </div>
