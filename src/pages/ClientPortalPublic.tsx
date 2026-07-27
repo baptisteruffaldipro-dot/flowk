@@ -123,7 +123,7 @@ export default function ClientPortalPublic() {
             {isTask && entity.flat_amount != null && (
               <Info label="Montant" value={`${Number(entity.flat_amount).toFixed(2)} € HT`} />
             )}
-            {isTask && entity.estimated_minutes && (
+            {isTask && !!entity.estimated_minutes && (
               <Info label="Temps estimé" value={`${(entity.estimated_minutes / 60).toFixed(1)} h`} />
             )}
             {entity.deadline && (
