@@ -107,6 +107,7 @@ export default function PortalPanel({
       .eq("entity_type", entityType)
       .eq("entity_id", entityId)
       .maybeSingle();
+    let row: any = data;
     if (data) {
       setPortal(data as any);
     } else {
@@ -116,6 +117,7 @@ export default function PortalPanel({
         .insert({ entity_type: entityType, entity_id: entityId, client_id: clientId ?? null })
         .select("*")
         .maybeSingle();
+      row = created;
       setPortal(created as any);
     }
     const table = entityType === "task" ? "tasks" : "projects";
@@ -123,11 +125,7 @@ export default function PortalPanel({
     setDeliverables(((e as any)?.deliverable_files as Deliverable[]) ?? []);
     setInvoiceUrl(((e as any)?.invoice_url as string) ?? "");
     setInvoiceFilePath(((e as any)?.invoice_file_path as string) ?? null);
-    setAmountDue(
-      (data ?? created) && ((data ?? created) as any).amount_due_ttc != null
-        ? String(((data ?? created) as any).amount_due_ttc)
-        : "",
-    );
+    setAmountDue(row?.amount_due_ttc != null ? String(row.amount_due_ttc) : "");
     if (clientId) {
       const { data: po } = await supabase
         .from("print_orders")
