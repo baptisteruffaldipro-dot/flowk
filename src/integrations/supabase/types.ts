@@ -441,6 +441,7 @@ export type Database = {
           created_at: string
           deliverable_reviews: Json
           delivered_at: string | null
+          delivery_locked: boolean
           delivery_override: boolean
           delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
           entity_id: string
@@ -473,6 +474,7 @@ export type Database = {
           created_at?: string
           deliverable_reviews?: Json
           delivered_at?: string | null
+          delivery_locked?: boolean
           delivery_override?: boolean
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           entity_id: string
@@ -505,6 +507,7 @@ export type Database = {
           created_at?: string
           deliverable_reviews?: Json
           delivered_at?: string | null
+          delivery_locked?: boolean
           delivery_override?: boolean
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
           entity_id?: string
