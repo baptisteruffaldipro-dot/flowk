@@ -127,28 +127,6 @@ export default function PortalPanel({
     setDeliverables(((e as any)?.deliverable_files as Deliverable[]) ?? []);
     setInvoiceUrl(((e as any)?.invoice_url as string) ?? "");
     setInvoiceFilePath(((e as any)?.invoice_file_path as string) ?? null);
-    setAmountDue(row?.amount_due_ttc != null ? String(row.amount_due_ttc) : "");
-    if (entityType === "project") {
-      const { data: tks } = await supabase
-        .from("tasks")
-        .select("billing_type,flat_amount,hourly_rate,total_minutes,client_revisions_count,free_revisions,extra_revision_rate,status")
-        .eq("project_id", entityId);
-      const total = (tks ?? [])
-        .filter((t: any) => t.status !== "archive")
-        .reduce((sum: number, t: any) => {
-          const base =
-            t.billing_type === "horaire"
-              ? (Number(t.total_minutes ?? 0) / 60) * Number(t.hourly_rate ?? 0)
-              : Number(t.flat_amount ?? 0);
-          const extra =
-            Math.max(0, Number(t.client_revisions_count ?? 0) - Number(t.free_revisions ?? 0)) *
-            Number(t.extra_revision_rate ?? 0);
-          return sum + base + extra;
-        }, 0);
-      setTasksTotal(Math.round(total * 100) / 100);
-    } else {
-      setTasksTotal(null);
-    }
     if (clientId) {
       const { data: po } = await supabase
         .from("print_orders")
