@@ -436,18 +436,3 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-function RibRow({ label, value, copy }: { label: string; value?: string | null; copy?: boolean }) {
-  if (!value) return null;
-  return (
-    <div className="flex items-center justify-between gap-2 text-sm">
-      <span className="text-muted-foreground text-xs w-20">{label}</span>
-      <span className="flex-1 font-mono text-xs truncate">{value}</span>
-      {copy && (
-        <Button size="icon" variant="ghost" onClick={() => { navigator.clipboard.writeText(value); toast.success("Copié"); }}>
-          <Copy className="h-3 w-3" />
-        </Button>
-      )}
-    </div>
-  );
-}
