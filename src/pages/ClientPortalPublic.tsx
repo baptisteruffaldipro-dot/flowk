@@ -266,6 +266,7 @@ export default function ClientPortalPublic() {
               Le téléchargement final des livrables est débloqué après confirmation du paiement.
             </p>
             {/* Option virement */}
+            {methods.includes("transfer") && (
             <div className="rounded-lg border border-border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium"><Landmark className="h-4 w-4" /> Virement bancaire</div>
               {pay?.iban ? (
@@ -285,8 +286,10 @@ export default function ClientPortalPublic() {
                 J'opte pour le virement
               </Button>
             </div>
+            )}
 
             {/* Option lien de paiement */}
+            {methods.includes("link") && (
             <div className="rounded-lg border border-border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium"><CreditCard className="h-4 w-4" /> Lien de paiement (carte)</div>
               {p.payment_link_url ? (
@@ -310,6 +313,7 @@ export default function ClientPortalPublic() {
                 </>
               )}
             </div>
+            )}
 
             {/* Déclaration paiement */}
             {!declared && (
