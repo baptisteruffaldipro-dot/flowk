@@ -31,7 +31,6 @@ export default function ClientPortalPublic() {
   const [showRefuse, setShowRefuse] = useState(false);
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
-  const [ribOpen, setRibOpen] = useState(false);
   const [obs, setObs] = useState<Record<string, string>>({});
 
   const load = async () => {
