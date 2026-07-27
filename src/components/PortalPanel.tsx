@@ -569,6 +569,32 @@ export default function PortalPanel({
           </Select>
         </div>
         <div className="space-y-1.5">
+          <Label className="text-xs">Statut de règlement</Label>
+          <Select
+            value={payState}
+            onValueChange={(v) =>
+              update({
+                payment_state: v,
+                ...(v === "paid"
+                  ? { admin_confirmed_paid_at: new Date().toISOString(), status: "paid" }
+                  : { admin_confirmed_paid_at: null }),
+              } as any)
+            }
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unpaid">Acompte non réglé / solde non réglé</SelectItem>
+              <SelectItem value="deposit_paid">Acompte réglé — solde non réglé</SelectItem>
+              <SelectItem value="paid">Solde totalement réglé</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            {paidOk
+              ? "Règlement suffisant : téléchargement autorisé selon la règle choisie."
+              : "Règlement insuffisant : aperçu seul, téléchargement bloqué."}
+          </p>
+        </div>
+        <div className="space-y-1.5">
           <Label className="text-xs">Override manuel</Label>
           <div className="flex items-center gap-2">
             <Switch checked={portal.delivery_override} onCheckedChange={toggleOverride} />
