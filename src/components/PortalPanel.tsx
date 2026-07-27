@@ -32,6 +32,7 @@ type Portal = {
   client_declared_paid_note: string | null;
   admin_confirmed_paid_at: string | null;
   delivery_unlock_rule: "acompte" | "total" | "libre";
+  payment_state?: "unpaid" | "deposit_paid" | "paid";
   delivery_override: boolean;
   delivery_locked?: boolean;
   admin_notes: string | null;
@@ -191,7 +192,7 @@ export default function PortalPanel({
   };
 
   const markPaid = async () => {
-    await update({ admin_confirmed_paid_at: new Date().toISOString(), status: "paid" } as any);
+    await update({ admin_confirmed_paid_at: new Date().toISOString(), status: "paid", payment_state: "paid" } as any);
     toast.success("Marqué comme payé — livraison débloquée");
   };
 
@@ -304,12 +305,17 @@ export default function PortalPanel({
     }
   };
 
+  const payState: "unpaid" | "deposit_paid" | "paid" =
+    portal.admin_confirmed_paid_at !== null ? "paid" : (portal.payment_state ?? "unpaid");
+
+  const paidOk =
+    portal.delivery_unlock_rule === "libre" ||
+    (portal.delivery_unlock_rule === "acompte" && (payState === "deposit_paid" || payState === "paid")) ||
+    (portal.delivery_unlock_rule === "total" && payState === "paid");
+
   const isUnlocked =
     !portal.delivery_locked &&
-    (portal.delivery_override ||
-    portal.admin_confirmed_paid_at !== null ||
-    portal.status === "delivered" ||
-    portal.delivery_unlock_rule === "libre");
+    (portal.delivery_override || portal.status === "delivered" || paidOk);
 
   return (
     <Card className="p-5 space-y-4">
