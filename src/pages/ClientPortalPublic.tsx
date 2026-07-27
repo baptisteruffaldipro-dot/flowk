@@ -288,6 +288,26 @@ export default function ClientPortalPublic() {
                           {!deliv.unlocked && <div className="absolute inset-x-0 top-0 h-10 bg-transparent" />}
                         </div>
                         <div className="space-y-2">
+                          <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+                            <p className="font-semibold text-foreground">Mentions BAT (Bon À Tirer)</p>
+                            <p>
+                              La validation de ce fichier vaut <strong>Bon À Tirer</strong> : elle autorise la production
+                              et/ou la diffusion en l'état.
+                            </p>
+                            <p>
+                              Il vous appartient de vérifier <strong>l'orthographe, la grammaire, les textes, dates,
+                              horaires, coordonnées et mentions légales</strong>. Toute erreur non signalée avant
+                              validation reste sous votre responsabilité.
+                            </p>
+                            <p>
+                              Les couleurs affichées à l'écran sont indicatives et peuvent différer légèrement du rendu
+                              imprimé (profils colorimétriques, papier, finition).
+                            </p>
+                            <p>
+                              Après validation, toute modification pourra faire l'objet d'une facturation
+                              complémentaire et d'un nouveau délai.
+                            </p>
+                          </div>
                           <Textarea
                             rows={2}
                             placeholder="Observation (optionnel)"
@@ -298,9 +318,9 @@ export default function ClientPortalPublic() {
                             <Button
                               size="sm"
                               disabled={busy}
-                              onClick={() => act("add_message", { body: `✅ Fichier validé — ${f.name}${obs[key] ? `\n${obs[key]}` : ""}` })}
+                              onClick={() => act("add_message", { body: `✅ BAT validé (bon à tirer) — ${f.name}${obs[key] ? `\n${obs[key]}` : ""}` })}
                             >
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Valider ce fichier
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Valider (Bon à tirer)
                             </Button>
                             <Button
                               size="sm"
