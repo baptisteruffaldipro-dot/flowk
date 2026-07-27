@@ -417,6 +417,84 @@ export default function PortalPanel({
       {/* Paiement */}
       <div className="space-y-2 rounded-lg border border-border p-3">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Paiement</div>
+
+        <div className="grid sm:grid-cols-2 gap-4 pb-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Moyens de paiement proposés au client</Label>
+            <div className="flex items-center gap-4 pt-1">
+              {[
+                { key: "link", label: "Carte bancaire (lien)" },
+                { key: "transfer", label: "Virement (RIB)" },
+              ].map((m) => {
+                const methods = portal.payment_methods ?? [];
+                const on = methods.includes(m.key);
+                return (
+                  <label key={m.key} className="flex items-center gap-2 text-xs">
+                    <Checkbox
+                      checked={on}
+                      onCheckedChange={(v) =>
+                        update({
+                          payment_methods: v
+                            ? [...methods.filter((x) => x !== m.key), m.key]
+                            : methods.filter((x) => x !== m.key),
+                        } as any)
+                      }
+                    />
+                    {m.label}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Modalité</Label>
+              <Select value={portal.payment_terms ?? "full"} onValueChange={(v) => update({ payment_terms: v } as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="deposit_50">Acompte 50 %</SelectItem>
+                  <SelectItem value="full">Totalité avant livraison</SelectItem>
+                  <SelectItem value="libre">Libre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Montant TTC dû</Label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={amountDue}
+                onChange={(e) => setAmountDue(e.target.value)}
+                onBlur={() => update({ amount_due_ttc: amountDue === "" ? null : Number(amountDue) } as any)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-1.5 pb-1">
+          <Label className="text-xs">Commande d'impression liée</Label>
+          <Select
+            value={portal.print_order_id ?? "none"}
+            onValueChange={(v) => update({ print_order_id: v === "none" ? null : v } as any)}
+          >
+            <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Aucune</SelectItem>
+              {printOrders.map((o) => (
+                <SelectItem key={o.id} value={o.id}>
+                  {(o.reference ? `${o.reference} — ` : "") + (o.description ?? "Commande")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {portal.print_order_id && (
+            <p className="text-[11px] text-muted-foreground">
+              La mention « régler la facture pour lancer la production » s'affichera côté client.
+            </p>
+          )}
+        </div>
+
         {portal.client_declared_paid_at && !portal.admin_confirmed_paid_at && (
           <div className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded p-2">
             Le client a déclaré avoir payé {new Date(portal.client_declared_paid_at).toLocaleString("fr-FR")}.
