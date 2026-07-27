@@ -373,24 +373,16 @@ export default function ClientPortalPublic() {
             {methods.includes("transfer") && (
             <div className="rounded-lg border border-border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium"><Landmark className="h-4 w-4" /> Virement bancaire</div>
-              {pay?.iban ? (
-                <div className="space-y-1 text-sm">
-                  <RibRow label="Titulaire" value={pay.account_holder} />
-                  <RibRow label="IBAN" value={pay.iban} copy />
-                  <RibRow label="BIC" value={pay.bic} copy />
-                  {pay.bank_name && <RibRow label="Banque" value={pay.bank_name} />}
-                  {pay.transfer_note && (
-                    <div className="text-xs text-muted-foreground pt-1">{pay.transfer_note}</div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-xs text-muted-foreground">Les coordonnées bancaires vont vous être communiquées.</div>
-              )}
-              {canPay && (
-                <Button size="sm" variant="outline" onClick={() => act("choose_transfer")} disabled={busy}>
-                  J'opte pour le virement
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setRibOpen(true)}>
+                  Afficher le RIB
                 </Button>
-              )}
+                {canPay && (
+                  <Button size="sm" variant="ghost" onClick={() => act("choose_transfer")} disabled={busy}>
+                    J'opte pour le virement
+                  </Button>
+                )}
+              </div>
             </div>
             )}
 
