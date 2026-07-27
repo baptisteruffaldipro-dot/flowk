@@ -153,41 +153,6 @@ export default function ClientPortalPublic() {
           )}
         </section>
 
-        {/* Règlement */}
-        {(termsLabel || dueAmount != null || printOrder || invoiceDoc?.url || invoiceDoc?.has_file) && (
-          <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
-            <h2 className="text-sm font-semibold">Règlement</h2>
-            {(termsLabel || dueAmount != null) && (
-              <p className="text-sm">
-                {termsLabel ?? "Montant à régler"}
-                {dueAmount != null && <> — <strong>{dueAmount.toFixed(2)} € TTC</strong></>}
-                {p.payment_terms === "deposit_50" && amountDue != null && (
-                  <span className="text-muted-foreground"> (sur un total de {amountDue.toFixed(2)} € TTC)</span>
-                )}
-              </p>
-            )}
-            {printOrder && (
-              <p className="text-sm text-amber-700 dark:text-amber-400">
-                Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
-              </p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              {(invoiceDoc?.url || invoiceDoc?.has_file) && (
-                <Button size="sm" variant="outline" onClick={openInvoice}>
-                  <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
-                </Button>
-              )}
-              {methods.includes("link") && p.payment_link_url && (
-                <Button size="sm" asChild>
-                  <a href={p.payment_link_url} target="_blank" rel="noreferrer">
-                    <CreditCard className="h-3.5 w-3.5 mr-1" /> Payer par carte
-                  </a>
-                </Button>
-              )}
-            </div>
-          </section>
-        )}
-
         {/* Commande d'impression liée */}
         {printOrder && (
           <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
@@ -212,141 +177,6 @@ export default function ClientPortalPublic() {
             {printOrder.observations && (
               <p className="text-xs text-muted-foreground whitespace-pre-wrap">{printOrder.observations}</p>
             )}
-          </section>
-        )}
-
-        {/* Validation */}
-        {canValidate && (
-          <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
-            <h2 className="text-sm font-semibold">Validation</h2>
-            <p className="text-xs text-muted-foreground">
-              En validant, vous confirmez le tarif indiqué.
-            </p>
-            {showRefuse ? (
-              <div className="space-y-2">
-                <Textarea placeholder="Motif (optionnel)" value={refuseReason} onChange={(e) => setRefuseReason(e.target.value)} rows={2} />
-                <div className="flex gap-2">
-                  <Button variant="destructive" onClick={() => act("refuse", { reason: refuseReason })} disabled={busy}>Confirmer le refus</Button>
-                  <Button variant="ghost" onClick={() => setShowRefuse(false)}>Annuler</Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-2 flex-wrap">
-                <Button onClick={() => act("validate")} disabled={busy}>
-                  <CheckCircle2 className="h-4 w-4 mr-1" /> Valider
-                </Button>
-                <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
-                  <XCircle className="h-4 w-4 mr-1" /> Refuser
-                </Button>
-                {p.payment_link_url && (
-                  <Button variant="secondary" asChild>
-                    <a href={p.payment_link_url} target="_blank" rel="noreferrer">
-                      <CreditCard className="h-4 w-4 mr-1" /> Payer <ExternalLink className="h-3.5 w-3.5 ml-1" />
-                    </a>
-                  </Button>
-                )}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Refus affiché */}
-        {p.status === "refused" && (
-          <section className="rounded-xl border border-rose-500/40 bg-rose-500/5 p-5">
-            <div className="text-sm font-medium">Demande refusée</div>
-            {p.refusal_reason && <div className="text-sm text-muted-foreground mt-1">Motif : {p.refusal_reason}</div>}
-          </section>
-        )}
-
-        {/* Paiement */}
-        {canPay && (
-          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
-            <h2 className="text-sm font-semibold">Paiement</h2>
-            <p className="text-xs text-muted-foreground">
-              Le téléchargement final des livrables est débloqué après confirmation du paiement.
-            </p>
-            {/* Option virement */}
-            {methods.includes("transfer") && (
-            <div className="rounded-lg border border-border p-3 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium"><Landmark className="h-4 w-4" /> Virement bancaire</div>
-              {pay?.iban ? (
-                <div className="space-y-1 text-sm">
-                  <RibRow label="Titulaire" value={pay.account_holder} />
-                  <RibRow label="IBAN" value={pay.iban} copy />
-                  <RibRow label="BIC" value={pay.bic} copy />
-                  {pay.bank_name && <RibRow label="Banque" value={pay.bank_name} />}
-                  {pay.transfer_note && (
-                    <div className="text-xs text-muted-foreground pt-1">{pay.transfer_note}</div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-xs text-muted-foreground">Les coordonnées bancaires vont vous être communiquées.</div>
-              )}
-              <Button size="sm" variant="outline" onClick={() => act("choose_transfer")} disabled={busy}>
-                J'opte pour le virement
-              </Button>
-            </div>
-            )}
-
-            {/* Option lien de paiement */}
-            {methods.includes("link") && (
-            <div className="rounded-lg border border-border p-3 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium"><CreditCard className="h-4 w-4" /> Lien de paiement (carte)</div>
-              {p.payment_link_url ? (
-                <Button size="sm" asChild>
-                  <a href={p.payment_link_url} target="_blank" rel="noreferrer">
-                    Payer par carte <ExternalLink className="h-3.5 w-3.5 ml-1" />
-                  </a>
-                </Button>
-              ) : (
-                <>
-                  <div className="text-xs text-muted-foreground">
-                    {p.status === "payment_link_requested"
-                      ? "Votre demande a bien été enregistrée. Le lien vous sera envoyé rapidement."
-                      : "Souhaitez-vous recevoir un lien de paiement par carte ?"}
-                  </div>
-                  {p.status !== "payment_link_requested" && (
-                    <Button size="sm" variant="outline" onClick={() => act("request_payment_link")} disabled={busy}>
-                      Demander un lien de paiement
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-            )}
-
-            {/* Déclaration paiement */}
-            {!declared && (
-              <div className="rounded-lg border border-border p-3 space-y-2">
-                <div className="text-sm font-medium">Vous avez payé ?</div>
-                <Input placeholder="Référence / date du virement (optionnel)" value={paidNote} onChange={(e) => setPaidNote(e.target.value)} />
-                <Button size="sm" onClick={() => act("declare_paid", { note: paidNote })} disabled={busy}>
-                  J'ai effectué le paiement
-                </Button>
-              </div>
-            )}
-            {declared && !p.admin_confirmed_paid_at && (
-              <div className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded p-2">
-                Merci ! Nous vérifions la réception du paiement.
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Factures */}
-        {invoices.length > 0 && (
-          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Devis & factures</h2>
-            {invoices.map((inv: any) => (
-              <div key={inv.id} className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-muted/40 text-sm">
-                <span className="truncate">{inv.label || inv.number || "Facture"} — {inv.amount != null ? `${Number(inv.amount).toFixed(2)} € HT` : ""}</span>
-                {inv.pdf_url && (
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={inv.pdf_url} target="_blank" rel="noreferrer"><Download className="h-3.5 w-3.5 mr-1" /> PDF</a>
-                  </Button>
-                )}
-              </div>
-            ))}
           </section>
         )}
 
@@ -465,6 +295,176 @@ export default function ClientPortalPublic() {
             </Button>
           </div>
         </section>
+
+        {/* Validation */}
+        {canValidate && (
+          <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
+            <h2 className="text-sm font-semibold">Validation</h2>
+            <p className="text-xs text-muted-foreground">
+              En validant, vous confirmez le tarif indiqué.
+            </p>
+            {showRefuse ? (
+              <div className="space-y-2">
+                <Textarea placeholder="Motif (optionnel)" value={refuseReason} onChange={(e) => setRefuseReason(e.target.value)} rows={2} />
+                <div className="flex gap-2">
+                  <Button variant="destructive" onClick={() => act("refuse", { reason: refuseReason })} disabled={busy}>Confirmer le refus</Button>
+                  <Button variant="ghost" onClick={() => setShowRefuse(false)}>Annuler</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2 flex-wrap">
+                <Button onClick={() => act("validate")} disabled={busy}>
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Valider
+                </Button>
+                <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
+                  <XCircle className="h-4 w-4 mr-1" /> Refuser
+                </Button>
+                {p.payment_link_url && (
+                  <Button variant="secondary" asChild>
+                    <a href={p.payment_link_url} target="_blank" rel="noreferrer">
+                      <CreditCard className="h-4 w-4 mr-1" /> Payer <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                    </a>
+                  </Button>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Refus affiché */}
+        {p.status === "refused" && (
+          <section className="rounded-xl border border-rose-500/40 bg-rose-500/5 p-5">
+            <div className="text-sm font-medium">Demande refusée</div>
+            {p.refusal_reason && <div className="text-sm text-muted-foreground mt-1">Motif : {p.refusal_reason}</div>}
+          </section>
+        )}
+
+        {/* Règlement */}
+        {(termsLabel || dueAmount != null || printOrder || invoiceDoc?.url || invoiceDoc?.has_file) && (
+          <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
+            <h2 className="text-sm font-semibold">Règlement</h2>
+            {(termsLabel || dueAmount != null) && (
+              <p className="text-sm">
+                {termsLabel ?? "Montant à régler"}
+                {dueAmount != null && <> — <strong>{dueAmount.toFixed(2)} € TTC</strong></>}
+                {p.payment_terms === "deposit_50" && amountDue != null && (
+                  <span className="text-muted-foreground"> (sur un total de {amountDue.toFixed(2)} € TTC)</span>
+                )}
+              </p>
+            )}
+            {printOrder && (
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {(invoiceDoc?.url || invoiceDoc?.has_file) && (
+                <Button size="sm" variant="outline" onClick={openInvoice}>
+                  <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
+                </Button>
+              )}
+              {methods.includes("link") && p.payment_link_url && (
+                <Button size="sm" asChild>
+                  <a href={p.payment_link_url} target="_blank" rel="noreferrer">
+                    <CreditCard className="h-3.5 w-3.5 mr-1" /> Payer par carte
+                  </a>
+                </Button>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Paiement */}
+        {canPay && (
+          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+            <h2 className="text-sm font-semibold">Paiement</h2>
+            <p className="text-xs text-muted-foreground">
+              Le téléchargement final des livrables est débloqué après confirmation du paiement.
+            </p>
+            {/* Option virement */}
+            {methods.includes("transfer") && (
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium"><Landmark className="h-4 w-4" /> Virement bancaire</div>
+              {pay?.iban ? (
+                <div className="space-y-1 text-sm">
+                  <RibRow label="Titulaire" value={pay.account_holder} />
+                  <RibRow label="IBAN" value={pay.iban} copy />
+                  <RibRow label="BIC" value={pay.bic} copy />
+                  {pay.bank_name && <RibRow label="Banque" value={pay.bank_name} />}
+                  {pay.transfer_note && (
+                    <div className="text-xs text-muted-foreground pt-1">{pay.transfer_note}</div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">Les coordonnées bancaires vont vous être communiquées.</div>
+              )}
+              <Button size="sm" variant="outline" onClick={() => act("choose_transfer")} disabled={busy}>
+                J'opte pour le virement
+              </Button>
+            </div>
+            )}
+
+            {/* Option lien de paiement */}
+            {methods.includes("link") && (
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium"><CreditCard className="h-4 w-4" /> Lien de paiement (carte)</div>
+              {p.payment_link_url ? (
+                <Button size="sm" asChild>
+                  <a href={p.payment_link_url} target="_blank" rel="noreferrer">
+                    Payer par carte <ExternalLink className="h-3.5 w-3.5 ml-1" />
+                  </a>
+                </Button>
+              ) : (
+                <>
+                  <div className="text-xs text-muted-foreground">
+                    {p.status === "payment_link_requested"
+                      ? "Votre demande a bien été enregistrée. Le lien vous sera envoyé rapidement."
+                      : "Souhaitez-vous recevoir un lien de paiement par carte ?"}
+                  </div>
+                  {p.status !== "payment_link_requested" && (
+                    <Button size="sm" variant="outline" onClick={() => act("request_payment_link")} disabled={busy}>
+                      Demander un lien de paiement
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+            )}
+
+            {/* Déclaration paiement */}
+            {!declared && (
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                <div className="text-sm font-medium">Vous avez payé ?</div>
+                <Input placeholder="Référence / date du virement (optionnel)" value={paidNote} onChange={(e) => setPaidNote(e.target.value)} />
+                <Button size="sm" onClick={() => act("declare_paid", { note: paidNote })} disabled={busy}>
+                  J'ai effectué le paiement
+                </Button>
+              </div>
+            )}
+            {declared && !p.admin_confirmed_paid_at && (
+              <div className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded p-2">
+                Merci ! Nous vérifions la réception du paiement.
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Factures */}
+        {invoices.length > 0 && (
+          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Devis & factures</h2>
+            {invoices.map((inv: any) => (
+              <div key={inv.id} className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-muted/40 text-sm">
+                <span className="truncate">{inv.label || inv.number || "Facture"} — {inv.amount != null ? `${Number(inv.amount).toFixed(2)} € HT` : ""}</span>
+                {inv.pdf_url && (
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={inv.pdf_url} target="_blank" rel="noreferrer"><Download className="h-3.5 w-3.5 mr-1" /> PDF</a>
+                  </Button>
+                )}
+              </div>
+            ))}
+          </section>
+        )}
       </div>
     </div>
   );
