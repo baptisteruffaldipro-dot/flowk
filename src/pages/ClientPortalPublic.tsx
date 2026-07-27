@@ -424,29 +424,6 @@ export default function ClientPortalPublic() {
         </section>
       </div>
 
-      <Dialog open={ribOpen} onOpenChange={setRibOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Coordonnées bancaires</DialogTitle>
-          </DialogHeader>
-          {pay?.iban ? (
-            <div className="space-y-1">
-              <RibRow label="Titulaire" value={pay.account_holder} />
-              <RibRow label="IBAN" value={pay.iban} copy />
-              <RibRow label="BIC" value={pay.bic} copy />
-              {pay.bank_name && <RibRow label="Banque" value={pay.bank_name} />}
-              {dueAmount != null && (
-                <div className="text-sm pt-2">Montant : <strong>{dueAmount.toFixed(2)} € TTC</strong></div>
-              )}
-              {pay.transfer_note && (
-                <div className="text-xs text-muted-foreground pt-1">{pay.transfer_note}</div>
-              )}
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">Les coordonnées bancaires vont vous être communiquées.</div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
