@@ -435,8 +435,8 @@ export default function FinanceDashboard() {
               </thead>
               <tbody>
                 {s.receivables.map((r) => (
-                  <>
-                  <tr key={r.id} className="border-b last:border-0">
+                  <Fragment key={r.id}>
+                  <tr className="border-b last:border-0">
                     <td className="py-2 font-medium">{r.client}</td>
                     <td className="py-2 text-right font-semibold">
                       {fmtMoney(r.outstanding)}
