@@ -375,7 +375,7 @@ export default function ClientPortalPublic() {
         )}
 
         {/* Paiement */}
-        {canPay && (
+        {(canPay || methods.includes("transfer")) && (
           <section className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
             <h2 className="text-sm font-semibold">Paiement</h2>
             <p className="text-xs text-muted-foreground">
@@ -398,14 +398,16 @@ export default function ClientPortalPublic() {
               ) : (
                 <div className="text-xs text-muted-foreground">Les coordonnées bancaires vont vous être communiquées.</div>
               )}
-              <Button size="sm" variant="outline" onClick={() => act("choose_transfer")} disabled={busy}>
-                J'opte pour le virement
-              </Button>
+              {canPay && (
+                <Button size="sm" variant="outline" onClick={() => act("choose_transfer")} disabled={busy}>
+                  J'opte pour le virement
+                </Button>
+              )}
             </div>
             )}
 
             {/* Option lien de paiement */}
-            {methods.includes("link") && (
+            {canPay && methods.includes("link") && (
             <div className="rounded-lg border border-border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium"><CreditCard className="h-4 w-4" /> Lien de paiement (carte)</div>
               {p.payment_link_url ? (
