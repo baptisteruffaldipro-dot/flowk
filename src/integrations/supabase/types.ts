@@ -432,12 +432,14 @@ export type Database = {
         Row: {
           admin_confirmed_paid_at: string | null
           admin_notes: string | null
+          amount_due_ttc: number | null
           client_declared_paid_at: string | null
           client_declared_paid_note: string | null
           client_id: string | null
           client_refused_at: string | null
           client_validated_at: string | null
           created_at: string
+          deliverable_reviews: Json
           delivered_at: string | null
           delivery_override: boolean
           delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
@@ -450,6 +452,9 @@ export type Database = {
           payment_method_requested:
             | Database["public"]["Enums"]["client_portal_payment_method"]
             | null
+          payment_methods: string[]
+          payment_terms: string
+          print_order_id: string | null
           published_at: string | null
           refusal_reason: string | null
           share_token: string
@@ -459,12 +464,14 @@ export type Database = {
         Insert: {
           admin_confirmed_paid_at?: string | null
           admin_notes?: string | null
+          amount_due_ttc?: number | null
           client_declared_paid_at?: string | null
           client_declared_paid_note?: string | null
           client_id?: string | null
           client_refused_at?: string | null
           client_validated_at?: string | null
           created_at?: string
+          deliverable_reviews?: Json
           delivered_at?: string | null
           delivery_override?: boolean
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
@@ -477,6 +484,9 @@ export type Database = {
           payment_method_requested?:
             | Database["public"]["Enums"]["client_portal_payment_method"]
             | null
+          payment_methods?: string[]
+          payment_terms?: string
+          print_order_id?: string | null
           published_at?: string | null
           refusal_reason?: string | null
           share_token?: string
@@ -486,12 +496,14 @@ export type Database = {
         Update: {
           admin_confirmed_paid_at?: string | null
           admin_notes?: string | null
+          amount_due_ttc?: number | null
           client_declared_paid_at?: string | null
           client_declared_paid_note?: string | null
           client_id?: string | null
           client_refused_at?: string | null
           client_validated_at?: string | null
           created_at?: string
+          deliverable_reviews?: Json
           delivered_at?: string | null
           delivery_override?: boolean
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
@@ -504,6 +516,9 @@ export type Database = {
           payment_method_requested?:
             | Database["public"]["Enums"]["client_portal_payment_method"]
             | null
+          payment_methods?: string[]
+          payment_terms?: string
+          print_order_id?: string | null
           published_at?: string | null
           refusal_reason?: string | null
           share_token?: string
@@ -516,6 +531,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_portals_print_order_id_fkey"
+            columns: ["print_order_id"]
+            isOneToOne: false
+            referencedRelation: "print_orders"
             referencedColumns: ["id"]
           },
         ]
