@@ -86,6 +86,14 @@ export default function ClientPortalPublic() {
   const isTask = p.entity_type === "task";
   const title = isTask ? entity.title : entity.name;
 
+  const baseAmount = Number(entity.flat_amount ?? 0);
+  const extraRevisions = Math.max(
+    0,
+    Number(entity.client_revisions_count ?? 0) - Number(entity.free_revisions ?? 0)
+  );
+  const extraRevisionsBilled = extraRevisions * Number(entity.extra_revision_rate ?? 0);
+  const totalAmount = baseAmount + extraRevisionsBilled;
+
   const canValidate = p.status === "draft" || p.status === "awaiting_validation";
   const canPay = ["validated", "payment_pending", "payment_link_requested"].includes(p.status);
   const declared = !!p.client_declared_paid_at;
@@ -123,7 +131,7 @@ export default function ClientPortalPublic() {
               <Info label="Facturation" value={entity.billing_type === "forfait" ? "Forfait" : "Au temps"} />
             )}
             {isTask && entity.flat_amount != null && (
-              <Info label="Montant" value={`${Number(entity.flat_amount).toFixed(2)} € HT`} />
+              <Info label="Montant" value={`${baseAmount.toFixed(2)} € HT`} />
             )}
             {isTask && !!entity.estimated_minutes && (
               <Info label="Temps estimé" value={`${(entity.estimated_minutes / 60).toFixed(1)} h`} />
@@ -142,6 +150,24 @@ export default function ClientPortalPublic() {
               />
             )}
           </div>
+          {isTask && extraRevisionsBilled > 0 && (
+            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-1 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Forfait</span>
+                <span>{baseAmount.toFixed(2)} € HT</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">
+                  Retours supplémentaires ({extraRevisions} × {Number(entity.extra_revision_rate).toFixed(2)} €)
+                </span>
+                <span>{extraRevisionsBilled.toFixed(2)} € HT</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-border/60 pt-1 font-semibold">
+                <span>Total</span>
+                <span>{totalAmount.toFixed(2)} € HT</span>
+              </div>
+            </div>
+          )}
           {subtasks.length > 0 && (
             <div className="pt-2 space-y-1">
               <div className="text-[10px] uppercase text-muted-foreground">Étapes</div>
