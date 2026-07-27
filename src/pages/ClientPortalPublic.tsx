@@ -439,6 +439,11 @@ export default function ClientPortalPublic() {
                   </Button>
                 )}
 
+              </div>
+            ))}
+          </section>
+        )}
+
         {/* Messages */}
         <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Échanges</h2>
@@ -463,11 +468,6 @@ export default function ClientPortalPublic() {
             </Button>
           </div>
         </section>
-
-              </div>
-            ))}
-          </section>
-        )}
       </div>
     </div>
   );
