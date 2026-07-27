@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, CreditCard, Landmark, Download, FileText, Printer, Eye } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +31,7 @@ export default function ClientPortalPublic() {
   const [showRefuse, setShowRefuse] = useState(false);
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
+  const [ribOpen, setRibOpen] = useState(false);
   const [obs, setObs] = useState<Record<string, string>>({});
 
   const load = async () => {
@@ -351,6 +353,11 @@ export default function ClientPortalPublic() {
                   </a>
                 </Button>
               )}
+              {methods.includes("transfer") && (
+                <Button size="sm" variant="outline" onClick={() => setRibOpen(true)}>
+                  <Landmark className="h-3.5 w-3.5 mr-1" /> Payer par virement (RIB)
+                </Button>
+              )}
             </div>
           </section>
         )}
@@ -366,24 +373,16 @@ export default function ClientPortalPublic() {
             {methods.includes("transfer") && (
             <div className="rounded-lg border border-border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium"><Landmark className="h-4 w-4" /> Virement bancaire</div>
-              {pay?.iban ? (
-                <div className="space-y-1 text-sm">
-                  <RibRow label="Titulaire" value={pay.account_holder} />
-                  <RibRow label="IBAN" value={pay.iban} copy />
-                  <RibRow label="BIC" value={pay.bic} copy />
-                  {pay.bank_name && <RibRow label="Banque" value={pay.bank_name} />}
-                  {pay.transfer_note && (
-                    <div className="text-xs text-muted-foreground pt-1">{pay.transfer_note}</div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-xs text-muted-foreground">Les coordonnées bancaires vont vous être communiquées.</div>
-              )}
-              {canPay && (
-                <Button size="sm" variant="outline" onClick={() => act("choose_transfer")} disabled={busy}>
-                  J'opte pour le virement
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setRibOpen(true)}>
+                  Afficher le RIB
                 </Button>
-              )}
+                {canPay && (
+                  <Button size="sm" variant="ghost" onClick={() => act("choose_transfer")} disabled={busy}>
+                    J'opte pour le virement
+                  </Button>
+                )}
+              </div>
             </div>
             )}
 
@@ -475,6 +474,30 @@ export default function ClientPortalPublic() {
           </div>
         </section>
       </div>
+
+      <Dialog open={ribOpen} onOpenChange={setRibOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Coordonnées bancaires</DialogTitle>
+          </DialogHeader>
+          {pay?.iban ? (
+            <div className="space-y-1">
+              <RibRow label="Titulaire" value={pay.account_holder} />
+              <RibRow label="IBAN" value={pay.iban} copy />
+              <RibRow label="BIC" value={pay.bic} copy />
+              {pay.bank_name && <RibRow label="Banque" value={pay.bank_name} />}
+              {dueAmount != null && (
+                <div className="text-sm pt-2">Montant : <strong>{dueAmount.toFixed(2)} € TTC</strong></div>
+              )}
+              {pay.transfer_note && (
+                <div className="text-xs text-muted-foreground pt-1">{pay.transfer_note}</div>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">Les coordonnées bancaires vont vous être communiquées.</div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
