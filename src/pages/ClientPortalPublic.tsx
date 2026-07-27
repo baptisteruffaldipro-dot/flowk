@@ -323,11 +323,7 @@ export default function ClientPortalPublic() {
               })}
               {!deliv.unlocked && (
                 <p className="text-[11px] text-muted-foreground pt-1">
-                  {p.payment_terms === "deposit_50"
-                    ? "Pour télécharger votre fichier, veuillez régler l'acompte de 50 % de la prestation en cours."
-                    : p.payment_terms === "full"
-                      ? "Pour télécharger votre fichier, veuillez régler la totalité de la prestation en cours."
-                      : "Consultation possible — le téléchargement sera débloqué après confirmation du paiement."}
+                  Le téléchargement est désactivé pour le moment — il sera débloqué par le studio.
                 </p>
               )}
             </div>
