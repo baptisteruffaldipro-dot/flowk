@@ -73,7 +73,13 @@ export default function FinanceDashboard() {
       const in30 = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
 
       const [bank, tx, vat, forecasts, financings, allTx, receivables] = await Promise.all([
-        supabase.from("bank_balances").select("amount, as_of_date").order("as_of_date", { ascending: false }).limit(1),
+        supabase
+          .from("bank_balances")
+          .select("amount, as_of_date")
+          .lte("as_of_date", now.toISOString().slice(0, 10))
+          .order("as_of_date", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(1),
         supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ht_presta, amount_ht_achat, split_reviewed, amount_ttc, vat_amount, date, due_date, paid_date").gte("date", yStart),
         supabase.from("vat_adjustments").select("adjustment, reserve_pct").order("period_month", { ascending: false }).limit(1),
         supabase.from("finance_forecasts").select("amount_ttc, planned_date, kind").gte("planned_date", now.toISOString().slice(0, 10)).lte("planned_date", in30),
@@ -89,19 +95,20 @@ export default function FinanceDashboard() {
       const bankDate = bank.data?.[0]?.as_of_date ?? null;
       const today = now.toISOString().slice(0, 10);
 
-      // Balance actualisée au jour même : snapshot + mouvements payés postérieurs
+      // Balance actualisée au jour même : dernier relevé + mouvements bancaires postérieurs
+      // (on n'utilise que les lignes de relevé bancaire pour éviter le double comptage
+      // avec les factures/achats déjà passés en banque)
       let bankAmtToday: number | null = bankAmt;
       if (bankAmt !== null && bankDate && bankDate < today) {
         const { data: moves } = await supabase
           .from("finance_transactions")
-          .select("kind, amount_ttc, paid_date")
-          .gt("paid_date", bankDate)
-          .lte("paid_date", today);
+          .select("amount_ttc, date")
+          .eq("kind", "bank")
+          .gt("date", bankDate)
+          .lte("date", today);
         let delta = 0;
         for (const m of (moves as any[]) ?? []) {
-          const ttc = Number(m.amount_ttc) || 0;
-          if (m.kind === "sale") delta += ttc;
-          else if (m.kind === "expense") delta -= ttc;
+          delta += Number(m.amount_ttc) || 0;
         }
         bankAmtToday = Number(bankAmt) + delta;
       }
