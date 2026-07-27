@@ -357,13 +357,6 @@ export default function ClientPortalPublic() {
                 <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
                   <XCircle className="h-4 w-4 mr-1" /> Refuser
                 </Button>
-                {p.payment_link_url && (
-                  <Button variant="secondary" asChild>
-                    <a href={p.payment_link_url} target="_blank" rel="noreferrer">
-                      <CreditCard className="h-4 w-4 mr-1" /> Payer <ExternalLink className="h-3.5 w-3.5 ml-1" />
-                    </a>
-                  </Button>
-                )}
               </div>
             )}
           </section>
