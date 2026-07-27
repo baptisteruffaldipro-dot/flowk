@@ -35,6 +35,7 @@ export default function FinanceImport() {
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [imports, setImports] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
+  const [makeReceivables, setMakeReceivables] = useState(true);
 
   const loadImports = async () => {
     const { data } = await supabase.from("tiime_imports").select("*").order("created_at", { ascending: false }).limit(20);
@@ -101,6 +102,9 @@ export default function FinanceImport() {
       let latestBank: { date: string; amount: number } | null = null;
       let bankNetMovement = 0;
       let bankMaxDate: string | null = null;
+      // Factures de vente non réglées → dettes clients (agrégées par client)
+      const unpaidByClient = new Map<string, { total: number; due: string | null; label: string }>();
+      let unpaidUnmatched = 0;
 
       for (const row of rows) {
         const n = normalizeRow(row, mapping);
@@ -138,6 +142,35 @@ export default function FinanceImport() {
           inserted++;
           if (invoice_id) await supabase.from("invoices").update({ tiime_synced_at: new Date().toISOString() }).eq("id", invoice_id);
         }
+
+        if (kind === "sale" && makeReceivables && !n.paid_date && Number(n.amount_ttc || 0) > 0) {
+          if (client_id) {
+            const cur = unpaidByClient.get(client_id) ?? { total: 0, due: null as string | null, label: n.counterparty || "" };
+            cur.total += Number(n.amount_ttc || 0);
+            if (n.due_date && (!cur.due || n.due_date < cur.due)) cur.due = n.due_date;
+            unpaidByClient.set(client_id, cur);
+          } else {
+            unpaidUnmatched++;
+          }
+        }
+      }
+
+      // Écriture des dettes clients issues de l'import (remplace les précédentes non soldées d'origine import)
+      if (unpaidByClient.size > 0) {
+        const today = new Date().toISOString().slice(0, 10);
+        for (const [cid, v] of unpaidByClient) {
+          await supabase.from("client_receivables").delete().eq("client_id", cid).eq("notes", "import_tiime").neq("status", "paye");
+          await (supabase as any).from("client_receivables").insert({
+            client_id: cid,
+            snapshot_date: today,
+            invoiced_ttc: Number(v.total.toFixed(2)),
+            paid_ttc: 0,
+            outstanding_ttc: Number(v.total.toFixed(2)),
+            expected_payment_date: v.due,
+            status: v.due && v.due >= today ? "a_venir" : "en_retard",
+            notes: "import_tiime",
+          });
+        }
       }
 
       if (latestBank) {
@@ -166,7 +199,11 @@ export default function FinanceImport() {
         status: "completed", inserted_count: inserted, duplicate_count: duplicates,
       }).eq("id", imp.id);
 
-      toast.success(`Import terminé : ${inserted} lignes ajoutées, ${duplicates} doublons ignorés.`);
+      toast.success(
+        `Import terminé : ${inserted} lignes ajoutées, ${duplicates} doublons ignorés.` +
+          (unpaidByClient.size > 0 ? ` ${unpaidByClient.size} dette(s) client créée(s).` : "") +
+          (unpaidUnmatched > 0 ? ` ${unpaidUnmatched} facture(s) non réglée(s) sans client reconnu.` : ""),
+      );
       setFile(null); setRows([]); setHeaders([]); setMapping({});
       loadImports();
     } catch (e: any) {
