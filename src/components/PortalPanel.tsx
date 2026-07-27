@@ -32,7 +32,7 @@ type Portal = {
   client_declared_paid_note: string | null;
   admin_confirmed_paid_at: string | null;
   delivery_unlock_rule: "acompte" | "total" | "libre";
-  payment_state?: "unpaid" | "deposit_paid" | "paid";
+  payment_state?: "unpaid" | "deposit_paid" | "balance_unpaid" | "paid";
   delivery_override: boolean;
   delivery_locked?: boolean;
   admin_notes: string | null;
@@ -305,12 +305,13 @@ export default function PortalPanel({
     }
   };
 
-  const payState: "unpaid" | "deposit_paid" | "paid" =
+  const payState: "unpaid" | "deposit_paid" | "balance_unpaid" | "paid" =
     portal.admin_confirmed_paid_at !== null ? "paid" : (portal.payment_state ?? "unpaid");
 
   const paidOk =
     portal.delivery_unlock_rule === "libre" ||
-    (portal.delivery_unlock_rule === "acompte" && (payState === "deposit_paid" || payState === "paid")) ||
+    (portal.delivery_unlock_rule === "acompte" &&
+      (payState === "deposit_paid" || payState === "balance_unpaid" || payState === "paid")) ||
     (portal.delivery_unlock_rule === "total" && payState === "paid");
 
   const isUnlocked =
@@ -583,9 +584,10 @@ export default function PortalPanel({
           >
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="unpaid">Acompte non réglé / solde non réglé</SelectItem>
-              <SelectItem value="deposit_paid">Acompte réglé — solde non réglé</SelectItem>
-              <SelectItem value="paid">Solde totalement réglé</SelectItem>
+              <SelectItem value="unpaid">Acompte non réglé</SelectItem>
+              <SelectItem value="deposit_paid">Acompte réglé</SelectItem>
+              <SelectItem value="balance_unpaid">Solde non réglé</SelectItem>
+              <SelectItem value="paid">Solde réglé</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-[11px] text-muted-foreground">
