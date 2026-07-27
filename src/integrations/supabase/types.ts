@@ -454,6 +454,7 @@ export type Database = {
             | Database["public"]["Enums"]["client_portal_payment_method"]
             | null
           payment_methods: string[]
+          payment_state: string
           payment_terms: string
           print_order_id: string | null
           published_at: string | null
@@ -487,6 +488,7 @@ export type Database = {
             | Database["public"]["Enums"]["client_portal_payment_method"]
             | null
           payment_methods?: string[]
+          payment_state?: string
           payment_terms?: string
           print_order_id?: string | null
           published_at?: string | null
@@ -520,6 +522,7 @@ export type Database = {
             | Database["public"]["Enums"]["client_portal_payment_method"]
             | null
           payment_methods?: string[]
+          payment_state?: string
           payment_terms?: string
           print_order_id?: string | null
           published_at?: string | null
