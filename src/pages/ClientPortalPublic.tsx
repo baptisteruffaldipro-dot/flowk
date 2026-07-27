@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye } from "lucide-react";
+import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -32,6 +32,7 @@ export default function ClientPortalPublic() {
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
   const [obs, setObs] = useState<Record<string, string>>({});
+  const [ribOpen, setRibOpen] = useState(false);
 
   const load = async () => {
     if (!token) return;
@@ -65,6 +66,21 @@ export default function ClientPortalPublic() {
   const printOrder = data.print_order ?? null;
   const invoiceDoc = data.invoice_doc ?? {};
   const reviews: any[] = deliv?.reviews ?? [];
+  const pay = data.payment_settings ?? {};
+  const methods: string[] = p.payment_methods ?? [];
+  const amountDue = p.amount_due_ttc != null ? Number(p.amount_due_ttc) : null;
+  const dueAmount =
+    amountDue != null ? (p.payment_terms === "deposit_50" ? amountDue / 2 : amountDue) : null;
+  const termsLabel =
+    p.payment_terms === "deposit_50"
+      ? "Acompte de 50 % à régler"
+      : p.payment_terms === "full"
+        ? "Totalité à régler"
+        : null;
+  const declared = !!p.client_declared_paid_at;
+  const canPay =
+    !p.admin_confirmed_paid_at &&
+    ["validated", "payment_pending", "payment_link_requested"].includes(p.status);
 
   const openInvoice = async () => {
     if (invoiceDoc?.url) { window.open(invoiceDoc.url, "_blank"); return; }
@@ -386,16 +402,71 @@ export default function ClientPortalPublic() {
           </section>
         )}
 
-        {/* Facture */}
-        {(invoiceDoc?.url || invoiceDoc?.has_file) && (
-          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Facture</h2>
-            <Button size="sm" variant="outline" onClick={openInvoice}>
-              <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
-            </Button>
+        {/* Règlement */}
+        {(termsLabel || dueAmount != null || printOrder || methods.length > 0 || invoiceDoc?.url || invoiceDoc?.has_file) && (
+          <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
+            <h2 className="text-sm font-semibold">Règlement</h2>
+            {(termsLabel || dueAmount != null) && (
+              <p className="text-sm">
+                {termsLabel ?? "Montant à régler"}
+                {dueAmount != null && <> — <strong>{dueAmount.toFixed(2)} € TTC</strong></>}
+                {p.payment_terms === "deposit_50" && amountDue != null && (
+                  <span className="text-muted-foreground"> (sur un total de {amountDue.toFixed(2)} € TTC)</span>
+                )}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {p.payment_terms === "deposit_50"
+                ? "Pour télécharger votre fichier, veuillez régler l'acompte de 50 % de la prestation en cours."
+                : p.payment_terms === "full"
+                  ? "Pour télécharger votre fichier, veuillez régler la totalité de la prestation en cours."
+                  : "Le téléchargement des livrables est débloqué après confirmation du paiement."}
+            </p>
+            {printOrder && (
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {(invoiceDoc?.url || invoiceDoc?.has_file) && (
+                <Button size="sm" variant="outline" onClick={openInvoice}>
+                  <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
+                </Button>
+              )}
+              {methods.includes("link") &&
+                (p.payment_link_url ? (
+                  <Button size="sm" asChild>
+                    <a href={p.payment_link_url} target="_blank" rel="noreferrer">
+                      <CreditCard className="h-3.5 w-3.5 mr-1" /> Payer par carte
+                    </a>
+                  </Button>
+                ) : canPay && p.status !== "payment_link_requested" ? (
+                  <Button size="sm" variant="outline" onClick={() => act("request_payment_link")} disabled={busy}>
+                    <CreditCard className="h-3.5 w-3.5 mr-1" /> Demander un lien de paiement
+                  </Button>
+                ) : null)}
+              {methods.includes("transfer") && (
+                <Button size="sm" variant="outline" onClick={() => setRibOpen(true)}>
+                  <Landmark className="h-3.5 w-3.5 mr-1" /> Payer par virement (RIB)
+                </Button>
+              )}
+            </div>
+            {canPay && !declared && methods.length > 0 && (
+              <div className="rounded-lg border border-border bg-background p-3 space-y-2">
+                <div className="text-sm font-medium">Vous avez payé ?</div>
+                <Input placeholder="Référence / date du paiement (optionnel)" value={paidNote} onChange={(e) => setPaidNote(e.target.value)} />
+                <Button size="sm" onClick={() => act("declare_paid", { note: paidNote })} disabled={busy}>
+                  J'ai effectué le paiement
+                </Button>
+              </div>
+            )}
+            {declared && !p.admin_confirmed_paid_at && (
+              <div className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded p-2">
+                Merci ! Nous vérifions la réception du paiement.
+              </div>
+            )}
           </section>
         )}
-
 
         {/* Messages */}
         <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
@@ -423,6 +494,44 @@ export default function ClientPortalPublic() {
         </section>
       </div>
 
+      <Dialog open={ribOpen} onOpenChange={setRibOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Coordonnées bancaires</DialogTitle>
+          </DialogHeader>
+          {pay?.iban ? (
+            <div className="space-y-1">
+              <RibRow label="Titulaire" value={pay.account_holder} />
+              <RibRow label="IBAN" value={pay.iban} copy />
+              <RibRow label="BIC" value={pay.bic} copy />
+              {pay.bank_name && <RibRow label="Banque" value={pay.bank_name} />}
+              {dueAmount != null && (
+                <div className="text-sm pt-2">Montant : <strong>{dueAmount.toFixed(2)} € TTC</strong></div>
+              )}
+              {pay.transfer_note && (
+                <div className="text-xs text-muted-foreground pt-1">{pay.transfer_note}</div>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">Les coordonnées bancaires vont vous être communiquées.</div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function RibRow({ label, value, copy }: { label: string; value?: string | null; copy?: boolean }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-center justify-between gap-2 text-sm">
+      <span className="text-muted-foreground text-xs w-20">{label}</span>
+      <span className="flex-1 font-mono text-xs truncate">{value}</span>
+      {copy && (
+        <Button size="icon" variant="ghost" onClick={() => { navigator.clipboard.writeText(value); toast.success("Copié"); }}>
+          <Copy className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 }

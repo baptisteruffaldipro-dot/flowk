@@ -435,6 +435,71 @@ export default function PortalPanel({
         </div>
       </div>
 
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Moyens de paiement proposés</Label>
+            <div className="flex flex-col gap-1.5">
+              {[
+                { key: "link", label: "Carte bancaire (lien)" },
+                { key: "transfer", label: "Virement (RIB)" },
+              ].map((m) => {
+                const active = (portal.payment_methods ?? []).includes(m.key);
+                return (
+                  <label key={m.key} className="flex items-center gap-2 text-sm">
+                    <Switch
+                      checked={active}
+                      onCheckedChange={(v) =>
+                        update({
+                          payment_methods: v
+                            ? [...(portal.payment_methods ?? []), m.key]
+                            : (portal.payment_methods ?? []).filter((x) => x !== m.key),
+                        } as any)
+                      }
+                    />
+                    <span className="text-xs text-muted-foreground">{m.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Modalité de règlement</Label>
+            <Select value={portal.payment_terms ?? "libre"} onValueChange={(v) => update({ payment_terms: v } as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="deposit_50">Acompte de 50 %</SelectItem>
+                <SelectItem value="full">Totalité</SelectItem>
+                <SelectItem value="libre">Libre</SelectItem>
+              </SelectContent>
+            </Select>
+            <Label className="text-xs pt-2 block">Montant dû TTC</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={portal.amount_due_ttc ?? ""}
+              onChange={(e) => setPortal({ ...portal, amount_due_ttc: e.target.value })}
+              onBlur={() =>
+                update({
+                  amount_due_ttc: portal.amount_due_ttc === "" || portal.amount_due_ttc == null ? null : Number(portal.amount_due_ttc),
+                } as any)
+              }
+            />
+          </div>
+        </div>
+
+        {(portal.payment_methods ?? []).includes("link") && (
+          <div className="space-y-1.5">
+            <Label className="text-xs">Lien de paiement carte (Stripe, SumUp, PayPal…)</Label>
+            <Input
+              type="url"
+              placeholder="https://…"
+              value={portal.payment_link_url ?? ""}
+              onChange={(e) => setPortal({ ...portal, payment_link_url: e.target.value })}
+              onBlur={() => update({ payment_link_url: portal.payment_link_url || null } as any)}
+            />
+          </div>
+        )}
+
         <div className="space-y-1.5 pb-1">
           <Label className="text-xs">Commande d'impression liée</Label>
           <Select
