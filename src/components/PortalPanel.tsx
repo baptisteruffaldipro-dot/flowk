@@ -482,6 +482,13 @@ export default function PortalPanel({
                   <SelectItem value="libre">Libre</SelectItem>
                 </SelectContent>
               </Select>
+              {portal.payment_terms !== "libre" && (
+                <p className="text-[11px] text-muted-foreground">
+                  Mention côté client : « Pour télécharger votre fichier, veuillez régler
+                  {portal.payment_terms === "deposit_50" ? " l'acompte de 50 %" : " la totalité"}
+                  {" "}de la prestation en cours. »
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Montant TTC dû</Label>
