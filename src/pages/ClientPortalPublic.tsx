@@ -22,7 +22,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default function ClientPortalPublic() {
   const { token } = useParams<{ token: string }>();
   const [data, setData] = useState<any>(null);
-  const [deliv, setDeliv] = useState<{ unlocked: boolean; files: any[] } | null>(null);
+  const [deliv, setDeliv] = useState<{ unlocked: boolean; files: any[]; reviews?: any[] } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState("");
@@ -152,6 +152,74 @@ export default function ClientPortalPublic() {
             </div>
           )}
         </section>
+
+        {/* Validation */}
+        {canValidate && (
+          <>
+          </>
+        )}
+
+        {/* Règlement */}
+        {(termsLabel || dueAmount != null || printOrder || invoiceDoc?.url || invoiceDoc?.has_file) && (
+          <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
+            <h2 className="text-sm font-semibold">Règlement</h2>
+            {(termsLabel || dueAmount != null) && (
+              <p className="text-sm">
+                {termsLabel ?? "Montant à régler"}
+                {dueAmount != null && <> — <strong>{dueAmount.toFixed(2)} € TTC</strong></>}
+                {p.payment_terms === "deposit_50" && amountDue != null && (
+                  <span className="text-muted-foreground"> (sur un total de {amountDue.toFixed(2)} € TTC)</span>
+                )}
+              </p>
+            )}
+            {printOrder && (
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {(invoiceDoc?.url || invoiceDoc?.has_file) && (
+                <Button size="sm" variant="outline" onClick={openInvoice}>
+                  <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
+                </Button>
+              )}
+              {methods.includes("link") && p.payment_link_url && (
+                <Button size="sm" asChild>
+                  <a href={p.payment_link_url} target="_blank" rel="noreferrer">
+                    <CreditCard className="h-3.5 w-3.5 mr-1" /> Payer par carte
+                  </a>
+                </Button>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Commande d'impression liée */}
+        {printOrder && (
+          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Printer className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Commande d'impression</h2>
+              {printOrder.status && <Badge variant="outline" className="text-[10px]">{String(printOrder.status).replace(/_/g, " ")}</Badge>}
+            </div>
+            <div className="text-sm font-medium">{printOrder.reference ? `${printOrder.reference} — ` : ""}{printOrder.description}</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+              {printOrder.quantity != null && <Info label="Quantité" value={String(printOrder.quantity)} />}
+              {printOrder.format && <Info label="Format" value={printOrder.format} />}
+              {printOrder.support && <Info label="Support" value={printOrder.support} />}
+              {printOrder.grammage && <Info label="Grammage" value={printOrder.grammage} />}
+              {printOrder.colors && <Info label="Couleurs" value={printOrder.colors} />}
+              {printOrder.finitions && <Info label="Finitions" value={printOrder.finitions} />}
+              {printOrder.amount != null && <Info label="Montant" value={`${Number(printOrder.amount).toFixed(2)} € HT`} />}
+              {printOrder.estimated_delivery_date && (
+                <Info label="Livraison estimée" value={new Date(printOrder.estimated_delivery_date).toLocaleDateString("fr-FR")} />
+              )}
+            </div>
+            {printOrder.observations && (
+              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{printOrder.observations}</p>
+            )}
+          </section>
+        )}
 
         {/* Validation */}
         {canValidate && (
