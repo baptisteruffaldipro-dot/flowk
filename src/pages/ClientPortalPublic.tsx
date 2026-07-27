@@ -86,6 +86,14 @@ export default function ClientPortalPublic() {
   const isTask = p.entity_type === "task";
   const title = isTask ? entity.title : entity.name;
 
+  const baseAmount = Number(entity.flat_amount ?? 0);
+  const extraRevisions = Math.max(
+    0,
+    Number(entity.client_revisions_count ?? 0) - Number(entity.free_revisions ?? 0)
+  );
+  const extraRevisionsBilled = extraRevisions * Number(entity.extra_revision_rate ?? 0);
+  const totalAmount = baseAmount + extraRevisionsBilled;
+
   const canValidate = p.status === "draft" || p.status === "awaiting_validation";
   const canPay = ["validated", "payment_pending", "payment_link_requested"].includes(p.status);
   const declared = !!p.client_declared_paid_at;
