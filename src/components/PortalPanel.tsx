@@ -189,11 +189,6 @@ export default function PortalPanel({
     toast.success("Lien copié");
   };
 
-  const markPaid = async () => {
-    await update({ admin_confirmed_paid_at: new Date().toISOString(), status: "paid", payment_state: "paid" } as any);
-    toast.success("Marqué comme payé — livraison débloquée");
-  };
-
   const markDelivered = async () => {
     await update({ delivered_at: new Date().toISOString(), status: "delivered" } as any);
     toast.success("Marqué comme livré");
