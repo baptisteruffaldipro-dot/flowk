@@ -353,6 +353,11 @@ export default function ClientPortalPublic() {
                   </a>
                 </Button>
               )}
+              {methods.includes("transfer") && (
+                <Button size="sm" variant="outline" onClick={() => setRibOpen(true)}>
+                  <Landmark className="h-3.5 w-3.5 mr-1" /> Payer par virement (RIB)
+                </Button>
+              )}
             </div>
           </section>
         )}
