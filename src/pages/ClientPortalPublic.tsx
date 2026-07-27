@@ -370,116 +370,13 @@ export default function ClientPortalPublic() {
           </section>
         )}
 
-        {/* Règlement */}
-        {(termsLabel || dueAmount != null || printOrder || invoiceDoc?.url || invoiceDoc?.has_file) && (
-          <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
-            <h2 className="text-sm font-semibold">Règlement</h2>
-            {(termsLabel || dueAmount != null) && (
-              <p className="text-sm">
-                {termsLabel ?? "Montant à régler"}
-                {dueAmount != null && <> — <strong>{dueAmount.toFixed(2)} € TTC</strong></>}
-                {p.payment_terms === "deposit_50" && amountDue != null && (
-                  <span className="text-muted-foreground"> (sur un total de {amountDue.toFixed(2)} € TTC)</span>
-                )}
-              </p>
-            )}
-            {printOrder && (
-              <p className="text-sm text-amber-700 dark:text-amber-400">
-                Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
-              </p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              {(invoiceDoc?.url || invoiceDoc?.has_file) && (
-                <Button size="sm" variant="outline" onClick={openInvoice}>
-                  <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
-                </Button>
-              )}
-              {methods.includes("link") && p.payment_link_url && (
-                <Button size="sm" asChild>
-                  <a href={p.payment_link_url} target="_blank" rel="noreferrer">
-                    <CreditCard className="h-3.5 w-3.5 mr-1" /> Payer par carte
-                  </a>
-                </Button>
-              )}
-              {methods.includes("transfer") && (
-                <Button size="sm" variant="outline" onClick={() => setRibOpen(true)}>
-                  <Landmark className="h-3.5 w-3.5 mr-1" /> Payer par virement (RIB)
-                </Button>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Paiement */}
-        {(canPay || methods.includes("transfer")) && (
-          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
-            <h2 className="text-sm font-semibold">Paiement</h2>
-            <p className="text-xs text-muted-foreground">
-              {p.payment_terms === "deposit_50"
-                ? "Pour télécharger votre fichier, veuillez régler l'acompte de 50 % de la prestation en cours."
-                : p.payment_terms === "full"
-                  ? "Pour télécharger votre fichier, veuillez régler la totalité de la prestation en cours."
-                  : "Le téléchargement final des livrables est débloqué après confirmation du paiement."}
-            </p>
-            {/* Option virement */}
-            {methods.includes("transfer") && (
-            <div className="rounded-lg border border-border p-3 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium"><Landmark className="h-4 w-4" /> Virement bancaire</div>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => setRibOpen(true)}>
-                  Afficher le RIB
-                </Button>
-                {canPay && (
-                  <Button size="sm" variant="ghost" onClick={() => act("choose_transfer")} disabled={busy}>
-                    J'opte pour le virement
-                  </Button>
-                )}
-              </div>
-            </div>
-            )}
-
-            {/* Option lien de paiement */}
-            {canPay && methods.includes("link") && (
-            <div className="rounded-lg border border-border p-3 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium"><CreditCard className="h-4 w-4" /> Lien de paiement (carte)</div>
-              {p.payment_link_url ? (
-                <Button size="sm" asChild>
-                  <a href={p.payment_link_url} target="_blank" rel="noreferrer">
-                    Payer par carte <ExternalLink className="h-3.5 w-3.5 ml-1" />
-                  </a>
-                </Button>
-              ) : (
-                <>
-                  <div className="text-xs text-muted-foreground">
-                    {p.status === "payment_link_requested"
-                      ? "Votre demande a bien été enregistrée. Le lien vous sera envoyé rapidement."
-                      : "Souhaitez-vous recevoir un lien de paiement par carte ?"}
-                  </div>
-                  {p.status !== "payment_link_requested" && (
-                    <Button size="sm" variant="outline" onClick={() => act("request_payment_link")} disabled={busy}>
-                      Demander un lien de paiement
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-            )}
-
-            {/* Déclaration paiement */}
-            {!declared && (
-              <div className="rounded-lg border border-border p-3 space-y-2">
-                <div className="text-sm font-medium">Vous avez payé ?</div>
-                <Input placeholder="Référence / date du virement (optionnel)" value={paidNote} onChange={(e) => setPaidNote(e.target.value)} />
-                <Button size="sm" onClick={() => act("declare_paid", { note: paidNote })} disabled={busy}>
-                  J'ai effectué le paiement
-                </Button>
-              </div>
-            )}
-            {declared && !p.admin_confirmed_paid_at && (
-              <div className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded p-2">
-                Merci ! Nous vérifions la réception du paiement.
-              </div>
-            )}
+        {/* Facture */}
+        {(invoiceDoc?.url || invoiceDoc?.has_file) && (
+          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Facture</h2>
+            <Button size="sm" variant="outline" onClick={openInvoice}>
+              <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
+            </Button>
           </section>
         )}
 
