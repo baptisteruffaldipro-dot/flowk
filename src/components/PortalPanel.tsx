@@ -312,7 +312,7 @@ export default function PortalPanel({
     portal.delivery_unlock_rule === "libre");
 
   return (
-    <Card className="p-5 space-y-5">
+    <Card className="p-5 space-y-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -334,6 +334,61 @@ export default function PortalPanel({
         </div>
       </div>
 
+      <section className="rounded-lg border border-border/70 p-4 space-y-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">1 · Lien client</div>
+      {/* Lien */}
+      <div className="space-y-1.5">
+        <Label className="text-xs">Lien à envoyer au client</Label>
+        <div className="flex gap-2">
+          <Input readOnly value={publicUrl} className="font-mono text-xs" />
+          <Button size="sm" variant="outline" onClick={copy}><Copy className="h-3.5 w-3.5 mr-1" /> Copier</Button>
+          <Button size="sm" variant="outline" asChild>
+            <a href={publicUrl} target="_blank" rel="noreferrer"><LinkIcon className="h-3.5 w-3.5 mr-1" /> Ouvrir</a>
+          </Button>
+          <Button size="sm" variant="ghost" onClick={regenerateToken} title="Régénérer un lien (invalide l'ancien)">
+            <RefreshCcw className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+      </section>
+
+      <section className="rounded-lg border border-border/70 p-4 space-y-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">2 · Livrables</div>
+        {deliverables.length === 0 && (
+          <div className="text-xs text-muted-foreground">Aucun fichier. Uploade un fichier ou ajoute une URL (WeTransfer, Drive…).</div>
+        )}
+        <div className="space-y-1">
+          {deliverables.map((d, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm rounded border border-border px-2 py-1.5">
+              <span className="flex-1 truncate">{d.name}</span>
+              <a href={d.url} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground underline truncate max-w-[40%]">{d.url}</a>
+              <Button size="icon" variant="ghost" onClick={() => saveDeliverables(deliverables.filter((_, j) => j !== i))}>
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+        <div className="grid sm:grid-cols-[1fr_2fr_auto] gap-2">
+          <Input placeholder="Nom du fichier" value={newName} onChange={(e) => setNewName(e.target.value)} />
+          <Input placeholder="URL" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} />
+          <Button size="sm" variant="outline" onClick={addDeliverable}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
+        </div>
+        <div className="flex items-center gap-2 pt-1">
+          <input ref={fileInput} type="file" multiple className="hidden" onChange={(e) => uploadFiles(e.target.files)} />
+          <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={uploading}>
+            <Upload className="h-3.5 w-3.5 mr-1.5" /> {uploading ? "Upload…" : "Uploader un fichier"}
+          </Button>
+          {notifyTemplate && clientEmail && (
+            <Button size="sm" variant="outline" onClick={sendNotice} disabled={sending || !isUnlocked}>
+              <Send className="h-3.5 w-3.5 mr-1.5" />
+              {sending ? "Envoi…" : "Notifier le client"}
+            </Button>
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border/70 p-4 space-y-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">3 · Facture &amp; paiement</div>
       {/* Facture */}
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
@@ -380,55 +435,6 @@ export default function PortalPanel({
           </div>
         </div>
       </div>
-
-      {/* Lien */}
-      <div className="space-y-1.5">
-        <Label className="text-xs">Lien à envoyer au client</Label>
-        <div className="flex gap-2">
-          <Input readOnly value={publicUrl} className="font-mono text-xs" />
-          <Button size="sm" variant="outline" onClick={copy}><Copy className="h-3.5 w-3.5 mr-1" /> Copier</Button>
-          <Button size="sm" variant="outline" asChild>
-            <a href={publicUrl} target="_blank" rel="noreferrer"><LinkIcon className="h-3.5 w-3.5 mr-1" /> Ouvrir</a>
-          </Button>
-          <Button size="sm" variant="ghost" onClick={regenerateToken} title="Régénérer un lien (invalide l'ancien)">
-            <RefreshCcw className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Règle de déblocage */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Règle de déblocage des livrables</Label>
-          <Select value={portal.delivery_unlock_rule} onValueChange={(v) => update({ delivery_unlock_rule: v as any })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="total">Solde total payé</SelectItem>
-              <SelectItem value="acompte">Acompte payé</SelectItem>
-              <SelectItem value="libre">Libre (aucun verrou)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Override manuel</Label>
-          <div className="flex items-center gap-2">
-            <Switch checked={portal.delivery_override} onCheckedChange={toggleOverride} />
-            <span className="text-xs text-muted-foreground">
-              Autoriser le téléchargement même sans paiement
-            </span>
-          </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Switch checked={!!portal.delivery_locked} onCheckedChange={toggleLocked} />
-            <span className="text-xs text-muted-foreground">
-              Bloquer le téléchargement (prioritaire sur tout le reste)
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Paiement */}
-      <div className="space-y-2 rounded-lg border border-border p-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Paiement</div>
 
         <div className="grid sm:grid-cols-2 gap-4 pb-2">
           <div className="space-y-1.5">
@@ -540,45 +546,42 @@ export default function PortalPanel({
             Marquer comme livré
           </Button>
         </div>
-      </div>
+      </section>
 
-      {/* Livrables */}
-      <div className="space-y-2">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Livrables</div>
-        {deliverables.length === 0 && (
-          <div className="text-xs text-muted-foreground">Aucun fichier. Uploade un fichier ou ajoute une URL (WeTransfer, Drive…).</div>
-        )}
-        <div className="space-y-1">
-          {deliverables.map((d, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm rounded border border-border px-2 py-1.5">
-              <span className="flex-1 truncate">{d.name}</span>
-              <a href={d.url} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground underline truncate max-w-[40%]">{d.url}</a>
-              <Button size="icon" variant="ghost" onClick={() => saveDeliverables(deliverables.filter((_, j) => j !== i))}>
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          ))}
+      <section className="rounded-lg border border-border/70 p-4 space-y-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">4 · Accès au téléchargement</div>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Règle de déblocage des livrables</Label>
+          <Select value={portal.delivery_unlock_rule} onValueChange={(v) => update({ delivery_unlock_rule: v as any })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="total">Solde total payé</SelectItem>
+              <SelectItem value="acompte">Acompte payé</SelectItem>
+              <SelectItem value="libre">Libre (aucun verrou)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="grid sm:grid-cols-[1fr_2fr_auto] gap-2">
-          <Input placeholder="Nom du fichier" value={newName} onChange={(e) => setNewName(e.target.value)} />
-          <Input placeholder="URL" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} />
-          <Button size="sm" variant="outline" onClick={addDeliverable}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
-        </div>
-        <div className="flex items-center gap-2 pt-1">
-          <input ref={fileInput} type="file" multiple className="hidden" onChange={(e) => uploadFiles(e.target.files)} />
-          <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={uploading}>
-            <Upload className="h-3.5 w-3.5 mr-1.5" /> {uploading ? "Upload…" : "Uploader un fichier"}
-          </Button>
-          {notifyTemplate && clientEmail && (
-            <Button size="sm" variant="outline" onClick={sendNotice} disabled={sending || !isUnlocked}>
-              <Send className="h-3.5 w-3.5 mr-1.5" />
-              {sending ? "Envoi…" : "Notifier le client"}
-            </Button>
-          )}
+        <div className="space-y-1.5">
+          <Label className="text-xs">Override manuel</Label>
+          <div className="flex items-center gap-2">
+            <Switch checked={portal.delivery_override} onCheckedChange={toggleOverride} />
+            <span className="text-xs text-muted-foreground">
+              Autoriser le téléchargement même sans paiement
+            </span>
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <Switch checked={!!portal.delivery_locked} onCheckedChange={toggleLocked} />
+            <span className="text-xs text-muted-foreground">
+              Bloquer le téléchargement (prioritaire sur tout le reste)
+            </span>
+          </div>
         </div>
       </div>
+      </section>
 
-      {/* Notes admin */}
+      <section className="rounded-lg border border-border/70 p-4 space-y-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">5 · Notes internes</div>
       <div className="space-y-1.5">
         <Label className="text-xs">Notes admin (non visibles par le client)</Label>
         <Textarea
@@ -588,6 +591,8 @@ export default function PortalPanel({
           onBlur={() => update({ admin_notes: portal.admin_notes } as any)}
         />
       </div>
+      </section>
+
     </Card>
   );
 }
