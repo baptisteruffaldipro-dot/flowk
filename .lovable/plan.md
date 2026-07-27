@@ -1,55 +1,39 @@
-## Analyse de cohérence
+## Objectif
 
-### ✅ Ce qui est juste
-- **Solde bancaire** 1 270,44 € au 31/07 : cohérent avec les imports Tiime.
-- **Dette en cours** 2 884 € = 1 300 € (compte courant dirigeant) + 1 584 € (3 loyers Studio 130) ✓
-- **Encours clients** 3 657 € ✓ (somme des 5 lignes)
-- **Prochaine TVA** 718,83 € = TVA collectée − déductible sur juillet ✓
+Enrichir le lien client partagé (`/p/c/:token`, page publique + panneau admin de la tâche/projet) avec : conditions de paiement explicites, facture téléchargeable, visionneuse PDF des livrables avec validation/refus, et affichage d'une commande d'impression liée.
 
-### ⚠️ Problèmes de calcul détectés
+## 1. Paiement — CB, RIB et solde dû
 
-1. **CA encaissé estimé = 0,00 €** — bug bloquant.
-   Le calcul filtre `paid_date IS NOT NULL` sur les 3 derniers mois. Or la majorité des ventes importées n'ont pas de `paid_date` renseigné → la moyenne tombe à 0. Il faut soit basculer sur `date` (date de facture), soit dériver le `paid_date` depuis les mouvements bancaires entrants.
+Côté admin (`PortalPanel.tsx`), nouveau bloc « Conditions de paiement » :
+- Choix des moyens proposés : **lien carte bleue** (URL à coller) et/ou **RIB** (affiche le RIB déjà saisi dans Réglages paiement) — cases à cocher indépendantes.
+- **Modalité** : `Acompte 50 %` / `Totalité avant livraison` / `Libre`.
+- **Montant TTC dû** (pré-rempli depuis le montant de la tâche/projet, modifiable).
 
-2. **Solde estimé fin de mois −1 681,82 €** — faussé par le point 1 (CA = 0). Dès que le CA est correctement estimé, ce chiffre remonte.
+Côté client (`ClientPortalPublic.tsx`) : encart « Règlement » affichant le montant à régler (ex. « Acompte de 50 % — 120,00 € TTC à régler ») avec, selon la configuration, le bouton **Payer par carte** et/ou le bloc RIB copiable. Le lien carte est aussi visible dès la validation (pas seulement après).
 
-3. **Argent réellement disponible 1 178,63 € — réserve TVA 0 %** — la réserve TVA est à 0 %, donc les 718,83 € dus le mois prochain ne sont pas provisionnés. La ligne dit "réellement disponible" mais ne l'est pas. Deux options : forcer une provision par défaut (ex. 100 % de la TVA du mois) ou renommer en "Solde net upcoming 30 j".
+## 2. Mention impression + facture
 
-4. **Risque de double comptage loyer** — le loyer Studio 130 apparaît :
-   - dans **Dettes fournisseurs** (1 584 € restant dû)
-   - probablement aussi dans **Frais fixes** mensualisés (moyenne 6 mois)
-   → le loyer est compté 2 fois dans "Solde requis" du mois prochain. À dédupliquer (marquer les financements `other` liés à un frais fixe existant, ou exclure la catégorie `frais_fixe` du calcul quand une dette fournisseur du même libellé existe).
+- Si une commande d'impression est liée (voir §4), affichage automatique de l'encadré :
+  « Pour toute commande d’impression, merci de régler la facture afin de lancer la production. »
+- **Facture téléchargeable** : la page publique expose la facture existante (lien externe `invoice_url` **ou** PDF uploadé `invoice_file_path`). Le PDF uploadé sera servi via une URL signée courte durée générée côté serveur ; la facture reste téléchargeable même avant paiement.
 
-5. **Dispo après remb. compte courant −1 705,37 €** — le libellé est trompeur : il retranche aussi les 1 584 € de dettes fournisseurs. À renommer en **"Dispo après remboursement total"** ou séparer en 2 KPI distincts.
+## 3. Visionneuse PDF + validation / refus des livrables
 
-6. **Alertes incomplètes** — aucune alerte sur les dettes fournisseurs en retard ni sur les loyers dus.
+- Nouvelle section « Documents à valider » sur la page publique : chaque livrable PDF s'affiche dans une **visionneuse intégrée** (iframe, barre d'outils masquée, pas de bouton de téléchargement).
+- Sous chaque document : **Valider** / **Demander une modification** (zone d'observation obligatoire en cas de refus).
+- Chaque action crée un message dans le fil d'échanges, met à jour le statut du portail et **envoie un email de notification** (fonction e-mail transactionnelle existante) + notification in-app.
+- **Téléchargement uniquement après paiement confirmé** : avant paiement, seule la prévisualisation est possible ; les URLs de téléchargement ne sont plus renvoyées au navigateur tant que la livraison est verrouillée.
 
-## Plan de correction
+## 4. Commande d'impression liée
 
-**Fichier : `src/pages/finance/FinanceDashboard.tsx`**
+- Dans `PortalPanel.tsx` : sélecteur « Commande d'impression liée » (liste des commandes du client).
+- Sur la page publique : carte récapitulative de la commande (description, quantité, format, support, finitions, délai estimé, montant, statut BAT/production), avec lien vers le BAT s'il est publié.
 
-1. Corriger l'estimation du CA encaissé : utiliser `date` (fait générateur) plutôt que `paid_date`, et déduire un ratio d'encaissement moyen (ex. `caHT * (encaissé/facturé sur 3 mois)`).
-2. Renommer "Dispo après remb. compte courant" → "Dispo après remboursement total (CC + fournisseurs)" et ajouter le détail dans le hint.
-3. Ajouter une provision TVA par défaut : si `reserve_pct = 0`, afficher aussi une valeur "après provision TVA mois prochain".
-4. Dédupliquer le loyer : quand un `finance_financings` de type `other` a le même libellé qu'une catégorie récurrente, exclure ce montant de `fixedMonthly` pour éviter le double comptage.
-5. Ajouter alertes : "Loyer STUDIO 130 — 3 mois en retard" ; "Client X en retard depuis N jours".
+## Détails techniques
 
-## Idées d'amélioration à ajouter
-
-**Priorité haute**
-- **Graphique trésorerie prévisionnelle 90 jours** (courbe solde jour par jour intégrant : encaissements attendus par `expected_payment_date`, dépenses récurrentes, TVA, mensualités crédit, loyers).
-- **DSO (Days Sales Outstanding)** : délai moyen d'encaissement client → aide à repérer les mauvais payeurs.
-- **Comparaison N vs N-1** sur chaque KPI (CA mois, dépenses, résultat).
-
-**Priorité moyenne**
-- **Objectif CA mensuel** paramétrable avec barre de progression.
-- **Scénario "et si"** : simulateur (si j'encaisse X d'ici Y, mon solde devient…).
-- **Échéancier consolidé** : timeline des sorties d'argent des 60 prochains jours (TVA, URSSAF, loyer, crédit, fournisseurs).
-- **Ratio marge** par client / par projet (croisement `finance_transactions` × `projects`).
-
-**Confort**
-- Export PDF/CSV du dashboard mensuel.
-- Toggle "HT/TTC" global.
-- Widget "Top 3 clients du mois" et "Top 3 postes de dépenses".
-
-Je propose de traiter d'abord les 5 corrections de calcul, puis on choisit ensemble 2-3 améliorations à implémenter.
+- Migration : ajout sur `client_portals` de `payment_methods` (text[]), `payment_terms` (`deposit_50` | `full` | `libre`), `amount_due_ttc` (numeric), `print_order_id` (uuid, FK `print_orders`), et sur les livrables un état de validation (`deliverable_reviews` jsonb : nom du fichier, statut, observation, date).
+- `get_client_portal_by_token` : renvoie en plus la commande d'impression liée (pour tâche **et** projet), la facture (URL ou indicateur de PDF), les nouveaux champs de paiement et les revues de livrables.
+- `portal_deliverables_by_token` : renvoie une **URL de prévisualisation** courte durée quand c'est verrouillé, et une URL de téléchargement seulement quand c'est déverrouillé.
+- `portal_action_by_token` : nouvelles actions `approve_file` et `request_changes` (avec observation).
+- Nouvelle fonction edge `portal-file-url` (publique, validée par token) pour générer les URLs signées de facture / prévisualisation depuis le bucket `livrables`.
+- RLS/GRANT : aucune table exposée directement, tout passe par les fonctions `SECURITY DEFINER` existantes.
