@@ -347,43 +347,6 @@ export default function ClientPortalPublic() {
   );
 }
 
-  function PaymentSummary() {
-    if (!termsLabel && dueAmount == null && !printOrder && !invoiceDoc?.url && !invoiceDoc?.has_file) return null;
-    return (
-      <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
-        <h2 className="text-sm font-semibold">Règlement</h2>
-        {(termsLabel || dueAmount != null) && (
-          <p className="text-sm">
-            {termsLabel ?? "Montant à régler"}
-            {dueAmount != null && <> — <strong>{dueAmount.toFixed(2)} € TTC</strong></>}
-            {p.payment_terms === "deposit_50" && amountDue != null && (
-              <span className="text-muted-foreground"> (sur un total de {amountDue.toFixed(2)} € TTC)</span>
-            )}
-          </p>
-        )}
-        {printOrder && (
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
-          </p>
-        )}
-        <div className="flex flex-wrap gap-2">
-          {(invoiceDoc?.url || invoiceDoc?.has_file) && (
-            <Button size="sm" variant="outline" onClick={openInvoice}>
-              <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
-            </Button>
-          )}
-          {methods.includes("link") && p.payment_link_url && (
-            <Button size="sm" asChild>
-              <a href={p.payment_link_url} target="_blank" rel="noreferrer">
-                <CreditCard className="h-3.5 w-3.5 mr-1" /> Payer par carte
-              </a>
-            </Button>
-          )}
-        </div>
-      </section>
-    );
-  }
-
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
