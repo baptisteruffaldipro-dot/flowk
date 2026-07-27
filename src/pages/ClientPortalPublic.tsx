@@ -62,20 +62,9 @@ export default function ClientPortalPublic() {
   const projectTasks: any[] = data.tasks ?? [];
   const projectTasksTotal = Number(data.tasks_total_ht ?? 0);
   const invoices: any[] = data.invoices ?? [];
-  const pay = data.payment_settings ?? {};
   const printOrder = data.print_order ?? null;
   const invoiceDoc = data.invoice_doc ?? {};
   const reviews: any[] = deliv?.reviews ?? [];
-  const methods: string[] = p.payment_methods ?? ["link", "transfer"];
-  const amountDue = p.amount_due_ttc != null ? Number(p.amount_due_ttc) : null;
-  const termsLabel =
-    p.payment_terms === "deposit_50"
-      ? "Acompte de 50 % à régler"
-      : p.payment_terms === "full"
-        ? "Solde total à régler"
-        : null;
-  const dueAmount =
-    amountDue != null ? (p.payment_terms === "deposit_50" ? amountDue / 2 : amountDue) : null;
 
   const openInvoice = async () => {
     if (invoiceDoc?.url) { window.open(invoiceDoc.url, "_blank"); return; }
