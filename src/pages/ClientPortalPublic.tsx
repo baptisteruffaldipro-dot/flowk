@@ -85,8 +85,6 @@ export default function ClientPortalPublic() {
   const totalAmount = baseAmount + extraRevisionsBilled;
 
   const canValidate = p.status === "draft" || p.status === "awaiting_validation";
-  const canPay = ["validated", "payment_pending", "payment_link_requested"].includes(p.status);
-  const declared = !!p.client_declared_paid_at;
 
   return (
     <div className="min-h-screen bg-background">
