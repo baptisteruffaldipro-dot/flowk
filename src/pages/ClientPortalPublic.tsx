@@ -397,7 +397,11 @@ export default function ClientPortalPublic() {
           <section className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
             <h2 className="text-sm font-semibold">Paiement</h2>
             <p className="text-xs text-muted-foreground">
-              Le téléchargement final des livrables est débloqué après confirmation du paiement.
+              {p.payment_terms === "deposit_50"
+                ? "Pour télécharger votre fichier, veuillez régler l'acompte de 50 % de la prestation en cours."
+                : p.payment_terms === "full"
+                  ? "Pour télécharger votre fichier, veuillez régler la totalité de la prestation en cours."
+                  : "Le téléchargement final des livrables est débloqué après confirmation du paiement."}
             </p>
             {/* Option virement */}
             {methods.includes("transfer") && (
