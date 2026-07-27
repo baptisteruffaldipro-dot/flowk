@@ -435,9 +435,17 @@ export default function FinanceDashboard() {
               </thead>
               <tbody>
                 {s.receivables.map((r) => (
+                  <>
                   <tr key={r.id} className="border-b last:border-0">
                     <td className="py-2 font-medium">{r.client}</td>
-                    <td className="py-2 text-right font-semibold">{fmtMoney(r.outstanding)}</td>
+                    <td className="py-2 text-right font-semibold">
+                      {fmtMoney(r.outstanding)}
+                      {r.paid > 0 && (
+                        <div className="text-[11px] font-normal text-muted-foreground">
+                          déjà réglé {fmtMoney(r.paid)} / {fmtMoney(r.invoiced)}
+                        </div>
+                      )}
+                    </td>
                     <td className="py-2 text-right">
                       <Input
                         type="date"
@@ -448,6 +456,9 @@ export default function FinanceDashboard() {
                     </td>
                     <td className="py-2 text-right">
                       <div className="inline-flex gap-1">
+                        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => { setPartialId(partialId === r.id ? null : r.id); setPartialAmount(""); }}>
+                          Paiement partiel
+                        </Button>
                         <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => updateReceivable(r.id, { status: "paye", paid_ttc: r.invoiced, outstanding_ttc: 0 })}>
                           Marquer payé
                         </Button>
@@ -457,6 +468,21 @@ export default function FinanceDashboard() {
                       </div>
                     </td>
                   </tr>
+                  {partialId === r.id && (
+                    <tr key={r.id + "-partial"} className="border-b last:border-0 bg-secondary/30">
+                      <td colSpan={4} className="py-2">
+                        <div className="flex flex-wrap items-end justify-end gap-2">
+                          <div>
+                            <label className="text-xs text-muted-foreground">Montant encaissé (TTC)</label>
+                            <Input type="number" step="0.01" className="h-8 w-32" autoFocus value={partialAmount} onChange={(e) => setPartialAmount(e.target.value)} />
+                          </div>
+                          <Button size="sm" className="h-8 text-xs" onClick={() => registerPartialPayment(r)}>Enregistrer</Button>
+                          <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setPartialId(null)}>Annuler</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </>
                 ))}
                 <tr className="font-semibold">
                   <td className="py-2">Total</td>
