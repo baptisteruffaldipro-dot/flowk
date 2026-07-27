@@ -501,9 +501,9 @@ export default function PortalPanel({
             {portal.client_declared_paid_note && <> — {portal.client_declared_paid_note}</>}
           </div>
         )}
-        {portal.payment_method_requested === "link" && (
+        {(portal.payment_methods ?? []).includes("link") && (
           <div className="space-y-1.5">
-            <Label className="text-xs">Lien de paiement (à coller — depuis ta compta externe)</Label>
+            <Label className="text-xs">Lien de paiement carte (à coller — depuis ta compta externe)</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="https://…"
@@ -517,6 +517,7 @@ export default function PortalPanel({
                 Enregistrer
               </Button>
             </div>
+            <p className="text-[11px] text-muted-foreground">Visible par le client dans le bloc Paiement.</p>
           </div>
         )}
         <div className="flex flex-wrap gap-2 pt-1">
