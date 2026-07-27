@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 import FinanceNav from "@/components/finance/FinanceNav";
 import { Card } from "@/components/ui/card";
@@ -482,7 +482,7 @@ export default function FinanceDashboard() {
                       </td>
                     </tr>
                   )}
-                  </>
+                  </Fragment>
                 ))}
                 <tr className="font-semibold">
                   <td className="py-2">Total</td>
