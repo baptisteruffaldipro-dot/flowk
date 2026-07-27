@@ -388,7 +388,7 @@ export default function PortalPanel({
       </section>
 
       <section className="rounded-lg border border-border/70 p-4 space-y-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">3 · Facture &amp; paiement</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">3 · Facture &amp; commande d'impression</div>
       {/* Facture */}
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
@@ -436,79 +436,6 @@ export default function PortalPanel({
         </div>
       </div>
 
-        <div className="grid sm:grid-cols-2 gap-4 pb-2">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Moyens de paiement proposés au client</Label>
-            <div className="flex items-center gap-4 pt-1">
-              {[
-                { key: "link", label: "Carte bancaire (lien)" },
-                { key: "transfer", label: "Virement (RIB)" },
-              ].map((m) => {
-                const methods = portal.payment_methods ?? [];
-                const on = methods.includes(m.key);
-                return (
-                  <label key={m.key} className="flex items-center gap-2 text-xs">
-                    <Checkbox
-                      checked={on}
-                      onCheckedChange={(v) =>
-                        update({
-                          payment_methods: v
-                            ? [...methods.filter((x) => x !== m.key), m.key]
-                            : methods.filter((x) => x !== m.key),
-                        } as any)
-                      }
-                    />
-                    {m.label}
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Modalité</Label>
-              <Select value={portal.payment_terms ?? "full"} onValueChange={(v) => update({ payment_terms: v } as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="deposit_50">Acompte 50 %</SelectItem>
-                  <SelectItem value="full">Totalité avant livraison</SelectItem>
-                  <SelectItem value="libre">Libre</SelectItem>
-                </SelectContent>
-              </Select>
-              {portal.payment_terms !== "libre" && (
-                <p className="text-[11px] text-muted-foreground">
-                  Mention côté client : « Pour télécharger votre fichier, veuillez régler
-                  {portal.payment_terms === "deposit_50" ? " l'acompte de 50 %" : " la totalité"}
-                  {" "}de la prestation en cours. »
-                </p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Montant TTC dû</Label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={amountDue}
-                onChange={(e) => setAmountDue(e.target.value)}
-                onBlur={() => update({ amount_due_ttc: amountDue === "" ? null : Number(amountDue) } as any)}
-              />
-              {entityType === "project" && tasksTotal != null && (
-                <button
-                  type="button"
-                  className="text-[11px] text-primary underline underline-offset-2"
-                  onClick={() => {
-                    setAmountDue(String(tasksTotal));
-                    update({ amount_due_ttc: tasksTotal } as any);
-                  }}
-                >
-                  Facturation groupée : utiliser le total des tâches ({tasksTotal.toFixed(2)} €)
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
         <div className="space-y-1.5 pb-1">
           <Label className="text-xs">Commande d'impression liée</Label>
           <Select
@@ -525,42 +452,9 @@ export default function PortalPanel({
               ))}
             </SelectContent>
           </Select>
-          {portal.print_order_id && (
-            <p className="text-[11px] text-muted-foreground">
-              La mention « régler la facture pour lancer la production » s'affichera côté client.
-            </p>
-          )}
         </div>
 
-        {portal.client_declared_paid_at && !portal.admin_confirmed_paid_at && (
-          <div className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded p-2">
-            Le client a déclaré avoir payé {new Date(portal.client_declared_paid_at).toLocaleString("fr-FR")}.
-            {portal.client_declared_paid_note && <> — {portal.client_declared_paid_note}</>}
-          </div>
-        )}
-        {(portal.payment_methods ?? []).includes("link") && (
-          <div className="space-y-1.5">
-            <Label className="text-xs">Lien de paiement carte (à coller — depuis ta compta externe)</Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="https://…"
-                value={portal.payment_link_url ?? ""}
-                onChange={(e) => setPortal({ ...portal, payment_link_url: e.target.value })}
-              />
-              <Button size="sm" variant="outline" onClick={() => update({
-                payment_link_url: portal.payment_link_url,
-                payment_link_sent_at: new Date().toISOString(),
-              } as any)}>
-                Enregistrer
-              </Button>
-            </div>
-            <p className="text-[11px] text-muted-foreground">Visible par le client dans le bloc Paiement.</p>
-          </div>
-        )}
         <div className="flex flex-wrap gap-2 pt-1">
-          <Button size="sm" onClick={markPaid} disabled={!!portal.admin_confirmed_paid_at}>
-            <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Marquer comme payé
-          </Button>
           <Button size="sm" variant="outline" onClick={markDelivered} disabled={portal.status === "delivered"}>
             Marquer comme livré
           </Button>
