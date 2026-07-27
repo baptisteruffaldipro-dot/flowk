@@ -61,7 +61,7 @@ export default function ClientPortalPublic() {
   const subtasks: any[] = data.subtasks ?? [];
   const projectTasks: any[] = data.tasks ?? [];
   const projectTasksTotal = Number(data.tasks_total_ht ?? 0);
-  const invoices: any[] = data.invoices ?? [];
+  
   const printOrder = data.print_order ?? null;
   const invoiceDoc = data.invoice_doc ?? {};
   const reviews: any[] = deliv?.reviews ?? [];
@@ -376,23 +376,6 @@ export default function ClientPortalPublic() {
           </section>
         )}
 
-        {/* Factures */}
-        {invoices.length > 0 && (
-          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Devis & factures</h2>
-            {invoices.map((inv: any) => (
-              <div key={inv.id} className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-muted/40 text-sm">
-                <span className="truncate">{inv.label || inv.number || "Facture"} — {inv.amount != null ? `${Number(inv.amount).toFixed(2)} € HT` : ""}</span>
-                {inv.pdf_url && (
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={inv.pdf_url} target="_blank" rel="noreferrer"><Download className="h-3.5 w-3.5 mr-1" /> PDF</a>
-                  </Button>
-                )}
-
-              </div>
-            ))}
-          </section>
-        )}
 
         {/* Messages */}
         <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
