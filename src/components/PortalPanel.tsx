@@ -94,8 +94,6 @@ export default function PortalPanel({
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
-  const [amountDue, setAmountDue] = useState<string>("");
-  const [tasksTotal, setTasksTotal] = useState<number | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
 
