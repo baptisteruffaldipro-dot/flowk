@@ -153,12 +153,6 @@ export default function ClientPortalPublic() {
           )}
         </section>
 
-        {/* Validation */}
-        {canValidate && (
-          <>
-          </>
-        )}
-
         {/* Règlement */}
         {(termsLabel || dueAmount != null || printOrder || invoiceDoc?.url || invoiceDoc?.has_file) && (
           <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
