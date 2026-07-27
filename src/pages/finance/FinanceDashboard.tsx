@@ -301,6 +301,25 @@ export default function FinanceDashboard() {
   }
 
   async function deleteReceivable(id: string) {
+    return deleteReceivableImpl(id);
+  }
+
+  async function registerPartialPayment(r: { id: string; invoiced: number; paid: number; outstanding: number }) {
+    const amt = Number(partialAmount.replace(",", "."));
+    if (!amt || amt <= 0) return toast.error("Montant invalide");
+    if (amt > r.outstanding + 0.001) return toast.error("Montant supérieur au reste dû");
+    const newPaid = Number((r.paid + amt).toFixed(2));
+    const newOutstanding = Number((r.outstanding - amt).toFixed(2));
+    await updateReceivable(r.id, {
+      paid_ttc: newPaid,
+      outstanding_ttc: newOutstanding,
+      status: newOutstanding <= 0.009 ? "paye" : "partiel",
+    });
+    setPartialId(null);
+    setPartialAmount("");
+  }
+
+  async function deleteReceivableImpl(id: string) {
     if (!confirm("Supprimer cette dette client ?")) return;
     const { error } = await (supabase as any).from("client_receivables").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
