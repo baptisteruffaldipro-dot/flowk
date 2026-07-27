@@ -33,6 +33,10 @@ type Portal = {
   delivery_unlock_rule: "acompte" | "total" | "libre";
   delivery_override: boolean;
   admin_notes: string | null;
+  payment_methods: string[];
+  payment_terms: "deposit_50" | "full" | "libre";
+  amount_due_ttc: number | string | null;
+  print_order_id: string | null;
 };
 
 type Deliverable = { name: string; url: string };
@@ -86,6 +90,8 @@ export default function PortalPanel({
   const [sending, setSending] = useState(false);
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
+  const [printOrders, setPrintOrders] = useState<any[]>([]);
+  const [amountDue, setAmountDue] = useState<string>("");
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
 
@@ -117,6 +123,20 @@ export default function PortalPanel({
     setDeliverables(((e as any)?.deliverable_files as Deliverable[]) ?? []);
     setInvoiceUrl(((e as any)?.invoice_url as string) ?? "");
     setInvoiceFilePath(((e as any)?.invoice_file_path as string) ?? null);
+    setAmountDue(
+      (data ?? created) && ((data ?? created) as any).amount_due_ttc != null
+        ? String(((data ?? created) as any).amount_due_ttc)
+        : "",
+    );
+    if (clientId) {
+      const { data: po } = await supabase
+        .from("print_orders")
+        .select("id,reference,description,amount,status")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      setPrintOrders(po ?? []);
+    }
     setLoading(false);
   };
 
