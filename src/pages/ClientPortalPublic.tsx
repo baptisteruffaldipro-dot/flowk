@@ -60,6 +60,8 @@ export default function ClientPortalPublic() {
   const client = data.client;
   const messages: any[] = data.messages ?? [];
   const subtasks: any[] = data.subtasks ?? [];
+  const projectTasks: any[] = data.tasks ?? [];
+  const projectTasksTotal = Number(data.tasks_total_ht ?? 0);
   const invoices: any[] = data.invoices ?? [];
   const pay = data.payment_settings ?? {};
   const printOrder = data.print_order ?? null;
@@ -182,6 +184,43 @@ export default function ClientPortalPublic() {
         </section>
 
         {/* Commande d'impression liée */}
+        {!isTask && projectTasks.length > 0 && (
+          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Prestations du projet
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Ce projet regroupe plusieurs prestations, facturées en une seule fois.
+            </p>
+            <div className="divide-y divide-border/60 rounded-lg border border-border/60">
+              {projectTasks.map((t: any) => {
+                const extra = Number(t.extra_revisions ?? 0);
+                return (
+                  <div key={t.id} className="flex items-start justify-between gap-3 px-3 py-2 text-sm">
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{t.title}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {t.billing_type === "horaire" ? "Au temps" : "Forfait"}
+                        {t.deadline ? ` · échéance ${new Date(t.deadline).toLocaleDateString("fr-FR")}` : ""}
+                        {extra > 0
+                          ? ` · ${extra} retour${extra > 1 ? "s" : ""} supplémentaire${extra > 1 ? "s" : ""}`
+                          : ""}
+                      </div>
+                    </div>
+                    <div className="whitespace-nowrap tabular-nums">
+                      {Number(t.amount_ht ?? 0).toFixed(2)} € HT
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="flex items-center justify-between px-3 py-2 text-sm font-semibold">
+                <span>Total du projet</span>
+                <span className="tabular-nums">{projectTasksTotal.toFixed(2)} € HT</span>
+              </div>
+            </div>
+          </section>
+        )}
+
         {printOrder && (
           <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
             <div className="flex items-center gap-2">
