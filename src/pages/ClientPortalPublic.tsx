@@ -362,24 +362,81 @@ export default function ClientPortalPublic() {
           </div>
           {(!deliv || deliv.files.length === 0) ? (
             <div className="text-xs text-muted-foreground">Aucun livrable pour le moment.</div>
-          ) : deliv.unlocked ? (
-            <div className="space-y-1">
-              {deliv.files.map((f: any, i: number) => (
-                <a key={i} href={f.url} target="_blank" rel="noreferrer"
-                   className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-secondary/60">
-                  <span className="truncate">{f.name}</span>
-                  <Download className="h-3.5 w-3.5" />
-                </a>
-              ))}
-            </div>
           ) : (
-            <div className="space-y-1">
-              {deliv.files.map((f: any, i: number) => (
-                <div key={i} className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5" /> <span className="truncate">{f.name}</span>
-                </div>
-              ))}
-              <p className="text-[11px] text-muted-foreground pt-1">Les fichiers seront téléchargeables après confirmation du paiement.</p>
+            <div className="space-y-2">
+              {deliv.files.map((f: any, i: number) => {
+                const key = String(f.url ?? i);
+                const open = openFile === key;
+                return (
+                  <div key={i} className="rounded-md border border-border">
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                      <span className="truncate flex items-center gap-2">
+                        {!deliv.unlocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {f.name}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <Button size="sm" variant="outline" onClick={() => setOpenFile(open ? null : key)}>
+                          <Eye className="h-3.5 w-3.5 mr-1" /> {open ? "Fermer" : "Visionner"}
+                        </Button>
+                        {deliv.unlocked && (
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={f.url} target="_blank" rel="noreferrer"><Download className="h-3.5 w-3.5" /></a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {open && (
+                      <div className="border-t border-border p-3 space-y-3">
+                        <div
+                          className="relative w-full h-[70vh] rounded-md overflow-hidden bg-muted"
+                          onContextMenu={(e) => !deliv.unlocked && e.preventDefault()}
+                        >
+                          <iframe
+                            src={`${f.url}#toolbar=0&navpanes=0`}
+                            title={f.name}
+                            className="w-full h-full"
+                          />
+                          {!deliv.unlocked && <div className="absolute inset-x-0 top-0 h-10 bg-transparent" />}
+                        </div>
+                        <div className="space-y-2">
+                          <Textarea
+                            rows={2}
+                            placeholder="Observation (optionnel)"
+                            value={obs[key] ?? ""}
+                            onChange={(e) => setObs({ ...obs, [key]: e.target.value })}
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              disabled={busy}
+                              onClick={() => act("add_message", { body: `✅ Fichier validé — ${f.name}${obs[key] ? `\n${obs[key]}` : ""}` })}
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Valider ce fichier
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={busy}
+                              onClick={() => {
+                                if (!obs[key]?.trim()) return toast.error("Merci d'indiquer une observation");
+                                act("add_message", { body: `❌ Modifications demandées — ${f.name}\n${obs[key]}` });
+                                setObs({ ...obs, [key]: "" });
+                              }}
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1" /> Demander une modification
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {!deliv.unlocked && (
+                <p className="text-[11px] text-muted-foreground pt-1">
+                  Consultation possible — le téléchargement sera débloqué après confirmation du paiement.
+                </p>
+              )}
             </div>
           )}
         </section>
