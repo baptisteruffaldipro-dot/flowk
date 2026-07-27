@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, CreditCard, Landmark, Download, FileText, Printer, Eye } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +31,7 @@ export default function ClientPortalPublic() {
   const [showRefuse, setShowRefuse] = useState(false);
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
+  const [ribOpen, setRibOpen] = useState(false);
   const [obs, setObs] = useState<Record<string, string>>({});
 
   const load = async () => {
