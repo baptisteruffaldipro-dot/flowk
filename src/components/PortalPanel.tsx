@@ -33,6 +33,7 @@ type Portal = {
   admin_confirmed_paid_at: string | null;
   delivery_unlock_rule: "acompte" | "total" | "libre";
   delivery_override: boolean;
+  delivery_locked?: boolean;
   admin_notes: string | null;
   payment_methods: string[];
   payment_terms: "deposit_50" | "full" | "libre";
@@ -203,6 +204,10 @@ export default function PortalPanel({
     await update({ delivery_override: !portal.delivery_override } as any);
   };
 
+  const toggleLocked = async () => {
+    await update({ delivery_locked: !portal.delivery_locked } as any);
+  };
+
   const saveDeliverables = async (list: Deliverable[]) => {
     const table = entityType === "task" ? "tasks" : "projects";
     const { error } = await supabase.from(table).update({ deliverable_files: list as any }).eq("id", entityId);
@@ -300,10 +305,11 @@ export default function PortalPanel({
   };
 
   const isUnlocked =
-    portal.delivery_override ||
+    !portal.delivery_locked &&
+    (portal.delivery_override ||
     portal.admin_confirmed_paid_at !== null ||
     portal.status === "delivered" ||
-    portal.delivery_unlock_rule === "libre";
+    portal.delivery_unlock_rule === "libre");
 
   return (
     <Card className="p-5 space-y-5">
@@ -409,6 +415,12 @@ export default function PortalPanel({
             <Switch checked={portal.delivery_override} onCheckedChange={toggleOverride} />
             <span className="text-xs text-muted-foreground">
               Autoriser le téléchargement même sans paiement
+            </span>
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <Switch checked={!!portal.delivery_locked} onCheckedChange={toggleLocked} />
+            <span className="text-xs text-muted-foreground">
+              Bloquer le téléchargement (prioritaire sur tout le reste)
             </span>
           </div>
         </div>
