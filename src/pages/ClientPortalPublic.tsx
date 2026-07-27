@@ -221,11 +221,17 @@ export default function ClientPortalPublic() {
                           className="relative w-full h-[70vh] rounded-md overflow-hidden bg-muted"
                           onContextMenu={(e) => !deliv.unlocked && e.preventDefault()}
                         >
-                          <iframe
-                            src={`${f.url}#toolbar=0&navpanes=0`}
-                            title={f.name}
-                            className="w-full h-full"
-                          />
+                          {(f.preview_url ?? f.url) ? (
+                            <iframe
+                              src={`${f.preview_url ?? f.url}#toolbar=0&navpanes=0`}
+                              title={f.name}
+                              className="w-full h-full"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                              Aperçu indisponible pour ce fichier.
+                            </div>
+                          )}
                           {!deliv.unlocked && <div className="absolute inset-x-0 top-0 h-10 bg-transparent" />}
                         </div>
                         <div className="space-y-2">
