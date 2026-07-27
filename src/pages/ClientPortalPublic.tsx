@@ -271,31 +271,6 @@ export default function ClientPortalPublic() {
           )}
         </section>
 
-        {/* Messages */}
-        <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Échanges</h2>
-          {messages.length === 0 ? (
-            <div className="text-xs text-muted-foreground">Aucun message pour le moment.</div>
-          ) : (
-            <div className="space-y-2">
-              {messages.map((m: any) => (
-                <div key={m.id} className={`text-sm p-3 rounded-md ${m.author === "client" ? "bg-primary/10" : "bg-muted/40"}`}>
-                  <div className="text-[10px] uppercase text-muted-foreground mb-0.5">
-                    {m.author === "client" ? "Vous" : "Studio"} · {new Date(m.created_at).toLocaleString("fr-FR")}
-                  </div>
-                  <div className="whitespace-pre-wrap">{m.body}</div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="space-y-2">
-            <Textarea placeholder="Écrire un message…" value={reply} onChange={(e) => setReply(e.target.value)} rows={3} />
-            <Button size="sm" onClick={async () => { if (!reply.trim()) return; await act("add_message", { body: reply.trim() }); setReply(""); }} disabled={!reply.trim() || busy}>
-              <Send className="h-3.5 w-3.5 mr-1" /> Envoyer
-            </Button>
-          </div>
-        </section>
-
         {/* Validation */}
         {canValidate && (
           <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
@@ -463,10 +438,36 @@ export default function ClientPortalPublic() {
                     <a href={inv.pdf_url} target="_blank" rel="noreferrer"><Download className="h-3.5 w-3.5 mr-1" /> PDF</a>
                   </Button>
                 )}
+
               </div>
             ))}
           </section>
         )}
+
+        {/* Messages */}
+        <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Échanges</h2>
+          {messages.length === 0 ? (
+            <div className="text-xs text-muted-foreground">Aucun message pour le moment.</div>
+          ) : (
+            <div className="space-y-2">
+              {messages.map((m: any) => (
+                <div key={m.id} className={`text-sm p-3 rounded-md ${m.author === "client" ? "bg-primary/10" : "bg-muted/40"}`}>
+                  <div className="text-[10px] uppercase text-muted-foreground mb-0.5">
+                    {m.author === "client" ? "Vous" : "Studio"} · {new Date(m.created_at).toLocaleString("fr-FR")}
+                  </div>
+                  <div className="whitespace-pre-wrap">{m.body}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="space-y-2">
+            <Textarea placeholder="Écrire un message…" value={reply} onChange={(e) => setReply(e.target.value)} rows={3} />
+            <Button size="sm" onClick={async () => { if (!reply.trim()) return; await act("add_message", { body: reply.trim() }); setReply(""); }} disabled={!reply.trim() || busy}>
+              <Send className="h-3.5 w-3.5 mr-1" /> Envoyer
+            </Button>
+          </div>
+        </section>
       </div>
     </div>
   );
