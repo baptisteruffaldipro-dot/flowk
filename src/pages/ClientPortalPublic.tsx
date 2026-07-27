@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, CreditCard, Landmark, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, CreditCard, Landmark, Download, FileText, Printer, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -22,13 +22,15 @@ const STATUS_LABEL: Record<string, string> = {
 export default function ClientPortalPublic() {
   const { token } = useParams<{ token: string }>();
   const [data, setData] = useState<any>(null);
-  const [deliv, setDeliv] = useState<{ unlocked: boolean; files: any[] } | null>(null);
+  const [deliv, setDeliv] = useState<{ unlocked: boolean; files: any[]; reviews?: any[] } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState("");
   const [refuseReason, setRefuseReason] = useState("");
   const [showRefuse, setShowRefuse] = useState(false);
   const [paidNote, setPaidNote] = useState("");
+  const [openFile, setOpenFile] = useState<string | null>(null);
+  const [obs, setObs] = useState<Record<string, string>>({});
 
   const load = async () => {
     if (!token) return;
@@ -58,6 +60,26 @@ export default function ClientPortalPublic() {
   const subtasks: any[] = data.subtasks ?? [];
   const invoices: any[] = data.invoices ?? [];
   const pay = data.payment_settings ?? {};
+  const printOrder = data.print_order ?? null;
+  const invoiceDoc = data.invoice_doc ?? {};
+  const reviews: any[] = deliv?.reviews ?? [];
+  const methods: string[] = p.payment_methods ?? ["link", "transfer"];
+  const amountDue = p.amount_due_ttc != null ? Number(p.amount_due_ttc) : null;
+  const termsLabel =
+    p.payment_terms === "deposit_50"
+      ? "Acompte de 50 % à régler"
+      : p.payment_terms === "full"
+        ? "Solde total à régler"
+        : null;
+  const dueAmount =
+    amountDue != null ? (p.payment_terms === "deposit_50" ? amountDue / 2 : amountDue) : null;
+
+  const openInvoice = async () => {
+    if (invoiceDoc?.url) { window.open(invoiceDoc.url, "_blank"); return; }
+    const { data: res, error } = await supabase.functions.invoke("portal-invoice-url", { body: { token } });
+    if (error || (res as any)?.error) return toast.error("Facture indisponible");
+    window.open((res as any).url, "_blank");
+  };
 
   const isTask = p.entity_type === "task";
   const title = isTask ? entity.title : entity.name;
@@ -131,6 +153,68 @@ export default function ClientPortalPublic() {
           )}
         </section>
 
+        {/* Règlement */}
+        {(termsLabel || dueAmount != null || printOrder || invoiceDoc?.url || invoiceDoc?.has_file) && (
+          <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
+            <h2 className="text-sm font-semibold">Règlement</h2>
+            {(termsLabel || dueAmount != null) && (
+              <p className="text-sm">
+                {termsLabel ?? "Montant à régler"}
+                {dueAmount != null && <> — <strong>{dueAmount.toFixed(2)} € TTC</strong></>}
+                {p.payment_terms === "deposit_50" && amountDue != null && (
+                  <span className="text-muted-foreground"> (sur un total de {amountDue.toFixed(2)} € TTC)</span>
+                )}
+              </p>
+            )}
+            {printOrder && (
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {(invoiceDoc?.url || invoiceDoc?.has_file) && (
+                <Button size="sm" variant="outline" onClick={openInvoice}>
+                  <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
+                </Button>
+              )}
+              {methods.includes("link") && p.payment_link_url && (
+                <Button size="sm" asChild>
+                  <a href={p.payment_link_url} target="_blank" rel="noreferrer">
+                    <CreditCard className="h-3.5 w-3.5 mr-1" /> Payer par carte
+                  </a>
+                </Button>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Commande d'impression liée */}
+        {printOrder && (
+          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Printer className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Commande d'impression</h2>
+              {printOrder.status && <Badge variant="outline" className="text-[10px]">{String(printOrder.status).replace(/_/g, " ")}</Badge>}
+            </div>
+            <div className="text-sm font-medium">{printOrder.reference ? `${printOrder.reference} — ` : ""}{printOrder.description}</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+              {printOrder.quantity != null && <Info label="Quantité" value={String(printOrder.quantity)} />}
+              {printOrder.format && <Info label="Format" value={printOrder.format} />}
+              {printOrder.support && <Info label="Support" value={printOrder.support} />}
+              {printOrder.grammage && <Info label="Grammage" value={printOrder.grammage} />}
+              {printOrder.colors && <Info label="Couleurs" value={printOrder.colors} />}
+              {printOrder.finitions && <Info label="Finitions" value={printOrder.finitions} />}
+              {printOrder.amount != null && <Info label="Montant" value={`${Number(printOrder.amount).toFixed(2)} € HT`} />}
+              {printOrder.estimated_delivery_date && (
+                <Info label="Livraison estimée" value={new Date(printOrder.estimated_delivery_date).toLocaleDateString("fr-FR")} />
+              )}
+            </div>
+            {printOrder.observations && (
+              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{printOrder.observations}</p>
+            )}
+          </section>
+        )}
+
         {/* Validation */}
         {canValidate && (
           <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
@@ -182,6 +266,7 @@ export default function ClientPortalPublic() {
               Le téléchargement final des livrables est débloqué après confirmation du paiement.
             </p>
             {/* Option virement */}
+            {methods.includes("transfer") && (
             <div className="rounded-lg border border-border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium"><Landmark className="h-4 w-4" /> Virement bancaire</div>
               {pay?.iban ? (
@@ -201,8 +286,10 @@ export default function ClientPortalPublic() {
                 J'opte pour le virement
               </Button>
             </div>
+            )}
 
             {/* Option lien de paiement */}
+            {methods.includes("link") && (
             <div className="rounded-lg border border-border p-3 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium"><CreditCard className="h-4 w-4" /> Lien de paiement (carte)</div>
               {p.payment_link_url ? (
@@ -226,6 +313,7 @@ export default function ClientPortalPublic() {
                 </>
               )}
             </div>
+            )}
 
             {/* Déclaration paiement */}
             {!declared && (
@@ -274,24 +362,81 @@ export default function ClientPortalPublic() {
           </div>
           {(!deliv || deliv.files.length === 0) ? (
             <div className="text-xs text-muted-foreground">Aucun livrable pour le moment.</div>
-          ) : deliv.unlocked ? (
-            <div className="space-y-1">
-              {deliv.files.map((f: any, i: number) => (
-                <a key={i} href={f.url} target="_blank" rel="noreferrer"
-                   className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-secondary/60">
-                  <span className="truncate">{f.name}</span>
-                  <Download className="h-3.5 w-3.5" />
-                </a>
-              ))}
-            </div>
           ) : (
-            <div className="space-y-1">
-              {deliv.files.map((f: any, i: number) => (
-                <div key={i} className="flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
-                  <Lock className="h-3.5 w-3.5" /> <span className="truncate">{f.name}</span>
-                </div>
-              ))}
-              <p className="text-[11px] text-muted-foreground pt-1">Les fichiers seront téléchargeables après confirmation du paiement.</p>
+            <div className="space-y-2">
+              {deliv.files.map((f: any, i: number) => {
+                const key = String(f.url ?? i);
+                const open = openFile === key;
+                return (
+                  <div key={i} className="rounded-md border border-border">
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                      <span className="truncate flex items-center gap-2">
+                        {!deliv.unlocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {f.name}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <Button size="sm" variant="outline" onClick={() => setOpenFile(open ? null : key)}>
+                          <Eye className="h-3.5 w-3.5 mr-1" /> {open ? "Fermer" : "Visionner"}
+                        </Button>
+                        {deliv.unlocked && (
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={f.url} target="_blank" rel="noreferrer"><Download className="h-3.5 w-3.5" /></a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {open && (
+                      <div className="border-t border-border p-3 space-y-3">
+                        <div
+                          className="relative w-full h-[70vh] rounded-md overflow-hidden bg-muted"
+                          onContextMenu={(e) => !deliv.unlocked && e.preventDefault()}
+                        >
+                          <iframe
+                            src={`${f.url}#toolbar=0&navpanes=0`}
+                            title={f.name}
+                            className="w-full h-full"
+                          />
+                          {!deliv.unlocked && <div className="absolute inset-x-0 top-0 h-10 bg-transparent" />}
+                        </div>
+                        <div className="space-y-2">
+                          <Textarea
+                            rows={2}
+                            placeholder="Observation (optionnel)"
+                            value={obs[key] ?? ""}
+                            onChange={(e) => setObs({ ...obs, [key]: e.target.value })}
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              disabled={busy}
+                              onClick={() => act("add_message", { body: `✅ Fichier validé — ${f.name}${obs[key] ? `\n${obs[key]}` : ""}` })}
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Valider ce fichier
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={busy}
+                              onClick={() => {
+                                if (!obs[key]?.trim()) return toast.error("Merci d'indiquer une observation");
+                                act("add_message", { body: `❌ Modifications demandées — ${f.name}\n${obs[key]}` });
+                                setObs({ ...obs, [key]: "" });
+                              }}
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1" /> Demander une modification
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {!deliv.unlocked && (
+                <p className="text-[11px] text-muted-foreground pt-1">
+                  Consultation possible — le téléchargement sera débloqué après confirmation du paiement.
+                </p>
+              )}
             </div>
           )}
         </section>
