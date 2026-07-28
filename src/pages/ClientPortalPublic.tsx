@@ -370,8 +370,6 @@ export default function ClientPortalPublic() {
         {canValidate && (
           <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
             <h2 className="text-sm font-semibold">Validation</h2>
-            <p className="text-xs text-muted-foreground">
-              En validant, vous confirmez le tarif indiqué.
             </p>
             {showRefuse ? (
               <div className="space-y-2">
