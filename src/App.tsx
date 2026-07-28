@@ -57,6 +57,7 @@ import FinanceTreasury from "./pages/finance/FinanceTreasury";
 import FinanceForecasts from "./pages/finance/FinanceForecasts";
 import FinanceProfitability from "./pages/finance/FinanceProfitability";
 import FinanceReports from "./pages/finance/FinanceReports";
+import PortalRedirect from "./pages/PortalRedirect";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,7 @@ const App = () => (
               <Route path="/social" element={<SocialMedia />} />
               <Route path="/social/:clientId" element={<SocialMediaClient />} />
               <Route path="/parametres/paiement" element={<PaymentSettings />} />
+              <Route path="/portails/:id" element={<PortalRedirect />} />
               <Route path="/finance" element={<FinanceDashboard />} />
               <Route path="/finance/import" element={<FinanceImport />} />
               <Route path="/finance/tresorerie" element={<FinanceTreasury />} />
