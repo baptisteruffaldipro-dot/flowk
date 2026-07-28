@@ -536,37 +536,117 @@ function KanbanCard({
             {(() => {
               if (noBudget) {
                 return (
-                  <Badge
-                    variant="outline"
-                    className="text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10 inline-flex items-center gap-1"
-                    title="Aucune estimation financière (prestation + impression)"
-                  >
-                    <AlertTriangle className="h-3 w-3" />
-                    Non budgétisé
-                  </Badge>
+                  <BudgetEditBadge task={task} onUpdate={onUpdate}>
+                    <Badge
+                      variant="outline"
+                      className="text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10 inline-flex items-center gap-1 cursor-pointer hover:bg-red-500/20"
+                      title="Cliquer pour renseigner le budget"
+                    >
+                      <AlertTriangle className="h-3 w-3" />
+                      Non budgétisé
+                    </Badge>
+                  </BudgetEditBadge>
                 );
               }
               const overrun = budget.estimatedTotal > 0 && budget.realTotal > budget.estimatedTotal;
               return (
-                <Badge
-                  variant="outline"
-                  className={`text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums inline-flex items-center gap-1 ${
-                    overrun
-                      ? "text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10"
-                      : "text-emerald-700 dark:text-emerald-400 border-emerald-300/50"
-                  }`}
-                  title={`Estimé ${fmtMoney(budget.estimatedTotal)} (presta ${fmtMoney(budget.estimatedPresta)} · impression ${fmtMoney(budget.estimatedPrint)}) · Réel ${fmtMoney(budget.realTotal)}`}
-                >
-                  {fmtMoney(budget.estimatedTotal)}
-                  {budget.realTotal > 0 && budget.realTotal !== budget.estimatedTotal && (
-                    <span className="opacity-70">→ {fmtMoney(budget.realTotal)}</span>
-                  )}
-                </Badge>
+                <BudgetEditBadge task={task} onUpdate={onUpdate}>
+                  <Badge
+                    variant="outline"
+                    className={`text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums inline-flex items-center gap-1 cursor-pointer ${
+                      overrun
+                        ? "text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10"
+                        : "text-emerald-700 dark:text-emerald-400 border-emerald-300/50"
+                    }`}
+                    title={`Estimé ${fmtMoney(budget.estimatedTotal)} (presta ${fmtMoney(budget.estimatedPresta)} · impression ${fmtMoney(budget.estimatedPrint)}) · Réel ${fmtMoney(budget.realTotal)}`}
+                  >
+                    {fmtMoney(budget.estimatedTotal)}
+                    {budget.realTotal > 0 && budget.realTotal !== budget.estimatedTotal && (
+                      <span className="opacity-70">→ {fmtMoney(budget.realTotal)}</span>
+                    )}
+                  </Badge>
+                </BudgetEditBadge>
               );
             })()}
           </div>
       </Card>
     </div>
+  );
+}
+
+function BudgetEditBadge({
+  task,
+  onUpdate,
+  children,
+}: {
+  task: any;
+  onUpdate: (id: string, patch: any) => void;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const [type, setType] = useState<string>(task.billing_type ?? "horaire");
+  const [flat, setFlat] = useState<string>(task.flat_amount != null ? String(task.flat_amount) : "");
+  const [rate, setRate] = useState<string>(task.hourly_rate != null ? String(task.hourly_rate) : "");
+  const [minutes, setMinutes] = useState<string>(task.estimated_minutes ? String(task.estimated_minutes) : "");
+  const [print, setPrint] = useState<string>(task.estimated_print_amount != null ? String(task.estimated_print_amount) : "");
+
+  useEffect(() => {
+    if (!open) return;
+    setType(task.billing_type ?? "horaire");
+    setFlat(task.flat_amount != null ? String(task.flat_amount) : "");
+    setRate(task.hourly_rate != null ? String(task.hourly_rate) : "");
+    setMinutes(task.estimated_minutes ? String(task.estimated_minutes) : "");
+    setPrint(task.estimated_print_amount != null ? String(task.estimated_print_amount) : "");
+  }, [open, task]);
+
+  const save = () => {
+    onUpdate(task.id, {
+      billing_type: type,
+      flat_amount: flat === "" ? null : Number(flat),
+      hourly_rate: rate === "" ? null : Number(rate),
+      estimated_minutes: minutes === "" ? 0 : Number(minutes),
+      estimated_print_amount: print === "" ? null : Number(print),
+    });
+    setOpen(false);
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <span
+          className="ml-auto"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+        >
+          {children}
+        </span>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="w-64 space-y-2"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-xs font-semibold">Budget estimé</div>
+        <Select value={type} onValueChange={setType}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="horaire">Horaire</SelectItem>
+            <SelectItem value="forfait">Forfait</SelectItem>
+          </SelectContent>
+        </Select>
+        {type === "forfait" ? (
+          <Input className="h-8 text-xs" type="number" placeholder="Montant forfait (€)" value={flat} onChange={(e) => setFlat(e.target.value)} />
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <Input className="h-8 text-xs" type="number" placeholder="Taux €/h" value={rate} onChange={(e) => setRate(e.target.value)} />
+            <Input className="h-8 text-xs" type="number" placeholder="Minutes" value={minutes} onChange={(e) => setMinutes(e.target.value)} />
+          </div>
+        )}
+        <Input className="h-8 text-xs" type="number" placeholder="Impression estimée (€)" value={print} onChange={(e) => setPrint(e.target.value)} />
+        <Button size="sm" className="w-full h-8 text-xs" onClick={save}>Enregistrer</Button>
+      </PopoverContent>
+    </Popover>
   );
 }
 
