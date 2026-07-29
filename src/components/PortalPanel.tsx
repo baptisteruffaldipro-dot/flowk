@@ -297,6 +297,29 @@ export default function PortalPanel({
     }
   };
 
+  const sendLinkByEmail = async () => {
+    const to = (linkEmail || clientEmail || "").trim();
+    if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return toast.error("Email invalide");
+    setSendingLink(true);
+    try {
+      if (!portal.is_published) await publish(true);
+      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "onboarding-ready",
+          recipientEmail: to,
+          idempotencyKey: `portal-link-${entityId}-${Date.now()}`,
+          templateData: { name: clientName ?? "", portalUrl: publicUrl },
+        },
+      });
+      if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
+      toast.success(`Lien envoyé à ${to}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur d'envoi");
+    } finally {
+      setSendingLink(false);
+    }
+  };
+
   const payState: "unpaid" | "deposit_paid" | "balance_unpaid" | "paid" =
     portal.admin_confirmed_paid_at !== null ? "paid" : (portal.payment_state ?? "unpaid");
 
