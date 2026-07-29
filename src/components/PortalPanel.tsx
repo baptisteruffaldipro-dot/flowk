@@ -374,6 +374,24 @@ export default function PortalPanel({
           </Button>
         </div>
       </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Envoyer le lien par email</Label>
+        <div className="flex gap-2">
+          <Input
+            type="email"
+            value={linkEmail}
+            onChange={(e) => setLinkEmail(e.target.value)}
+            placeholder={clientEmail || "email@client.fr"}
+            className="text-xs"
+          />
+          <Button size="sm" onClick={sendLinkByEmail} disabled={sendingLink}>
+            <Send className="h-3.5 w-3.5 mr-1" /> {sendingLink ? "Envoi…" : "Envoyer"}
+          </Button>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          {clientEmail ? `Par défaut : ${clientEmail}` : "Aucun email client enregistré — saisis une adresse."}
+        </p>
+      </div>
       </section>
 
       <section className="rounded-lg border border-border/70 p-4 space-y-3">
