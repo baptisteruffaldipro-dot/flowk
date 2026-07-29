@@ -90,6 +90,8 @@ export default function PortalPanel({
   const [uploading, setUploading] = useState(false);
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendingLink, setSendingLink] = useState(false);
+  const [linkEmail, setLinkEmail] = useState("");
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
@@ -297,6 +299,29 @@ export default function PortalPanel({
     }
   };
 
+  const sendLinkByEmail = async () => {
+    const to = (linkEmail || clientEmail || "").trim();
+    if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return toast.error("Email invalide");
+    setSendingLink(true);
+    try {
+      if (!portal.is_published) await publish(true);
+      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "onboarding-ready",
+          recipientEmail: to,
+          idempotencyKey: `portal-link-${entityId}-${Date.now()}`,
+          templateData: { name: clientName ?? "", portalUrl: publicUrl },
+        },
+      });
+      if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
+      toast.success(`Lien envoyé à ${to}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur d'envoi");
+    } finally {
+      setSendingLink(false);
+    }
+  };
+
   const payState: "unpaid" | "deposit_paid" | "balance_unpaid" | "paid" =
     portal.admin_confirmed_paid_at !== null ? "paid" : (portal.payment_state ?? "unpaid");
 
@@ -348,6 +373,24 @@ export default function PortalPanel({
             <RefreshCcw className="h-3.5 w-3.5" />
           </Button>
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Envoyer le lien par email</Label>
+        <div className="flex gap-2">
+          <Input
+            type="email"
+            value={linkEmail}
+            onChange={(e) => setLinkEmail(e.target.value)}
+            placeholder={clientEmail || "email@client.fr"}
+            className="text-xs"
+          />
+          <Button size="sm" onClick={sendLinkByEmail} disabled={sendingLink}>
+            <Send className="h-3.5 w-3.5 mr-1" /> {sendingLink ? "Envoi…" : "Envoyer"}
+          </Button>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          {clientEmail ? `Par défaut : ${clientEmail}` : "Aucun email client enregistré — saisis une adresse."}
+        </p>
       </div>
       </section>
 
