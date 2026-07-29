@@ -364,32 +364,34 @@ export default function ClientPortalPublic() {
               )}
             </div>
           )}
-        </section>
 
-        {/* Validation */}
-        {canValidate && (
-          <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
-            <h2 className="text-sm font-semibold">Validation</h2>
-            {showRefuse ? (
-              <div className="space-y-2">
-                <Textarea placeholder="Motif (optionnel)" value={refuseReason} onChange={(e) => setRefuseReason(e.target.value)} rows={2} />
-                <div className="flex gap-2">
-                  <Button variant="destructive" onClick={() => act("refuse", { reason: refuseReason })} disabled={busy}>Confirmer le refus</Button>
-                  <Button variant="ghost" onClick={() => setShowRefuse(false)}>Annuler</Button>
+          {canValidate && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <p className="text-sm font-semibold">Validation du livrable (Bon à tirer)</p>
+              <p className="text-[11px] text-muted-foreground">
+                En validant, vous approuvez le(s) fichier(s) ci-dessus et autorisez la production et/ou la diffusion en l'état.
+              </p>
+              {showRefuse ? (
+                <div className="space-y-2">
+                  <Textarea placeholder="Motif (optionnel)" value={refuseReason} onChange={(e) => setRefuseReason(e.target.value)} rows={2} />
+                  <div className="flex gap-2">
+                    <Button variant="destructive" onClick={() => act("refuse", { reason: refuseReason })} disabled={busy}>Confirmer le refus</Button>
+                    <Button variant="ghost" onClick={() => setShowRefuse(false)}>Annuler</Button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex gap-2 flex-wrap">
-                <Button onClick={() => act("validate")} disabled={busy}>
-                  <CheckCircle2 className="h-4 w-4 mr-1" /> Valider
-                </Button>
-                <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
-                  <XCircle className="h-4 w-4 mr-1" /> Refuser
-                </Button>
-              </div>
-            )}
-          </section>
-        )}
+              ) : (
+                <div className="flex gap-2 flex-wrap">
+                  <Button onClick={() => act("validate")} disabled={busy}>
+                    <CheckCircle2 className="h-4 w-4 mr-1" /> Valider (Bon à tirer)
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
+                    <XCircle className="h-4 w-4 mr-1" /> Refuser
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
 
         {/* Refus affiché */}
         {p.status === "refused" && (
