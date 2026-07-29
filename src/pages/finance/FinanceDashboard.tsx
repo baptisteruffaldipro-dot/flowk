@@ -51,8 +51,6 @@ export default function FinanceDashboard() {
   const [newClientId, setNewClientId] = useState<string>("");
   const [newAmount, setNewAmount] = useState<string>("");
   const [newDue, setNewDue] = useState<string>("");
-  const [partialId, setPartialId] = useState<string | null>(null);
-  const [partialAmount, setPartialAmount] = useState<string>("");
   const [clientsList, setClientsList] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
