@@ -330,27 +330,9 @@ export default function ClientPortalPublic() {
                             value={obs[key] ?? ""}
                             onChange={(e) => setObs({ ...obs, [key]: e.target.value })}
                           />
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              disabled={busy}
-                              onClick={() => act("add_message", { body: `✅ BAT validé (bon à tirer) — ${f.name}${obs[key] ? `\n${obs[key]}` : ""}` })}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Valider (Bon à tirer)
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={busy}
-                              onClick={() => {
-                                if (!obs[key]?.trim()) return toast.error("Merci d'indiquer une observation");
-                                act("add_message", { body: `❌ Modifications demandées — ${f.name}\n${obs[key]}` });
-                                setObs({ ...obs, [key]: "" });
-                              }}
-                            >
-                              <XCircle className="h-3.5 w-3.5 mr-1" /> Demander une modification
-                            </Button>
-                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            Votre observation sera transmise avec votre validation ou votre demande de modification (boutons en bas de ce bloc).
+                          </p>
                         </div>
                       </div>
                     )}
@@ -381,7 +363,15 @@ export default function ClientPortalPublic() {
                 </div>
               ) : (
                 <div className="flex gap-2 flex-wrap">
-                  <Button onClick={() => act("validate")} disabled={busy}>
+                  <Button
+                    onClick={async () => {
+                      const note = Object.values(obs).filter((v) => v?.trim()).join("\n");
+                      if (note) await act("add_message", { body: `Observation du client :\n${note}` });
+                      await act("validate");
+                      setObs({});
+                    }}
+                    disabled={busy}
+                  >
                     <CheckCircle2 className="h-4 w-4 mr-1" /> Valider (Bon à tirer)
                   </Button>
                   <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
