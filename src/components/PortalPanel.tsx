@@ -90,6 +90,8 @@ export default function PortalPanel({
   const [uploading, setUploading] = useState(false);
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendingLink, setSendingLink] = useState(false);
+  const [linkEmail, setLinkEmail] = useState("");
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
