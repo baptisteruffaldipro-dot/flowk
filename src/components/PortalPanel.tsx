@@ -92,6 +92,7 @@ export default function PortalPanel({
   const [sending, setSending] = useState(false);
   const [sendingLink, setSendingLink] = useState(false);
   const [linkEmail, setLinkEmail] = useState("");
+  const [fetchedClient, setFetchedClient] = useState<{ email?: string | null; name?: string | null } | null>(null);
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
@@ -99,6 +100,8 @@ export default function PortalPanel({
   const invoiceInput = useRef<HTMLInputElement>(null);
 
   const table = entityType === "task" ? "tasks" : "projects";
+  const effEmail = clientEmail || fetchedClient?.email || null;
+  const effName = clientName || fetchedClient?.name || null;
   const bucket = "livrables";
   const SIGNED_URL_TTL = 60 * 60 * 24 * 365; // 1 an
 
@@ -136,6 +139,14 @@ export default function PortalPanel({
         .order("created_at", { ascending: false })
         .limit(50);
       setPrintOrders(po ?? []);
+      if (!clientEmail || !clientName) {
+        const { data: c } = await supabase
+          .from("clients")
+          .select("name,email")
+          .eq("id", clientId)
+          .maybeSingle();
+        if (c) setFetchedClient({ email: (c as any).email, name: (c as any).name });
+      }
     }
     setLoading(false);
   };
@@ -274,17 +285,17 @@ export default function PortalPanel({
   };
 
   const sendNotice = async () => {
-    if (!clientEmail) return toast.error("Pas d'email client");
+    if (!effEmail) return toast.error("Pas d'email client");
     if (!isUnlocked) return toast.error("Livraison verrouillée — débloquez d'abord");
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: notifyTemplate ?? "files-delivered",
-          recipientEmail: clientEmail,
+          recipientEmail: effEmail,
           idempotencyKey: `${notifyTemplate ?? "files-delivered"}-${entityId}-${Date.now()}`,
           templateData: {
-            name: clientName ?? "",
+            name: effName ?? "",
             description: notifyContext?.description ?? "",
             portalUrl: notifyContext?.portalUrl ?? publicUrl,
           },
@@ -300,7 +311,7 @@ export default function PortalPanel({
   };
 
   const sendLinkByEmail = async () => {
-    const to = (linkEmail || clientEmail || "").trim();
+    const to = (linkEmail || effEmail || "").trim();
     if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return toast.error("Email invalide");
     setSendingLink(true);
     try {
@@ -310,7 +321,7 @@ export default function PortalPanel({
           templateName: "onboarding-ready",
           recipientEmail: to,
           idempotencyKey: `portal-link-${entityId}-${Date.now()}`,
-          templateData: { name: clientName ?? "", portalUrl: publicUrl },
+          templateData: { name: effName ?? "", portalUrl: publicUrl },
         },
       });
       if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
@@ -381,7 +392,7 @@ export default function PortalPanel({
             type="email"
             value={linkEmail}
             onChange={(e) => setLinkEmail(e.target.value)}
-            placeholder={clientEmail || "email@client.fr"}
+            placeholder={effEmail || "email@client.fr"}
             className="text-xs"
           />
           <Button size="sm" onClick={sendLinkByEmail} disabled={sendingLink}>
@@ -389,7 +400,7 @@ export default function PortalPanel({
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          {clientEmail ? `Par défaut : ${clientEmail}` : "Aucun email client enregistré — saisis une adresse."}
+          {effEmail ? `Par défaut : ${effEmail}` : "Aucun email client enregistré — saisis une adresse."}
         </p>
       </div>
       </section>
@@ -420,7 +431,7 @@ export default function PortalPanel({
           <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={uploading}>
             <Upload className="h-3.5 w-3.5 mr-1.5" /> {uploading ? "Upload…" : "Uploader un fichier"}
           </Button>
-          {notifyTemplate && clientEmail && (
+          {notifyTemplate && effEmail && (
             <Button size="sm" variant="outline" onClick={sendNotice} disabled={sending || !isUnlocked}>
               <Send className="h-3.5 w-3.5 mr-1.5" />
               {sending ? "Envoi…" : "Notifier le client"}
