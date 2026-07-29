@@ -92,6 +92,7 @@ export default function PortalPanel({
   const [sending, setSending] = useState(false);
   const [sendingLink, setSendingLink] = useState(false);
   const [linkEmail, setLinkEmail] = useState("");
+  const [fetchedClient, setFetchedClient] = useState<{ email?: string | null; name?: string | null } | null>(null);
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
@@ -136,6 +137,14 @@ export default function PortalPanel({
         .order("created_at", { ascending: false })
         .limit(50);
       setPrintOrders(po ?? []);
+      if (!clientEmail || !clientName) {
+        const { data: c } = await supabase
+          .from("clients")
+          .select("name,email")
+          .eq("id", clientId)
+          .maybeSingle();
+        if (c) setFetchedClient({ email: (c as any).email, name: (c as any).name });
+      }
     }
     setLoading(false);
   };
