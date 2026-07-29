@@ -363,7 +363,15 @@ export default function ClientPortalPublic() {
                 </div>
               ) : (
                 <div className="flex gap-2 flex-wrap">
-                  <Button onClick={() => act("validate")} disabled={busy}>
+                  <Button
+                    onClick={async () => {
+                      const note = Object.values(obs).filter((v) => v?.trim()).join("\n");
+                      if (note) await act("add_message", { body: `Observation du client :\n${note}` });
+                      await act("validate");
+                      setObs({});
+                    }}
+                    disabled={busy}
+                  >
                     <CheckCircle2 className="h-4 w-4 mr-1" /> Valider (Bon à tirer)
                   </Button>
                   <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
