@@ -230,6 +230,7 @@ export default function PortalPanel({
       ? Array.from(new Set([...selectedPrintOrders, id]))
       : selectedPrintOrders.filter((x) => x !== id);
     await update({ print_order_ids: next, print_order_id: next[0] ?? null } as any);
+    await load();
   };
 
   const publish = async (v: boolean) => {
