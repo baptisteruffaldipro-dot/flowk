@@ -100,6 +100,8 @@ export default function PortalPanel({
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
   const [computedTotal, setComputedTotal] = useState<number>(0);
+  const [computedPresta, setComputedPresta] = useState<number>(0);
+  const [computedPrint, setComputedPrint] = useState<number>(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
 
@@ -148,6 +150,24 @@ export default function PortalPanel({
       computed = (ts ?? []).reduce((s: number, t: any) => s + computeTaskBilling(t).total, 0);
     }
     computed = Math.round(computed * 100) / 100;
+    setComputedPresta(computed);
+
+    // Ajout des commandes d'impression liées au portail
+    const linkedIds: string[] =
+      (row?.print_order_ids && row.print_order_ids.length > 0
+        ? row.print_order_ids
+        : row?.print_order_id
+          ? [row.print_order_id]
+          : []) ?? [];
+    let printTotal = 0;
+    if (linkedIds.length > 0) {
+      const { data: linked } = await supabase.from("print_orders").select("id,amount").in("id", linkedIds);
+      printTotal = (linked ?? []).reduce((s: number, o: any) => s + Number(o.amount || 0), 0);
+    }
+    printTotal = Math.round(printTotal * 100) / 100;
+    setComputedPrint(printTotal);
+
+    computed = Math.round((computed + printTotal) * 100) / 100;
     setComputedTotal(computed);
     if (row?.id && computed > 0 && Number(row.amount_due_ttc ?? 0) !== computed) {
       const { data: synced } = await supabase
@@ -210,6 +230,7 @@ export default function PortalPanel({
       ? Array.from(new Set([...selectedPrintOrders, id]))
       : selectedPrintOrders.filter((x) => x !== id);
     await update({ print_order_ids: next, print_order_id: next[0] ?? null } as any);
+    await load();
   };
 
   const publish = async (v: boolean) => {
@@ -593,7 +614,7 @@ export default function PortalPanel({
             />
             <p className="text-[11px] text-muted-foreground">
               {computedTotal > 0
-                ? `Synchronisé automatiquement avec la facturation ${entityType === "task" ? "de la tâche" : "des tâches du projet"} (${computedTotal.toFixed(2)} € HT).`
+                ? `Synchronisé automatiquement : prestation ${computedPresta.toFixed(2)} € HT${computedPrint > 0 ? ` + impression ${computedPrint.toFixed(2)} € HT` : ""} = ${computedTotal.toFixed(2)} € HT.`
                 : "Aucune facturation calculée — saisissez le montant HT manuellement."}
             </p>
             {portal.amount_due_ttc != null && portal.amount_due_ttc !== "" && (
