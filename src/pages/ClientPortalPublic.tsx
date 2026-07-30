@@ -176,8 +176,16 @@ export default function ClientPortalPublic() {
                 <span>{extraRevisionsBilled.toFixed(2)} € HT</span>
               </div>
               <div className="flex items-center justify-between border-t border-border/60 pt-1 font-semibold">
-                <span>Total</span>
-                <span>{totalAmount.toFixed(2)} € HT</span>
+                <span>Total HT</span>
+                <span>{totalAmount.toFixed(2)} €</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>TVA 20 %</span>
+                <span>{(totalAmount * 0.2).toFixed(2)} €</span>
+              </div>
+              <div className="flex items-center justify-between font-semibold">
+                <span>Total TTC</span>
+                <span>{(totalAmount * 1.2).toFixed(2)} €</span>
               </div>
             </div>
           )}
@@ -224,9 +232,19 @@ export default function ClientPortalPublic() {
                   </div>
                 );
               })}
-              <div className="flex items-center justify-between px-3 py-2 text-sm font-semibold">
-                <span>Total du projet</span>
-                <span className="tabular-nums">{projectTasksTotal.toFixed(2)} € HT</span>
+              <div className="px-3 py-2 text-sm space-y-1">
+                <div className="flex items-center justify-between font-semibold">
+                  <span>Total du projet HT</span>
+                  <span className="tabular-nums">{projectTasksTotal.toFixed(2)} €</span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>TVA 20 %</span>
+                  <span className="tabular-nums">{(projectTasksTotal * 0.2).toFixed(2)} €</span>
+                </div>
+                <div className="flex items-center justify-between font-semibold">
+                  <span>Total du projet TTC</span>
+                  <span className="tabular-nums">{(projectTasksTotal * 1.2).toFixed(2)} €</span>
+                </div>
               </div>
             </div>
           </section>
@@ -272,14 +290,26 @@ export default function ClientPortalPublic() {
                 </div>
               ))}
             </div>
-            {linkedPrintOrders.length > 1 && (
-              <div className="flex items-center justify-between text-sm font-medium border-t border-border/60 pt-3">
-                <span>Total impression</span>
-                <span className="tabular-nums">
-                  {linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0).toFixed(2)} € HT
-                </span>
-              </div>
-            )}
+            {(() => {
+              const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0);
+              if (!printHT) return null;
+              return (
+                <div className="border-t border-border/60 pt-3 space-y-1 text-sm">
+                  <div className="flex items-center justify-between font-medium">
+                    <span>Total impression HT</span>
+                    <span className="tabular-nums">{printHT.toFixed(2)} €</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>TVA 20 %</span>
+                    <span className="tabular-nums">{(printHT * 0.2).toFixed(2)} €</span>
+                  </div>
+                  <div className="flex items-center justify-between font-semibold">
+                    <span>Total impression TTC</span>
+                    <span className="tabular-nums">{(printHT * 1.2).toFixed(2)} €</span>
+                  </div>
+                </div>
+              );
+            })()}
           </section>
         )}
 
