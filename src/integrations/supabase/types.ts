@@ -457,6 +457,7 @@ export type Database = {
           payment_state: string
           payment_terms: string
           print_order_id: string | null
+          print_order_ids: string[]
           published_at: string | null
           refusal_reason: string | null
           share_token: string
@@ -491,6 +492,7 @@ export type Database = {
           payment_state?: string
           payment_terms?: string
           print_order_id?: string | null
+          print_order_ids?: string[]
           published_at?: string | null
           refusal_reason?: string | null
           share_token?: string
@@ -525,6 +527,7 @@ export type Database = {
           payment_state?: string
           payment_terms?: string
           print_order_id?: string | null
+          print_order_ids?: string[]
           published_at?: string | null
           refusal_reason?: string | null
           share_token?: string

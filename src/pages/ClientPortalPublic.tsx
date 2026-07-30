@@ -64,7 +64,13 @@ export default function ClientPortalPublic() {
   const projectTasks: any[] = data.tasks ?? [];
   const projectTasksTotal = Number(data.tasks_total_ht ?? 0);
   
-  const printOrder = data.print_order ?? null;
+  const linkedPrintOrders: any[] =
+    (data.linked_print_orders && data.linked_print_orders.length > 0
+      ? data.linked_print_orders
+      : data.print_order
+        ? [data.print_order]
+        : []) ?? [];
+  const printOrder = linkedPrintOrders[0] ?? null;
   const invoiceDoc = data.invoice_doc ?? {};
   const reviews: any[] = deliv?.reviews ?? [];
   const pay = data.payment_settings ?? {};
@@ -224,28 +230,53 @@ export default function ClientPortalPublic() {
           </section>
         )}
 
-        {printOrder && (
-          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+        {linkedPrintOrders.length > 0 && (
+          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
             <div className="flex items-center gap-2">
               <Printer className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Commande d'impression</h2>
-              {printOrder.status && <Badge variant="outline" className="text-[10px]">{String(printOrder.status).replace(/_/g, " ")}</Badge>}
-            </div>
-            <div className="text-sm font-medium">{printOrder.reference ? `${printOrder.reference} — ` : ""}{printOrder.description}</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-              {printOrder.quantity != null && <Info label="Quantité" value={String(printOrder.quantity)} />}
-              {printOrder.format && <Info label="Format" value={printOrder.format} />}
-              {printOrder.support && <Info label="Support" value={printOrder.support} />}
-              {printOrder.grammage && <Info label="Grammage" value={printOrder.grammage} />}
-              {printOrder.colors && <Info label="Couleurs" value={printOrder.colors} />}
-              {printOrder.finitions && <Info label="Finitions" value={printOrder.finitions} />}
-              {printOrder.amount != null && <Info label="Montant" value={`${Number(printOrder.amount).toFixed(2)} € HT`} />}
-              {printOrder.estimated_delivery_date && (
-                <Info label="Livraison estimée" value={new Date(printOrder.estimated_delivery_date).toLocaleDateString("fr-FR")} />
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {linkedPrintOrders.length > 1 ? "Commandes d'impression" : "Commande d'impression"}
+              </h2>
+              {linkedPrintOrders.length > 1 && (
+                <Badge variant="outline" className="text-[10px]">{linkedPrintOrders.length}</Badge>
               )}
             </div>
-            {printOrder.observations && (
-              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{printOrder.observations}</p>
+            <div className="space-y-4">
+              {linkedPrintOrders.map((po: any, i: number) => (
+                <div key={po.id ?? i} className={i > 0 ? "pt-4 border-t border-border/60 space-y-3" : "space-y-3"}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium">
+                      {po.reference ? `${po.reference} — ` : ""}{po.description}
+                    </span>
+                    {po.status && (
+                      <Badge variant="outline" className="text-[10px]">{String(po.status).replace(/_/g, " ")}</Badge>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                    {po.quantity != null && <Info label="Quantité" value={String(po.quantity)} />}
+                    {po.format && <Info label="Format" value={po.format} />}
+                    {po.support && <Info label="Support" value={po.support} />}
+                    {po.grammage && <Info label="Grammage" value={po.grammage} />}
+                    {po.colors && <Info label="Couleurs" value={po.colors} />}
+                    {po.finitions && <Info label="Finitions" value={po.finitions} />}
+                    {po.amount != null && <Info label="Montant" value={`${Number(po.amount).toFixed(2)} € HT`} />}
+                    {po.estimated_delivery_date && (
+                      <Info label="Livraison estimée" value={new Date(po.estimated_delivery_date).toLocaleDateString("fr-FR")} />
+                    )}
+                  </div>
+                  {po.observations && (
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{po.observations}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            {linkedPrintOrders.length > 1 && (
+              <div className="flex items-center justify-between text-sm font-medium border-t border-border/60 pt-3">
+                <span>Total impression</span>
+                <span className="tabular-nums">
+                  {linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0).toFixed(2)} € HT
+                </span>
+              </div>
             )}
           </section>
         )}

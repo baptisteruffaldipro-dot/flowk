@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Copy, Link as LinkIcon, Plus, Trash2, Lock, Unlock, RefreshCcw, Upload, FileText, ExternalLink, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ type Portal = {
   payment_terms: "deposit_50" | "full" | "libre";
   amount_due_ttc: number | string | null;
   print_order_id: string | null;
+  print_order_ids?: string[] | null;
 };
 
 type Deliverable = { name: string; url: string };
@@ -159,6 +161,13 @@ export default function PortalPanel({
 
   const publicUrl = `${getPublicAppUrl()}/p/c/${portal.share_token}`;
 
+  const selectedPrintOrders: string[] =
+    (portal.print_order_ids && portal.print_order_ids.length > 0
+      ? portal.print_order_ids
+      : portal.print_order_id
+        ? [portal.print_order_id]
+        : []) ?? [];
+
   const update = async (patch: Partial<Portal>) => {
     const { data, error } = await supabase
       .from("client_portals" as any)
@@ -168,6 +177,13 @@ export default function PortalPanel({
       .maybeSingle();
     if (error) return toast.error(error.message);
     setPortal(data as any);
+  };
+
+  const togglePrintOrder = async (id: string, on: boolean) => {
+    const next = on
+      ? Array.from(new Set([...selectedPrintOrders, id]))
+      : selectedPrintOrders.filter((x) => x !== id);
+    await update({ print_order_ids: next, print_order_id: next[0] ?? null } as any);
   };
 
   const publish = async (v: boolean) => {
@@ -555,21 +571,36 @@ export default function PortalPanel({
         )}
 
         <div className="space-y-1.5 pb-1">
-          <Label className="text-xs">Commande d'impression liée</Label>
-          <Select
-            value={portal.print_order_id ?? "none"}
-            onValueChange={(v) => update({ print_order_id: v === "none" ? null : v } as any)}
-          >
-            <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Aucune</SelectItem>
-              {printOrders.map((o) => (
-                <SelectItem key={o.id} value={o.id}>
-                  {(o.reference ? `${o.reference} — ` : "") + (o.description ?? "Commande")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label className="text-xs">Commandes d'impression liées</Label>
+          {printOrders.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Aucune commande d'impression pour ce client.</p>
+          ) : (
+            <div className="rounded-md border divide-y max-h-56 overflow-auto">
+              {printOrders.map((o) => {
+                const checked = selectedPrintOrders.includes(o.id);
+                return (
+                  <label key={o.id} className="flex items-start gap-2 p-2 text-sm cursor-pointer hover:bg-secondary/40">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => togglePrintOrder(o.id, Boolean(v))}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      {(o.reference ? `${o.reference} — ` : "") + (o.description ?? "Commande")}
+                      {o.amount != null && (
+                        <span className="text-muted-foreground"> · {Number(o.amount).toFixed(2)} €</span>
+                      )}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-[11px] text-muted-foreground">
+            {selectedPrintOrders.length === 0
+              ? "Aucune commande affichée dans le portail client."
+              : `${selectedPrintOrders.length} commande${selectedPrintOrders.length > 1 ? "s" : ""} affichée${selectedPrintOrders.length > 1 ? "s" : ""} dans le portail client.`}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2 pt-1">
