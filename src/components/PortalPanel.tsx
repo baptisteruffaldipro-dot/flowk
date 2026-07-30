@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Copy, Link as LinkIcon, Plus, Trash2, Lock, Unlock, RefreshCcw, Upload, FileText, ExternalLink, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -160,6 +161,13 @@ export default function PortalPanel({
 
   const publicUrl = `${getPublicAppUrl()}/p/c/${portal.share_token}`;
 
+  const selectedPrintOrders: string[] =
+    (portal.print_order_ids && portal.print_order_ids.length > 0
+      ? portal.print_order_ids
+      : portal.print_order_id
+        ? [portal.print_order_id]
+        : []) ?? [];
+
   const update = async (patch: Partial<Portal>) => {
     const { data, error } = await supabase
       .from("client_portals" as any)
@@ -169,6 +177,13 @@ export default function PortalPanel({
       .maybeSingle();
     if (error) return toast.error(error.message);
     setPortal(data as any);
+  };
+
+  const togglePrintOrder = async (id: string, on: boolean) => {
+    const next = on
+      ? Array.from(new Set([...selectedPrintOrders, id]))
+      : selectedPrintOrders.filter((x) => x !== id);
+    await update({ print_order_ids: next, print_order_id: next[0] ?? null } as any);
   };
 
   const publish = async (v: boolean) => {
