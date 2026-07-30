@@ -569,7 +569,7 @@ export default function PortalPanel({
               </SelectContent>
             </Select>
             <div className="flex items-center justify-between pt-2">
-              <Label className="text-xs">Montant dû TTC</Label>
+              <Label className="text-xs">Montant dû HT</Label>
               <Button
                 type="button"
                 size="sm"
@@ -593,9 +593,15 @@ export default function PortalPanel({
             />
             <p className="text-[11px] text-muted-foreground">
               {computedTotal > 0
-                ? `Synchronisé automatiquement avec la facturation ${entityType === "task" ? "de la tâche" : "des tâches du projet"} (${computedTotal.toFixed(2)} €).`
-                : "Aucune facturation calculée — saisissez le montant manuellement."}
+                ? `Synchronisé automatiquement avec la facturation ${entityType === "task" ? "de la tâche" : "des tâches du projet"} (${computedTotal.toFixed(2)} € HT).`
+                : "Aucune facturation calculée — saisissez le montant HT manuellement."}
             </p>
+            {portal.amount_due_ttc != null && portal.amount_due_ttc !== "" && (
+              <p className="text-[11px] text-muted-foreground">
+                TVA 20 % : {(Number(portal.amount_due_ttc) * 0.2).toFixed(2)} € · Total TTC :{" "}
+                <strong>{(Number(portal.amount_due_ttc) * 1.2).toFixed(2)} €</strong>
+              </p>
+            )}
           </div>
         </div>
 
