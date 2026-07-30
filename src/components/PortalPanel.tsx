@@ -556,21 +556,36 @@ export default function PortalPanel({
         )}
 
         <div className="space-y-1.5 pb-1">
-          <Label className="text-xs">Commande d'impression liée</Label>
-          <Select
-            value={portal.print_order_id ?? "none"}
-            onValueChange={(v) => update({ print_order_id: v === "none" ? null : v } as any)}
-          >
-            <SelectTrigger><SelectValue placeholder="Aucune" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Aucune</SelectItem>
-              {printOrders.map((o) => (
-                <SelectItem key={o.id} value={o.id}>
-                  {(o.reference ? `${o.reference} — ` : "") + (o.description ?? "Commande")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label className="text-xs">Commandes d'impression liées</Label>
+          {printOrders.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Aucune commande d'impression pour ce client.</p>
+          ) : (
+            <div className="rounded-md border divide-y max-h-56 overflow-auto">
+              {printOrders.map((o) => {
+                const checked = selectedPrintOrders.includes(o.id);
+                return (
+                  <label key={o.id} className="flex items-start gap-2 p-2 text-sm cursor-pointer hover:bg-secondary/40">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => togglePrintOrder(o.id, Boolean(v))}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      {(o.reference ? `${o.reference} — ` : "") + (o.description ?? "Commande")}
+                      {o.amount != null && (
+                        <span className="text-muted-foreground"> · {Number(o.amount).toFixed(2)} €</span>
+                      )}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-[11px] text-muted-foreground">
+            {selectedPrintOrders.length === 0
+              ? "Aucune commande affichée dans le portail client."
+              : `${selectedPrintOrders.length} commande${selectedPrintOrders.length > 1 ? "s" : ""} affichée${selectedPrintOrders.length > 1 ? "s" : ""} dans le portail client.`}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2 pt-1">
