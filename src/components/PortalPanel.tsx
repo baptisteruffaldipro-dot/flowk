@@ -39,6 +39,7 @@ type Portal = {
   payment_terms: "deposit_50" | "full" | "libre";
   amount_due_ttc: number | string | null;
   print_order_id: string | null;
+  print_order_ids?: string[] | null;
 };
 
 type Deliverable = { name: string; url: string };
