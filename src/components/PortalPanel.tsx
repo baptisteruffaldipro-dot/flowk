@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Copy, Link as LinkIcon, Plus, Trash2, Lock, Unlock, RefreshCcw, Upload, FileText, ExternalLink, Send } from "lucide-react";
 import { toast } from "sonner";
 import { getPublicAppUrl } from "@/lib/publicUrl";
+import { computeTaskBilling } from "@/lib/billing";
 
 type EntityType = "task" | "project";
 
@@ -98,6 +99,7 @@ export default function PortalPanel({
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
+  const [computedTotal, setComputedTotal] = useState<number>(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
 
@@ -133,6 +135,30 @@ export default function PortalPanel({
     setDeliverables(((e as any)?.deliverable_files as Deliverable[]) ?? []);
     setInvoiceUrl(((e as any)?.invoice_url as string) ?? "");
     setInvoiceFilePath(((e as any)?.invoice_file_path as string) ?? null);
+
+    // Solde prestation calculé depuis la facturation de la tâche (ou des tâches du projet)
+    const BILLING_COLS =
+      "billing_type,hourly_rate,flat_amount,estimated_minutes,total_minutes,client_revisions_count,free_revisions,extra_revision_rate";
+    let computed = 0;
+    if (entityType === "task") {
+      const { data: t } = await supabase.from("tasks").select(BILLING_COLS).eq("id", entityId).maybeSingle();
+      if (t) computed = computeTaskBilling(t as any).total;
+    } else {
+      const { data: ts } = await supabase.from("tasks").select(BILLING_COLS).eq("project_id", entityId);
+      computed = (ts ?? []).reduce((s: number, t: any) => s + computeTaskBilling(t).total, 0);
+    }
+    computed = Math.round(computed * 100) / 100;
+    setComputedTotal(computed);
+    if (row?.id && computed > 0 && Number(row.amount_due_ttc ?? 0) !== computed) {
+      const { data: synced } = await supabase
+        .from("client_portals" as any)
+        .update({ amount_due_ttc: computed })
+        .eq("id", row.id)
+        .select("*")
+        .maybeSingle();
+      if (synced) setPortal(synced as any);
+    }
+
     if (clientId) {
       const { data: po } = await supabase
         .from("print_orders")
@@ -542,7 +568,18 @@ export default function PortalPanel({
                 <SelectItem value="libre">Libre</SelectItem>
               </SelectContent>
             </Select>
-            <Label className="text-xs pt-2 block">Montant dû TTC</Label>
+            <div className="flex items-center justify-between pt-2">
+              <Label className="text-xs">Montant dû TTC</Label>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[11px]"
+                onClick={() => load()}
+              >
+                <RefreshCcw className="h-3 w-3 mr-1" /> Resynchroniser
+              </Button>
+            </div>
             <Input
               type="number"
               step="0.01"
@@ -554,6 +591,11 @@ export default function PortalPanel({
                 } as any)
               }
             />
+            <p className="text-[11px] text-muted-foreground">
+              {computedTotal > 0
+                ? `Synchronisé automatiquement avec la facturation ${entityType === "task" ? "de la tâche" : "des tâches du projet"} (${computedTotal.toFixed(2)} €).`
+                : "Aucune facturation calculée — saisissez le montant manuellement."}
+            </p>
           </div>
         </div>
 
