@@ -64,7 +64,13 @@ export default function ClientPortalPublic() {
   const projectTasks: any[] = data.tasks ?? [];
   const projectTasksTotal = Number(data.tasks_total_ht ?? 0);
   
-  const printOrder = data.print_order ?? null;
+  const linkedPrintOrders: any[] =
+    (data.linked_print_orders && data.linked_print_orders.length > 0
+      ? data.linked_print_orders
+      : data.print_order
+        ? [data.print_order]
+        : []) ?? [];
+  const printOrder = linkedPrintOrders[0] ?? null;
   const invoiceDoc = data.invoice_doc ?? {};
   const reviews: any[] = deliv?.reviews ?? [];
   const pay = data.payment_settings ?? {};
