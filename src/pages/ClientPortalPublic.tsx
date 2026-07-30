@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark } from "lucide-react";
+import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -32,6 +32,7 @@ export default function ClientPortalPublic() {
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
   const [obs, setObs] = useState<Record<string, string>>({});
+  const [zoom, setZoom] = useState<Record<string, number>>({});
   const [ribOpen, setRibOpen] = useState(false);
 
   const load = async () => {
