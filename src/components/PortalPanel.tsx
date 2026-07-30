@@ -568,7 +568,18 @@ export default function PortalPanel({
                 <SelectItem value="libre">Libre</SelectItem>
               </SelectContent>
             </Select>
-            <Label className="text-xs pt-2 block">Montant dû TTC</Label>
+            <div className="flex items-center justify-between pt-2">
+              <Label className="text-xs">Montant dû TTC</Label>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[11px]"
+                onClick={() => load()}
+              >
+                <RefreshCcw className="h-3 w-3 mr-1" /> Resynchroniser
+              </Button>
+            </div>
             <Input
               type="number"
               step="0.01"
@@ -580,6 +591,11 @@ export default function PortalPanel({
                 } as any)
               }
             />
+            <p className="text-[11px] text-muted-foreground">
+              {computedTotal > 0
+                ? `Synchronisé automatiquement avec la facturation ${entityType === "task" ? "de la tâche" : "des tâches du projet"} (${computedTotal.toFixed(2)} €).`
+                : "Aucune facturation calculée — saisissez le montant manuellement."}
+            </p>
           </div>
         </div>
 
