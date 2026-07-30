@@ -316,15 +316,16 @@ export default function ClientPortalPublic() {
                                       src={src}
                                       alt={f.name}
                                       draggable={false}
-                                      style={{ width: `${z}%` }}
+                                      style={{ width: `${z}%`, minWidth: "100%" }}
                                       className="max-w-none block select-none"
                                     />
                                   ) : (
                                     <iframe
                                       key={z}
-                                      src={`${src}#toolbar=0&navpanes=0&view=FitH&zoom=${z}`}
+                                      src={`${src}#toolbar=0&navpanes=0&view=FitH&page=1`}
                                       title={f.name}
-                                      className="w-full h-full border-0"
+                                      style={{ width: `${z}%`, minWidth: "100%", height: "100%" }}
+                                      className="border-0 block"
                                     />
                                   )
                                 ) : (
