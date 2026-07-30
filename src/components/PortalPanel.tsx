@@ -613,7 +613,7 @@ export default function PortalPanel({
             />
             <p className="text-[11px] text-muted-foreground">
               {computedTotal > 0
-                ? `Synchronisé automatiquement avec la facturation ${entityType === "task" ? "de la tâche" : "des tâches du projet"} (${computedTotal.toFixed(2)} € HT).`
+                ? `Synchronisé automatiquement : prestation ${computedPresta.toFixed(2)} € HT${computedPrint > 0 ? ` + impression ${computedPrint.toFixed(2)} € HT` : ""} = ${computedTotal.toFixed(2)} € HT.`
                 : "Aucune facturation calculée — saisissez le montant HT manuellement."}
             </p>
             {portal.amount_due_ttc != null && portal.amount_due_ttc !== "" && (
