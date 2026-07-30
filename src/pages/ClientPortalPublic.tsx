@@ -496,9 +496,18 @@ export default function ClientPortalPublic() {
             {(termsLabel || dueAmount != null) && (
               <p className="text-sm">
                 {termsLabel ?? "Montant à régler"}
-                {dueAmount != null && <> — <strong>{dueAmount.toFixed(2)} € TTC</strong></>}
+                {dueAmount != null && (
+                  <>
+                    {" "}— <strong>{dueAmount.toFixed(2)} € HT</strong>{" "}
+                    <span className="text-muted-foreground">
+                      (soit {(dueAmount * 1.2).toFixed(2)} € TTC, TVA 20 % : {(dueAmount * 0.2).toFixed(2)} €)
+                    </span>
+                  </>
+                )}
                 {p.payment_terms === "deposit_50" && amountDue != null && (
-                  <span className="text-muted-foreground"> (sur un total de {amountDue.toFixed(2)} € TTC)</span>
+                  <span className="text-muted-foreground">
+                    {" "}(sur un total de {amountDue.toFixed(2)} € HT / {(amountDue * 1.2).toFixed(2)} € TTC)
+                  </span>
                 )}
               </p>
             )}
