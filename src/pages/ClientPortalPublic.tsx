@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
+import { computeTaskBilling } from "@/lib/billing";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "En préparation",
@@ -99,13 +100,14 @@ export default function ClientPortalPublic() {
   const isTask = p.entity_type === "task";
   const title = isTask ? entity.title : entity.name;
 
-  const baseAmount = Number(entity.flat_amount ?? 0);
+  const taskBilling = isTask ? computeTaskBilling(entity) : null;
+  const baseAmount = taskBilling?.base ?? 0;
   const extraRevisions = Math.max(
     0,
     Number(entity.client_revisions_count ?? 0) - Number(entity.free_revisions ?? 0)
   );
   const extraRevisionsBilled = extraRevisions * Number(entity.extra_revision_rate ?? 0);
-  const totalAmount = baseAmount + extraRevisionsBilled;
+  const totalAmount = taskBilling?.total ?? 0;
 
   const canValidate = p.status === "draft" || p.status === "awaiting_validation";
 
@@ -141,8 +143,8 @@ export default function ClientPortalPublic() {
             {isTask && entity.billing_type && (
               <Info label="Facturation" value={entity.billing_type === "forfait" ? "Forfait" : "Au temps"} />
             )}
-            {isTask && entity.flat_amount != null && (
-              <Info label="Montant" value={`${baseAmount.toFixed(2)} € HT`} />
+            {isTask && totalAmount > 0 && (
+              <Info label="Solde prestation" value={`${totalAmount.toFixed(2)} € HT`} />
             )}
             {isTask && !!entity.estimated_minutes && (
               <Info label="Temps estimé" value={`${(entity.estimated_minutes / 60).toFixed(1)} h`} />
