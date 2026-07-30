@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark } from "lucide-react";
+import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -32,6 +32,7 @@ export default function ClientPortalPublic() {
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
   const [obs, setObs] = useState<Record<string, string>>({});
+  const [zoom, setZoom] = useState<Record<string, number>>({});
   const [ribOpen, setRibOpen] = useState(false);
 
   const load = async () => {
@@ -286,23 +287,56 @@ export default function ClientPortalPublic() {
                     </div>
                     {open && (
                       <div className="border-t border-border p-3 space-y-3">
-                        <div
-                          className="relative w-full h-[70vh] rounded-md overflow-hidden bg-muted"
-                          onContextMenu={(e) => !deliv.unlocked && e.preventDefault()}
-                        >
-                          {(f.preview_url ?? f.url) ? (
-                            <iframe
-                              src={`${f.preview_url ?? f.url}#toolbar=0&navpanes=0`}
-                              title={f.name}
-                              className="w-full h-full"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                              Aperçu indisponible pour ce fichier.
+                        {(() => {
+                          const src = f.preview_url ?? f.url;
+                          const z = zoom[key] ?? 100;
+                          const isImg = /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i.test(String(f.name ?? src ?? ""));
+                          const setZ = (v: number) => setZoom({ ...zoom, [key]: Math.min(400, Math.max(50, v)) });
+                          return (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-1.5">
+                                <Button size="sm" variant="outline" onClick={() => setZ(z - 25)}>
+                                  <ZoomOut className="h-3.5 w-3.5" />
+                                </Button>
+                                <span className="text-[11px] tabular-nums text-muted-foreground w-12 text-center">{z}%</span>
+                                <Button size="sm" variant="outline" onClick={() => setZ(z + 25)}>
+                                  <ZoomIn className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button size="sm" variant="ghost" className="text-[11px]" onClick={() => setZ(100)}>
+                                  <Maximize2 className="h-3.5 w-3.5 mr-1" /> 100%
+                                </Button>
+                              </div>
+                              <div
+                                className="relative w-full h-[75vh] rounded-md overflow-auto bg-muted"
+                                onContextMenu={(e) => !deliv.unlocked && e.preventDefault()}
+                              >
+                                {src ? (
+                                  isImg ? (
+                                    <img
+                                      src={src}
+                                      alt={f.name}
+                                      draggable={false}
+                                      style={{ width: `${z}%` }}
+                                      className="max-w-none block select-none"
+                                    />
+                                  ) : (
+                                    <iframe
+                                      key={z}
+                                      src={`${src}#toolbar=0&navpanes=0&view=FitH&zoom=${z}`}
+                                      title={f.name}
+                                      className="w-full h-full border-0"
+                                    />
+                                  )
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                                    Aperçu indisponible pour ce fichier.
+                                  </div>
+                                )}
+                                {!deliv.unlocked && <div className="absolute inset-x-0 top-0 h-10 bg-transparent" />}
+                              </div>
                             </div>
-                          )}
-                          {!deliv.unlocked && <div className="absolute inset-x-0 top-0 h-10 bg-transparent" />}
-                        </div>
+                          );
+                        })()}
                         <div className="space-y-2">
                           <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] leading-relaxed text-muted-foreground space-y-1">
                             <p className="font-semibold text-foreground">Mentions BAT (Bon À Tirer)</p>
