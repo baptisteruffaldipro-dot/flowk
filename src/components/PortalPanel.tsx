@@ -100,6 +100,8 @@ export default function PortalPanel({
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [printOrders, setPrintOrders] = useState<any[]>([]);
   const [computedTotal, setComputedTotal] = useState<number>(0);
+  const [computedPresta, setComputedPresta] = useState<number>(0);
+  const [computedPrint, setComputedPrint] = useState<number>(0);
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
 
@@ -148,6 +150,24 @@ export default function PortalPanel({
       computed = (ts ?? []).reduce((s: number, t: any) => s + computeTaskBilling(t).total, 0);
     }
     computed = Math.round(computed * 100) / 100;
+    setComputedPresta(computed);
+
+    // Ajout des commandes d'impression liées au portail
+    const linkedIds: string[] =
+      (row?.print_order_ids && row.print_order_ids.length > 0
+        ? row.print_order_ids
+        : row?.print_order_id
+          ? [row.print_order_id]
+          : []) ?? [];
+    let printTotal = 0;
+    if (linkedIds.length > 0) {
+      const { data: linked } = await supabase.from("print_orders").select("id,amount").in("id", linkedIds);
+      printTotal = (linked ?? []).reduce((s: number, o: any) => s + Number(o.amount || 0), 0);
+    }
+    printTotal = Math.round(printTotal * 100) / 100;
+    setComputedPrint(printTotal);
+
+    computed = Math.round((computed + printTotal) * 100) / 100;
     setComputedTotal(computed);
     if (row?.id && computed > 0 && Number(row.amount_due_ttc ?? 0) !== computed) {
       const { data: synced } = await supabase
