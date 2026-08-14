@@ -1,3 +1,4 @@
+import PdfCanvasViewer from "@/components/PdfCanvasViewer";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -391,13 +392,7 @@ export default function ClientPortalPublic() {
                                       className="max-w-none block select-none"
                                     />
                                   ) : (
-                                    <iframe
-                                      key={z}
-                                      src={`${src}#toolbar=0&navpanes=0&view=FitH&page=1`}
-                                      title={f.name}
-                                      style={{ width: `${z}%`, minWidth: "100%", height: "100%" }}
-                                      className="border-0 block"
-                                    />
+                                    <PdfCanvasViewer src={src} zoom={z} />
                                   )
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
