@@ -618,11 +618,22 @@ export default function PortalPanel({
                 : "Aucune facturation calculée — saisissez le montant HT manuellement."}
             </p>
             {portal.amount_due_ttc != null && portal.amount_due_ttc !== "" && (
-              <p className="text-[11px] text-muted-foreground">
-                TVA 20 % : {(Number(portal.amount_due_ttc) * 0.2).toFixed(2)} € · Total TTC :{" "}
-                <strong>{(Number(portal.amount_due_ttc) * 1.2).toFixed(2)} €</strong>
-              </p>
+              <div className="rounded-md border border-border/60 bg-background p-2.5 space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Prestation + impression HT</span>
+                  <span className="tabular-nums">{Number(portal.amount_due_ttc).toFixed(2)} €</span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>TVA 20 %</span>
+                  <span className="tabular-nums">{(Number(portal.amount_due_ttc) * 0.2).toFixed(2)} €</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-border/60 pt-1.5">
+                  <span className="text-sm font-semibold">Total TTC à payer</span>
+                  <span className="text-lg font-semibold tabular-nums">{(Number(portal.amount_due_ttc) * 1.2).toFixed(2)} €</span>
+                </div>
+              </div>
             )}
+
           </div>
         </div>
 
