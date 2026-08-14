@@ -637,7 +637,7 @@ export default function ClientPortalPublic() {
               <RibRow label="BIC" value={pay.bic} copy />
               {pay.bank_name && <RibRow label="Banque" value={pay.bank_name} />}
               {dueAmount != null && (
-                <div className="text-sm pt-2">Montant : <strong>{dueAmount.toFixed(2)} € TTC</strong></div>
+                <div className="text-sm pt-2">Montant à régler : <strong>{(dueAmount * 1.2).toFixed(2)} € TTC</strong></div>
               )}
               {pay.transfer_note && (
                 <div className="text-xs text-muted-foreground pt-1">{pay.transfer_note}</div>
