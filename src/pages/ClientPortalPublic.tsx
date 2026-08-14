@@ -112,6 +112,11 @@ export default function ClientPortalPublic() {
   const extraRevisionsBilled = extraRevisions * Number(entity.extra_revision_rate ?? 0);
   const totalAmount = taskBilling?.total ?? 0;
 
+  const prestationHT = isTask ? totalAmount : projectTasksTotal;
+  const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0);
+  const displayTotalHT = amountDue != null ? amountDue : prestationHT + printHT;
+
+
   const canValidate = p.status === "draft" || p.status === "awaiting_validation";
 
   return (
