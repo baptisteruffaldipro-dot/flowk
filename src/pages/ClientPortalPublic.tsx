@@ -502,23 +502,50 @@ export default function ClientPortalPublic() {
           <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
             <h2 className="text-sm font-semibold">Règlement</h2>
             {(termsLabel || dueAmount != null) && (
-              <p className="text-sm">
-                {termsLabel ?? "Montant à régler"}
-                {dueAmount != null && (
-                  <>
-                    {" "}— <strong>{dueAmount.toFixed(2)} € HT</strong>{" "}
-                    <span className="text-muted-foreground">
-                      (soit {(dueAmount * 1.2).toFixed(2)} € TTC, TVA 20 % : {(dueAmount * 0.2).toFixed(2)} €)
-                    </span>
-                  </>
-                )}
+              <div className="space-y-2">
+                <p className="text-sm">
+                  {termsLabel ?? "Montant à régler"}
+                  {dueAmount != null && (
+                    <>
+                      {" — "}
+                      <strong className="text-base text-foreground">{(dueAmount * 1.2).toFixed(2)} € TTC</strong>
+                    </>
+                  )}
+                </p>
+                <div className="rounded-lg border border-border/60 bg-background p-3 space-y-1.5 text-sm">
+                  {prestationHT > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Prestation</span>
+                      <span className="tabular-nums">{prestationHT.toFixed(2)} € HT</span>
+                    </div>
+                  )}
+                  {printHT > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Impression</span>
+                      <span className="tabular-nums">{printHT.toFixed(2)} € HT</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Total HT</span>
+                    <span className="tabular-nums font-medium">{displayTotalHT.toFixed(2)} €</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>TVA 20 %</span>
+                    <span className="tabular-nums">{(displayTotalHT * 0.2).toFixed(2)} €</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border/60 pt-1.5">
+                    <span className="font-semibold">Total TTC</span>
+                    <span className="font-semibold tabular-nums">{(displayTotalHT * 1.2).toFixed(2)} €</span>
+                  </div>
+                </div>
                 {p.payment_terms === "deposit_50" && amountDue != null && (
-                  <span className="text-muted-foreground">
-                    {" "}(sur un total de {amountDue.toFixed(2)} € HT / {(amountDue * 1.2).toFixed(2)} € TTC)
-                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    Acompte de 50 % demandé ({(dueAmount * 1.2).toFixed(2)} € TTC) sur un total de {(displayTotalHT * 1.2).toFixed(2)} € TTC.
+                  </p>
                 )}
-              </p>
+              </div>
             )}
+
             <p className="text-xs text-muted-foreground">
               {p.payment_terms === "deposit_50"
                 ? "Pour télécharger votre fichier, veuillez régler l'acompte de 50 % de la prestation en cours."
