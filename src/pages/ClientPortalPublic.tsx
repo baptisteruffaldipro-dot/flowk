@@ -90,6 +90,11 @@ export default function ClientPortalPublic() {
     !p.admin_confirmed_paid_at &&
     ["validated", "payment_pending", "payment_link_requested"].includes(p.status);
 
+  const prestationHT = isTask ? totalAmount : projectTasksTotal;
+  const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0);
+  const displayTotalHT = amountDue != null ? amountDue : prestationHT + printHT;
+
+
   const openInvoice = async () => {
     if (invoiceDoc?.url) { window.open(invoiceDoc.url, "_blank"); return; }
     const { data: res, error } = await supabase.functions.invoke("portal-invoice-url", { body: { token } });
