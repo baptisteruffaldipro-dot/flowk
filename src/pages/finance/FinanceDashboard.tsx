@@ -40,25 +40,13 @@ type Stats = {
   supplierDebt: number;
   supplierDebts: { label: string; remaining: number; monthly: number; installments: number }[];
   alerts: string[];
-  receivables: { id: string; client: string; invoiced: number; paid: number; outstanding: number; status: string; expected_payment_date: string | null }[];
+  receivables: { id: string; client: string; doc: string | null; date: string; outstanding: number; expected_payment_date: string | null }[];
   receivablesTotal: number;
 };
 
 export default function FinanceDashboard() {
   const [s, setS] = useState<Stats | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
-  const [addOpen, setAddOpen] = useState(false);
-  const [newClientId, setNewClientId] = useState<string>("");
-  const [newAmount, setNewAmount] = useState<string>("");
-  const [newDue, setNewDue] = useState<string>("");
-  const [clientsList, setClientsList] = useState<{ id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from("clients").select("id, name").order("name");
-      setClientsList((data as any) ?? []);
-    })();
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -85,10 +73,13 @@ export default function FinanceDashboard() {
         supabase.from("finance_forecasts").select("amount_ttc, planned_date, kind").gte("planned_date", now.toISOString().slice(0, 10)).lte("planned_date", in30),
         (supabase as any).from("finance_financings").select("*").eq("active", true),
         supabase.from("finance_transactions").select("kind, category, amount_ht, amount_ht_presta, amount_ht_achat, split_reviewed, amount_ttc, vat_amount, date"),
-        (supabase as any)
-          .from("client_receivables")
-          .select("id, snapshot_date, invoiced_ttc, paid_ttc, outstanding_ttc, status, expected_payment_date, clients(name)")
-          .order("snapshot_date", { ascending: false }),
+        supabase
+          .from("finance_transactions")
+          .select("id, doc_number, date, due_date, counterparty, amount_ttc, clients(name)")
+          .eq("kind", "sale")
+          .is("paid_date", null)
+          .gt("amount_ttc", 0)
+          .order("date", { ascending: true }),
       ]);
 
       const bankAmt = bank.data?.[0]?.amount ?? null;
