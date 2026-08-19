@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtMoney } from "@/lib/format";
 import { Wallet, TrendingUp, TrendingDown, Percent, PiggyBank, AlertTriangle, ArrowUpRight, ArrowDownRight, Sparkles, CalendarClock, Users, Banknote } from "lucide-react";
-import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -316,7 +315,7 @@ export default function FinanceDashboard() {
         <KPI icon={PiggyBank} label="Dispo après remboursement total" value={fmtMoney(dispoApresCC)} hint={`− ${fmtMoney(detteDirigeant)} compte courant − ${fmtMoney(s.supplierDebt)} fournisseurs`} accent={dispoApresCC < 0 ? "text-red-600" : dispoApresCC < 500 ? "text-amber-600" : "text-emerald-600"} />
         <KPI icon={Percent} label="Prochaine TVA estimée à payer" value={fmtMoney(s.vatNextMonth)} hint="mois prochain" />
         <KPI icon={Banknote} label="Dette en cours" value={fmtMoney(detteTotale)} hint={`${fmtMoney(detteDirigeant)} compte courant + ${fmtMoney(s.supplierDebt)} fournisseurs`} accent={detteTotale > 0 ? "text-red-600" : "text-emerald-600"} />
-        <KPI icon={Users} label="Encours clients" value={fmtMoney(s.receivablesTotal)} hint={`${s.receivables.length} client(s) en retard`} accent={s.receivablesTotal > 0 ? "text-red-600" : "text-emerald-600"} />
+        <KPI icon={Users} label="Encours clients" value={fmtMoney(s.receivablesTotal)} hint={`${s.receivables.length} facture(s) non réglée(s)`} accent={s.receivablesTotal > 0 ? "text-red-600" : "text-emerald-600"} />
       </div>
 
       {/* Encours clients */}
