@@ -35,7 +35,6 @@ export default function FinanceImport() {
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [imports, setImports] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
-  const [paidCount, setPaidCount] = useState(0);
 
   const loadImports = async () => {
     const { data } = await supabase.from("tiime_imports").select("*").order("created_at", { ascending: false }).limit(20);
@@ -183,7 +182,6 @@ export default function FinanceImport() {
         status: "completed", inserted_count: inserted, duplicate_count: duplicates,
       }).eq("id", imp.id);
 
-      setPaidCount(paidInvoices);
       toast.success(
         `Import terminé : ${inserted} lignes ajoutées, ${duplicates} doublons ignorés.` +
           (kind === "sale" ? ` ${paidInvoices} facture(s) réglée(s), ${unpaidInvoices} non réglée(s).` : ""),
