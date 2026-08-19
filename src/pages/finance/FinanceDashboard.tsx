@@ -275,42 +275,16 @@ export default function FinanceDashboard() {
     })();
   }, [reloadTick]);
 
-  async function updateReceivable(id: string, patch: Record<string, any>) {
-    const { error } = await (supabase as any).from("client_receivables").update(patch).eq("id", id);
+  // Une facture non réglée = ligne finance_transactions (kind=sale, paid_date null)
+  async function updateInvoice(id: string, patch: Record<string, any>) {
+    const { error } = await supabase.from("finance_transactions").update(patch as any).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Mis à jour");
     setReloadTick((t) => t + 1);
   }
 
-  async function deleteReceivable(id: string) {
-    return deleteReceivableImpl(id);
-  }
-
-  async function deleteReceivableImpl(id: string) {
-    if (!confirm("Supprimer cette dette client ?")) return;
-    const { error } = await (supabase as any).from("client_receivables").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Dette supprimée");
-    setReloadTick((t) => t + 1);
-  }
-
-  async function addReceivable() {
-    const amt = Number(newAmount);
-    if (!newClientId) return toast.error("Sélectionne un client");
-    if (!amt || amt <= 0) return toast.error("Montant invalide");
-    const { error } = await (supabase as any).from("client_receivables").insert({
-      client_id: newClientId,
-      invoiced_ttc: amt,
-      paid_ttc: 0,
-      outstanding_ttc: amt,
-      expected_payment_date: newDue || null,
-      status: newDue ? "a_venir" : "en_retard",
-      snapshot_date: new Date().toISOString().slice(0, 10),
-    });
-    if (error) { toast.error(error.message); return; }
-    toast.success("Dette ajoutée");
-    setNewClientId(""); setNewAmount(""); setNewDue(""); setAddOpen(false);
-    setReloadTick((t) => t + 1);
+  async function markPaid(id: string) {
+    await updateInvoice(id, { paid_date: new Date().toISOString().slice(0, 10) });
   }
 
   if (!s) return <div className="p-6 md:p-8">Chargement…</div>;
