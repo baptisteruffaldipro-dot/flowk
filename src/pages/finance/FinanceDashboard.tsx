@@ -220,27 +220,18 @@ export default function FinanceDashboard() {
       const soldeRequisNext = fixedMonthly + vatNextMonth + financingNextMonth + supplierNextMonth;
       const soldeFinNextEst = (bankAmt ?? 0) + caNextEst - expensesNextEst - vatNextMonth - financingNextMonth - supplierNextMonth;
 
-      // Encours clients (dernier snapshot par client)
-      const seen = new Set<string>();
-      const recRows: any[] = (receivables.data as any[]) ?? [];
-      const latestPerClient = recRows.filter((r) => {
-        const name = r.clients?.name || "—";
-        if (seen.has(name)) return false;
-        seen.add(name);
-        return true;
-      });
-      const recList = latestPerClient
+      // Encours clients = factures de vente non réglées (aucune date de paiement)
+      const recList = (((receivables.data as any[]) ?? []) as any[])
         .map((r) => ({
-          id: r.id,
-          client: r.clients?.name || "—",
-          invoiced: Number(r.invoiced_ttc || 0),
-          paid: Number(r.paid_ttc || 0),
-          outstanding: Number(r.outstanding_ttc || 0),
-          status: r.status || "en_retard",
-          expected_payment_date: r.expected_payment_date || null,
+          id: r.id as string,
+          client: r.clients?.name || r.counterparty || "—",
+          doc: (r.doc_number as string) || null,
+          date: r.date as string,
+          outstanding: Number(r.amount_ttc || 0),
+          expected_payment_date: (r.due_date as string) || null,
         }))
-        .filter((r) => r.outstanding > 0 && r.status !== "paye")
-        .sort((a, b) => b.outstanding - a.outstanding);
+        .filter((r) => r.outstanding > 0)
+        .sort((a, b) => a.date.localeCompare(b.date));
       const receivablesTotal = recList.reduce((a, r) => a + r.outstanding, 0);
 
       const alerts: string[] = [];
