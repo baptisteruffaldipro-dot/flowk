@@ -16,6 +16,7 @@ export type CanonicalField =
   | "account_code"
   | "supplier_cost_ht"
   | "bank_balance"
+  | "doc_status"
   | "ignore";
 
 export type ColumnMapping = Record<string, CanonicalField>;
@@ -25,7 +26,7 @@ const HEURISTICS: Array<{ pattern: RegExp; field: CanonicalField }> = [
   { pattern: /^id$/i, field: "ignore" },
   { pattern: /iban/i, field: "ignore" },
   { pattern: /type.*op[eé]ration/i, field: "ignore" },
-  { pattern: /statut/i, field: "ignore" },
+  { pattern: /statut/i, field: "doc_status" },
   { pattern: /^pays/i, field: "ignore" },
   { pattern: /^tags?$/i, field: "ignore" },
   { pattern: /commentaire/i, field: "ignore" },
@@ -120,6 +121,7 @@ export type NormalizedRow = {
   account_code: string | null;
   supplier_cost_ht: number | null;
   bank_balance: number | null;
+  doc_status: string | null;
   raw: Record<string, any>;
 };
 
@@ -153,8 +155,17 @@ export function normalizeRow(row: Record<string, any>, mapping: ColumnMapping): 
     account_code: get("account_code") ? String(get("account_code")) : null,
     supplier_cost_ht: get("supplier_cost_ht") != null ? toNumber(get("supplier_cost_ht")) : null,
     bank_balance: get("bank_balance") != null && get("bank_balance") !== "" ? toNumber(get("bank_balance")) : null,
+    doc_status: get("doc_status") ? String(get("doc_status")).trim() : null,
     raw: row,
   };
+}
+
+/** Une facture est considérée réglée si son statut Tiime vaut "Payée" / "Payé" / "Paid". */
+export function isPaidStatus(status: string | null | undefined): boolean {
+  if (!status) return false;
+  return /^pay/i.test(
+    status.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(),
+  );
 }
 
 export function normalizeCounterparty(s: string | null): string {
@@ -216,5 +227,6 @@ export const CANONICAL_LABELS: Record<CanonicalField, string> = {
   account_code: "Compte comptable",
   supplier_cost_ht: "Coût d'achat HT (fournisseur)",
   bank_balance: "Solde bancaire",
+  doc_status: "Statut (payée / envoyée…)",
   ignore: "— Ignorer —",
 };
