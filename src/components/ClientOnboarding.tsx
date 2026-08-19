@@ -17,6 +17,7 @@ import {
   INVOICE_STATUS_LABEL,
   PROJECT_TYPE_LABEL,
 } from "@/lib/format";
+import { getPublicAppUrl } from "@/lib/publicUrl";
 
 type Mode = "admin" | "client";
 
@@ -81,7 +82,24 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
   const sendOnboardingEmail = async () => {
     if (!clientInfo?.email) return toast.error("Le client n'a pas d'email enregistré");
     setSendingOnboarding(true);
-    const portalUrl = `${window.location.origin}/portail`;
+    // Lien public (sans compte) : on utilise le portail partagé le plus récent du client.
+    const { data: cp } = await supabase
+      .from("client_portals" as any)
+      .select("id,share_token,is_published,created_at")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const portal: any = (cp as any)?.[0];
+    if (!portal?.share_token) {
+      setSendingOnboarding(false);
+      return toast.error("Aucun lien portail disponible", {
+        description: "Créez d'abord un portail depuis une tâche ou un projet.",
+      });
+    }
+    if (!portal.is_published) {
+      await supabase.from("client_portals" as any).update({ is_published: true }).eq("id", portal.id);
+    }
+    const portalUrl = `${getPublicAppUrl()}/p/c/${portal.share_token}`;
     const { data, error } = await supabase.functions.invoke("send-transactional-email", {
       body: {
         templateName: "onboarding-ready",
