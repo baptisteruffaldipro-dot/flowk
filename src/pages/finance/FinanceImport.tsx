@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { autoDetectMapping, CANONICAL_LABELS, CanonicalField, categorize, ColumnMapping, dedupeKey, headersSignature, normalizeCounterparty, normalizeRow, parseFile } from "@/lib/finance/parseTiime";
+import { autoDetectMapping, CANONICAL_LABELS, CanonicalField, categorize, ColumnMapping, dedupeKey, headersSignature, isPaidStatus, normalizeCounterparty, normalizeRow, parseFile } from "@/lib/finance/parseTiime";
 import { Upload, FileSpreadsheet, RotateCcw, CheckCircle2, Wand2 } from "lucide-react";
 import { fmtDate } from "@/lib/format";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,7 +35,7 @@ export default function FinanceImport() {
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [imports, setImports] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
-  const [makeReceivables, setMakeReceivables] = useState(true);
+  const [paidCount, setPaidCount] = useState(0);
 
   const loadImports = async () => {
     const { data } = await supabase.from("tiime_imports").select("*").order("created_at", { ascending: false }).limit(20);
@@ -102,9 +102,8 @@ export default function FinanceImport() {
       let latestBank: { date: string; amount: number } | null = null;
       let bankNetMovement = 0;
       let bankMaxDate: string | null = null;
-      // Factures de vente non réglées → dettes clients (agrégées par client)
-      const unpaidByClient = new Map<string, { total: number; due: string | null; label: string }>();
-      let unpaidUnmatched = 0;
+      let bankMinDate: string | null = null;
+      let paidInvoices = 0, unpaidInvoices = 0;
 
       for (const row of rows) {
         const n = normalizeRow(row, mapping);
@@ -115,6 +114,7 @@ export default function FinanceImport() {
         if (kind === "bank") {
           bankNetMovement += Number(n.amount_ttc || 0);
           if (!bankMaxDate || n.date > bankMaxDate) bankMaxDate = n.date;
+          if (!bankMinDate || n.date < bankMinDate) bankMinDate = n.date;
         }
 
         const cat = categorize(kind, n, rules as any);
@@ -122,12 +122,16 @@ export default function FinanceImport() {
         const link = linkMap.get(norm);
         const client_id = link?.client_id ?? clientByNorm.get(norm) ?? null;
         const invoice_id = n.doc_number ? invByNumber.get(n.doc_number) ?? null : null;
+        // Classement payé / non payé : date de paiement explicite, sinon statut Tiime ("Payée")
+        const statusPaid = isPaidStatus(n.doc_status);
+        const paid_date = n.paid_date ?? (statusPaid ? n.date : null);
+        if (kind === "sale") { if (paid_date) paidInvoices++; else unpaidInvoices++; }
 
         const payload = {
           import_id: imp.id,
           source: "tiime_import",
           kind, category: cat.category, category_source: cat.source,
-          doc_number: n.doc_number, date: n.date, due_date: n.due_date, paid_date: n.paid_date,
+          doc_number: n.doc_number, date: n.date, due_date: n.due_date, paid_date,
           label: n.label, counterparty: n.counterparty, counterparty_normalized: norm || null,
           amount_ht: n.amount_ht, vat_amount: n.vat_amount, amount_ttc: n.amount_ttc,
           vat_rate: n.vat_rate, account_code: n.account_code, supplier_cost_ht: n.supplier_cost_ht,
@@ -142,56 +146,36 @@ export default function FinanceImport() {
           inserted++;
           if (invoice_id) await supabase.from("invoices").update({ tiime_synced_at: new Date().toISOString() }).eq("id", invoice_id);
         }
-
-        if (kind === "sale" && makeReceivables && !n.paid_date && Number(n.amount_ttc || 0) > 0) {
-          if (client_id) {
-            const cur = unpaidByClient.get(client_id) ?? { total: 0, due: null as string | null, label: n.counterparty || "" };
-            cur.total += Number(n.amount_ttc || 0);
-            if (n.due_date && (!cur.due || n.due_date < cur.due)) cur.due = n.due_date;
-            unpaidByClient.set(client_id, cur);
-          } else {
-            unpaidUnmatched++;
-          }
-        }
-      }
-
-      // Écriture des dettes clients issues de l'import (remplace les précédentes non soldées d'origine import)
-      if (unpaidByClient.size > 0) {
-        const today = new Date().toISOString().slice(0, 10);
-        for (const [cid, v] of unpaidByClient) {
-          await supabase.from("client_receivables").delete().eq("client_id", cid).eq("notes", "import_tiime").neq("status", "paye");
-          await (supabase as any).from("client_receivables").insert({
-            client_id: cid,
-            snapshot_date: today,
-            invoiced_ttc: Number(v.total.toFixed(2)),
-            paid_ttc: 0,
-            outstanding_ttc: Number(v.total.toFixed(2)),
-            expected_payment_date: v.due,
-            status: v.due && v.due >= today ? "a_venir" : "en_retard",
-            notes: "import_tiime",
-          });
-        }
       }
 
       if (latestBank) {
         await supabase.from("bank_balances").insert({
           as_of_date: latestBank.date, amount: latestBank.amount, source: "tiime_import", import_id: imp.id,
         });
-      } else if (kind === "bank" && bankMaxDate && bankNetMovement !== 0) {
-        // No "solde" column in the statement — compute snapshot from previous balance + net movement
+      } else if (kind === "bank" && bankMaxDate && bankMinDate && bankNetMovement !== 0) {
+        // Pas de colonne "solde" : on part du dernier solde connu STRICTEMENT antérieur
+        // à la première ligne du relevé, puis on ajoute uniquement le net de la période.
         const { data: prev } = await supabase
           .from("bank_balances")
-          .select("amount")
-          .lte("as_of_date", bankMaxDate)
+          .select("amount, as_of_date")
+          .lt("as_of_date", bankMinDate)
           .order("as_of_date", { ascending: false })
+          .order("created_at", { ascending: false })
           .limit(1);
         const start = Number(prev?.[0]?.amount ?? 0);
+        // On supprime les snapshots déjà posés dans la période réimportée (évite les doublons de solde)
+        await supabase
+          .from("bank_balances")
+          .delete()
+          .gte("as_of_date", bankMinDate)
+          .lte("as_of_date", bankMaxDate)
+          .eq("source", "tiime_import");
         await supabase.from("bank_balances").insert({
           as_of_date: bankMaxDate,
           amount: start + bankNetMovement,
           source: "tiime_import",
           import_id: imp.id,
-          note: `Calculé depuis ${inserted} mouvements (net ${bankNetMovement.toFixed(2)} €)`,
+          note: `Solde ${start.toFixed(2)} € au ${prev?.[0]?.as_of_date ?? "—"} + net ${bankNetMovement.toFixed(2)} € (${bankMinDate}→${bankMaxDate})`,
         });
       }
 
@@ -199,10 +183,10 @@ export default function FinanceImport() {
         status: "completed", inserted_count: inserted, duplicate_count: duplicates,
       }).eq("id", imp.id);
 
+      setPaidCount(paidInvoices);
       toast.success(
         `Import terminé : ${inserted} lignes ajoutées, ${duplicates} doublons ignorés.` +
-          (unpaidByClient.size > 0 ? ` ${unpaidByClient.size} dette(s) client créée(s).` : "") +
-          (unpaidUnmatched > 0 ? ` ${unpaidUnmatched} facture(s) non réglée(s) sans client reconnu.` : ""),
+          (kind === "sale" ? ` ${paidInvoices} facture(s) réglée(s), ${unpaidInvoices} non réglée(s).` : ""),
       );
       setFile(null); setRows([]); setHeaders([]); setMapping({});
       loadImports();
@@ -249,10 +233,10 @@ export default function FinanceImport() {
         </div>
 
         {kind === "sale" && (
-          <label className="mt-3 flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-            <input type="checkbox" className="h-4 w-4 accent-primary" checked={makeReceivables} onChange={(e) => setMakeReceivables(e.target.checked)} />
-            Créer les dettes clients pour les factures envoyées non réglées (sans date de paiement)
-          </label>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Les factures sont classées automatiquement <strong>payées / non payées</strong> d'après la colonne
+            « statut de la facture » (Payée) ou la date de paiement. Les non payées alimentent l'encours client.
+          </p>
         )}
 
         {headers.length > 0 && (
