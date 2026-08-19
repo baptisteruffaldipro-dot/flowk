@@ -1,7 +1,7 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
 import {
-  Body, Button, Container, Head, Heading, Html, Preview, Text,
+  Body, Button, Container, Head, Heading, Html, Link, Preview, Text,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
@@ -25,7 +25,13 @@ const OnboardingReadyEmail = ({ name, portalUrl }: OnboardingReadyProps) => (
           projets, briefs, BAT, factures et rendez-vous, en un seul endroit.
         </Text>
         {portalUrl && (
-          <Button style={button} href={portalUrl}>Accéder à mon espace</Button>
+          <>
+            <Button style={button} href={portalUrl}>Accéder à mon espace</Button>
+            <Text style={small}>
+              Si le bouton ne s'affiche pas, copiez ce lien dans votre navigateur :<br />
+              <Link href={portalUrl} style={link}>{portalUrl}</Link>
+            </Text>
+          </>
         )}
         <Text style={footer}>— {SITE_NAME}</Text>
       </Container>
@@ -59,3 +65,5 @@ const button = {
   margin: '8px 0 24px',
 }
 const footer = { fontSize: '13px', color: 'hsl(220, 9%, 46%)', margin: '32px 0 0' }
+const small = { fontSize: '13px', color: 'hsl(220, 9%, 46%)', lineHeight: '1.6', margin: '0 0 8px', wordBreak: 'break-all' as const }
+const link = { color: 'hsl(220, 13%, 13%)', textDecoration: 'underline' }
