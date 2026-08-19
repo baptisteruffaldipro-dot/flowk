@@ -30,9 +30,8 @@ export default function CashflowProjection() {
       const horizonISO = iso(horizon);
       const todayISO = iso(today);
 
-      const [bank, receivables, invoicesUnpaid, financings, forecasts, allTx] = await Promise.all([
+      const [bank, invoicesUnpaid, financings, forecasts, allTx] = await Promise.all([
         supabase.from("bank_balances").select("amount, as_of_date").order("as_of_date", { ascending: false }).limit(1),
-        (supabase as any).from("client_receivables").select("outstanding_ttc, expected_payment_date, status, clients(name)"),
         supabase.from("finance_transactions").select("amount_ttc, due_date, paid_date, kind, counterparty, label").is("paid_date", null).not("due_date", "is", null),
         (supabase as any).from("finance_financings").select("*").eq("active", true),
         supabase.from("finance_forecasts").select("amount_ttc, planned_date, kind, label").gte("planned_date", todayISO).lte("planned_date", horizonISO),
@@ -43,16 +42,7 @@ export default function CashflowProjection() {
       setStartBalance(startBal);
       const evs: Event[] = [];
 
-      // 1) Encours clients (receivables) attendus
-      for (const r of ((receivables.data as any[]) ?? [])) {
-        const amt = Number(r.outstanding_ttc || 0);
-        if (amt <= 0 || r.status === "paye") continue;
-        const d = r.expected_payment_date || iso(addDays(today, 30));
-        if (d < todayISO || d > horizonISO) continue;
-        evs.push({ date: d, amount: amt, label: `${r.clients?.name ?? "Client"} — encaissement`, kind: "receivable" });
-      }
-
-      // 2) Factures non payées avec due_date dans l'horizon
+      // 1) Factures non payées avec date d'échéance dans l'horizon
       for (const t of ((invoicesUnpaid.data as any[]) ?? [])) {
         if (!t.due_date || t.due_date < todayISO || t.due_date > horizonISO) continue;
         const amt = Number(t.amount_ttc || 0);
