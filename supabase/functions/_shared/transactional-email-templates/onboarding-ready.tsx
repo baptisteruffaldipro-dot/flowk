@@ -26,7 +26,14 @@ const OnboardingReadyEmail = ({ name, portalUrl }: OnboardingReadyProps) => (
         </Text>
         {portalUrl && (
           <>
-            <Button style={button} href={portalUrl}>Accéder à mon espace</Button>
+            <Button
+              style={button}
+              href={portalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Accéder à mon espace
+            </Button>
             <Text style={small}>
               Si le bouton ne s'affiche pas, copiez ce lien dans votre navigateur :<br />
               <Link href={portalUrl} style={link}>{portalUrl}</Link>
@@ -54,13 +61,15 @@ const container = { padding: '32px 28px', maxWidth: '560px' }
 const h1 = { fontSize: '22px', fontWeight: 600 as const, color: 'hsl(220, 13%, 13%)', margin: '0 0 20px', letterSpacing: '-0.01em' }
 const text = { fontSize: '15px', color: 'hsl(220, 9%, 30%)', lineHeight: '1.6', margin: '0 0 18px' }
 const button = {
-  backgroundColor: 'hsl(220, 13%, 13%)',
+  backgroundColor: '#202124',
+  border: '1px solid #202124',
   color: '#ffffff',
   fontSize: '14px',
   fontWeight: 500 as const,
-  borderRadius: '10px',
-  padding: '12px 22px',
+  borderRadius: '8px',
+  padding: '13px 22px',
   textDecoration: 'none',
+  textAlign: 'center' as const,
   display: 'inline-block',
   margin: '8px 0 24px',
 }
