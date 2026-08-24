@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import BatViewer from "@/components/BatViewer";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
 import DeliveryGateCard from "@/components/DeliveryGateCard";
+import ClientSelectField from "@/components/ClientSelectField";
 
 export default function PrintOrderDetail() {
   const { id } = useParams();
@@ -32,6 +33,9 @@ export default function PrintOrderDetail() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [savingForm, setSavingForm] = useState(false);
+  const [clients, setClients] = useState<{ id: string; name: string; company?: string | null }[]>([]);
+  const [editingClient, setEditingClient] = useState(false);
+
 
   const load = async () => {
     if (!id) return;
@@ -57,6 +61,23 @@ export default function PrintOrderDetail() {
   };
 
   useEffect(() => { load(); }, [id]);
+
+  useEffect(() => {
+    supabase.from("clients").select("id,name,company").order("name").then(({ data }) => {
+      setClients((data as any) ?? []);
+    });
+  }, []);
+
+  const changeClient = async (clientId: string) => {
+    if (!id || !clientId) return;
+    const { error } = await supabase.from("print_orders").update({ client_id: clientId }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Client mis à jour");
+    setEditingClient(false);
+    load();
+  };
+
+
 
   const uploadBat = async (file: File) => {
     setUploading(true);
@@ -264,13 +285,38 @@ export default function PrintOrderDetail() {
           )}
         </Card>
         <Card className="p-4">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Client</div>
-          <div className="text-sm mt-1">{order.clients?.name}</div>
-          <div className="text-xs text-muted-foreground">{order.clients?.email ?? "—"}</div>
-          {!order.clients?.portal_user_id && (
-            <div className="text-[10px] text-amber-600 mt-1">Portail non activé</div>
+          <div className="flex items-center justify-between">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Client</div>
+            {!editingClient && (
+              <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setEditingClient(true)}>
+                Changer
+              </Button>
+            )}
+          </div>
+          {editingClient ? (
+            <div className="mt-2 space-y-2">
+              <ClientSelectField
+                value={order.client_id ?? ""}
+                onChange={changeClient}
+                clients={clients}
+                onClientCreated={(c) => setClients((p) => [...p, c])}
+                showCompany
+              />
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingClient(false)}>
+                Fermer
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="text-sm mt-1">{order.clients?.name}</div>
+              <div className="text-xs text-muted-foreground">{order.clients?.email ?? "—"}</div>
+              {!order.clients?.portal_user_id && (
+                <div className="text-[10px] text-amber-600 mt-1">Portail non activé</div>
+              )}
+            </>
           )}
         </Card>
+
         <Card className="p-4">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Livrables</div>
           <div className="text-sm mt-1">{(order.deliverables ?? []).length} fichier(s)</div>
