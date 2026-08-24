@@ -115,7 +115,11 @@ export default function ClientPortalPublic() {
 
   const prestationHT = isTask ? totalAmount : projectTasksTotal;
   const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0);
-  const displayTotalHT = amountDue != null ? amountDue : prestationHT + printHT;
+  const componentsHT = prestationHT + printHT;
+  // Le total HT est la somme des composants (prestation + impressions).
+  // On ne retombe sur amount_due_ttc que si aucun composant n'est chiffré.
+  const displayTotalHT = componentsHT > 0 ? componentsHT : (amountDue ?? 0);
+
 
 
   const canValidate = p.status === "draft" || p.status === "awaiting_validation";
