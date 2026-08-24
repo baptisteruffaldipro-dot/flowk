@@ -78,8 +78,8 @@ export default function ClientPortalPublic() {
   const pay = data.payment_settings ?? {};
   const methods: string[] = p.payment_methods ?? [];
   const amountDue = p.amount_due_ttc != null ? Number(p.amount_due_ttc) : null;
-  const dueAmount =
-    amountDue != null ? (p.payment_terms === "deposit_50" ? amountDue / 2 : amountDue) : null;
+  const hasAmount = amountDue != null;
+
   const termsLabel =
     p.payment_terms === "deposit_50"
       ? "Acompte de 50 % à régler"
@@ -115,7 +115,17 @@ export default function ClientPortalPublic() {
 
   const prestationHT = isTask ? totalAmount : projectTasksTotal;
   const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0);
-  const displayTotalHT = amountDue != null ? amountDue : prestationHT + printHT;
+  const componentsHT = prestationHT + printHT;
+  // Le total HT est la somme des composants (prestation + impressions).
+  // On ne retombe sur amount_due_ttc que si aucun composant n'est chiffré.
+  const displayTotalHT = componentsHT > 0 ? componentsHT : (amountDue ?? 0);
+  const dueAmount =
+    displayTotalHT > 0 || hasAmount
+      ? (p.payment_terms === "deposit_50" ? displayTotalHT / 2 : displayTotalHT)
+      : null;
+
+
+
 
 
   const canValidate = p.status === "draft" || p.status === "awaiting_validation";
