@@ -119,6 +119,12 @@ export default function ClientPortalPublic() {
   // Le total HT est la somme des composants (prestation + impressions).
   // On ne retombe sur amount_due_ttc que si aucun composant n'est chiffré.
   const displayTotalHT = componentsHT > 0 ? componentsHT : (amountDue ?? 0);
+  const dueAmount =
+    displayTotalHT > 0 || hasAmount
+      ? (p.payment_terms === "deposit_50" ? displayTotalHT / 2 : displayTotalHT)
+      : null;
+
+
 
 
 
