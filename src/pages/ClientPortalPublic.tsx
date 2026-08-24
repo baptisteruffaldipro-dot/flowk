@@ -78,8 +78,8 @@ export default function ClientPortalPublic() {
   const pay = data.payment_settings ?? {};
   const methods: string[] = p.payment_methods ?? [];
   const amountDue = p.amount_due_ttc != null ? Number(p.amount_due_ttc) : null;
-  const dueAmount =
-    amountDue != null ? (p.payment_terms === "deposit_50" ? amountDue / 2 : amountDue) : null;
+  const hasAmount = amountDue != null;
+
   const termsLabel =
     p.payment_terms === "deposit_50"
       ? "Acompte de 50 % à régler"
