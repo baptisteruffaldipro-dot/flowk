@@ -62,6 +62,23 @@ export default function PrintOrderDetail() {
 
   useEffect(() => { load(); }, [id]);
 
+  useEffect(() => {
+    supabase.from("clients").select("id,name,company").order("name").then(({ data }) => {
+      setClients((data as any) ?? []);
+    });
+  }, []);
+
+  const changeClient = async (clientId: string) => {
+    if (!id || !clientId) return;
+    const { error } = await supabase.from("print_orders").update({ client_id: clientId }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Client mis à jour");
+    setEditingClient(false);
+    load();
+  };
+
+
+
   const uploadBat = async (file: File) => {
     setUploading(true);
     const path = `${id}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
