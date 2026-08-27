@@ -99,7 +99,24 @@ export default function IdeasBoard({
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [linkProject, setLinkProject] = useState<string>("none");
+  const [linkTask, setLinkTask] = useState<string>("none");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!showGlobal) return;
+    (async () => {
+      const [p, t] = await Promise.all([
+        supabase.from("projects").select("id,name").eq("archived", false).order("name"),
+        supabase.from("tasks").select("id,title").order("updated_at", { ascending: false }).limit(200),
+      ]);
+      setProjects(p.data ?? []);
+      setTasks(t.data ?? []);
+    })();
+  }, [showGlobal]);
+
 
   const load = useCallback(async () => {
     setLoading(true);
