@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 import { toast } from "sonner";
-import { Lightbulb, ImagePlus, Trash2, Pin, PinOff, Link2, Loader2, Plus, X } from "lucide-react";
+import { Lightbulb, ImagePlus, Trash2, Pin, PinOff, Link2, Loader2, Plus, X, ImageIcon } from "lucide-react";
 import { fmtDateTime } from "@/lib/format";
 
 export type Idea = {
@@ -82,6 +83,24 @@ function IdeaImages({ paths, onRemove }: { paths: string[]; onRemove?: (p: strin
   );
 }
 
+function ThumbImage({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.storage.from("ideas").createSignedUrls([path], 3600);
+      if (cancelled || !data || !data[0]) return;
+      setUrl(data[0].signedUrl ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [path]);
+  return url ? (
+    <img src={url} alt="Inspiration" loading="lazy" className="h-full w-full object-cover" />
+  ) : (
+    <div className="h-full w-full animate-pulse bg-muted/40" />
+  );
+}
+
 export default function IdeasBoard({
   projectId = null,
   taskId = null,
@@ -107,6 +126,7 @@ export default function IdeasBoard({
   const [tasks, setTasks] = useState<any[]>([]);
   const [linkProject, setLinkProject] = useState<string>("none");
   const [linkTask, setLinkTask] = useState<string>("none");
+  const [selected, setSelected] = useState<Idea | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -268,71 +288,132 @@ export default function IdeasBoard({
       ) : ideas.length === 0 ? (
         <div className="text-xs text-muted-foreground mt-4">Aucune note pour le moment.</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-4">
-          {ideas.map((idea) => (
-            <div key={idea.id} className={`rounded-lg border p-3 ${colorCls(idea.color)}`}>
-              <div className="flex items-start gap-2">
-                <div className="flex-1 min-w-0">
-                  {idea.title && <div className="text-sm font-medium break-words">{idea.title}</div>}
-                  {idea.content && <div className="text-sm whitespace-pre-wrap break-words mt-0.5">{idea.content}</div>}
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => patch(idea.id, { pinned: !idea.pinned })} className="text-muted-foreground hover:text-foreground" aria-label="Épingler">
-                    {idea.pinned ? <Pin className="h-3.5 w-3.5 text-amber-500" /> : <PinOff className="h-3.5 w-3.5" />}
-                  </button>
-                  <button onClick={() => remove(idea)} className="text-muted-foreground hover:text-destructive" aria-label="Supprimer">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {showGlobal && (idea.project_id || idea.task_id) && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {idea.project_id && (
-                    <Link to={`/projets/${idea.project_id}`}>
-                      <Badge variant="secondary" className="text-[10px] font-normal">
-                        {projects.find((p) => p.id === idea.project_id)?.name ?? "Projet"}
-                      </Badge>
-                    </Link>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 mt-4">
+          {ideas.map((idea) => {
+            const preview = (idea.content || "").replace(/\s+/g, " ").trim();
+            return (
+              <button
+                key={idea.id}
+                onClick={() => setSelected(idea)}
+                className={`text-left rounded-lg border p-2.5 ${colorCls(idea.color)} hover:ring-2 ring-foreground/20 transition-all flex flex-col gap-1.5 group relative`}
+              >
+                {/* Thumbnail image */}
+                {idea.images.length > 0 && (
+                  <div className="relative -mx-2.5 -mt-2.5 mb-0.5 h-20 overflow-hidden border-b border-border/50">
+                    <ThumbImage path={idea.images[0]} />
+                    {idea.images.length > 1 && (
+                      <span className="absolute bottom-1 right-1 rounded bg-background/90 px-1 text-[10px] font-medium">
+                        +{idea.images.length - 1}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {idea.title ? (
+                  <div className="text-xs font-medium line-clamp-1 break-words">{idea.title}</div>
+                ) : preview ? (
+                  <div className="text-xs font-medium line-clamp-1 break-words">{preview}</div>
+                ) : (
+                  <div className="text-xs text-muted-foreground italic">Note sans titre</div>
+                )}
+                {preview && (
+                  <div className="text-[11px] text-muted-foreground line-clamp-2 break-words">{preview}</div>
+                )}
+                <div className="flex items-center gap-1 mt-auto">
+                  {idea.pinned && <Pin className="h-3 w-3 text-amber-500" />}
+                  {idea.links.length > 0 && <Link2 className="h-3 w-3 text-muted-foreground" />}
+                  {idea.images.length > 0 && <ImageIcon className="h-3 w-3 text-muted-foreground" />}
+                  {showGlobal && idea.project_id && (
+                    <Badge variant="secondary" className="text-[9px] font-normal px-1 py-0">
+                      {projects.find((p) => p.id === idea.project_id)?.name?.slice(0, 12) ?? "Projet"}
+                    </Badge>
                   )}
-                  {idea.task_id && (
-                    <Link to={`/taches/${idea.task_id}`}>
-                      <Badge variant="secondary" className="text-[10px] font-normal">
-                        {tasks.find((t) => t.id === idea.task_id)?.title ?? "Tâche"}
-                      </Badge>
-                    </Link>
-                  )}
+                  <span className="ml-auto text-[9px] text-muted-foreground">{fmtDateTime(idea.updated_at)}</span>
                 </div>
-              )}
-
-              <IdeaImages paths={idea.images} />
-
-
-              {idea.links.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {idea.links.map((l) => (
-                    <a key={l} href={l} target="_blank" rel="noreferrer" className="text-[11px] text-primary inline-flex items-center gap-1 truncate max-w-full hover:underline">
-                      <Link2 className="h-3 w-3 shrink-0" /> <span className="truncate">{l}</span>
-                    </a>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex items-center gap-1 mt-3">
-                {COLORS.map((c) => (
-                  <button
-                    key={c.key}
-                    onClick={() => patch(idea.id, { color: idea.color === c.key ? null : c.key })}
-                    className={`h-3.5 w-3.5 rounded-full border ${c.cls} ${idea.color === c.key ? "ring-2 ring-offset-1 ring-foreground/30" : ""}`}
-                    aria-label={`Couleur ${c.key}`}
-                  />
-                ))}
-                <Badge variant="outline" className="ml-auto text-[10px] font-normal">{fmtDateTime(idea.updated_at)}</Badge>
-              </div>
-            </div>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
+
+      {/* Dialog détail */}
+      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+        <DialogContent className="max-w-lg">
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-start gap-2">
+                  <button
+                    onClick={() => { patch(selected.id, { pinned: !selected.pinned }); setSelected({ ...selected, pinned: !selected.pinned }); }}
+                    className="text-muted-foreground hover:text-foreground shrink-0 mt-0.5"
+                    aria-label="Épingler"
+                  >
+                    {selected.pinned ? <Pin className="h-4 w-4 text-amber-500" /> : <PinOff className="h-4 w-4" />}
+                  </button>
+                  <span className="flex-1 break-words">{selected.title || "Note sans titre"}</span>
+                  <button
+                    onClick={() => { remove(selected); setSelected(null); }}
+                    className="text-muted-foreground hover:text-destructive shrink-0 mt-0.5"
+                    aria-label="Supprimer"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                {selected.content && (
+                  <div className="text-sm whitespace-pre-wrap break-words">{selected.content}</div>
+                )}
+
+                <IdeaImages paths={selected.images} />
+
+                {selected.links.length > 0 && (
+                  <div className="space-y-1">
+                    {selected.links.map((l) => (
+                      <a key={l} href={l} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 break-all hover:underline">
+                        <Link2 className="h-3 w-3 shrink-0" /> {l}
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {showGlobal && (selected.project_id || selected.task_id) && (
+                  <div className="flex flex-wrap gap-1">
+                    {selected.project_id && (
+                      <Link to={`/projets/${selected.project_id}`}>
+                        <Badge variant="secondary" className="text-[10px] font-normal">
+                          {projects.find((p) => p.id === selected.project_id)?.name ?? "Projet"}
+                        </Badge>
+                      </Link>
+                    )}
+                    {selected.task_id && (
+                      <Link to={`/taches/${selected.task_id}`}>
+                        <Badge variant="secondary" className="text-[10px] font-normal">
+                          {tasks.find((t) => t.id === selected.task_id)?.title ?? "Tâche"}
+                        </Badge>
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="flex items-center justify-between sm:justify-between gap-2">
+                <div className="flex items-center gap-1">
+                  {COLORS.map((c) => (
+                    <button
+                      key={c.key}
+                      onClick={() => { patch(selected.id, { color: selected.color === c.key ? null : c.key }); setSelected({ ...selected, color: selected.color === c.key ? null : c.key }); }}
+                      className={`h-4 w-4 rounded-full border ${c.cls} ${selected.color === c.key ? "ring-2 ring-offset-1 ring-foreground/30" : ""}`}
+                      aria-label={`Couleur ${c.key}`}
+                    />
+                  ))}
+                </div>
+                <Badge variant="outline" className="text-[10px] font-normal">{fmtDateTime(selected.updated_at)}</Badge>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
