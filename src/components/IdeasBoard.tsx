@@ -407,6 +407,11 @@ export default function IdeasBoard({
                   {idea.pinned && <Pin className="h-3 w-3 text-amber-500" />}
                   {idea.links.length > 0 && <Link2 className="h-3 w-3 text-muted-foreground" />}
                   {idea.images.length > 0 && <ImageIcon className="h-3 w-3 text-muted-foreground" />}
+                  {showGlobal && idea.client_id && (
+                    <Badge variant="outline" className="text-[9px] font-normal px-1 py-0">
+                      {clients.find((c) => c.id === idea.client_id)?.name?.slice(0, 12) ?? "Client"}
+                    </Badge>
+                  )}
                   {showGlobal && idea.project_id && (
                     <Badge variant="secondary" className="text-[9px] font-normal px-1 py-0">
                       {projects.find((p) => p.id === idea.project_id)?.name?.slice(0, 12) ?? "Projet"}
