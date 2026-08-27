@@ -227,6 +227,25 @@ export default function IdeasBoard({
           className="text-sm resize-none"
         />
         <IdeaImages paths={pending} onRemove={(p) => { setPending((a) => a.filter((x) => x !== p)); supabase.storage.from("ideas").remove([p]); }} />
+        {showGlobal && expanded && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+            <Select value={linkProject} onValueChange={setLinkProject}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Lier à un projet" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucun projet</SelectItem>
+                {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={linkTask} onValueChange={setLinkTask}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Lier à une tâche" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucune tâche</SelectItem>
+                {tasks.map((t) => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 mt-2">
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => e.target.files && uploadFiles(e.target.files)} />
           <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => fileRef.current?.click()} disabled={uploading}>
