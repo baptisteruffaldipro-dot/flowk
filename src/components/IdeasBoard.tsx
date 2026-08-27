@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 import { toast } from "sonner";
-import { Lightbulb, ImagePlus, Trash2, Pin, PinOff, Link2, Loader2, Plus, X } from "lucide-react";
+import { Lightbulb, ImagePlus, Trash2, Pin, PinOff, Link2, Loader2, Plus, X, ImageIcon } from "lucide-react";
 import { fmtDateTime } from "@/lib/format";
 
 export type Idea = {
