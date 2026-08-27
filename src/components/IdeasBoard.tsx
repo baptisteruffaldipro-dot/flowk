@@ -108,6 +108,7 @@ export default function IdeasBoard({
   const [tasks, setTasks] = useState<any[]>([]);
   const [linkProject, setLinkProject] = useState<string>("none");
   const [linkTask, setLinkTask] = useState<string>("none");
+  const [selected, setSelected] = useState<Idea | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
