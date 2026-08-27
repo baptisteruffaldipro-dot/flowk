@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 import ProjectRoadmap from "@/components/ProjectRoadmap";
 import PortalPanel from "@/components/PortalPanel";
+import IdeasBoard from "@/components/IdeasBoard";
 
 const DONE_STATUSES = new Set(["envoye", "a_facturer", "facture_envoyee", "payee", "archive"]);
 
@@ -238,6 +239,10 @@ export default function ProjectDetail() {
 
       <div className="mb-4">
         <PortalPanel entityType="project" entityId={project.id} clientId={project.client_id ?? null} />
+      </div>
+
+      <div className="mb-4">
+        <IdeasBoard projectId={project.id} clientId={project.client_id ?? null} />
       </div>
 
       {tasks.length > 0 && (

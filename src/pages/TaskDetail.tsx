@@ -32,6 +32,7 @@ import { computeTaskBilling } from "@/lib/billing";
 import PrestationPicker from "@/components/PrestationPicker";
 import NewBatDialog from "@/components/NewBatDialog";
 import PortalPanel from "@/components/PortalPanel";
+import IdeasBoard from "@/components/IdeasBoard";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -637,6 +638,10 @@ export default function TaskDetail() {
           notifyTemplate="files-delivered"
           notifyContext={{ description: task.title }}
         />
+      </div>
+
+      <div className="mb-4">
+        <IdeasBoard taskId={task.id} clientId={task.client_id ?? null} />
       </div>
 
       {entries.length > 0 && (
