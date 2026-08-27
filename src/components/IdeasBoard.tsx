@@ -370,16 +370,16 @@ export default function IdeasBoard({
       {/* Liste */}
       {loading ? (
         <div className="text-xs text-muted-foreground mt-4">Chargement…</div>
-      ) : ideas.length === 0 ? (
-        <div className="text-xs text-muted-foreground mt-4">Aucune note pour le moment.</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-xs text-muted-foreground mt-4">{q ? "Aucun résultat pour cette recherche." : "Aucune note pour le moment."}</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 mt-4">
-          {ideas.map((idea) => {
+          {filtered.map((idea) => {
             const preview = (idea.content || "").replace(/\s+/g, " ").trim();
             return (
               <button
                 key={idea.id}
-                onClick={() => setSelected(idea)}
+                onClick={() => openDetail(idea)}
                 className={`text-left rounded-lg border p-2.5 ${colorCls(idea.color)} hover:ring-2 ring-foreground/20 transition-all flex flex-col gap-1.5 group relative`}
               >
                 {/* Thumbnail image */}
