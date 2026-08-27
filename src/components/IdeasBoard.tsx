@@ -284,7 +284,27 @@ export default function IdeasBoard({
                 </div>
               </div>
 
+              {showGlobal && (idea.project_id || idea.task_id) && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {idea.project_id && (
+                    <Link to={`/projets/${idea.project_id}`}>
+                      <Badge variant="secondary" className="text-[10px] font-normal">
+                        {projects.find((p) => p.id === idea.project_id)?.name ?? "Projet"}
+                      </Badge>
+                    </Link>
+                  )}
+                  {idea.task_id && (
+                    <Link to={`/taches/${idea.task_id}`}>
+                      <Badge variant="secondary" className="text-[10px] font-normal">
+                        {tasks.find((t) => t.id === idea.task_id)?.title ?? "Tâche"}
+                      </Badge>
+                    </Link>
+                  )}
+                </div>
+              )}
+
               <IdeaImages paths={idea.images} />
+
 
               {idea.links.length > 0 && (
                 <div className="mt-2 space-y-1">
