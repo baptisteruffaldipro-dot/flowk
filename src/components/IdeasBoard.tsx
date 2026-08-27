@@ -83,6 +83,24 @@ function IdeaImages({ paths, onRemove }: { paths: string[]; onRemove?: (p: strin
   );
 }
 
+function ThumbImage({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.storage.from("ideas").createSignedUrls([path], 3600);
+      if (cancelled || !data || !data[0]) return;
+      setUrl(data[0].signedUrl ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [path]);
+  return url ? (
+    <img src={url} alt="Inspiration" loading="lazy" className="h-full w-full object-cover" />
+  ) : (
+    <div className="h-full w-full animate-pulse bg-muted/40" />
+  );
+}
+
 export default function IdeasBoard({
   projectId = null,
   taskId = null,
