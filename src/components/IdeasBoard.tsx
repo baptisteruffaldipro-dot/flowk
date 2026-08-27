@@ -167,15 +167,17 @@ export default function IdeasBoard({
       content: draft.trim() || null,
       images: pending,
       links,
-      project_id: projectId,
-      task_id: taskId,
+      project_id: projectId ?? (linkProject !== "none" ? linkProject : null),
+      task_id: taskId ?? (linkTask !== "none" ? linkTask : null),
       client_id: clientId,
       created_by: u.user?.id ?? null,
     } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
     setDraft(""); setDraftTitle(""); setPending([]); setExpanded(false);
+    setLinkProject("none"); setLinkTask("none");
     load();
+
   };
 
   const patch = async (id: string, p: Partial<Idea>) => {
