@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 import { toast } from "sonner";
-import { Lightbulb, ImagePlus, Trash2, Pin, PinOff, Link2, Loader2, Plus, X, ImageIcon } from "lucide-react";
+import { Lightbulb, ImagePlus, Trash2, Pin, PinOff, Link2, Loader2, Plus, X, ImageIcon, Search, Pencil, Check, Building2 } from "lucide-react";
 import { fmtDateTime } from "@/lib/format";
 
 export type Idea = {
