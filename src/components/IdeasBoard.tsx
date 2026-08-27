@@ -204,13 +204,13 @@ export default function IdeasBoard({
       links,
       project_id: projectId ?? (linkProject !== "none" ? linkProject : null),
       task_id: taskId ?? (linkTask !== "none" ? linkTask : null),
-      client_id: clientId,
+      client_id: clientId ?? (linkClient !== "none" ? linkClient : null),
       created_by: u.user?.id ?? null,
     } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
     setDraft(""); setDraftTitle(""); setPending([]); setExpanded(false);
-    setLinkProject("none"); setLinkTask("none");
+    setLinkProject("none"); setLinkTask("none"); setLinkClient("none");
     load();
 
   };
