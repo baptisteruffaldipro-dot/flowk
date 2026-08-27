@@ -228,13 +228,80 @@ export default function IdeasBoard({
     setIdeas((arr) => arr.filter((i) => i.id !== idea.id));
   };
 
+  const openDetail = (idea: Idea) => {
+    setSelected(idea);
+    setEditMode(false);
+    setEditTitle(idea.title ?? "");
+    setEditContent(idea.content ?? "");
+  };
+
+  const saveEdit = async () => {
+    if (!selected) return;
+    setEditSaving(true);
+    const links = Array.from(new Set((editContent.match(URL_RE) ?? [])));
+    const upd = { title: editTitle.trim() || null, content: editContent.trim() || null, links };
+    await patch(selected.id, upd as any);
+    setSelected({ ...selected, ...upd } as Idea);
+    setEditSaving(false);
+    setEditMode(false);
+  };
+
+  const addImagesToNote = async (files: FileList | File[]) => {
+    if (!selected) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (!list.length) return;
+    setDetailUploading(true);
+    const paths: string[] = [];
+    for (const f of list) {
+      const ext = f.name.split(".").pop() || "png";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("ideas").upload(path, f, { upsert: false });
+      if (error) toast.error(error.message);
+      else paths.push(path);
+    }
+    setDetailUploading(false);
+    if (!paths.length) return;
+    const images = [...selected.images, ...paths];
+    await patch(selected.id, { images } as any);
+    setSelected({ ...selected, images });
+  };
+
+  const removeImageFromNote = async (p: string) => {
+    if (!selected) return;
+    const images = selected.images.filter((x) => x !== p);
+    await patch(selected.id, { images } as any);
+    setSelected({ ...selected, images });
+    supabase.storage.from("ideas").remove([p]);
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = !q
+    ? ideas
+    : ideas.filter((i) => {
+        const clientName = clients.find((c) => c.id === i.client_id)?.name ?? "";
+        const projectName = projects.find((p) => p.id === i.project_id)?.name ?? "";
+        const taskName = tasks.find((t) => t.id === i.task_id)?.title ?? "";
+        return [i.title, i.content, clientName, projectName, taskName, ...(i.links ?? [])]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q));
+      });
+
   return (
     <Card className="p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold inline-flex items-center gap-2">
+      <div className="flex items-center justify-between mb-3 gap-3">
+        <h2 className="text-sm font-semibold inline-flex items-center gap-2 shrink-0">
           <Lightbulb className="h-4 w-4 text-amber-500" /> {title}
         </h2>
-        <span className="text-xs text-muted-foreground">{ideas.length} note{ideas.length > 1 ? "s" : ""}</span>
+        <div className="relative ml-auto w-full max-w-xs">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher un mot-clé…"
+            className="h-8 pl-7 text-xs"
+          />
+        </div>
+        <span className="text-xs text-muted-foreground shrink-0">{filtered.length} note{filtered.length > 1 ? "s" : ""}</span>
       </div>
 
       {/* Composer */}
