@@ -141,12 +141,14 @@ export default function IdeasBoard({
   useEffect(() => {
     if (!showGlobal) return;
     (async () => {
-      const [p, t] = await Promise.all([
+      const [p, t, c] = await Promise.all([
         supabase.from("projects").select("id,name").eq("archived", false).order("name"),
         supabase.from("tasks").select("id,title").order("updated_at", { ascending: false }).limit(200),
+        supabase.from("clients").select("id,name").order("name"),
       ]);
       setProjects(p.data ?? []);
       setTasks(t.data ?? []);
+      setClients(c.data ?? []);
     })();
   }, [showGlobal]);
 
