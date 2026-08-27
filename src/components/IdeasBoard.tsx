@@ -330,7 +330,14 @@ export default function IdeasBoard({
         />
         <IdeaImages paths={pending} onRemove={(p) => { setPending((a) => a.filter((x) => x !== p)); supabase.storage.from("ideas").remove([p]); }} />
         {showGlobal && expanded && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+            <Select value={linkClient} onValueChange={setLinkClient}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Lier à un client" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucun client</SelectItem>
+                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Select value={linkProject} onValueChange={setLinkProject}>
               <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Lier à un projet" /></SelectTrigger>
               <SelectContent>
