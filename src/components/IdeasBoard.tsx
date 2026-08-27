@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 import { toast } from "sonner";
-import { Lightbulb, ImagePlus, Trash2, Pin, PinOff, Link2, Loader2, Plus, X, ImageIcon } from "lucide-react";
+import { Lightbulb, ImagePlus, Trash2, Pin, PinOff, Link2, Loader2, Plus, X, ImageIcon, Search, Pencil, Check, Building2 } from "lucide-react";
 import { fmtDateTime } from "@/lib/format";
 
 export type Idea = {
@@ -127,17 +127,28 @@ export default function IdeasBoard({
   const [linkProject, setLinkProject] = useState<string>("none");
   const [linkTask, setLinkTask] = useState<string>("none");
   const [selected, setSelected] = useState<Idea | null>(null);
+  const [clients, setClients] = useState<any[]>([]);
+  const [linkClient, setLinkClient] = useState<string>("none");
+  const [query, setQuery] = useState("");
+  const [editMode, setEditMode] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [detailUploading, setDetailUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const detailFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!showGlobal) return;
     (async () => {
-      const [p, t] = await Promise.all([
+      const [p, t, c] = await Promise.all([
         supabase.from("projects").select("id,name").eq("archived", false).order("name"),
         supabase.from("tasks").select("id,title").order("updated_at", { ascending: false }).limit(200),
+        supabase.from("clients").select("id,name").order("name"),
       ]);
       setProjects(p.data ?? []);
       setTasks(t.data ?? []);
+      setClients(c.data ?? []);
     })();
   }, [showGlobal]);
 
@@ -193,13 +204,13 @@ export default function IdeasBoard({
       links,
       project_id: projectId ?? (linkProject !== "none" ? linkProject : null),
       task_id: taskId ?? (linkTask !== "none" ? linkTask : null),
-      client_id: clientId,
+      client_id: clientId ?? (linkClient !== "none" ? linkClient : null),
       created_by: u.user?.id ?? null,
     } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
     setDraft(""); setDraftTitle(""); setPending([]); setExpanded(false);
-    setLinkProject("none"); setLinkTask("none");
+    setLinkProject("none"); setLinkTask("none"); setLinkClient("none");
     load();
 
   };
@@ -217,13 +228,80 @@ export default function IdeasBoard({
     setIdeas((arr) => arr.filter((i) => i.id !== idea.id));
   };
 
+  const openDetail = (idea: Idea) => {
+    setSelected(idea);
+    setEditMode(false);
+    setEditTitle(idea.title ?? "");
+    setEditContent(idea.content ?? "");
+  };
+
+  const saveEdit = async () => {
+    if (!selected) return;
+    setEditSaving(true);
+    const links = Array.from(new Set((editContent.match(URL_RE) ?? [])));
+    const upd = { title: editTitle.trim() || null, content: editContent.trim() || null, links };
+    await patch(selected.id, upd as any);
+    setSelected({ ...selected, ...upd } as Idea);
+    setEditSaving(false);
+    setEditMode(false);
+  };
+
+  const addImagesToNote = async (files: FileList | File[]) => {
+    if (!selected) return;
+    const list = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (!list.length) return;
+    setDetailUploading(true);
+    const paths: string[] = [];
+    for (const f of list) {
+      const ext = f.name.split(".").pop() || "png";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("ideas").upload(path, f, { upsert: false });
+      if (error) toast.error(error.message);
+      else paths.push(path);
+    }
+    setDetailUploading(false);
+    if (!paths.length) return;
+    const images = [...selected.images, ...paths];
+    await patch(selected.id, { images } as any);
+    setSelected({ ...selected, images });
+  };
+
+  const removeImageFromNote = async (p: string) => {
+    if (!selected) return;
+    const images = selected.images.filter((x) => x !== p);
+    await patch(selected.id, { images } as any);
+    setSelected({ ...selected, images });
+    supabase.storage.from("ideas").remove([p]);
+  };
+
+  const q = query.trim().toLowerCase();
+  const filtered = !q
+    ? ideas
+    : ideas.filter((i) => {
+        const clientName = clients.find((c) => c.id === i.client_id)?.name ?? "";
+        const projectName = projects.find((p) => p.id === i.project_id)?.name ?? "";
+        const taskName = tasks.find((t) => t.id === i.task_id)?.title ?? "";
+        return [i.title, i.content, clientName, projectName, taskName, ...(i.links ?? [])]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q));
+      });
+
   return (
     <Card className="p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold inline-flex items-center gap-2">
+      <div className="flex items-center justify-between mb-3 gap-3">
+        <h2 className="text-sm font-semibold inline-flex items-center gap-2 shrink-0">
           <Lightbulb className="h-4 w-4 text-amber-500" /> {title}
         </h2>
-        <span className="text-xs text-muted-foreground">{ideas.length} note{ideas.length > 1 ? "s" : ""}</span>
+        <div className="relative ml-auto w-full max-w-xs">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher un mot-clé…"
+            className="h-8 pl-7 text-xs"
+          />
+        </div>
+        <span className="text-xs text-muted-foreground shrink-0">{filtered.length} note{filtered.length > 1 ? "s" : ""}</span>
       </div>
 
       {/* Composer */}
@@ -252,7 +330,14 @@ export default function IdeasBoard({
         />
         <IdeaImages paths={pending} onRemove={(p) => { setPending((a) => a.filter((x) => x !== p)); supabase.storage.from("ideas").remove([p]); }} />
         {showGlobal && expanded && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+            <Select value={linkClient} onValueChange={setLinkClient}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Lier à un client" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucun client</SelectItem>
+                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Select value={linkProject} onValueChange={setLinkProject}>
               <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Lier à un projet" /></SelectTrigger>
               <SelectContent>
@@ -285,16 +370,16 @@ export default function IdeasBoard({
       {/* Liste */}
       {loading ? (
         <div className="text-xs text-muted-foreground mt-4">Chargement…</div>
-      ) : ideas.length === 0 ? (
-        <div className="text-xs text-muted-foreground mt-4">Aucune note pour le moment.</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-xs text-muted-foreground mt-4">{q ? "Aucun résultat pour cette recherche." : "Aucune note pour le moment."}</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 mt-4">
-          {ideas.map((idea) => {
+          {filtered.map((idea) => {
             const preview = (idea.content || "").replace(/\s+/g, " ").trim();
             return (
               <button
                 key={idea.id}
-                onClick={() => setSelected(idea)}
+                onClick={() => openDetail(idea)}
                 className={`text-left rounded-lg border p-2.5 ${colorCls(idea.color)} hover:ring-2 ring-foreground/20 transition-all flex flex-col gap-1.5 group relative`}
               >
                 {/* Thumbnail image */}
@@ -322,6 +407,11 @@ export default function IdeasBoard({
                   {idea.pinned && <Pin className="h-3 w-3 text-amber-500" />}
                   {idea.links.length > 0 && <Link2 className="h-3 w-3 text-muted-foreground" />}
                   {idea.images.length > 0 && <ImageIcon className="h-3 w-3 text-muted-foreground" />}
+                  {showGlobal && idea.client_id && (
+                    <Badge variant="outline" className="text-[9px] font-normal px-1 py-0">
+                      {clients.find((c) => c.id === idea.client_id)?.name?.slice(0, 12) ?? "Client"}
+                    </Badge>
+                  )}
                   {showGlobal && idea.project_id && (
                     <Badge variant="secondary" className="text-[9px] font-normal px-1 py-0">
                       {projects.find((p) => p.id === idea.project_id)?.name?.slice(0, 12) ?? "Projet"}
@@ -349,7 +439,19 @@ export default function IdeasBoard({
                   >
                     {selected.pinned ? <Pin className="h-4 w-4 text-amber-500" /> : <PinOff className="h-4 w-4" />}
                   </button>
-                  <span className="flex-1 break-words">{selected.title || "Note sans titre"}</span>
+                  {editMode ? (
+                    <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Titre" className="h-8 text-sm flex-1" />
+                  ) : (
+                    <span className="flex-1 break-words">{selected.title || "Note sans titre"}</span>
+                  )}
+                  <button
+                    onClick={() => (editMode ? saveEdit() : setEditMode(true))}
+                    disabled={editSaving}
+                    className="text-muted-foreground hover:text-foreground shrink-0 mt-0.5"
+                    aria-label={editMode ? "Enregistrer" : "Modifier"}
+                  >
+                    {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : editMode ? <Check className="h-4 w-4 text-emerald-600" /> : <Pencil className="h-4 w-4" />}
+                  </button>
                   <button
                     onClick={() => { remove(selected); setSelected(null); }}
                     className="text-muted-foreground hover:text-destructive shrink-0 mt-0.5"
@@ -361,11 +463,20 @@ export default function IdeasBoard({
               </DialogHeader>
 
               <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-                {selected.content && (
+                {editMode ? (
+                  <Textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={6} className="text-sm" placeholder="Contenu de la note…" />
+                ) : selected.content ? (
                   <div className="text-sm whitespace-pre-wrap break-words">{selected.content}</div>
-                )}
+                ) : null}
 
-                <IdeaImages paths={selected.images} />
+                <IdeaImages paths={selected.images} onRemove={removeImageFromNote} />
+
+                <div>
+                  <input ref={detailFileRef} type="file" accept="image/*" multiple hidden onChange={(e) => e.target.files && addImagesToNote(e.target.files)} />
+                  <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => detailFileRef.current?.click()} disabled={detailUploading}>
+                    {detailUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />} Ajouter une photo
+                  </Button>
+                </div>
 
                 {selected.links.length > 0 && (
                   <div className="space-y-1">
@@ -377,8 +488,49 @@ export default function IdeasBoard({
                   </div>
                 )}
 
-                {showGlobal && (selected.project_id || selected.task_id) && (
+                {showGlobal && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Select
+                      value={selected.client_id ?? "none"}
+                      onValueChange={(v) => { const val = v === "none" ? null : v; patch(selected.id, { client_id: val }); setSelected({ ...selected, client_id: val }); }}
+                    >
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Client lié" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun client</SelectItem>
+                        {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={selected.project_id ?? "none"}
+                      onValueChange={(v) => { const val = v === "none" ? null : v; patch(selected.id, { project_id: val }); setSelected({ ...selected, project_id: val }); }}
+                    >
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Projet lié" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun projet</SelectItem>
+                        {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={selected.task_id ?? "none"}
+                      onValueChange={(v) => { const val = v === "none" ? null : v; patch(selected.id, { task_id: val }); setSelected({ ...selected, task_id: val }); }}
+                    >
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Tâche liée" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucune tâche</SelectItem>
+                        {tasks.map((t) => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {showGlobal && (selected.client_id || selected.project_id || selected.task_id) && (
                   <div className="flex flex-wrap gap-1">
+                    {selected.client_id && (
+                      <Badge variant="outline" className="text-[10px] font-normal inline-flex items-center gap-1">
+                        <Building2 className="h-3 w-3" />
+                        {clients.find((c) => c.id === selected.client_id)?.name ?? "Client"}
+                      </Badge>
+                    )}
                     {selected.project_id && (
                       <Link to={`/projets/${selected.project_id}`}>
                         <Badge variant="secondary" className="text-[10px] font-normal">
