@@ -1312,6 +1312,79 @@ export type Database = {
         }
         Relationships: []
       }
+      ideas: {
+        Row: {
+          client_id: string | null
+          color: string | null
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          images: Json
+          links: Json
+          pinned: boolean
+          project_id: string | null
+          tags: string[]
+          task_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          color?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          images?: Json
+          links?: Json
+          pinned?: boolean
+          project_id?: string | null
+          tags?: string[]
+          task_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          color?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          images?: Json
+          links?: Json
+          pinned?: boolean
+          project_id?: string | null
+          tags?: string[]
+          task_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ideas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ideas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ideas_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_installments: {
         Row: {
           amount: number

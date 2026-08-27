@@ -58,6 +58,7 @@ import FinanceForecasts from "./pages/finance/FinanceForecasts";
 import FinanceProfitability from "./pages/finance/FinanceProfitability";
 import FinanceReports from "./pages/finance/FinanceReports";
 import PortalRedirect from "./pages/PortalRedirect";
+import Ideas from "./pages/Ideas";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="/clients/:id" element={<ClientDetail />} />
               <Route path="/projets" element={<Projects />} />
               <Route path="/projets/:id" element={<ProjectDetail />} />
+              <Route path="/notes" element={<Ideas />} />
               <Route path="/taches" element={<Tasks />} />
               <Route path="/taches/:id" element={<TaskDetail />} />
               <Route path="/impressions" element={<PrintOrders />} />
