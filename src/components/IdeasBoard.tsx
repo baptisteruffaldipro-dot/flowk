@@ -127,7 +127,16 @@ export default function IdeasBoard({
   const [linkProject, setLinkProject] = useState<string>("none");
   const [linkTask, setLinkTask] = useState<string>("none");
   const [selected, setSelected] = useState<Idea | null>(null);
+  const [clients, setClients] = useState<any[]>([]);
+  const [linkClient, setLinkClient] = useState<string>("none");
+  const [query, setQuery] = useState("");
+  const [editMode, setEditMode] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [detailUploading, setDetailUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const detailFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!showGlobal) return;
