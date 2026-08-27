@@ -439,7 +439,19 @@ export default function IdeasBoard({
                   >
                     {selected.pinned ? <Pin className="h-4 w-4 text-amber-500" /> : <PinOff className="h-4 w-4" />}
                   </button>
-                  <span className="flex-1 break-words">{selected.title || "Note sans titre"}</span>
+                  {editMode ? (
+                    <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Titre" className="h-8 text-sm flex-1" />
+                  ) : (
+                    <span className="flex-1 break-words">{selected.title || "Note sans titre"}</span>
+                  )}
+                  <button
+                    onClick={() => (editMode ? saveEdit() : setEditMode(true))}
+                    disabled={editSaving}
+                    className="text-muted-foreground hover:text-foreground shrink-0 mt-0.5"
+                    aria-label={editMode ? "Enregistrer" : "Modifier"}
+                  >
+                    {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : editMode ? <Check className="h-4 w-4 text-emerald-600" /> : <Pencil className="h-4 w-4" />}
+                  </button>
                   <button
                     onClick={() => { remove(selected); setSelected(null); }}
                     className="text-muted-foreground hover:text-destructive shrink-0 mt-0.5"
@@ -451,11 +463,20 @@ export default function IdeasBoard({
               </DialogHeader>
 
               <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-                {selected.content && (
+                {editMode ? (
+                  <Textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={6} className="text-sm" placeholder="Contenu de la note…" />
+                ) : selected.content ? (
                   <div className="text-sm whitespace-pre-wrap break-words">{selected.content}</div>
-                )}
+                ) : null}
 
-                <IdeaImages paths={selected.images} />
+                <IdeaImages paths={selected.images} onRemove={removeImageFromNote} />
+
+                <div>
+                  <input ref={detailFileRef} type="file" accept="image/*" multiple hidden onChange={(e) => e.target.files && addImagesToNote(e.target.files)} />
+                  <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => detailFileRef.current?.click()} disabled={detailUploading}>
+                    {detailUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />} Ajouter une photo
+                  </Button>
+                </div>
 
                 {selected.links.length > 0 && (
                   <div className="space-y-1">
@@ -467,8 +488,49 @@ export default function IdeasBoard({
                   </div>
                 )}
 
-                {showGlobal && (selected.project_id || selected.task_id) && (
+                {showGlobal && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Select
+                      value={selected.client_id ?? "none"}
+                      onValueChange={(v) => { const val = v === "none" ? null : v; patch(selected.id, { client_id: val }); setSelected({ ...selected, client_id: val }); }}
+                    >
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Client lié" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun client</SelectItem>
+                        {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={selected.project_id ?? "none"}
+                      onValueChange={(v) => { const val = v === "none" ? null : v; patch(selected.id, { project_id: val }); setSelected({ ...selected, project_id: val }); }}
+                    >
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Projet lié" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun projet</SelectItem>
+                        {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={selected.task_id ?? "none"}
+                      onValueChange={(v) => { const val = v === "none" ? null : v; patch(selected.id, { task_id: val }); setSelected({ ...selected, task_id: val }); }}
+                    >
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Tâche liée" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucune tâche</SelectItem>
+                        {tasks.map((t) => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {showGlobal && (selected.client_id || selected.project_id || selected.task_id) && (
                   <div className="flex flex-wrap gap-1">
+                    {selected.client_id && (
+                      <Badge variant="outline" className="text-[10px] font-normal inline-flex items-center gap-1">
+                        <Building2 className="h-3 w-3" />
+                        {clients.find((c) => c.id === selected.client_id)?.name ?? "Client"}
+                      </Badge>
+                    )}
                     {selected.project_id && (
                       <Link to={`/projets/${selected.project_id}`}>
                         <Badge variant="secondary" className="text-[10px] font-normal">
