@@ -22,14 +22,17 @@ export default function TxSplitEditor({
   amountHt,
   value,
   onChange,
+  alwaysOn = false,
 }: {
   transactionId?: string | null;
   amountHt: number;
   value: SplitDraft[];
   onChange: (rows: SplitDraft[]) => void;
+  /** Masque l'interrupteur et affiche directement la ventilation. */
+  alwaysOn?: boolean;
 }) {
   const { activeUnits } = useBusinessUnits();
-  const [enabled, setEnabled] = useState(value.length > 0);
+  const [enabled, setEnabled] = useState(alwaysOn || value.length > 0);
   const [mode, setMode] = useState<Mode>("pct");
   const total = Math.abs(Number(amountHt) || 0);
 
@@ -80,7 +83,7 @@ export default function TxSplitEditor({
             Prioritaire sur le pôle unique et sur la règle de charges communes.
           </p>
         </div>
-        <Switch checked={enabled} onCheckedChange={toggle} />
+        {!alwaysOn && <Switch checked={enabled} onCheckedChange={toggle} />}
       </div>
 
       {enabled && (

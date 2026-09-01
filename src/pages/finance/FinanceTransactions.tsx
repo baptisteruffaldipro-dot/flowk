@@ -13,6 +13,7 @@ import { fmtDate, fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { Plus, Pencil, Tags } from "lucide-react";
 import TransactionDialog, { TxRow } from "@/components/finance/TransactionDialog";
+import SplitDialog from "@/components/finance/SplitDialog";
 import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 import { useTxSplits } from "@/hooks/useTxSplits";
 import { splitShares } from "@/lib/finance/units";
@@ -51,6 +52,7 @@ export default function FinanceTransactions() {
   const [editing, setEditing] = useState<TxRow | null>(null);
   const [tick, setTick] = useState(0);
   const splits = useTxSplits(tick);
+  const [splitTargets, setSplitTargets] = useState<{ ids: string[]; amount: number } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -200,6 +202,17 @@ export default function FinanceTransactions() {
               {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const ids = filtered.filter((r) => selected.has(r.id)).map((r) => r.id);
+              const amount = filtered.filter((r) => selected.has(r.id)).reduce((a, r) => a + Math.abs(Number(r.amount_ht || 0)), 0);
+              setSplitTargets({ ids, amount });
+            }}
+          >
+            Répartir sur plusieurs pôles
+          </Button>
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Annuler</Button>
         </Card>
       )}
@@ -240,18 +253,36 @@ export default function FinanceTransactions() {
                     <td className="px-3 py-1.5 max-w-[220px] truncate text-muted-foreground" title={r.label ?? ""}>{r.label ?? "—"}</td>
                     <td className="px-3 py-1.5">
                       {sp?.length ? (
-                        <span
-                          className="text-xs"
-                          title={sp.map((s) => `${byId.get(s.business_unit_id)?.name ?? "?"} ${s.share_pct}%`).join(" · ")}
+                        <button
+                          type="button"
+                          className="flex flex-wrap items-center gap-1 text-left"
+                          onClick={() => setSplitTargets({ ids: [r.id], amount: Math.abs(Number(r.amount_ht || 0)) })}
+                          title="Modifier la répartition"
                         >
-                          Réparti ({sp.length})
-                        </span>
+                          {sp.map((s) => (
+                            <span
+                              key={s.business_unit_id}
+                              className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px]"
+                            >
+                              <span className="h-2 w-2 rounded-full" style={{ background: byId.get(s.business_unit_id)?.color }} />
+                              {byId.get(s.business_unit_id)?.name ?? "?"} {Math.round(Number(s.share_pct))}%
+                            </span>
+                          ))}
+                        </button>
                       ) : (
-                        <Select value={r.business_unit_id ?? "none"} onValueChange={(v) => setUnit(r, v)}>
+                        <Select
+                          value={r.business_unit_id ?? "none"}
+                          onValueChange={(v) =>
+                            v === "__split"
+                              ? setSplitTargets({ ids: [r.id], amount: Math.abs(Number(r.amount_ht || 0)) })
+                              : setUnit(r, v)
+                          }
+                        >
                           <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">Non affecté</SelectItem>
                             {activeUnits.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+                            <SelectItem value="__split">Plusieurs pôles…</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
@@ -289,6 +320,14 @@ export default function FinanceTransactions() {
           </table>
         </div>
       </Card>
+
+      <SplitDialog
+        open={!!splitTargets}
+        onOpenChange={(v) => { if (!v) setSplitTargets(null); }}
+        transactionIds={splitTargets?.ids ?? []}
+        amountHt={splitTargets?.amount ?? 0}
+        onSaved={() => { setSelected(new Set()); setTick((t) => t + 1); }}
+      />
 
       <TransactionDialog
         open={open}
