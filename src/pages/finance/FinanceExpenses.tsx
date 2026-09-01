@@ -12,12 +12,15 @@ import RecurringExpensesSuggestions from "@/components/finance/RecurringExpenses
 import FinanceScopeBar from "@/components/finance/FinanceScopeBar";
 import { useFinanceScope, periodRange } from "@/lib/finance/scope";
 import { useBusinessUnits } from "@/hooks/useBusinessUnits";
+import { useTxSplits } from "@/hooks/useTxSplits";
+import { splitShares } from "@/lib/finance/units";
 
 export default function FinanceExpenses() {
   const scope = useFinanceScope();
   const range = periodRange(scope);
   const { byId } = useBusinessUnits();
   const [rows, setRows] = useState<any[]>([]);
+  const splits = useTxSplits();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TxRow | null>(null);
@@ -32,13 +35,16 @@ export default function FinanceExpenses() {
   const filtered = useMemo(() => {
     const term = q.toLowerCase();
     const scoped = rows.filter(
-      (r) => (!scope.buId || r.business_unit_id === scope.buId) && r.date >= range.start && r.date <= range.end,
+      (r) =>
+        (!scope.buId || splitShares(r, splits).some((s) => s.buId === scope.buId)) &&
+        r.date >= range.start &&
+        r.date <= range.end,
     );
     if (!term) return scoped;
     return scoped.filter((r) =>
       [r.counterparty, r.label, r.clients?.name, r.projects?.name, r.tasks?.title].some((v) => (v ?? "").toString().toLowerCase().includes(term)),
     );
-  }, [rows, q, scope.buId, range.start, range.end]);
+  }, [rows, q, scope.buId, range.start, range.end, splits]);
 
   const total = filtered.reduce((a, r) => a + Number(r.amount_ht || 0), 0);
 
@@ -79,7 +85,17 @@ export default function FinanceExpenses() {
                   <td className="px-3 py-2 whitespace-nowrap">{fmtDate(r.date)}</td>
                   <td className="px-3 py-2">{r.counterparty ?? "—"}</td>
                   <td className="px-3 py-2 max-w-xs truncate" title={r.label}>{r.label ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs">{r.business_unit_id ? (byId.get(r.business_unit_id)?.name ?? "—") : <span className="text-muted-foreground">Global</span>}</td>
+                  <td className="px-3 py-2 text-xs">
+                    {splits.get(r.id)?.length ? (
+                      <span title={splits.get(r.id)!.map((s) => `${byId.get(s.business_unit_id)?.name ?? "?"} ${s.share_pct}%`).join(" · ")}>
+                        Réparti ({splits.get(r.id)!.length})
+                      </span>
+                    ) : r.business_unit_id ? (
+                      byId.get(r.business_unit_id)?.name ?? "—"
+                    ) : (
+                      <span className="text-muted-foreground">Global</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{[r.projects?.name, r.tasks?.title].filter(Boolean).join(" · ") || "—"}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.amount_ht || 0))}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtMoney(Number(r.vat_amount || 0))}</td>
