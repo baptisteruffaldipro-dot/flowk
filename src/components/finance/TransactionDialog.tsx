@@ -7,9 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 
 type Kind = "sale" | "expense" | "bank";
-type Category = "prestation" | "achat_revente" | "expense" | "bank" | "other";
+type Category = "prestation" | "achat_revente" | "expense" | "frais_fixe" | "bank" | "other";
 
 export type TxRow = {
   id?: string;
@@ -28,6 +29,7 @@ export type TxRow = {
   supplier_cost_ht?: number | null;
   client_id?: string | null;
   project_id?: string | null;
+  business_unit_id?: string | null;
 };
 
 const empty = (kind: Kind): TxRow => ({
@@ -53,6 +55,7 @@ export default function TransactionDialog({
   onSaved: () => void;
 }) {
   const [row, setRow] = useState<TxRow>(empty(kind));
+  const { activeUnits } = useBusinessUnits();
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
@@ -95,6 +98,7 @@ export default function TransactionDialog({
       supplier_cost_ht: row.supplier_cost_ht != null && !isNaN(Number(row.supplier_cost_ht)) ? Number(row.supplier_cost_ht) : null,
       client_id: row.client_id || null,
       project_id: row.project_id || null,
+      business_unit_id: row.business_unit_id || null,
       source: "manual",
       category_source: "manual",
     };
@@ -184,6 +188,18 @@ export default function TransactionDialog({
               <Field label="Date de paiement">
                 <Input type="date" value={row.paid_date ?? ""} onChange={(e) => setField("paid_date", e.target.value || null)} />
               </Field>
+              {isExpense && (
+                <Field label="Nature">
+                  <Select value={row.category === "frais_fixe" ? "frais_fixe" : row.category === "achat_revente" ? "achat_revente" : "expense"} onValueChange={(v) => setField("category", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="expense">Ponctuelle</SelectItem>
+                      <SelectItem value="frais_fixe">Récurrente (frais fixe)</SelectItem>
+                      <SelectItem value="achat_revente">Achat / investissement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
               {row.category === "achat_revente" && (
                 <Field label="Coût d'achat HT (fournisseur)">
                   <Input type="number" step="0.01" value={row.supplier_cost_ht ?? ""} onChange={(e) => setField("supplier_cost_ht", e.target.value === "" ? null : Number(e.target.value))} />
@@ -205,6 +221,15 @@ export default function TransactionDialog({
               <SelectContent>
                 <SelectItem value="none">—</SelectItem>
                 {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Pôle d'activité">
+            <Select value={row.business_unit_id ?? "none"} onValueChange={(v) => setField("business_unit_id", v === "none" ? null : v)}>
+              <SelectTrigger><SelectValue placeholder="Global / commun" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Global / commun</SelectItem>
+                {activeUnits.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </Field>

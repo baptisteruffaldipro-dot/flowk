@@ -9,8 +9,14 @@ import { fmtDate, fmtMoney } from "@/lib/format";
 import TransactionDialog, { TxRow } from "@/components/finance/TransactionDialog";
 import { Plus, Pencil } from "lucide-react";
 import RecurringExpensesSuggestions from "@/components/finance/RecurringExpensesSuggestions";
+import FinanceScopeBar from "@/components/finance/FinanceScopeBar";
+import { useFinanceScope, periodRange } from "@/lib/finance/scope";
+import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 
 export default function FinanceExpenses() {
+  const scope = useFinanceScope();
+  const range = periodRange(scope);
+  const { byId } = useBusinessUnits();
   const [rows, setRows] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -25,11 +31,14 @@ export default function FinanceExpenses() {
 
   const filtered = useMemo(() => {
     const term = q.toLowerCase();
-    if (!term) return rows;
-    return rows.filter((r) =>
+    const scoped = rows.filter(
+      (r) => (!scope.buId || r.business_unit_id === scope.buId) && r.date >= range.start && r.date <= range.end,
+    );
+    if (!term) return scoped;
+    return scoped.filter((r) =>
       [r.counterparty, r.label, r.clients?.name, r.projects?.name, r.tasks?.title].some((v) => (v ?? "").toString().toLowerCase().includes(term)),
     );
-  }, [rows, q]);
+  }, [rows, q, scope.buId, range.start, range.end]);
 
   const total = filtered.reduce((a, r) => a + Number(r.amount_ht || 0), 0);
 
@@ -37,6 +46,7 @@ export default function FinanceExpenses() {
     <div className="p-6 md:p-8">
       <PageHeader title="Dépenses" description="Fournisseurs, projets, tâches — filtre à ta guise." />
       <FinanceNav />
+      <FinanceScopeBar />
       <RecurringExpensesSuggestions onChange={load} />
       <div className="flex items-center gap-2 mb-4">
         <Input placeholder="Rechercher fournisseur, projet, client…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
@@ -55,6 +65,7 @@ export default function FinanceExpenses() {
                 <th className="text-left px-3 py-2">Date</th>
                 <th className="text-left px-3 py-2">Fournisseur</th>
                 <th className="text-left px-3 py-2">Libellé</th>
+                <th className="text-left px-3 py-2">Pôle</th>
                 <th className="text-left px-3 py-2">Projet / Tâche</th>
                 <th className="text-right px-3 py-2">HT</th>
                 <th className="text-right px-3 py-2">TVA</th>
@@ -68,6 +79,7 @@ export default function FinanceExpenses() {
                   <td className="px-3 py-2 whitespace-nowrap">{fmtDate(r.date)}</td>
                   <td className="px-3 py-2">{r.counterparty ?? "—"}</td>
                   <td className="px-3 py-2 max-w-xs truncate" title={r.label}>{r.label ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs">{r.business_unit_id ? (byId.get(r.business_unit_id)?.name ?? "—") : <span className="text-muted-foreground">Global</span>}</td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">{[r.projects?.name, r.tasks?.title].filter(Boolean).join(" · ") || "—"}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(Number(r.amount_ht || 0))}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtMoney(Number(r.vat_amount || 0))}</td>
@@ -79,7 +91,7 @@ export default function FinanceExpenses() {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={8} className="px-3 py-8 text-center text-sm text-muted-foreground">Aucune dépense</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={9} className="px-3 py-8 text-center text-sm text-muted-foreground">Aucune dépense</td></tr>}
             </tbody>
           </table>
         </div>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CashflowProjection from "@/components/finance/CashflowProjection";
+import UnitsComparison from "@/components/finance/UnitsComparison";
 
 type Stats = {
   bankBalance: number | null;
@@ -299,6 +300,7 @@ export default function FinanceDashboard() {
     <div className="p-6 md:p-8">
       <PageHeader title="Finance & pilotage" description="Vision claire de la santé financière — alimentée par tes imports Tiime." />
       <FinanceNav />
+      <UnitsComparison />
       {s.alerts.length > 0 && (
         <Card className="p-4 mb-4 border-amber-300/50 bg-amber-50/50 dark:bg-amber-950/20">
           <div className="flex items-start gap-2 text-sm">

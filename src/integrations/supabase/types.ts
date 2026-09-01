@@ -364,6 +364,212 @@ export type Database = {
           },
         ]
       }
+      bu_allocation_rules: {
+        Row: {
+          active: boolean
+          business_unit_id: string
+          created_at: string
+          id: string
+          share_pct: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          business_unit_id: string
+          created_at?: string
+          id?: string
+          share_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          business_unit_id?: string
+          created_at?: string
+          id?: string
+          share_pct?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bu_allocation_rules_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: true
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bu_goals: {
+        Row: {
+          business_unit_id: string | null
+          created_at: string
+          expense_goal: number
+          id: string
+          note: string | null
+          period_start: string
+          period_type: string
+          profit_goal: number
+          revenue_goal: number
+          updated_at: string
+        }
+        Insert: {
+          business_unit_id?: string | null
+          created_at?: string
+          expense_goal?: number
+          id?: string
+          note?: string | null
+          period_start: string
+          period_type?: string
+          profit_goal?: number
+          revenue_goal?: number
+          updated_at?: string
+        }
+        Update: {
+          business_unit_id?: string | null
+          created_at?: string
+          expense_goal?: number
+          id?: string
+          note?: string | null
+          period_start?: string
+          period_type?: string
+          profit_goal?: number
+          revenue_goal?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bu_goals_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bu_hourly_rates: {
+        Row: {
+          activity: string
+          business_unit_id: string
+          created_at: string
+          hourly_rate: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          activity: string
+          business_unit_id: string
+          created_at?: string
+          hourly_rate?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          activity?: string
+          business_unit_id?: string
+          created_at?: string
+          hourly_rate?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bu_hourly_rates_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_units: {
+        Row: {
+          active: boolean
+          code: string
+          color: string
+          created_at: string
+          id: string
+          name: string
+          note: string | null
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          note?: string | null
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          note?: string | null
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalog_items: {
+        Row: {
+          active: boolean
+          business_unit_id: string | null
+          cost_ht: number
+          created_at: string
+          id: string
+          kind: string
+          label: string
+          monthly_ht: number
+          note: string | null
+          price_ht: number
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          active?: boolean
+          business_unit_id?: string | null
+          cost_ht?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          label: string
+          monthly_ht?: number
+          note?: string | null
+          price_ht?: number
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          active?: boolean
+          business_unit_id?: string | null
+          cost_ht?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string
+          monthly_ht?: number
+          note?: string | null
+          price_ht?: number
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_items_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_portal_events: {
         Row: {
           created_at: string
@@ -978,6 +1184,7 @@ export type Database = {
       finance_forecasts: {
         Row: {
           amount_ttc: number
+          business_unit_id: string | null
           created_at: string
           id: string
           kind: string
@@ -990,6 +1197,7 @@ export type Database = {
         }
         Insert: {
           amount_ttc: number
+          business_unit_id?: string | null
           created_at?: string
           id?: string
           kind?: string
@@ -1002,6 +1210,7 @@ export type Database = {
         }
         Update: {
           amount_ttc?: number
+          business_unit_id?: string | null
           created_at?: string
           id?: string
           kind?: string
@@ -1012,7 +1221,15 @@ export type Database = {
           updated_at?: string
           vat_rate?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "finance_forecasts_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       finance_link_rules: {
         Row: {
@@ -1073,6 +1290,7 @@ export type Database = {
           amount_ht_achat: number | null
           amount_ht_presta: number | null
           amount_ttc: number
+          business_unit_id: string | null
           category: Database["public"]["Enums"]["finance_category"]
           category_source: string | null
           client_id: string | null
@@ -1105,6 +1323,7 @@ export type Database = {
           amount_ht_achat?: number | null
           amount_ht_presta?: number | null
           amount_ttc?: number
+          business_unit_id?: string | null
           category?: Database["public"]["Enums"]["finance_category"]
           category_source?: string | null
           client_id?: string | null
@@ -1137,6 +1356,7 @@ export type Database = {
           amount_ht_achat?: number | null
           amount_ht_presta?: number | null
           amount_ttc?: number
+          business_unit_id?: string | null
           category?: Database["public"]["Enums"]["finance_category"]
           category_source?: string | null
           client_id?: string | null
@@ -1164,6 +1384,13 @@ export type Database = {
           vat_rate?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "finance_transactions_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "finance_transactions_client_id_fkey"
             columns: ["client_id"]
@@ -1987,6 +2214,7 @@ export type Database = {
           bat_rejection_reason: string | null
           bat_uploaded_at: string | null
           bat_validated_at: string | null
+          business_unit_id: string | null
           client_id: string
           colors: string | null
           created_at: string
@@ -2021,6 +2249,7 @@ export type Database = {
           bat_rejection_reason?: string | null
           bat_uploaded_at?: string | null
           bat_validated_at?: string | null
+          business_unit_id?: string | null
           client_id: string
           colors?: string | null
           created_at?: string
@@ -2055,6 +2284,7 @@ export type Database = {
           bat_rejection_reason?: string | null
           bat_uploaded_at?: string | null
           bat_validated_at?: string | null
+          business_unit_id?: string | null
           client_id?: string
           colors?: string | null
           created_at?: string
@@ -2083,6 +2313,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "print_orders_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "print_orders_client_id_fkey"
             columns: ["client_id"]
@@ -2167,6 +2404,7 @@ export type Database = {
           brief: Json | null
           brief_required: boolean
           brief_submitted_at: string | null
+          business_unit_id: string | null
           client_id: string
           created_at: string
           deadline: string | null
@@ -2183,6 +2421,7 @@ export type Database = {
           brief?: Json | null
           brief_required?: boolean
           brief_submitted_at?: string | null
+          business_unit_id?: string | null
           client_id: string
           created_at?: string
           deadline?: string | null
@@ -2199,6 +2438,7 @@ export type Database = {
           brief?: Json | null
           brief_required?: boolean
           brief_submitted_at?: string | null
+          business_unit_id?: string | null
           client_id?: string
           created_at?: string
           deadline?: string | null
@@ -2211,6 +2451,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_client_id_fkey"
             columns: ["client_id"]
@@ -2368,6 +2615,68 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_expenses: {
+        Row: {
+          active: boolean
+          amount_ht: number
+          business_unit_id: string | null
+          category: Database["public"]["Enums"]["finance_category"]
+          created_at: string
+          day_of_month: number
+          end_date: string | null
+          id: string
+          label: string
+          note: string | null
+          periodicity: string
+          start_date: string
+          supplier: string | null
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          active?: boolean
+          amount_ht?: number
+          business_unit_id?: string | null
+          category?: Database["public"]["Enums"]["finance_category"]
+          created_at?: string
+          day_of_month?: number
+          end_date?: string | null
+          id?: string
+          label: string
+          note?: string | null
+          periodicity?: string
+          start_date?: string
+          supplier?: string | null
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          active?: boolean
+          amount_ht?: number
+          business_unit_id?: string | null
+          category?: Database["public"]["Enums"]["finance_category"]
+          created_at?: string
+          day_of_month?: number
+          end_date?: string | null
+          id?: string
+          label?: string
+          note?: string | null
+          periodicity?: string
+          start_date?: string
+          supplier?: string | null
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
             referencedColumns: ["id"]
           },
         ]
@@ -2598,6 +2907,84 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          business_unit_id: string | null
+          card_changes_per_year: number
+          client_id: string | null
+          client_name: string | null
+          created_at: string
+          end_date: string | null
+          extra_dishes: number
+          id: string
+          monthly_ht: number
+          note: string | null
+          plan: string
+          qr_stands: number
+          setup_fee_ht: number
+          start_date: string
+          status: string
+          support_minutes_per_month: number
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          business_unit_id?: string | null
+          card_changes_per_year?: number
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          end_date?: string | null
+          extra_dishes?: number
+          id?: string
+          monthly_ht?: number
+          note?: string | null
+          plan?: string
+          qr_stands?: number
+          setup_fee_ht?: number
+          start_date?: string
+          status?: string
+          support_minutes_per_month?: number
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          business_unit_id?: string | null
+          card_changes_per_year?: number
+          client_id?: string | null
+          client_name?: string | null
+          created_at?: string
+          end_date?: string | null
+          extra_dishes?: number
+          id?: string
+          monthly_ht?: number
+          note?: string | null
+          plan?: string
+          qr_stands?: number
+          setup_fee_ht?: number
+          start_date?: string
+          status?: string
+          support_minutes_per_month?: number
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subtasks: {
         Row: {
           created_at: string
@@ -2662,6 +3049,7 @@ export type Database = {
           acompte_invoiced: boolean
           bat_id: string | null
           billing_type: Database["public"]["Enums"]["billing_type"]
+          business_unit_id: string | null
           client_id: string | null
           client_revisions_count: number
           created_at: string
@@ -2700,6 +3088,7 @@ export type Database = {
           acompte_invoiced?: boolean
           bat_id?: string | null
           billing_type?: Database["public"]["Enums"]["billing_type"]
+          business_unit_id?: string | null
           client_id?: string | null
           client_revisions_count?: number
           created_at?: string
@@ -2738,6 +3127,7 @@ export type Database = {
           acompte_invoiced?: boolean
           bat_id?: string | null
           billing_type?: Database["public"]["Enums"]["billing_type"]
+          business_unit_id?: string | null
           client_id?: string | null
           client_revisions_count?: number
           created_at?: string
@@ -2778,6 +3168,13 @@ export type Database = {
             columns: ["bat_id"]
             isOneToOne: false
             referencedRelation: "bats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
             referencedColumns: ["id"]
           },
           {
