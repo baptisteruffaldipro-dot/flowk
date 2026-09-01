@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useBusinessUnits } from "@/hooks/useBusinessUnits";
+import TxSplitEditor, { saveTxSplits, type SplitDraft } from "@/components/finance/TxSplitEditor";
 
 type Kind = "sale" | "expense" | "bank";
 type Category = "prestation" | "achat_revente" | "expense" | "frais_fixe" | "bank" | "other";
@@ -59,9 +60,10 @@ export default function TransactionDialog({
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [splits, setSplits] = useState<SplitDraft[]>([]);
 
   useEffect(() => {
-    if (open) setRow(initial ? { ...initial } : empty(kind));
+    if (open) { setRow(initial ? { ...initial } : empty(kind)); setSplits([]); }
   }, [open, initial, kind]);
 
   useEffect(() => {
@@ -102,9 +104,15 @@ export default function TransactionDialog({
       source: "manual",
       category_source: "manual",
     };
-    let error;
+    let error: any;
+    let savedId = row.id;
     if (row.id) ({ error } = await supabase.from("finance_transactions").update(payload).eq("id", row.id));
-    else ({ error } = await supabase.from("finance_transactions").insert(payload));
+    else {
+      const res = await supabase.from("finance_transactions").insert(payload).select("id").single();
+      error = res.error;
+      savedId = res.data?.id;
+    }
+    if (!error && savedId) await saveTxSplits(savedId, splits);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(row.id ? "Ligne modifiée" : "Ligne ajoutée");
@@ -233,6 +241,14 @@ export default function TransactionDialog({
               </SelectContent>
             </Select>
           </Field>
+          {!isBank && (
+            <TxSplitEditor
+              transactionId={row.id}
+              amountHt={Number(row.amount_ht) || 0}
+              value={splits}
+              onChange={setSplits}
+            />
+          )}
           <Field label="Projet (lien)">
             <Select value={row.project_id ?? "none"} onValueChange={(v) => setField("project_id", v === "none" ? null : v)}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>

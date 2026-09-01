@@ -9,12 +9,14 @@ import { aggregateByUnit, computeMrr, consolidate, emptyMetrics, monthlySeries, 
 import { monthLabel, monthsBetween } from "@/lib/finance/scope";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ArrowRight } from "lucide-react";
+import { useTxSplits } from "@/hooks/useTxSplits";
 
 /** Comparaison consolidée des pôles sur l'année en cours (bloc du tableau de bord). */
 export default function UnitsComparison() {
   const { activeUnits } = useBusinessUnits();
   const [tx, setTx] = useState<TxLite[]>([]);
   const [subs, setSubs] = useState<any[]>([]);
+  const splits = useTxSplits();
 
   const year = new Date().getFullYear();
   const start = `${year}-01-01`;
@@ -35,7 +37,7 @@ export default function UnitsComparison() {
     })();
   }, [start, end]);
 
-  const byUnit = useMemo(() => aggregateByUnit(tx, { start, end }), [tx, start, end]);
+  const byUnit = useMemo(() => aggregateByUnit(tx, { start, end, splits }), [tx, start, end, splits]);
   const rows = activeUnits.map((u) => ({ unit: u, m: byUnit.get(u.id) ?? emptyMetrics(u.id) }));
   const total = consolidate([...byUnit.values()]);
   const { mrr, arr } = computeMrr(subs);
@@ -44,11 +46,11 @@ export default function UnitsComparison() {
   const chart = useMemo(() => {
     const base = months.map((m) => ({ month: m, label: monthLabel(m) } as any));
     for (const u of activeUnits) {
-      const s = monthlySeries(tx, months, u.id);
+      const s = monthlySeries(tx, months, u.id, splits);
       s.forEach((d, i) => { base[i][u.code] = d.ca; });
     }
     return base;
-  }, [tx, months, activeUnits]);
+  }, [tx, months, activeUnits, splits]);
 
   return (
     <Card className="p-5 mb-6">
