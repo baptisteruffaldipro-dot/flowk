@@ -8,14 +8,23 @@ import { fmtDate, fmtMoney } from "@/lib/format";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import TransactionDialog, { TxRow } from "@/components/finance/TransactionDialog";
 import { Plus, Pencil } from "lucide-react";
+import FinanceScopeBar from "@/components/finance/FinanceScopeBar";
+import { useFinanceScope } from "@/lib/finance/scope";
+import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 
 export default function FinanceCA() {
-  const [rows, setRows] = useState<any[]>([]);
+  const scope = useFinanceScope();
+  const { byId } = useBusinessUnits();
+  const [allRows, setAllRows] = useState<any[]>([]);
+  const rows = useMemo(
+    () => (scope.buId ? allRows.filter((r) => r.business_unit_id === scope.buId) : allRows),
+    [allRows, scope.buId],
+  );
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TxRow | null>(null);
   const load = async () => {
     const { data } = await supabase.from("finance_transactions").select("*").eq("kind", "sale").order("date");
-    setRows(data ?? []);
+    setAllRows(data ?? []);
   };
   useEffect(() => { load(); }, []);
 
@@ -46,6 +55,7 @@ export default function FinanceCA() {
     <div className="p-6 md:p-8">
       <PageHeader title="Chiffre d'affaires" description="Prestations et Achats / Reventes — jamais mélangés." />
       <FinanceNav />
+      <FinanceScopeBar />
       <div className="flex justify-end mb-4">
         <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
           <Plus className="h-4 w-4 mr-1" /> Ajouter une vente
