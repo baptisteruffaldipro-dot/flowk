@@ -60,6 +60,21 @@ function finalize(m: UnitMetrics) {
   return m;
 }
 
+export type TxSplit = { business_unit_id: string; share_pct: number };
+
+/** Répartition effective d'une ligne : soit sa ventilation manuelle, soit son pôle. */
+export function splitShares(
+  r: TxLite,
+  splits?: Map<string, TxSplit[]>,
+): { buId: string | null; factor: number }[] {
+  const rows = r.id ? splits?.get(r.id) : undefined;
+  if (rows && rows.length) {
+    const total = rows.reduce((a, s) => a + (Number(s.share_pct) || 0), 0);
+    if (total > 0) return rows.map((s) => ({ buId: s.business_unit_id, factor: (Number(s.share_pct) || 0) / total }));
+  }
+  return [{ buId: r.business_unit_id ?? null, factor: 1 }];
+}
+
 export type AggregateOptions = {
   start: string;
   end: string;
@@ -69,6 +84,8 @@ export type AggregateOptions = {
   minutesByUnit?: Map<string, number>;
   /** taux horaire interne par pôle */
   rateByUnit?: Map<string, number>;
+  /** ventilation manuelle par transaction : txId -> lignes de répartition */
+  splits?: Map<string, TxSplit[]>;
 };
 
 /**
@@ -76,7 +93,7 @@ export type AggregateOptions = {
  * affectées (global / commun) restant après ventilation.
  */
 export function aggregateByUnit(rows: TxLite[], opts: AggregateOptions): Map<string | null, UnitMetrics> {
-  const { start, end, allocation, minutesByUnit, rateByUnit } = opts;
+  const { start, end, allocation, minutesByUnit, rateByUnit, splits } = opts;
   const map = new Map<string | null, UnitMetrics>();
   const get = (id: string | null) => {
     if (!map.has(id)) map.set(id, emptyMetrics(id));
@@ -87,25 +104,28 @@ export function aggregateByUnit(rows: TxLite[], opts: AggregateOptions): Map<str
 
   for (const r of rows) {
     if (!inRange(r.date, start, end)) continue;
-    const bu = r.business_unit_id ?? null;
     const ht = Number(r.amount_ht) || 0;
     const ttc = Number(r.amount_ttc) || 0;
+    const shares = splitShares(r, splits);
 
-    if (r.kind === "sale") {
-      const m = get(bu);
-      m.revenueInvoiced += ht;
-      m.purchaseCost += Number(r.supplier_cost_ht) || 0;
-      if (r.paid_date) m.revenueCollected += ht;
-      else m.outstanding += ttc;
-    } else if (r.kind === "expense") {
-      const amount = Math.abs(ht);
-      if (bu === null && allocation && allocation.size > 0) {
-        sharedPool += amount;
-      } else {
-        get(bu).expenses += amount;
+    for (const { buId: bu, factor } of shares) {
+      if (r.kind === "sale") {
+        const m = get(bu);
+        m.revenueInvoiced += ht * factor;
+        m.purchaseCost += (Number(r.supplier_cost_ht) || 0) * factor;
+        if (r.paid_date) m.revenueCollected += ht * factor;
+        else m.outstanding += ttc * factor;
+      } else if (r.kind === "expense") {
+        const amount = Math.abs(ht) * factor;
+        if (bu === null && allocation && allocation.size > 0) {
+          sharedPool += amount;
+        } else {
+          get(bu).expenses += amount;
+        }
       }
     }
   }
+
 
   if (sharedPool > 0 && allocation) {
     const total = Array.from(allocation.values()).reduce((a, b) => a + b, 0);
