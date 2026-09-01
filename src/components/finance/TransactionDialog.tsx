@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 
 type Kind = "sale" | "expense" | "bank";
-type Category = "prestation" | "achat_revente" | "expense" | "bank" | "other";
+type Category = "prestation" | "achat_revente" | "expense" | "frais_fixe" | "bank" | "other";
 
 export type TxRow = {
   id?: string;
