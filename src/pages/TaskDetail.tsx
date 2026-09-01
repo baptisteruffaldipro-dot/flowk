@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
+import BusinessUnitCard from "@/components/finance/BusinessUnitCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -510,6 +511,15 @@ export default function TaskDetail() {
         <StatBlock label="Temps passé" value={fmtMinutes(totalMinutesLive)} highlight={running} />
         <StatBlock label="Montant total" value={fmtMoney(billing?.total ?? null)} />
       </div>
+
+      <BusinessUnitCard
+        entity="task"
+        id={task.id}
+        businessUnitId={(task as any).business_unit_id ?? null}
+        clientId={task.client_id}
+        label={task.title}
+        amountHt={billing?.total ?? 0}
+      />
 
       <Card className="p-4 sm:p-5 mb-4 overflow-hidden">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">

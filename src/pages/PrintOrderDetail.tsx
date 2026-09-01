@@ -20,6 +20,7 @@ import BatViewer from "@/components/BatViewer";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
 import DeliveryGateCard from "@/components/DeliveryGateCard";
 import ClientSelectField from "@/components/ClientSelectField";
+import BusinessUnitCard from "@/components/finance/BusinessUnitCard";
 
 export default function PrintOrderDetail() {
   const { id } = useParams();
@@ -322,6 +323,15 @@ export default function PrintOrderDetail() {
           <div className="text-sm mt-1">{(order.deliverables ?? []).length} fichier(s)</div>
         </Card>
       </div>
+
+      <BusinessUnitCard
+        entity="print_order"
+        id={order.id}
+        businessUnitId={(order as any).business_unit_id ?? null}
+        clientId={order.client_id}
+        label={order.description ?? "Commande d'impression"}
+        amountHt={Number(order.amount ?? 0)}
+      />
 
       <Card className="p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
