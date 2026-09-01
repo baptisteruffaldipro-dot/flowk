@@ -1428,6 +1428,45 @@ export type Database = {
           },
         ]
       }
+      finance_tx_splits: {
+        Row: {
+          business_unit_id: string
+          created_at: string
+          id: string
+          share_pct: number
+          transaction_id: string
+        }
+        Insert: {
+          business_unit_id: string
+          created_at?: string
+          id?: string
+          share_pct?: number
+          transaction_id: string
+        }
+        Update: {
+          business_unit_id?: string
+          created_at?: string
+          id?: string
+          share_pct?: number
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_tx_splits_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_tx_splits_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "finance_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goal_projects: {
         Row: {
           created_at: string
