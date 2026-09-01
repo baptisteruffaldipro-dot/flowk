@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { monthLabel, monthsBetween, periodRange, useFinanceScope } from "@/lib/finance/scope";
+import { useTxSplits } from "@/hooks/useTxSplits";
 import { aggregateByUnit, computeMrr, emptyMetrics, monthlyRecurringCost, monthlySeries, type TxLite } from "@/lib/finance/units";
 import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 import { computeTaskBilling } from "@/lib/billing";
@@ -88,7 +89,7 @@ export default function FinanceUnitDetail() {
   }, [tx, range.start, range.end, minutes, rate, unit?.id]);
 
   const months = useMemo(() => monthsBetween(range.start.slice(0, 4) + "-01-01", range.end.slice(0, 4) + "-12-31"), [range.start, range.end]);
-  const series = useMemo(() => monthlySeries(yearTx, months, unit?.id ?? null).map((d) => ({ ...d, label: monthLabel(d.month) })), [yearTx, months, unit?.id]);
+  const series = useMemo(() => monthlySeries(yearTx, months, unit?.id ?? null, splits).map((d) => ({ ...d, label: monthLabel(d.month) })), [yearTx, months, unit?.id]);
 
   const { mrr, arr } = computeMrr(subs);
   const recurringMonthly = monthlyRecurringCost(recurring);

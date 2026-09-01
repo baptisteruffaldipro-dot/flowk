@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtMinutes, fmtMoney } from "@/lib/format";
 import { periodRange, useFinanceScope } from "@/lib/finance/scope";
+import { useTxSplits } from "@/hooks/useTxSplits";
 import { aggregateByUnit, consolidate, emptyMetrics, type TxLite, type UnitMetrics } from "@/lib/finance/units";
 import { reloadBusinessUnits, useBusinessUnits } from "@/hooks/useBusinessUnits";
 import { toast } from "sonner";
@@ -58,7 +59,7 @@ export default function FinanceUnits() {
   }, [range.start, range.end, tick]);
 
   const byUnit = useMemo(
-    () => aggregateByUnit(tx, { start: range.start, end: range.end, allocation: alloc, minutesByUnit: minutes, rateByUnit: rates }),
+    () => aggregateByUnit(tx, { start: range.start, end: range.end, allocation: alloc, minutesByUnit: minutes, rateByUnit: rates, splits }),
     [tx, range.start, range.end, alloc, minutes, rates],
   );
 
