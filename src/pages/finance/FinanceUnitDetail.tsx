@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { monthLabel, monthsBetween, periodRange, useFinanceScope } from "@/lib/finance/scope";
 import { useTxSplits } from "@/hooks/useTxSplits";
-import { aggregateByUnit, computeMrr, emptyMetrics, monthlyRecurringCost, monthlySeries, type TxLite } from "@/lib/finance/units";
+import { aggregateByUnit, computeMrr, emptyMetrics, monthlyRecurringCost, monthlySeries, splitShares, type TxLite } from "@/lib/finance/units";
 import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 import { computeTaskBilling } from "@/lib/billing";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -29,6 +29,7 @@ export default function FinanceUnitDetail() {
   const [orders, setOrders] = useState<any[]>([]);
   const [minutes, setMinutes] = useState(0);
   const [rate, setRate] = useState(0);
+  const splits = useTxSplits();
 
   useEffect(() => {
     if (!unit) return;
@@ -39,14 +40,12 @@ export default function FinanceUnitDetail() {
         supabase
           .from("finance_transactions")
           .select("id, kind, category, date, paid_date, amount_ht, amount_ttc, supplier_cost_ht, business_unit_id, counterparty, label")
-          .eq("business_unit_id", unit.id)
           .gte("date", range.start)
           .lte("date", range.end)
           .order("date", { ascending: false }),
         supabase
           .from("finance_transactions")
-          .select("kind, category, date, amount_ht, business_unit_id")
-          .eq("business_unit_id", unit.id)
+          .select("id, kind, category, date, amount_ht, business_unit_id")
           .gte("date", yStart)
           .lte("date", yEnd),
         supabase.from("finance_forecasts").select("*").eq("business_unit_id", unit.id).gte("planned_date", range.start).lte("planned_date", range.end),
@@ -78,15 +77,21 @@ export default function FinanceUnitDetail() {
     })();
   }, [unit?.id, range.start, range.end]);
 
+  const unitTx = useMemo(
+    () => tx.filter((r) => splitShares(r, splits).some((sh) => sh.buId === (unit?.id ?? null))),
+    [tx, splits, unit?.id],
+  );
+
   const m = useMemo(() => {
     const map = aggregateByUnit(tx, {
       start: range.start,
       end: range.end,
       minutesByUnit: new Map([[unit?.id ?? "x", minutes]]),
       rateByUnit: new Map([[unit?.id ?? "x", rate]]),
+      splits,
     });
     return map.get(unit?.id ?? null) ?? emptyMetrics(unit?.id ?? null);
-  }, [tx, range.start, range.end, minutes, rate, unit?.id]);
+  }, [tx, range.start, range.end, minutes, rate, unit?.id, splits]);
 
   const months = useMemo(() => monthsBetween(range.start.slice(0, 4) + "-01-01", range.end.slice(0, 4) + "-12-31"), [range.start, range.end]);
   const series = useMemo(() => monthlySeries(yearTx, months, unit?.id ?? null, splits).map((d) => ({ ...d, label: monthLabel(d.month) })), [yearTx, months, unit?.id]);
@@ -295,7 +300,7 @@ export default function FinanceUnitDetail() {
               </tr>
             </thead>
             <tbody>
-              {tx.map((r: any) => (
+              {unitTx.map((r: any) => (
                 <tr key={r.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-3 py-2 whitespace-nowrap">{fmtDate(r.date)}</td>
                   <td className="px-3 py-2 text-xs">{r.kind === "sale" ? "Vente" : r.kind === "expense" ? "Dépense" : "Banque"}</td>
@@ -306,7 +311,7 @@ export default function FinanceUnitDetail() {
                   <td className="px-3 py-2 text-xs">{r.paid_date ? fmtDate(r.paid_date) : <span className="text-amber-600">Non</span>}</td>
                 </tr>
               ))}
-              {tx.length === 0 && <tr><td colSpan={7} className="px-3 py-8 text-center text-sm text-muted-foreground">Aucune écriture sur la période</td></tr>}
+              {unitTx.length === 0 && <tr><td colSpan={7} className="px-3 py-8 text-center text-sm text-muted-foreground">Aucune écriture sur la période</td></tr>}
             </tbody>
           </table>
         </div>

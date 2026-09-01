@@ -28,6 +28,7 @@ export default function FinanceUnits() {
   const [goals, setGoals] = useState<any[]>([]);
   const [newName, setNewName] = useState("");
   const [tick, setTick] = useState(0);
+  const splits = useTxSplits(tick);
 
   useEffect(() => {
     (async () => {
@@ -60,7 +61,7 @@ export default function FinanceUnits() {
 
   const byUnit = useMemo(
     () => aggregateByUnit(tx, { start: range.start, end: range.end, allocation: alloc, minutesByUnit: minutes, rateByUnit: rates, splits }),
-    [tx, range.start, range.end, alloc, minutes, rates],
+    [tx, range.start, range.end, alloc, minutes, rates, splits],
   );
 
   const rows = activeUnits.map((u) => ({ unit: u, m: byUnit.get(u.id) ?? emptyMetrics(u.id) }));
