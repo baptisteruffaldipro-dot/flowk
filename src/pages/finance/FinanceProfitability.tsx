@@ -44,7 +44,7 @@ function Table({ rows, label }: { rows: Row[]; label: string }) {
   );
 }
 
-export default function FinanceProfitability() {
+export default function FinanceProfitability({ embedded }: { embedded?: boolean } = {}) {
   const [tx, setTx] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
@@ -79,9 +79,9 @@ export default function FinanceProfitability() {
   const byTask = useMemo(() => agg("task_id", new Map(tasks.map((t) => [t.id, t.title]))), [tx, tasks]);
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="Rentabilité" description="Marge par client, projet ou tâche. Lie tes dépenses via les règles pour affiner." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="Rentabilité" description="Marge par client, projet ou tâche. Lie tes dépenses via les règles pour affiner." />}
+      {!embedded && <FinanceNav />}
       <Tabs defaultValue="client">
         <TabsList>
           <TabsTrigger value="client">Par client</TabsTrigger>

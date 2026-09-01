@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 type Kind = "income" | "expense";
 
-export default function FinanceForecasts() {
+export default function FinanceForecasts({ embedded }: { embedded?: boolean } = {}) {
   const [items, setItems] = useState<any[]>([]);
   const [label, setLabel] = useState("");
   const [kind, setKind] = useState<Kind>("expense");
@@ -53,9 +53,9 @@ export default function FinanceForecasts() {
   let running = balance ?? 0;
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="Simulateur" description="Ajoute des dépenses ou entrées prévues et vois l'impact sur ta trésorerie." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="Simulateur" description="Ajoute des dépenses ou entrées prévues et vois l'impact sur ta trésorerie." />}
+      {!embedded && <FinanceNav />}
       <Card className="p-5 mb-6">
         <div className="grid md:grid-cols-5 gap-2 items-end">
           <div><Label className="text-xs">Libellé</Label><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ex : URSSAF" /></div>

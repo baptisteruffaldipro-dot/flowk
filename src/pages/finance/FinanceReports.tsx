@@ -22,7 +22,7 @@ function download(name: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function FinanceReports() {
+export default function FinanceReports({ embedded }: { embedded?: boolean } = {}) {
   const [tx, setTx] = useState<any[]>([]);
   useEffect(() => { (async () => {
     const { data } = await supabase.from("finance_transactions").select("*").order("date");
@@ -42,13 +42,13 @@ export default function FinanceReports() {
   }, [tx]);
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader
         title="Rapports"
         description="Exports comptables et synthèses annuelles."
-        actions={<Button variant="outline" size="sm" onClick={() => download("finance_transactions.csv", toCSV(tx))}><Download className="h-4 w-4 mr-1" /> Export CSV complet</Button>}
+        actions={<Button variant="outline" size="sm" onClick={() => download("finance_transactions.csv", toCSV(tx))}><Download className="h-4 w-4 mr-1" />} Export CSV complet</Button>}
       />
-      <FinanceNav />
+      {!embedded && <FinanceNav />}
       <Card className="p-0 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="text-xs text-muted-foreground border-b bg-muted/40">

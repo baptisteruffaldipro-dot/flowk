@@ -12,7 +12,7 @@ import FinanceScopeBar from "@/components/finance/FinanceScopeBar";
 import { useFinanceScope } from "@/lib/finance/scope";
 import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 
-export default function FinanceCA() {
+export default function FinanceCA({ embedded }: { embedded?: boolean } = {}) {
   const scope = useFinanceScope();
   const { byId } = useBusinessUnits();
   const [allRows, setAllRows] = useState<any[]>([]);
@@ -52,9 +52,9 @@ export default function FinanceCA() {
   const tauxMarque = totalCost > 0 ? (margeAchat / totalCost) * 100 : 0;
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="Chiffre d'affaires" description="Prestations et Achats / Reventes — jamais mélangés." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="Chiffre d'affaires" description="Prestations et Achats / Reventes — jamais mélangés." />}
+      {!embedded && <FinanceNav />}
       <FinanceScopeBar />
       <div className="flex justify-end mb-4">
         <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>

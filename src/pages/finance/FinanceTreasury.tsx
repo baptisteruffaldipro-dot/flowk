@@ -42,7 +42,7 @@ function emptyFinancing(): Financing {
   };
 }
 
-export default function FinanceTreasury() {
+export default function FinanceTreasury({ embedded }: { embedded?: boolean } = {}) {
   const [balances, setBalances] = useState<any[]>([]);
   const [tx, setTx] = useState<any[]>([]);
   const [forecasts, setForecasts] = useState<any[]>([]);
@@ -144,9 +144,9 @@ export default function FinanceTreasury() {
   const soldeActuelDate = balances[0]?.as_of_date;
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="Trésorerie" description="Vue solde + prévisions 30/60/90 jours et 6 mois." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="Trésorerie" description="Vue solde + prévisions 30/60/90 jours et 6 mois." />}
+      {!embedded && <FinanceNav />}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="p-5">
