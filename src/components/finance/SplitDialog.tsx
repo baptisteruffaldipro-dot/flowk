@@ -63,6 +63,7 @@ export default function SplitDialog({
             amountHt={amountHt}
             value={rows}
             onChange={setRows}
+            alwaysOn
           />
         </div>
 
