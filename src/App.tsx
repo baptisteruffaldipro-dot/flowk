@@ -57,6 +57,10 @@ import FinanceTreasury from "./pages/finance/FinanceTreasury";
 import FinanceForecasts from "./pages/finance/FinanceForecasts";
 import FinanceProfitability from "./pages/finance/FinanceProfitability";
 import FinanceReports from "./pages/finance/FinanceReports";
+import FinanceUnits from "./pages/finance/FinanceUnits";
+import FinanceUnitDetail from "./pages/finance/FinanceUnitDetail";
+import FinanceRecurring from "./pages/finance/FinanceRecurring";
+import FinanceGoals from "./pages/finance/FinanceGoals";
 import PortalRedirect from "./pages/PortalRedirect";
 import Ideas from "./pages/Ideas";
 
@@ -124,6 +128,10 @@ const App = () => (
               <Route path="/finance/previsions" element={<FinanceForecasts />} />
               <Route path="/finance/rentabilite" element={<FinanceProfitability />} />
               <Route path="/finance/rapports" element={<FinanceReports />} />
+              <Route path="/finance/poles" element={<FinanceUnits />} />
+              <Route path="/finance/poles/:code" element={<FinanceUnitDetail />} />
+              <Route path="/finance/recurrents" element={<FinanceRecurring />} />
+              <Route path="/finance/objectifs" element={<FinanceGoals />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
