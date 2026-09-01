@@ -16,7 +16,7 @@ import { reloadBusinessUnits, useBusinessUnits } from "@/hooks/useBusinessUnits"
 import { toast } from "sonner";
 import { ArrowRight, Plus } from "lucide-react";
 
-export default function FinanceUnits() {
+export default function FinanceUnits({ embedded }: { embedded?: boolean } = {}) {
   const scope = useFinanceScope();
   const range = periodRange(scope);
   const { units, activeUnits } = useBusinessUnits();
@@ -93,9 +93,9 @@ export default function FinanceUnits() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="Pôles d'activité" description="Pilotage comparé de chaque activité sur la période sélectionnée." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="Pôles d'activité" description="Pilotage comparé de chaque activité sur la période sélectionnée." />}
+      {!embedded && <FinanceNav />}
       <FinanceScopeBar showUnits={false} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-6">
