@@ -167,19 +167,27 @@ export function consolidate(metrics: Iterable<UnitMetrics>): UnitMetrics {
 }
 
 /** Série mensuelle CA / dépenses / résultat. */
-export function monthlySeries(rows: TxLite[], months: string[], buId: string | null | "all") {
+export function monthlySeries(
+  rows: TxLite[],
+  months: string[],
+  buId: string | null | "all",
+  splits?: Map<string, TxSplit[]>,
+) {
   const base = new Map(months.map((m) => [m, { month: m, ca: 0, depenses: 0, resultat: 0 }]));
   for (const r of rows) {
     const ym = (r.date ?? "").slice(0, 7);
     const bucket = base.get(ym);
     if (!bucket) continue;
-    if (buId !== "all" && (r.business_unit_id ?? null) !== buId) continue;
     const ht = Number(r.amount_ht) || 0;
-    if (r.kind === "sale") bucket.ca += ht;
-    else if (r.kind === "expense") bucket.depenses += Math.abs(ht) + 0;
+    for (const s of splitShares(r, splits)) {
+      if (buId !== "all" && s.buId !== buId) continue;
+      if (r.kind === "sale") bucket.ca += ht * s.factor;
+      else if (r.kind === "expense") bucket.depenses += Math.abs(ht) * s.factor;
+    }
   }
   for (const b of base.values()) b.resultat = b.ca - b.depenses;
   return Array.from(base.values());
+
 }
 
 /** MRR / ARR à partir des abonnements actifs. */
