@@ -21,7 +21,7 @@ const PERIODICITIES = [
   { value: "weekly", label: "Hebdomadaire" },
 ];
 
-export default function FinanceRecurring() {
+export default function FinanceRecurring({ embedded }: { embedded?: boolean } = {}) {
   const { activeUnits, byId } = useBusinessUnits();
   const [rec, setRec] = useState<any[]>([]);
   const [subs, setSubs] = useState<any[]>([]);
@@ -130,9 +130,9 @@ export default function FinanceRecurring() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="Récurrents" description="Charges récurrentes et abonnements clients — base du prévisionnel et du MRR." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="Récurrents" description="Charges récurrentes et abonnements clients — base du prévisionnel et du MRR." />}
+      {!embedded && <FinanceNav />}
 
       <div className="grid gap-3 sm:grid-cols-3 mb-5">
         <Kpi label="Charges récurrentes / mois" value={fmtMoney(monthlyCost)} />

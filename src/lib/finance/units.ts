@@ -12,13 +12,28 @@ export type TxLite = {
   amount_ttc?: number | null;
   vat_amount?: number | null;
   supplier_cost_ht?: number | null;
+  amount_ht_presta?: number | null;
+  amount_ht_achat?: number | null;
   business_unit_id?: string | null;
 };
+
+/** Découpe une vente entre prestation et achat-revente. */
+export function prestaAchat(r: TxLite): { presta: number; achat: number } {
+  const ht = Number(r.amount_ht) || 0;
+  const p = Number(r.amount_ht_presta) || 0;
+  const a = Number(r.amount_ht_achat) || 0;
+  if (p || a) return { presta: p, achat: a };
+  if (r.category === "achat_revente") return { presta: 0, achat: ht };
+  return { presta: ht, achat: 0 };
+}
 
 export type UnitMetrics = {
   buId: string | null;
   revenueInvoiced: number;   // CA HT facturé
   revenueCollected: number;  // CA HT encaissé
+  revenuePresta: number;     // part prestation du CA HT
+  revenueAchat: number;      // part achat-revente du CA HT
+  fixedCosts: number;        // dépenses HT marquées « frais fixe »
   purchaseCost: number;      // coût d'achat / fournisseur des ventes
   expenses: number;          // dépenses HT (hors coût fournisseur)
   sharedExpenses: number;    // quote-part de charges communes ventilée
@@ -39,6 +54,9 @@ export function emptyMetrics(buId: string | null): UnitMetrics {
     buId,
     revenueInvoiced: 0,
     revenueCollected: 0,
+    revenuePresta: 0,
+    revenueAchat: 0,
+    fixedCosts: 0,
     purchaseCost: 0,
     expenses: 0,
     sharedExpenses: 0,
@@ -112,6 +130,9 @@ export function aggregateByUnit(rows: TxLite[], opts: AggregateOptions): Map<str
       if (r.kind === "sale") {
         const m = get(bu);
         m.revenueInvoiced += ht * factor;
+        const pa = prestaAchat(r);
+        m.revenuePresta += pa.presta * factor;
+        m.revenueAchat += pa.achat * factor;
         m.purchaseCost += (Number(r.supplier_cost_ht) || 0) * factor;
         if (r.paid_date) m.revenueCollected += ht * factor;
         else m.outstanding += ttc * factor;
@@ -122,6 +143,7 @@ export function aggregateByUnit(rows: TxLite[], opts: AggregateOptions): Map<str
         } else {
           get(bu).expenses += amount;
         }
+        if (r.category === "frais_fixe") get(bu).fixedCosts += amount;
       }
     }
   }
@@ -156,6 +178,9 @@ export function consolidate(metrics: Iterable<UnitMetrics>): UnitMetrics {
   for (const m of metrics) {
     t.revenueInvoiced += m.revenueInvoiced;
     t.revenueCollected += m.revenueCollected;
+    t.revenuePresta += m.revenuePresta;
+    t.revenueAchat += m.revenueAchat;
+    t.fixedCosts += m.fixedCosts;
     t.purchaseCost += m.purchaseCost;
     t.expenses += m.expenses;
     t.sharedExpenses += m.sharedExpenses;

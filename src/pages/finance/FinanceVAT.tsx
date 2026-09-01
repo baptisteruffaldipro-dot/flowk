@@ -10,7 +10,7 @@ import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 
-export default function FinanceVAT() {
+export default function FinanceVAT({ embedded }: { embedded?: boolean } = {}) {
   const [rows, setRows] = useState<any[]>([]);
   const [adj, setAdj] = useState<any[]>([]);
   const [reservePct, setReservePct] = useState<number>(0);
@@ -75,9 +75,9 @@ export default function FinanceVAT() {
   };
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="TVA" description="Collectée, déductible, nette. Estimation à provisionner." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="TVA" description="Collectée, déductible, nette. Estimation à provisionner." />}
+      {!embedded && <FinanceNav />}
       <div className="grid md:grid-cols-3 gap-3 mb-6">
         <Card className="p-4"><div className="text-xs text-muted-foreground">TVA collectée</div><div className="text-xl font-semibold mt-1">{fmtMoney(totalCollected)}</div></Card>
         <Card className="p-4"><div className="text-xs text-muted-foreground">TVA déductible</div><div className="text-xl font-semibold mt-1">{fmtMoney(totalDeductible)}</div></Card>

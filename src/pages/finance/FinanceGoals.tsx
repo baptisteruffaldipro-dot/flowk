@@ -12,7 +12,7 @@ import { periodRange, useFinanceScope } from "@/lib/finance/scope";
 import FinanceScopeBar from "@/components/finance/FinanceScopeBar";
 import { toast } from "sonner";
 
-export default function FinanceGoals() {
+export default function FinanceGoals({ embedded }: { embedded?: boolean } = {}) {
   const { activeUnits } = useBusinessUnits();
   const scope = useFinanceScope();
   const range = periodRange(scope);
@@ -74,9 +74,9 @@ export default function FinanceGoals() {
   const allocTotal = Object.values(alloc).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="Objectifs & règles" description="Objectifs mensuels par pôle, clé de répartition des charges communes et coûts horaires internes." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="Objectifs & règles" description="Objectifs mensuels par pôle, clé de répartition des charges communes et coûts horaires internes." />}
+      {!embedded && <FinanceNav />}
       <FinanceScopeBar showUnits={false} />
 
       <Card className="p-0 overflow-hidden mb-6">

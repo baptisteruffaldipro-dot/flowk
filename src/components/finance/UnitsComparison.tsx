@@ -27,7 +27,7 @@ export default function UnitsComparison() {
       const [t, s] = await Promise.all([
         supabase
           .from("finance_transactions")
-          .select("id, kind, category, date, paid_date, amount_ht, amount_ttc, supplier_cost_ht, business_unit_id")
+          .select("id, kind, category, date, paid_date, amount_ht, amount_ht_presta, amount_ht_achat, amount_ttc, supplier_cost_ht, business_unit_id")
           .gte("date", start)
           .lte("date", end),
         supabase.from("subscriptions").select("monthly_ht, status"),
@@ -66,7 +66,9 @@ export default function UnitsComparison() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
         <Mini label="CA HT total" value={fmtMoney(total.revenueInvoiced)} />
+        <Mini label="Presta / Achat-revente" value={`${fmtMoney(total.revenuePresta)} / ${fmtMoney(total.revenueAchat)}`} />
         <Mini label="Dépenses HT" value={fmtMoney(total.expenses + total.purchaseCost)} />
+        <Mini label="Frais fixes" value={fmtMoney(total.fixedCosts)} />
         <Mini label="Résultat" value={fmtMoney(total.result)} accent={total.result >= 0 ? "pos" : "neg"} />
         <Mini label="MRR / ARR" value={`${fmtMoney(mrr)} / ${fmtMoney(arr)}`} />
       </div>
@@ -92,8 +94,11 @@ export default function UnitsComparison() {
             <tr>
               <th className="text-left px-2 py-1.5">Pôle</th>
               <th className="text-right px-2 py-1.5">CA HT</th>
+              <th className="text-right px-2 py-1.5">dont presta</th>
+              <th className="text-right px-2 py-1.5">dont achat</th>
               <th className="text-right px-2 py-1.5">Encaissé</th>
               <th className="text-right px-2 py-1.5">Dépenses</th>
+              <th className="text-right px-2 py-1.5">dont frais fixes</th>
               <th className="text-right px-2 py-1.5">Résultat</th>
               <th className="text-right px-2 py-1.5">Marge</th>
             </tr>
@@ -108,8 +113,11 @@ export default function UnitsComparison() {
                   </Link>
                 </td>
                 <td className="px-2 py-1.5 text-right tabular-nums">{fmtMoney(m.revenueInvoiced)}</td>
+                <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">{fmtMoney(m.revenuePresta)}</td>
+                <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">{fmtMoney(m.revenueAchat)}</td>
                 <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">{fmtMoney(m.revenueCollected)}</td>
                 <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">{fmtMoney(m.expenses + m.purchaseCost)}</td>
+                <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">{fmtMoney(m.fixedCosts)}</td>
                 <td className={`px-2 py-1.5 text-right tabular-nums font-medium ${m.result >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{fmtMoney(m.result)}</td>
                 <td className="px-2 py-1.5 text-right tabular-nums">{m.marginPct.toFixed(0)}%</td>
               </tr>

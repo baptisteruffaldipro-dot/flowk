@@ -38,7 +38,7 @@ function suggestSplit(label: string | null, ht: number): { presta: number; achat
   return { presta: signed, achat: 0 };
 }
 
-export default function FinanceSplit() {
+export default function FinanceSplit({ embedded }: { embedded?: boolean } = {}) {
   const [rows, setRows] = useState<Row[]>([]);
   const [filter, setFilter] = useState<"todo" | "done" | "all">("todo");
   const [search, setSearch] = useState("");
@@ -131,9 +131,9 @@ export default function FinanceSplit() {
   const reviewedCount = rows.filter((r) => r.split_reviewed).length;
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="Répartition presta / achat-revente" description="Découpe chaque facture entre création (presta) et impression revendue (achat-revente) pour un calcul fidèle de la marge." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="Répartition presta / achat-revente" description="Découpe chaque facture entre création (presta) et impression revendue (achat-revente) pour un calcul fidèle de la marge." />}
+      {!embedded && <FinanceNav />}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Card className="p-4">

@@ -49,18 +49,10 @@ import ClientBatPublic from "./pages/ClientBatPublic";
 import NotFound from "./pages/NotFound";
 import FinanceDashboard from "./pages/finance/FinanceDashboard";
 import FinanceImport from "./pages/finance/FinanceImport";
-import FinanceCA from "./pages/finance/FinanceCA";
-import FinanceSplit from "./pages/finance/FinanceSplit";
-import FinanceExpenses from "./pages/finance/FinanceExpenses";
-import FinanceVAT from "./pages/finance/FinanceVAT";
-import FinanceTreasury from "./pages/finance/FinanceTreasury";
-import FinanceForecasts from "./pages/finance/FinanceForecasts";
-import FinanceProfitability from "./pages/finance/FinanceProfitability";
-import FinanceReports from "./pages/finance/FinanceReports";
-import FinanceUnits from "./pages/finance/FinanceUnits";
+import FinanceTransactions from "./pages/finance/FinanceTransactions";
+import FinanceCash from "./pages/finance/FinanceCash";
+import FinancePoles from "./pages/finance/FinancePoles";
 import FinanceUnitDetail from "./pages/finance/FinanceUnitDetail";
-import FinanceRecurring from "./pages/finance/FinanceRecurring";
-import FinanceGoals from "./pages/finance/FinanceGoals";
 import PortalRedirect from "./pages/PortalRedirect";
 import Ideas from "./pages/Ideas";
 
@@ -120,18 +112,20 @@ const App = () => (
               <Route path="/portails/:id" element={<PortalRedirect />} />
               <Route path="/finance" element={<FinanceDashboard />} />
               <Route path="/finance/import" element={<FinanceImport />} />
-              <Route path="/finance/tresorerie" element={<FinanceTreasury />} />
-              <Route path="/finance/ca" element={<FinanceCA />} />
-              <Route path="/finance/split" element={<FinanceSplit />} />
-              <Route path="/finance/depenses" element={<FinanceExpenses />} />
-              <Route path="/finance/tva" element={<FinanceVAT />} />
-              <Route path="/finance/previsions" element={<FinanceForecasts />} />
-              <Route path="/finance/rentabilite" element={<FinanceProfitability />} />
-              <Route path="/finance/rapports" element={<FinanceReports />} />
-              <Route path="/finance/poles" element={<FinanceUnits />} />
+              <Route path="/finance/transactions" element={<FinanceTransactions />} />
+              <Route path="/finance/tresorerie" element={<FinanceCash />} />
+              <Route path="/finance/poles" element={<FinancePoles />} />
               <Route path="/finance/poles/:code" element={<FinanceUnitDetail />} />
-              <Route path="/finance/recurrents" element={<FinanceRecurring />} />
-              <Route path="/finance/objectifs" element={<FinanceGoals />} />
+              {/* Anciennes URLs — redirigées vers les 5 écrans */}
+              <Route path="/finance/ca" element={<Navigate to="/finance/transactions" replace />} />
+              <Route path="/finance/split" element={<Navigate to="/finance/transactions" replace />} />
+              <Route path="/finance/depenses" element={<Navigate to="/finance/transactions" replace />} />
+              <Route path="/finance/tva" element={<Navigate to="/finance/tresorerie" replace />} />
+              <Route path="/finance/previsions" element={<Navigate to="/finance/poles" replace />} />
+              <Route path="/finance/rentabilite" element={<Navigate to="/finance/poles" replace />} />
+              <Route path="/finance/rapports" element={<Navigate to="/finance/poles" replace />} />
+              <Route path="/finance/recurrents" element={<Navigate to="/finance/poles" replace />} />
+              <Route path="/finance/objectifs" element={<Navigate to="/finance/poles" replace />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

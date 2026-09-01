@@ -15,7 +15,7 @@ import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 import { useTxSplits } from "@/hooks/useTxSplits";
 import { splitShares } from "@/lib/finance/units";
 
-export default function FinanceExpenses() {
+export default function FinanceExpenses({ embedded }: { embedded?: boolean } = {}) {
   const scope = useFinanceScope();
   const range = periodRange(scope);
   const { byId } = useBusinessUnits();
@@ -49,9 +49,9 @@ export default function FinanceExpenses() {
   const total = filtered.reduce((a, r) => a + Number(r.amount_ht || 0), 0);
 
   return (
-    <div className="p-6 md:p-8">
-      <PageHeader title="Dépenses" description="Fournisseurs, projets, tâches — filtre à ta guise." />
-      <FinanceNav />
+    <div className={embedded ? "" : "p-6 md:p-8"}>
+      {!embedded && <PageHeader title="Dépenses" description="Fournisseurs, projets, tâches — filtre à ta guise." />}
+      {!embedded && <FinanceNav />}
       <FinanceScopeBar />
       <RecurringExpensesSuggestions onChange={load} />
       <div className="flex items-center gap-2 mb-4">

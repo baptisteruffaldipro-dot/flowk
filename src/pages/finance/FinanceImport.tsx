@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import FinanceNav from "@/components/finance/FinanceNav";
 import { Card } from "@/components/ui/card";
@@ -26,7 +27,59 @@ function fmtMonth(iso: string | null) {
   return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
 
+
+/**
+ * Applique les règles mémorisées après un import :
+ * - catégorie via finance_category_rules ;
+ * - pôle repris de la dernière transaction connue du même tiers.
+ * Retourne le nombre de lignes labellisées.
+ */
+async function applyLabelRules(importId: string): Promise<number> {
+  const { data: fresh } = await supabase
+    .from("finance_transactions")
+    .select("id, kind, label, counterparty, counterparty_normalized, business_unit_id")
+    .eq("import_id", importId);
+  const rows = (fresh as any[]) ?? [];
+  if (!rows.length) return 0;
+
+  const [{ data: rules }, { data: known }] = await Promise.all([
+    supabase.from("finance_category_rules").select("*").eq("active", true).order("priority", { ascending: false }),
+    supabase
+      .from("finance_transactions")
+      .select("counterparty_normalized, business_unit_id")
+      .not("business_unit_id", "is", null)
+      .not("counterparty_normalized", "is", null)
+      .limit(3000),
+  ]);
+
+  const buByCounterparty = new Map<string, string>();
+  for (const k of ((known as any[]) ?? [])) {
+    if (!buByCounterparty.has(k.counterparty_normalized)) buByCounterparty.set(k.counterparty_normalized, k.business_unit_id);
+  }
+
+  let count = 0;
+  for (const r of rows) {
+    const patch: Record<string, any> = {};
+    const rule = ((rules as any[]) ?? []).find((ru) => {
+      if (ru.match_kind && ru.match_kind !== r.kind) return false;
+      const hay = String((ru.field === "counterparty" ? r.counterparty : r.label) ?? "").toLowerCase();
+      return hay.includes(String(ru.pattern).toLowerCase());
+    });
+    if (rule) { patch.category = rule.category; patch.category_source = "rule"; }
+    if (!r.business_unit_id && r.counterparty_normalized) {
+      const bu = buByCounterparty.get(r.counterparty_normalized);
+      if (bu) patch.business_unit_id = bu;
+    }
+    if (Object.keys(patch).length) {
+      await supabase.from("finance_transactions").update(patch as any).eq("id", r.id);
+      count++;
+    }
+  }
+  return count;
+}
+
 export default function FinanceImport() {
+  const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [kind, setKind] = useState<Kind>("sale");
   const [periodMonth, setPeriodMonth] = useState<string>(currentMonthISO());
@@ -182,12 +235,16 @@ export default function FinanceImport() {
         status: "completed", inserted_count: inserted, duplicate_count: duplicates,
       }).eq("id", imp.id);
 
+      const labelled = await applyLabelRules(imp.id);
+
       toast.success(
         `Import terminé : ${inserted} lignes ajoutées, ${duplicates} doublons ignorés.` +
-          (kind === "sale" ? ` ${paidInvoices} facture(s) réglée(s), ${unpaidInvoices} non réglée(s).` : ""),
+          (kind === "sale" ? ` ${paidInvoices} facture(s) réglée(s), ${unpaidInvoices} non réglée(s).` : "") +
+          (labelled ? ` ${labelled} ligne(s) labellisée(s) automatiquement.` : ""),
       );
       setFile(null); setRows([]); setHeaders([]); setMapping({});
       loadImports();
+      navigate("/finance/transactions?todo=1");
     } catch (e: any) {
       toast.error(`Erreur import : ${e.message}`);
     } finally { setBusy(false); }
