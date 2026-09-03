@@ -205,10 +205,15 @@ export default function PortalPanel({
         if (c) setFetchedClient({ email: (c as any).email, name: (c as any).name });
       }
     }
+
+    const { data: ps } = await supabase.from("payment_settings" as any).select("iban,bic,account_holder,bank_name,transfer_note").eq("id", 1).maybeSingle();
+    setPaymentSettings(ps as any);
+
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [entityType, entityId]);
+
 
   if (loading || !portal) {
     return <Card className="p-5 text-sm text-muted-foreground">Chargement du portail client…</Card>;
