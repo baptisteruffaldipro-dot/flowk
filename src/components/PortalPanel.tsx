@@ -94,6 +94,7 @@ export default function PortalPanel({
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendingLink, setSendingLink] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
   const [linkEmail, setLinkEmail] = useState("");
   const [fetchedClient, setFetchedClient] = useState<{ email?: string | null; name?: string | null } | null>(null);
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
