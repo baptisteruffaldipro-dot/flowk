@@ -397,6 +397,34 @@ export default function PortalPanel({
     }
   };
 
+  const sendPaymentReminder = async () => {
+    if (!effEmail) return toast.error("Pas d'email client");
+    setSendingReminder(true);
+    try {
+      if (!portal.is_published) await publish(true);
+      const ht = Number(portal.amount_due_ttc ?? 0);
+      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "payment-reminder",
+          recipientEmail: effEmail,
+          idempotencyKey: `payment-reminder-${entityId}-${Date.now()}`,
+          templateData: {
+            name: effName ?? "",
+            portalUrl: publicUrl,
+            paymentUrl: portal.payment_link_url ?? "",
+            amountTtc: ht > 0 ? `${(ht * 1.2).toFixed(2).replace(".", ",")} € TTC` : "",
+          },
+        },
+      });
+      if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
+      toast.success("Relance paiement envoyée");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur d'envoi");
+    } finally {
+      setSendingReminder(false);
+    }
+  };
+
   const payState: "unpaid" | "deposit_paid" | "balance_unpaid" | "paid" =
     portal.admin_confirmed_paid_at !== null ? "paid" : (portal.payment_state ?? "unpaid");
 
@@ -650,6 +678,22 @@ export default function PortalPanel({
             />
           </div>
         )}
+
+        <div className="space-y-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={sendPaymentReminder}
+            disabled={sendingReminder || !effEmail}
+            title={effEmail ? `Relancer ${effEmail}` : "Aucun email client renseigné"}
+          >
+            <Send className="h-3.5 w-3.5 mr-1" />
+            {sendingReminder ? "Envoi…" : "Relancer le paiement par email"}
+          </Button>
+          <p className="text-[11px] text-muted-foreground">
+            Rappelle au client que le paiement par carte est disponible et que toute commande d'impression doit être réglée avant son lancement.
+          </p>
+        </div>
 
         <div className="space-y-1.5 pb-1">
           <Label className="text-xs">Commandes d'impression liées</Label>
