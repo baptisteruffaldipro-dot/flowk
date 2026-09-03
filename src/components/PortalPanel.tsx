@@ -103,8 +103,16 @@ export default function PortalPanel({
   const [computedTotal, setComputedTotal] = useState<number>(0);
   const [computedPresta, setComputedPresta] = useState<number>(0);
   const [computedPrint, setComputedPrint] = useState<number>(0);
+  const [paymentSettings, setPaymentSettings] = useState<{
+    iban?: string | null;
+    bic?: string | null;
+    account_holder?: string | null;
+    bank_name?: string | null;
+    transfer_note?: string | null;
+  } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
+
 
   const table = entityType === "task" ? "tasks" : "projects";
   const effEmail = clientEmail || fetchedClient?.email || null;
@@ -197,10 +205,15 @@ export default function PortalPanel({
         if (c) setFetchedClient({ email: (c as any).email, name: (c as any).name });
       }
     }
+
+    const { data: ps } = await supabase.from("payment_settings" as any).select("iban,bic,account_holder,bank_name,transfer_note").eq("id", 1).maybeSingle();
+    setPaymentSettings(ps as any);
+
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [entityType, entityId]);
+
 
   if (loading || !portal) {
     return <Card className="p-5 text-sm text-muted-foreground">Chargement du portail client…</Card>;
@@ -403,6 +416,7 @@ export default function PortalPanel({
     try {
       if (!portal.is_published) await publish(true);
       const ht = Number(portal.amount_due_ttc ?? 0);
+      const transferEnabled = (portal.payment_methods ?? []).includes("transfer");
       const { data, error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "payment-reminder",
@@ -413,6 +427,12 @@ export default function PortalPanel({
             portalUrl: publicUrl,
             paymentUrl: portal.payment_link_url ?? "",
             amountTtc: ht > 0 ? `${(ht * 1.2).toFixed(2).replace(".", ",")} € TTC` : "",
+            transferEnabled,
+            ribIban: paymentSettings?.iban ?? "",
+            ribBic: paymentSettings?.bic ?? "",
+            ribAccountHolder: paymentSettings?.account_holder ?? "",
+            ribBankName: paymentSettings?.bank_name ?? "",
+            ribTransferNote: paymentSettings?.transfer_note ?? "",
           },
         },
       });
@@ -424,6 +444,7 @@ export default function PortalPanel({
       setSendingReminder(false);
     }
   };
+
 
   const payState: "unpaid" | "deposit_paid" | "balance_unpaid" | "paid" =
     portal.admin_confirmed_paid_at !== null ? "paid" : (portal.payment_state ?? "unpaid");
@@ -691,8 +712,9 @@ export default function PortalPanel({
             {sendingReminder ? "Envoi…" : "Relancer le paiement par email"}
           </Button>
           <p className="text-[11px] text-muted-foreground">
-            Rappelle au client que le paiement par carte est disponible et que toute commande d'impression doit être réglée avant son lancement.
+            Rappelle au client des moyens de règlement disponibles (carte ou virement) et que toute commande d'impression doit être réglée avant son lancement.
           </p>
+
         </div>
 
         <div className="space-y-1.5 pb-1">

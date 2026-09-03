@@ -12,12 +12,29 @@ interface PaymentReminderProps {
   portalUrl?: string
   paymentUrl?: string
   amountTtc?: string
+  transferEnabled?: boolean
+  ribIban?: string
+  ribBic?: string
+  ribAccountHolder?: string
+  ribBankName?: string
+  ribTransferNote?: string
 }
 
-const PaymentReminderEmail = ({ name, portalUrl, paymentUrl, amountTtc }: PaymentReminderProps) => (
+const PaymentReminderEmail = ({
+  name,
+  portalUrl,
+  paymentUrl,
+  amountTtc,
+  transferEnabled,
+  ribIban,
+  ribBic,
+  ribAccountHolder,
+  ribBankName,
+  ribTransferNote,
+}: PaymentReminderProps) => (
   <Html lang="fr" dir="ltr">
     <Head />
-    <Preview>Rappel : le règlement de votre prestation est disponible par carte</Preview>
+    <Preview>Rappel : le règlement de votre prestation est disponible par carte ou virement</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Rappel de règlement</Heading>
@@ -28,8 +45,9 @@ const PaymentReminderEmail = ({ name, portalUrl, paymentUrl, amountTtc }: Paymen
           {amountTtc ? '.' : ''}
         </Text>
         <Text style={text}>
-          Pour vous faciliter la démarche, le <strong>paiement par carte bancaire</strong> est
-          disponible — il est sécurisé et ne prend que quelques instants.
+          Pour vous faciliter la démarche, plusieurs moyens de règlement sont disponibles :
+          le <strong>paiement par carte bancaire</strong> (sécurisé, quelques instants) et/ou
+          le <strong>virement bancaire</strong>.
         </Text>
         {paymentUrl && (
           <>
@@ -41,6 +59,22 @@ const PaymentReminderEmail = ({ name, portalUrl, paymentUrl, amountTtc }: Paymen
               <Link href={paymentUrl} style={link}>{paymentUrl}</Link>
             </Text>
           </>
+        )}
+        {transferEnabled && ribIban && (
+          <Section style={ribBox}>
+            <Text style={ribTitle}>Règlement par virement</Text>
+            <Text style={ribText}>
+              <strong>Bénéficiaire :</strong> {ribAccountHolder || SITE_NAME}<br />
+              {ribBankName && <><strong>Banque :</strong> {ribBankName}<br /></>}
+              <strong>IBAN :</strong> {ribIban}<br />
+              {ribBic && <><strong>BIC :</strong> {ribBic}<br /></>}
+              {ribTransferNote && (
+                <>
+                  <strong>Libellé à indiquer :</strong> {ribTransferNote}
+                </>
+              )}
+            </Text>
+          </Section>
         )}
         <Section style={notice}>
           <Text style={noticeText}>
@@ -75,6 +109,12 @@ export const template = {
     portalUrl: 'https://example.com/p/portail/abc',
     paymentUrl: 'https://example.com/pay',
     amountTtc: '240,00 € TTC',
+    transferEnabled: true,
+    ribIban: 'FR12 3456 7890 1234 5678 9012 345',
+    ribBic: 'ABCDEFGH',
+    ribAccountHolder: 'Atelier Rufo',
+    ribBankName: 'Exemple Banque',
+    ribTransferNote: 'Facture ABC - Camille',
   },
 } satisfies TemplateEntry
 
@@ -106,3 +146,13 @@ const noticeText = { fontSize: '14px', color: 'hsl(30, 40%, 25%)', lineHeight: '
 const footer = { fontSize: '13px', color: 'hsl(220, 9%, 46%)', margin: '32px 0 0' }
 const small = { fontSize: '13px', color: 'hsl(220, 9%, 46%)', lineHeight: '1.6', margin: '0 0 18px', wordBreak: 'break-all' as const }
 const link = { color: 'hsl(220, 13%, 13%)', textDecoration: 'underline' }
+const ribBox = {
+  backgroundColor: 'hsl(210, 20%, 98%)',
+  border: '1px solid hsl(220, 13%, 88%)',
+  borderRadius: '8px',
+  padding: '16px 18px',
+  margin: '0 0 22px',
+}
+const ribTitle = { fontSize: '14px', fontWeight: 600 as const, color: 'hsl(220, 13%, 13%)', margin: '0 0 10px' }
+const ribText = { fontSize: '14px', color: 'hsl(220, 9%, 30%)', lineHeight: '1.7', margin: '0' }
+
