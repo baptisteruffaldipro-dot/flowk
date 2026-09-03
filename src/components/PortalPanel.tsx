@@ -103,8 +103,16 @@ export default function PortalPanel({
   const [computedTotal, setComputedTotal] = useState<number>(0);
   const [computedPresta, setComputedPresta] = useState<number>(0);
   const [computedPrint, setComputedPrint] = useState<number>(0);
+  const [paymentSettings, setPaymentSettings] = useState<{
+    iban?: string | null;
+    bic?: string | null;
+    account_holder?: string | null;
+    bank_name?: string | null;
+    transfer_note?: string | null;
+  } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
+
 
   const table = entityType === "task" ? "tasks" : "projects";
   const effEmail = clientEmail || fetchedClient?.email || null;
