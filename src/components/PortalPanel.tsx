@@ -416,6 +416,7 @@ export default function PortalPanel({
     try {
       if (!portal.is_published) await publish(true);
       const ht = Number(portal.amount_due_ttc ?? 0);
+      const transferEnabled = (portal.payment_methods ?? []).includes("transfer");
       const { data, error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "payment-reminder",
@@ -426,6 +427,12 @@ export default function PortalPanel({
             portalUrl: publicUrl,
             paymentUrl: portal.payment_link_url ?? "",
             amountTtc: ht > 0 ? `${(ht * 1.2).toFixed(2).replace(".", ",")} € TTC` : "",
+            transferEnabled,
+            ribIban: paymentSettings?.iban ?? "",
+            ribBic: paymentSettings?.bic ?? "",
+            ribAccountHolder: paymentSettings?.account_holder ?? "",
+            ribBankName: paymentSettings?.bank_name ?? "",
+            ribTransferNote: paymentSettings?.transfer_note ?? "",
           },
         },
       });
@@ -437,6 +444,7 @@ export default function PortalPanel({
       setSendingReminder(false);
     }
   };
+
 
   const payState: "unpaid" | "deposit_paid" | "balance_unpaid" | "paid" =
     portal.admin_confirmed_paid_at !== null ? "paid" : (portal.payment_state ?? "unpaid");
