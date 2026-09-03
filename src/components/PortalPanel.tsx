@@ -712,8 +712,9 @@ export default function PortalPanel({
             {sendingReminder ? "Envoi…" : "Relancer le paiement par email"}
           </Button>
           <p className="text-[11px] text-muted-foreground">
-            Rappelle au client que le paiement par carte est disponible et que toute commande d'impression doit être réglée avant son lancement.
+            Rappelle au client des moyens de règlement disponibles (carte ou virement) et que toute commande d'impression doit être réglée avant son lancement.
           </p>
+
         </div>
 
         <div className="space-y-1.5 pb-1">
