@@ -146,3 +146,13 @@ const noticeText = { fontSize: '14px', color: 'hsl(30, 40%, 25%)', lineHeight: '
 const footer = { fontSize: '13px', color: 'hsl(220, 9%, 46%)', margin: '32px 0 0' }
 const small = { fontSize: '13px', color: 'hsl(220, 9%, 46%)', lineHeight: '1.6', margin: '0 0 18px', wordBreak: 'break-all' as const }
 const link = { color: 'hsl(220, 13%, 13%)', textDecoration: 'underline' }
+const ribBox = {
+  backgroundColor: 'hsl(210, 20%, 98%)',
+  border: '1px solid hsl(220, 13%, 88%)',
+  borderRadius: '8px',
+  padding: '16px 18px',
+  margin: '0 0 22px',
+}
+const ribTitle = { fontSize: '14px', fontWeight: 600 as const, color: 'hsl(220, 13%, 13%)', margin: '0 0 10px' }
+const ribText = { fontSize: '14px', color: 'hsl(220, 9%, 30%)', lineHeight: '1.7', margin: '0' }
+
