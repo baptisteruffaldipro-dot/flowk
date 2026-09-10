@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Copy, Link as LinkIcon, Plus, Trash2, Lock, Unlock, RefreshCcw, Upload, FileText, ExternalLink, Send } from "lucide-react";
+import { Copy, Link as LinkIcon, Plus, Trash2, Lock, Unlock, RefreshCcw, Upload, FileText, ExternalLink, Send, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { getPublicAppUrl } from "@/lib/publicUrl";
 import { computeTaskBilling } from "@/lib/billing";
@@ -45,6 +45,12 @@ type Portal = {
 };
 
 type Deliverable = { name: string; url: string };
+type PortalMessage = {
+  id: string;
+  author: string;
+  body: string;
+  created_at: string;
+};
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Brouillon",
@@ -110,6 +116,9 @@ export default function PortalPanel({
     bank_name?: string | null;
     transfer_note?: string | null;
   } | null>(null);
+  const [messages, setMessages] = useState<PortalMessage[]>([]);
+  const [messageReply, setMessageReply] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
 
@@ -140,6 +149,16 @@ export default function PortalPanel({
         .maybeSingle();
       row = created;
       setPortal(created as any);
+    }
+    if (row?.id) {
+      const { data: portalMessages } = await supabase
+        .from("client_portal_messages")
+        .select("id,author,body,created_at")
+        .eq("portal_id", row.id)
+        .order("created_at", { ascending: true });
+      setMessages((portalMessages as PortalMessage[] | null) ?? []);
+    } else {
+      setMessages([]);
     }
     const table = entityType === "task" ? "tasks" : "projects";
     const { data: e } = await supabase.from(table).select("deliverable_files,invoice_url,invoice_file_path").eq("id", entityId).maybeSingle();
@@ -442,6 +461,27 @@ export default function PortalPanel({
       toast.error(e?.message ?? "Erreur d'envoi");
     } finally {
       setSendingReminder(false);
+    }
+  };
+
+  const sendMessage = async () => {
+    const body = messageReply.trim();
+    if (!body) return;
+    setSendingMessage(true);
+    try {
+      const { data, error } = await supabase
+        .from("client_portal_messages")
+        .insert({ portal_id: portal.id, author: "admin", body })
+        .select("id,author,body,created_at")
+        .single();
+      if (error) throw error;
+      setMessages((current) => [...current, data as PortalMessage]);
+      setMessageReply("");
+      toast.success("Message envoyé au client");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Impossible d’envoyer le message");
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -817,7 +857,44 @@ export default function PortalPanel({
       </section>
 
       <section className="rounded-lg border border-border/70 p-4 space-y-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">5 · Notes internes</div>
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <MessageSquare className="h-3.5 w-3.5" />
+          5 · Échanges
+          {messages.length > 0 && <Badge variant="secondary" className="ml-auto text-[10px]">{messages.length}</Badge>}
+        </div>
+        {messages.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Aucun message pour le moment.</p>
+        ) : (
+          <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`rounded-md p-3 text-sm ${message.author === "client" ? "bg-primary/10" : "bg-muted/50"}`}
+              >
+                <div className="mb-1 text-[10px] uppercase text-muted-foreground">
+                  {message.author === "client" ? "Client" : "Studio"} · {new Date(message.created_at).toLocaleString("fr-FR")}
+                </div>
+                <div className="whitespace-pre-wrap">{message.body}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="space-y-2 border-t border-border/60 pt-3">
+          <Textarea
+            rows={3}
+            placeholder="Répondre au client…"
+            value={messageReply}
+            onChange={(event) => setMessageReply(event.target.value)}
+          />
+          <Button size="sm" onClick={sendMessage} disabled={!messageReply.trim() || sendingMessage}>
+            <Send className="mr-1.5 h-3.5 w-3.5" />
+            {sendingMessage ? "Envoi…" : "Envoyer"}
+          </Button>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border/70 p-4 space-y-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">6 · Notes internes</div>
       <div className="space-y-1.5">
         <Label className="text-xs">Notes admin (non visibles par le client)</Label>
         <Textarea
