@@ -32,6 +32,9 @@ const STATUS_TONE: Record<string, string> = {
 export default function Leads() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [replyLead, setReplyLead] = useState<any | null>(null);
+  const [replySubject, setReplySubject] = useState("");
+  const [replyBody, setReplyBody] = useState("");
 
   const load = async () => {
     const { data } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
