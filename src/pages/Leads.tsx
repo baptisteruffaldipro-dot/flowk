@@ -85,12 +85,39 @@ export default function Leads() {
 
   const replyTo = (lead: any) => {
     if (!lead.email) { toast.error("Pas d'email pour ce lead"); return; }
-    const subject = `Re: votre demande${lead.company ? ` – ${lead.company}` : ""}`;
     const greet = lead.name ? `Bonjour ${lead.name},` : "Bonjour,";
-    const quoted = lead.message ? `\n\n---\nVotre message :\n${lead.message.split("\n").map((l: string) => `> ${l}`).join("\n")}` : "";
-    const body = `${greet}\n\nMerci pour votre message, je reviens vers vous rapidement.\n\nBien à vous,${quoted}`;
-    window.location.href = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const quoted = lead.message
+      ? `\n\n---\nVotre message :\n${lead.message.split("\n").map((l: string) => `> ${l}`).join("\n")}`
+      : "";
+    setReplyLead(lead);
+    setReplySubject(`Re: votre demande${lead.company ? ` – ${lead.company}` : ""}`);
+    setReplyBody(`${greet}\n\nMerci pour votre message, je reviens vers vous rapidement.\n\nBien à vous,${quoted}`);
     if (!lead.read_at) markRead(lead.id);
+  };
+
+  const mailtoUrl = () =>
+    `mailto:${replyLead?.email}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyBody)}`;
+
+  const openInMailApp = () => {
+    const url = mailtoUrl();
+    const win = window.open(url, "_blank");
+    if (!win) {
+      try {
+        window.top!.location.href = url;
+      } catch {
+        toast.error("Impossible d'ouvrir la messagerie — copie le message.");
+      }
+    }
+  };
+
+  const copyReply = async () => {
+    const text = `À : ${replyLead?.email}\nObjet : ${replySubject}\n\n${replyBody}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Message copié");
+    } catch {
+      toast.error("Impossible de copier");
+    }
   };
 
   const unread = leads.filter((l) => !l.read_at).length;
