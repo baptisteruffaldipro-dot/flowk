@@ -13,7 +13,7 @@ export const EmailChangeEmail = ({ siteName, oldEmail, email, newEmail, confirma
         <Heading style={h1}>Confirmez votre nouvelle adresse</Heading>
         <Text style={text}>
           Vous avez demandé à modifier l'adresse email de votre compte {siteName} de{' '}
-          <Link href={`mailto:${email}`} style={link}>{email}</Link> vers{' '}
+          <Link href={`mailto:${oldEmail || email}`} style={link}>{oldEmail || email}</Link> vers{' '}
           <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>.
         </Text>
         <Button style={button} href={confirmationUrl}>Confirmer le changement</Button>
