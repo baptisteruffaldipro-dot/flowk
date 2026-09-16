@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
           </div>
         `
         // Use the transactional email function
-        await fetch(`${SUPABASE_URL}/functions/v1/send-transactional-email`, {
+        await fetch(`${SUPABASE_URL}/functions/v1/send-app-email`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

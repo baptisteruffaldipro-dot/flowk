@@ -70,7 +70,7 @@ export default function BatDetail() {
     await update({ status: "en_relecture", sent_at: new Date().toISOString() });
     const publicUrl = `${getPublicAppUrl()}/p/bat/${bat.share_token}`;
     if (bat?.clients?.email) {
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
+      const { error } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "bat-ready",
           recipientEmail: bat.clients.email,

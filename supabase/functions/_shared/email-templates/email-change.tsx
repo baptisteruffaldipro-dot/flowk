@@ -2,9 +2,9 @@
 import * as React from 'npm:react@18.3.1'
 import { Body, Button, Container, Head, Heading, Html, Link, Preview, Text } from 'npm:@react-email/components@0.0.22'
 
-interface Props { siteName: string; email: string; newEmail: string; confirmationUrl: string }
+interface Props { siteName: string; oldEmail?: string; email: string; newEmail: string; confirmationUrl: string }
 
-export const EmailChangeEmail = ({ siteName, email, newEmail, confirmationUrl }: Props) => (
+export const EmailChangeEmail = ({ siteName, oldEmail, email, newEmail, confirmationUrl }: Props) => (
   <Html lang="fr" dir="ltr">
     <Head />
     <Preview>Confirmez votre nouvelle adresse {siteName}</Preview>
@@ -13,7 +13,7 @@ export const EmailChangeEmail = ({ siteName, email, newEmail, confirmationUrl }:
         <Heading style={h1}>Confirmez votre nouvelle adresse</Heading>
         <Text style={text}>
           Vous avez demandé à modifier l'adresse email de votre compte {siteName} de{' '}
-          <Link href={`mailto:${email}`} style={link}>{email}</Link> vers{' '}
+          <Link href={`mailto:${oldEmail || email}`} style={link}>{oldEmail || email}</Link> vers{' '}
           <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>.
         </Text>
         <Button style={button} href={confirmationUrl}>Confirmer le changement</Button>

@@ -174,7 +174,7 @@ export default function PrintOrderDetail() {
 
   const notify = async (kind: "bat_ready" | "delivered") => {
     if (!order?.clients?.email) return toast.error("Email client manquant");
-    const { error } = await supabase.functions.invoke("send-transactional-email", {
+    const { error } = await supabase.functions.invoke("send-app-email", {
       body: {
         templateName: kind === "bat_ready" ? "bat-ready" : "files-delivered",
         recipientEmail: order.clients.email,

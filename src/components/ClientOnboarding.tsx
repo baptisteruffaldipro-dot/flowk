@@ -100,7 +100,7 @@ export default function ClientOnboarding({ clientId, mode }: { clientId: string;
       await supabase.from("client_portals" as any).update({ is_published: true }).eq("id", portal.id);
     }
     const portalUrl = `${getPublicAppUrl()}/p/c/${portal.share_token}`;
-    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+    const { data, error } = await supabase.functions.invoke("send-app-email", {
       body: {
         templateName: "onboarding-ready",
         recipientEmail: clientInfo.email,
