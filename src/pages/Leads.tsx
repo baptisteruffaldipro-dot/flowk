@@ -5,9 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { fmtDateTime } from "@/lib/format";
 import { toast } from "sonner";
-import { Mail, Phone, Trash2, Copy, Reply } from "lucide-react";
+import { Mail, Phone, Trash2, Copy, Reply, ExternalLink } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   nouveau: "Nouveau",
@@ -28,6 +32,9 @@ const STATUS_TONE: Record<string, string> = {
 export default function Leads() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [replyLead, setReplyLead] = useState<any | null>(null);
+  const [replySubject, setReplySubject] = useState("");
+  const [replyBody, setReplyBody] = useState("");
 
   const load = async () => {
     const { data } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
@@ -81,12 +88,39 @@ export default function Leads() {
 
   const replyTo = (lead: any) => {
     if (!lead.email) { toast.error("Pas d'email pour ce lead"); return; }
-    const subject = `Re: votre demande${lead.company ? ` – ${lead.company}` : ""}`;
     const greet = lead.name ? `Bonjour ${lead.name},` : "Bonjour,";
-    const quoted = lead.message ? `\n\n---\nVotre message :\n${lead.message.split("\n").map((l: string) => `> ${l}`).join("\n")}` : "";
-    const body = `${greet}\n\nMerci pour votre message, je reviens vers vous rapidement.\n\nBien à vous,${quoted}`;
-    window.location.href = `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const quoted = lead.message
+      ? `\n\n---\nVotre message :\n${lead.message.split("\n").map((l: string) => `> ${l}`).join("\n")}`
+      : "";
+    setReplyLead(lead);
+    setReplySubject(`Re: votre demande${lead.company ? ` – ${lead.company}` : ""}`);
+    setReplyBody(`${greet}\n\nMerci pour votre message, je reviens vers vous rapidement.\n\nBien à vous,${quoted}`);
     if (!lead.read_at) markRead(lead.id);
+  };
+
+  const mailtoUrl = () =>
+    `mailto:${replyLead?.email}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyBody)}`;
+
+  const openInMailApp = () => {
+    const url = mailtoUrl();
+    const win = window.open(url, "_blank");
+    if (!win) {
+      try {
+        window.top!.location.href = url;
+      } catch {
+        toast.error("Impossible d'ouvrir la messagerie — copie le message.");
+      }
+    }
+  };
+
+  const copyReply = async () => {
+    const text = `À : ${replyLead?.email}\nObjet : ${replySubject}\n\n${replyBody}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Message copié");
+    } catch {
+      toast.error("Impossible de copier");
+    }
   };
 
   const unread = leads.filter((l) => !l.read_at).length;
@@ -169,6 +203,36 @@ export default function Leads() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!replyLead} onOpenChange={(open) => { if (!open) setReplyLead(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Répondre à {replyLead?.name || replyLead?.email}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Destinataire</Label>
+              <Input readOnly value={replyLead?.email ?? ""} className="text-xs" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Objet</Label>
+              <Input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Message</Label>
+              <Textarea rows={10} value={replyBody} onChange={(e) => setReplyBody(e.target.value)} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={openInMailApp}>
+                <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Ouvrir dans ma messagerie
+              </Button>
+              <Button size="sm" variant="outline" onClick={copyReply}>
+                <Copy className="mr-1.5 h-3.5 w-3.5" /> Copier le message
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
