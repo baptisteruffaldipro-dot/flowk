@@ -2,9 +2,9 @@
 import * as React from 'npm:react@18.3.1'
 import { Body, Button, Container, Head, Heading, Html, Link, Preview, Text } from 'npm:@react-email/components@0.0.22'
 
-interface Props { siteName: string; email: string; newEmail: string; confirmationUrl: string }
+interface Props { siteName: string; oldEmail?: string; email: string; newEmail: string; confirmationUrl: string }
 
-export const EmailChangeEmail = ({ siteName, email, newEmail, confirmationUrl }: Props) => (
+export const EmailChangeEmail = ({ siteName, oldEmail, email, newEmail, confirmationUrl }: Props) => (
   <Html lang="fr" dir="ltr">
     <Head />
     <Preview>Confirmez votre nouvelle adresse {siteName}</Preview>
