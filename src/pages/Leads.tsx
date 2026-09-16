@@ -203,6 +203,36 @@ export default function Leads() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!replyLead} onOpenChange={(open) => { if (!open) setReplyLead(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Répondre à {replyLead?.name || replyLead?.email}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Destinataire</Label>
+              <Input readOnly value={replyLead?.email ?? ""} className="text-xs" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Objet</Label>
+              <Input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Message</Label>
+              <Textarea rows={10} value={replyBody} onChange={(e) => setReplyBody(e.target.value)} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={openInMailApp}>
+                <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Ouvrir dans ma messagerie
+              </Button>
+              <Button size="sm" variant="outline" onClick={copyReply}>
+                <Copy className="mr-1.5 h-3.5 w-3.5" /> Copier le message
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
