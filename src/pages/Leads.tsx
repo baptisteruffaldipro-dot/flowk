@@ -5,9 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { fmtDateTime } from "@/lib/format";
 import { toast } from "sonner";
-import { Mail, Phone, Trash2, Copy, Reply } from "lucide-react";
+import { Mail, Phone, Trash2, Copy, Reply, ExternalLink } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   nouveau: "Nouveau",
