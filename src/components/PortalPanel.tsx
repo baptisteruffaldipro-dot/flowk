@@ -385,7 +385,7 @@ export default function PortalPanel({
     if (!isUnlocked) return toast.error("Livraison verrouillée — débloquez d'abord");
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      const { data, error } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: notifyTemplate ?? "files-delivered",
           recipientEmail: effEmail,
@@ -412,7 +412,7 @@ export default function PortalPanel({
     setSendingLink(true);
     try {
       if (!portal.is_published) await publish(true);
-      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      const { data, error } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "onboarding-ready",
           recipientEmail: to,
@@ -436,7 +436,7 @@ export default function PortalPanel({
       if (!portal.is_published) await publish(true);
       const ht = Number(portal.amount_due_ttc ?? 0);
       const transferEnabled = (portal.payment_methods ?? []).includes("transfer");
-      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      const { data, error } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "payment-reminder",
           recipientEmail: effEmail,

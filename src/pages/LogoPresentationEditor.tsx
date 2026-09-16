@@ -241,7 +241,7 @@ export default function LogoPresentationEditor() {
     if (!client?.email) { toast.error("Le client n'a pas d'email enregistré"); return; }
     setSending(true);
     const presentationUrl = `${window.location.origin}/p/logo/${row.share_token}`;
-    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+    const { data, error } = await supabase.functions.invoke("send-app-email", {
       body: {
         templateName: "logo-ready",
         recipientEmail: client.email,

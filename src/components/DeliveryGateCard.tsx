@@ -20,7 +20,7 @@ type Props = {
   table: "tasks" | "print_orders" | "logo_presentations";
   row: DeliveryGateRow & { client_id?: string | null };
   onUpdated: () => void;
-  /** envoie l'email "fichiers prêts" via send-transactional-email */
+  /** envoie l'email "fichiers prêts" via send-app-email */
   notifyTemplate?: "files-delivered" | "logo-ready";
   /** données passées à l'email */
   notifyContext?: { description?: string; portalUrl?: string };
@@ -154,7 +154,7 @@ export default function DeliveryGateCard({
     if (status.state !== "available") return toast.error("Livraison non disponible — débloquez d'abord");
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      const { data, error } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: notifyTemplate ?? "files-delivered",
           recipientEmail: clientEmail,

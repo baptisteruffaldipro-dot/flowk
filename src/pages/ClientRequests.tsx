@@ -78,7 +78,7 @@ export default function ClientRequests() {
     const deadline = r.deadline ? new Date(r.deadline).toLocaleDateString("fr-FR") : "";
     const amount = r.estimated_amount ? Number(r.estimated_amount).toFixed(2) : "";
     try {
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
+      const { error } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "client-request-link",
           recipientEmail: to,
