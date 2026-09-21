@@ -9,6 +9,20 @@ import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 import { Upload, Loader2, Sparkles } from "lucide-react";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
+import PriceTiersEditor, { PriceTier } from "@/components/PriceTiersEditor";
+
+// Parse un texte collé du type "25 ex. : 56 € HT" (une ligne par tarif)
+function parseTiersText(raw: string): PriceTier[] {
+  const out: PriceTier[] = [];
+  for (const line of raw.split(/\n+/)) {
+    const m = line.match(/([\d\s]+)\s*(?:ex\.?|exemplaires?)?\s*[:=–-]\s*([\d\s.,]+)\s*€?\s*(?:HT|TTC)?/i);
+    if (!m) continue;
+    const qty = parseInt(m[1].replace(/\s/g, ""), 10);
+    const price = parseFloat(m[2].replace(/\s/g, "").replace(",", "."));
+    if (Number.isFinite(qty) && qty > 0 && Number.isFinite(price)) out.push({ quantity: qty, price });
+  }
+  return out;
+}
 
 type Task = {
   id: string;
@@ -34,6 +48,8 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
   const [parsingNote, setParsingNote] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [products, setProducts] = useState<PrintProduct[]>([]);
+  const [tiers, setTiers] = useState<PriceTier[]>([]);
+  const [tiersText, setTiersText] = useState("");
   const [form, setForm] = useState({
     description: "",
     reference: "",
@@ -66,6 +82,8 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
         estimated_delivery_date: "",
       });
       setProducts([]);
+      setTiers([]);
+      setTiersText("");
       setNoteText("");
     }
   }, [open, task?.id]);
@@ -165,6 +183,7 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
         observations: form.observations.trim() || null,
         estimated_delivery_date: form.estimated_delivery_date || null,
         products: products as any,
+        price_tiers: tiers as any,
       }).select().single();
       if (error || !inserted) { toast.error(error?.message ?? "Erreur"); return; }
 
@@ -273,6 +292,38 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
             <Label className="text-xs">Observations</Label>
             <Textarea rows={2} value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} />
           </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t space-y-2">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground block">Tarifs par quantité (HT)</Label>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Coller un barème</Label>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!tiersText.trim()}
+                onClick={() => {
+                  const parsed = parseTiersText(tiersText);
+                  if (parsed.length === 0) return toast.error("Aucun tarif détecté — format attendu : « 100 ex. : 70 € HT »");
+                  setTiers(parsed);
+                  toast.success(`${parsed.length} tarifs importés`);
+                }}
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1" />
+                Importer
+              </Button>
+            </div>
+            <Textarea
+              value={tiersText}
+              onChange={(e) => setTiersText(e.target.value)}
+              placeholder={"Colle le barème de l'imprimeur, une ligne par tarif :\n25 ex. : 56 € HT\n50 ex. : 62 € HT\n100 ex. : 70 € HT"}
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">Une ligne par tarif (ex : « 100 ex. : 70 € HT »). Tu peux ensuite ajuster chaque ligne.</p>
+          </div>
+          <PriceTiersEditor value={tiers} onChange={setTiers} />
         </div>
 
         <div className="mt-4 pt-4 border-t">
