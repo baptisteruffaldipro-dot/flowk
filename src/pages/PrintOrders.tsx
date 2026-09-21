@@ -14,7 +14,21 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
+import PriceTiersEditor, { PriceTier } from "@/components/PriceTiersEditor";
 import ClientSelectField from "@/components/ClientSelectField";
+
+// Parse un texte collé du type "25 ex. : 56 € HT" (une ligne par tarif)
+function parseTiersText(raw: string): PriceTier[] {
+  const out: PriceTier[] = [];
+  for (const line of raw.split(/\n+/)) {
+    const m = line.match(/([\d\s]+)\s*(?:ex\.?|exemplaires?)?\s*[:=–-]\s*([\d\s.,]+)\s*€?\s*(?:HT|TTC)?/i);
+    if (!m) continue;
+    const qty = parseInt(m[1].replace(/\s/g, ""), 10);
+    const price = parseFloat(m[2].replace(/\s/g, "").replace(",", "."));
+    if (Number.isFinite(qty) && qty > 0 && Number.isFinite(price)) out.push({ quantity: qty, price });
+  }
+  return out;
+}
 
 export default function PrintOrders() {
   const [bats, setBats] = useState<any[]>([]);
@@ -31,6 +45,8 @@ export default function PrintOrders() {
     estimated_delivery_date: "",
   });
   const [products, setProducts] = useState<PrintProduct[]>([]);
+  const [tiers, setTiers] = useState<PriceTier[]>([]);
+  const [tiersText, setTiersText] = useState("");
 
   const load = async () => {
     const [b, o, c, inv] = await Promise.all([
@@ -81,12 +97,15 @@ export default function PrintOrders() {
       observations: form.observations.trim() || null,
       estimated_delivery_date: form.estimated_delivery_date || null,
       products: products as any,
+      price_tiers: tiers as any,
     });
     if (error) return toast.error(error.message);
     toast.success("Commande créée");
     setOpen(false);
     setForm({ description: "", client_id: "", amount: "", status: "a_commander", reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "", estimated_delivery_date: "" });
     setProducts([]);
+    setTiers([]);
+    setTiersText("");
     setNoteText("");
     load();
   };
