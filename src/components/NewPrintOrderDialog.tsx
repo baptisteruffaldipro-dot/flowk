@@ -167,7 +167,7 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
 
     setSaving(true);
     try {
-      const { data: inserted, error } = await supabase.from("print_orders").insert({
+      const { data: inserted, error } = await supabase.from("print_orders").insert(({
         description: form.description.trim(),
         client_id: task.client_id,
         project_id: task.project_id || null,
@@ -184,7 +184,7 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
         estimated_delivery_date: form.estimated_delivery_date || null,
         products: products as any,
         price_tiers: tiers as any,
-      }).select().single();
+      }) as any).select().single();
       if (error || !inserted) { toast.error(error?.message ?? "Erreur"); return; }
 
       toast.success("Commande d'impression créée");

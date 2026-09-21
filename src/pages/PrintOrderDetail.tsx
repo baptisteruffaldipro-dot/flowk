@@ -156,7 +156,7 @@ export default function PrintOrderDetail() {
 
   const saveTiers = async () => {
     setSavingTiers(true);
-    const { error } = await supabase.from("print_orders").update({ price_tiers: tiers as any }).eq("id", id);
+    const { error } = await supabase.from("print_orders").update({ price_tiers: tiers } as any).eq("id", id);
     setSavingTiers(false);
     if (error) return toast.error(error.message);
     toast.success("Tarifs enregistrés");
