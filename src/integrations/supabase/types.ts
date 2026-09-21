@@ -2272,6 +2272,7 @@ export type Database = {
           invoice_url: string | null
           observations: string | null
           payment_status: Database["public"]["Enums"]["print_payment_status"]
+          price_tiers: Json
           products: Json
           project_id: string | null
           quantity: number | null
@@ -2307,6 +2308,7 @@ export type Database = {
           invoice_url?: string | null
           observations?: string | null
           payment_status?: Database["public"]["Enums"]["print_payment_status"]
+          price_tiers?: Json
           products?: Json
           project_id?: string | null
           quantity?: number | null
@@ -2342,6 +2344,7 @@ export type Database = {
           invoice_url?: string | null
           observations?: string | null
           payment_status?: Database["public"]["Enums"]["print_payment_status"]
+          price_tiers?: Json
           products?: Json
           project_id?: string | null
           quantity?: number | null
