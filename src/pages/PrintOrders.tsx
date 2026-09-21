@@ -14,7 +14,21 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
+import PriceTiersEditor, { PriceTier } from "@/components/PriceTiersEditor";
 import ClientSelectField from "@/components/ClientSelectField";
+
+// Parse un texte collé du type "25 ex. : 56 € HT" (une ligne par tarif)
+function parseTiersText(raw: string): PriceTier[] {
+  const out: PriceTier[] = [];
+  for (const line of raw.split(/\n+/)) {
+    const m = line.match(/([\d\s]+)\s*(?:ex\.?|exemplaires?)?\s*[:=–-]\s*([\d\s.,]+)\s*€?\s*(?:HT|TTC)?/i);
+    if (!m) continue;
+    const qty = parseInt(m[1].replace(/\s/g, ""), 10);
+    const price = parseFloat(m[2].replace(/\s/g, "").replace(",", "."));
+    if (Number.isFinite(qty) && qty > 0 && Number.isFinite(price)) out.push({ quantity: qty, price });
+  }
+  return out;
+}
 
 export default function PrintOrders() {
   const [bats, setBats] = useState<any[]>([]);
@@ -31,6 +45,8 @@ export default function PrintOrders() {
     estimated_delivery_date: "",
   });
   const [products, setProducts] = useState<PrintProduct[]>([]);
+  const [tiers, setTiers] = useState<PriceTier[]>([]);
+  const [tiersText, setTiersText] = useState("");
 
   const load = async () => {
     const [b, o, c, inv] = await Promise.all([
@@ -81,12 +97,15 @@ export default function PrintOrders() {
       observations: form.observations.trim() || null,
       estimated_delivery_date: form.estimated_delivery_date || null,
       products: products as any,
+      price_tiers: tiers as any,
     });
     if (error) return toast.error(error.message);
     toast.success("Commande créée");
     setOpen(false);
     setForm({ description: "", client_id: "", amount: "", status: "a_commander", reference: "", quantity: "", format: "", grammage: "", support: "", colors: "", finitions: "", observations: "", estimated_delivery_date: "" });
     setProducts([]);
+    setTiers([]);
+    setTiersText("");
     setNoteText("");
     load();
   };
@@ -289,6 +308,37 @@ export default function PrintOrders() {
                   <Label className="text-xs">Observations</Label>
                   <Input value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} maxLength={500} />
                 </div>
+              </div>
+              <div className="mt-4 pt-4 border-t space-y-2">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground block">Tarifs par quantité (HT)</Label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Coller un barème</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={!tiersText.trim()}
+                      onClick={() => {
+                        const parsed = parseTiersText(tiersText);
+                        if (parsed.length === 0) return toast.error("Aucun tarif détecté — format attendu : « 100 ex. : 70 € HT »");
+                        setTiers(parsed);
+                        toast.success(`${parsed.length} tarifs importés`);
+                      }}
+                    >
+                      <Sparkles className="h-3.5 w-3.5 mr-1" />
+                      Importer
+                    </Button>
+                  </div>
+                  <Textarea
+                    value={tiersText}
+                    onChange={(e) => setTiersText(e.target.value)}
+                    placeholder={"Colle le barème de l'imprimeur, une ligne par tarif :\n25 ex. : 56 € HT\n50 ex. : 62 € HT\n100 ex. : 70 € HT"}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">Une ligne par tarif. Tu peux ensuite ajuster chaque ligne.</p>
+                </div>
+                <PriceTiersEditor value={tiers} onChange={setTiers} />
               </div>
               <div className="mt-4 pt-4 border-t">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
