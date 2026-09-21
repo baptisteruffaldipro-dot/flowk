@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import BatViewer from "@/components/BatViewer";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
+import PriceTiersEditor, { PriceTier } from "@/components/PriceTiersEditor";
 import DeliveryGateCard from "@/components/DeliveryGateCard";
 import ClientSelectField from "@/components/ClientSelectField";
 import BusinessUnitCard from "@/components/finance/BusinessUnitCard";
@@ -30,7 +31,9 @@ export default function PrintOrderDetail() {
   const livInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [products, setProducts] = useState<PrintProduct[]>([]);
+  const [tiers, setTiers] = useState<PriceTier[]>([]);
   const [savingProducts, setSavingProducts] = useState(false);
+  const [savingTiers, setSavingTiers] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<any>({});
   const [savingForm, setSavingForm] = useState(false);
@@ -47,6 +50,7 @@ export default function PrintOrderDetail() {
       .maybeSingle();
     setOrder(data);
     setProducts(((data as any)?.products as PrintProduct[]) ?? []);
+    setTiers(((data as any)?.price_tiers as PriceTier[]) ?? []);
     setForm({
       description: data?.description ?? "",
       reference: data?.reference ?? "",
@@ -147,6 +151,15 @@ export default function PrintOrderDetail() {
     setSavingProducts(false);
     if (error) return toast.error(error.message);
     toast.success("Produits enregistrés");
+    load();
+  };
+
+  const saveTiers = async () => {
+    setSavingTiers(true);
+    const { error } = await supabase.from("print_orders").update({ price_tiers: tiers } as any).eq("id", id);
+    setSavingTiers(false);
+    if (error) return toast.error(error.message);
+    toast.success("Tarifs enregistrés");
     load();
   };
 
@@ -448,6 +461,19 @@ export default function PrintOrderDetail() {
           </div>
         </div>
         )}
+      </Card>
+
+      <Card className="p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-sm font-semibold">Tarifs par quantité</h2>
+            <p className="text-xs text-muted-foreground">Barème dégressif communiqué par l'imprimeur (HT)</p>
+          </div>
+          <Button size="sm" onClick={saveTiers} disabled={savingTiers}>
+            {savingTiers ? "Enregistrement…" : "Enregistrer"}
+          </Button>
+        </div>
+        <PriceTiersEditor value={tiers} onChange={setTiers} />
       </Card>
 
       <Card className="p-5 mb-6">
