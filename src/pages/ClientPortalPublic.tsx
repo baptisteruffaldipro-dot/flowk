@@ -11,6 +11,8 @@ import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileTe
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 
+type PriceTier = { quantity?: number | null; models?: number | null; price?: number | null };
+
 const STATUS_LABEL: Record<string, string> = {
   draft: "En préparation",
   awaiting_validation: "En attente de votre validation",
@@ -129,6 +131,14 @@ export default function ClientPortalPublic() {
 
 
   const canValidate = p.status === "draft" || p.status === "awaiting_validation";
+
+  const formatTierNumber = (value: number) =>
+    value.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+
+  const getPriceTiers = (po: any): PriceTier[] =>
+    Array.isArray(po?.price_tiers)
+      ? po.price_tiers.filter((tier: PriceTier) => tier.quantity != null && tier.price != null)
+      : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -305,6 +315,26 @@ export default function ClientPortalPublic() {
                   </div>
                   {po.observations && (
                     <p className="text-xs text-muted-foreground whitespace-pre-wrap">{po.observations}</p>
+                  )}
+                  {getPriceTiers(po).length > 0 && (
+                    <div className="rounded-lg border border-border/60 p-3 space-y-2">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Tarifs par quantité HT</div>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {getPriceTiers(po).map((tier, tierIndex) => {
+                          const quantity = Number(tier.quantity ?? 0);
+                          const price = Number(tier.price ?? 0);
+                          return (
+                            <div key={`${po.id ?? i}-tier-${tierIndex}`} className="flex items-center justify-between gap-3 text-sm">
+                              <span className="text-muted-foreground">
+                                {formatTierNumber(quantity)} ex.
+                                {tier.models ? ` · ${formatTierNumber(Number(tier.models))} modèles` : ""}
+                              </span>
+                              <span className="font-medium tabular-nums">{price.toFixed(2)} € HT</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}
