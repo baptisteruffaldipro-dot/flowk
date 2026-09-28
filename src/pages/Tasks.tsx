@@ -1319,8 +1319,16 @@ export default function Tasks() {
   const filteredProjects = projects.filter((p) => !form.client_id || p.client_id === form.client_id);
 
   const q = search.trim().toLowerCase();
-  const filteredTasks = q
+  const preFiltered = prestationFilter
     ? tasks.filter((t) => {
+        const list: string[] = (t.prestations && t.prestations.length > 0)
+          ? t.prestations
+          : (t.prestation ? [t.prestation] : []);
+        return list.includes(prestationFilter);
+      })
+    : tasks;
+  const filteredTasks = q
+    ? preFiltered.filter((t) => {
         const prestList: string[] = (t.prestations && t.prestations.length > 0)
           ? t.prestations
           : (t.prestation ? [t.prestation] : []);
