@@ -1540,6 +1540,19 @@ export default function Tasks() {
             Seule la colonne « Aujourd'hui » est affichée. Glisse 1 à 3 tâches dedans pour la journée.
           </span>
         )}
+        <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+        {(["impression", "devis", "creation"] as const).map((k) => (
+          <Button
+            key={k}
+            size="sm"
+            variant={prestationFilter === k ? "default" : "outline"}
+            onClick={() => setPrestationFilter((v) => (v === k ? null : k))}
+            className="gap-1.5"
+          >
+            {k === "impression" ? <Printer className="h-3.5 w-3.5" /> : k === "devis" ? <FileText className="h-3.5 w-3.5" /> : <PenTool className="h-3.5 w-3.5" />}
+            {PRESTATION_LABEL[k]}
+          </Button>
+        ))}
       </div>
 
       <Tabs defaultValue="kanban">
