@@ -42,6 +42,8 @@ export default function Agenda() {
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
   const [bForm, setBForm] = useState<Omit<Block, "id">>(emptyBlock());
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [dragHint, setDragHint] = useState<{ key: string; min: number } | null>(null);
+  const gridScrollRef = { current: null as HTMLDivElement | null };
 
   const load = async () => {
     const [t, b] = await Promise.all([
@@ -94,20 +96,36 @@ export default function Agenda() {
     if (error) { toast.error(error.message); load(); }
   };
 
+  const clearDrag = () => { setDragOver(null); setDragHint(null); };
+
   const onDrop = (e: React.DragEvent, date: Date, startMin: number | null) => {
-    e.preventDefault(); setDragOver(null);
+    e.preventDefault(); clearDrag();
     const id = e.dataTransfer.getData("text/task");
     if (!id) return;
     updateTask(id, { scheduled_date: ymd(date), scheduled_start: startMin == null ? null : minToTime(startMin) });
   };
-  const dropOnGrid = (e: React.DragEvent, date: Date) => {
+  const snapMin = (e: React.DragEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const y = e.clientY - rect.top;
     let min = START_H * 60 + Math.round((y / HOUR_PX) * 60 / 15) * 15;
-    min = Math.max(START_H * 60, Math.min(END_H * 60 - 15, min));
-    onDrop(e, date, min);
+    return Math.max(START_H * 60, Math.min(END_H * 60 - 15, min));
   };
-  const allowDrop = (key: string) => (e: React.DragEvent) => { e.preventDefault(); if (dragOver !== key) setDragOver(key); };
+  const dropOnGrid = (e: React.DragEvent, date: Date) => onDrop(e, date, snapMin(e));
+  const allowDrop = (key: string) => (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOver !== key) setDragOver(key); };
+  const allowGridDrop = (key: string) => (e: React.DragEvent) => {
+    e.preventDefault(); e.dataTransfer.dropEffect = "move";
+    if (dragOver !== key) setDragOver(key);
+    const min = snapMin(e);
+    setDragHint((h) => (h && h.key === key && h.min === min ? h : { key, min }));
+    // auto-scroll the grid when dragging near its top/bottom edge
+    const scroller = gridScrollRef.current;
+    if (scroller) {
+      const r = scroller.getBoundingClientRect();
+      const EDGE = 70, SPEED = 14;
+      if (e.clientY < r.top + EDGE) scroller.scrollTop -= SPEED;
+      else if (e.clientY > r.bottom - EDGE) scroller.scrollTop += SPEED;
+    }
+  };
 
   const shift = (dir: number) => {
     if (view === "day") setAnchor(addDays(anchor, dir));
@@ -151,7 +169,16 @@ export default function Agenda() {
         <PopoverTrigger asChild>
           <div
             draggable
-            onDragStart={(e) => { e.dataTransfer.setData("text/task", t.id); e.dataTransfer.effectAllowed = "move"; }}
+            onDragStart={(e) => {
+              e.dataTransfer.setData("text/task", t.id);
+              e.dataTransfer.effectAllowed = "move";
+              const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+              ghost.style.width = "180px"; ghost.style.opacity = "0.9";
+              document.body.appendChild(ghost);
+              e.dataTransfer.setDragImage(ghost, 20, 12);
+              requestAnimationFrame(() => document.body.removeChild(ghost));
+            }}
+            onDragEnd={clearDrag}
             style={{ background: catBg(cat, 0.16), borderLeftColor: catVar(cat), ...style }}
             className={cn(
               "group cursor-grab active:cursor-grabbing rounded-md border-l-4 px-2 py-1 text-left overflow-hidden hover:brightness-95 transition",
@@ -242,15 +269,15 @@ export default function Agenda() {
           const key = `all-${ymd(d)}`;
           const list = (tasksByDay.get(ymd(d)) ?? []).filter((t) => !t.scheduled_start);
           return (
-            <div key={key} onDragOver={allowDrop(key)} onDragLeave={() => setDragOver(null)} onDrop={(e) => onDrop(e, d, null)}
-              className={cn("border-b border-l p-1 min-h-[56px] space-y-1 transition-colors", dragOver === key && "bg-accent/10")}>
+            <div key={key} onDragOver={allowDrop(key)} onDragLeave={clearDrag} onDrop={(e) => onDrop(e, d, null)}
+              className={cn("border-b border-l p-1 min-h-[56px] space-y-1 transition-colors", dragOver === key && "bg-accent/15 ring-2 ring-inset ring-accent/40")}>
               {list.map((t) => <TaskChip key={t.id} t={t} compact={view === "week"} />)}
               {list.length === 0 && <div className="text-[10px] text-muted-foreground/60 text-center pt-3">glisse ici</div>}
             </div>
           );
         })}
       </div>
-      <div className="max-h-[70vh] overflow-y-auto">
+      <div className="max-h-[70vh] overflow-y-auto" ref={(el) => { gridScrollRef.current = el; }} onDragLeave={clearDrag}>
         <div className="grid relative" style={{ gridTemplateColumns: `52px repeat(${days.length}, minmax(0, 1fr))` }}>
           <div>
             {hours.map((h) => <div key={h} style={{ height: HOUR_PX }} className="text-[10px] text-muted-foreground text-right pr-1.5 pt-0.5">{h}:00</div>)}
@@ -274,8 +301,14 @@ export default function Agenda() {
             const nowMin = now.getHours() * 60 + now.getMinutes();
             const isToday = ymd(d) === ymd(now);
             return (
-              <div key={key} onDragOver={allowDrop(key)} onDragLeave={() => setDragOver(null)} onDrop={(e) => dropOnGrid(e, d)}
-                className={cn("relative border-l", dragOver === key && "bg-accent/5")} style={{ height: hours.length * HOUR_PX }}>
+              <div key={key} onDragOver={allowGridDrop(key)} onDragLeave={clearDrag} onDrop={(e) => dropOnGrid(e, d)}
+                className={cn("relative border-l transition-colors", dragOver === key && "bg-accent/10")} style={{ height: hours.length * HOUR_PX }}>
+                {dragHint?.key === key && (
+                  <div className="absolute inset-x-0 z-20 pointer-events-none" style={{ top: ((dragHint.min - START_H * 60) / 60) * HOUR_PX }}>
+                    <div className="h-0.5 bg-accent" />
+                    <div className="absolute right-1 -top-2.5 rounded bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-foreground shadow">{minToTime(dragHint.min)}</div>
+                  </div>
+                )}
                 {hours.map((h, i) => <div key={h} className={cn("absolute inset-x-0 border-t", i % 1 === 0 && "border-border/60")} style={{ top: i * HOUR_PX }} />)}
                 {placed.map((ev) => {
                   const top = ((ev.start - START_H * 60) / 60) * HOUR_PX;
@@ -322,8 +355,8 @@ export default function Agenda() {
           const inMonth = d.getMonth() === anchor.getMonth();
           const isToday = ymd(d) === ymd(new Date());
           return (
-            <div key={key} onDragOver={allowDrop(key)} onDragLeave={() => setDragOver(null)} onDrop={(e) => onDrop(e, d, null)}
-              className={cn("min-h-[120px] border-b border-r p-1.5 space-y-1 transition-colors", !inMonth && "bg-muted/30 opacity-60", (i + 1) % 7 === 0 && "border-r-0", dragOver === key && "bg-accent/10")}>
+            <div key={key} onDragOver={allowDrop(key)} onDragLeave={clearDrag} onDrop={(e) => onDrop(e, d, null)}
+              className={cn("min-h-[120px] border-b border-r p-1.5 space-y-1 transition-colors", !inMonth && "bg-muted/30 opacity-60", (i + 1) % 7 === 0 && "border-r-0", dragOver === key && "bg-accent/15 ring-2 ring-inset ring-accent/40")}>
               <div className="flex items-center justify-between">
                 <button onClick={() => { setAnchor(d); setView("day"); }} className={cn("text-xs font-semibold px-1.5 rounded", isToday && "bg-accent text-accent-foreground")}>{d.getDate()}</button>
                 <div className="flex gap-0.5">{l.bs.slice(0, 4).map((b) => <span key={b.id} className="h-1.5 w-1.5 rounded-full" style={{ background: catVar(b.category) }} title={b.title} />)}</div>
@@ -370,9 +403,9 @@ export default function Agenda() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-        <Card className="p-3 h-fit lg:sticky lg:top-4 space-y-2"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { const id = e.dataTransfer.getData("text/task"); if (id) updateTask(id, { scheduled_date: null, scheduled_start: null }); }}>
+        <Card className={cn("p-3 h-fit lg:sticky lg:top-4 space-y-2 transition-colors", dragOver === "backlog" && "ring-2 ring-accent/40 bg-accent/5")}
+          onDragOver={allowDrop("backlog")} onDragLeave={clearDrag}
+          onDrop={(e) => { e.preventDefault(); clearDrag(); const id = e.dataTransfer.getData("text/task"); if (id) updateTask(id, { scheduled_date: null, scheduled_start: null }); }}>
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">À programmer</h2>
             <span className="text-xs text-muted-foreground">{backlog.length}</span>
@@ -386,7 +419,7 @@ export default function Agenda() {
             {backlog.map((t) => {
               const cat = taskCategory(t);
               return (
-                <div key={t.id} draggable onDragStart={(e) => e.dataTransfer.setData("text/task", t.id)}
+                <div key={t.id} draggable onDragStart={(e) => { e.dataTransfer.setData("text/task", t.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={clearDrag}
                   style={{ borderLeftColor: catVar(cat), background: catBg(cat, 0.08) }}
                   className="flex items-start gap-1.5 rounded-md border border-l-4 px-2 py-1.5 cursor-grab active:cursor-grabbing hover:shadow-sm">
                   <GripVertical className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
