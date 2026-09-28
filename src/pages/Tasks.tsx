@@ -870,6 +870,7 @@ export default function Tasks() {
   const [search, setSearch] = useState("");
   const [focusMode, setFocusMode] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [prestationFilter, setPrestationFilter] = useState<string | null>(null);
   const [showProjectHint, setShowProjectHint] = useState(false);
   const [batForTask, setBatForTask] = useState<any | null>(null);
   const [printForTask, setPrintForTask] = useState<any | null>(null);
