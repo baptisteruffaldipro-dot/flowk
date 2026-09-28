@@ -376,46 +376,36 @@ export default function PrintOrders() {
         }
       />
 
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">BAT validés</h2>
-      <Card className="overflow-hidden mb-6">
-        {bats.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            Aucun BAT validé. Les BAT apparaîtront ici une fois validés par le client.
-          </div>
-        ) : (
-          <div className="divide-y">
-            {bats.map((b) => (
-              <div key={b.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm hover:bg-secondary/40">
-                <Link to={`/bats/${b.id}`} className="col-span-4 min-w-0">
-                  <div className="font-medium truncate hover:underline">{b.title}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {b.clients?.name}{b.projects?.name ? ` · ${b.projects.name}` : ""}
-                    {b.reference ? ` · réf. ${b.reference}` : ""}
-                  </div>
-                </Link>
-                <div className="col-span-2 text-xs">
-                  {b.quantity ? <Badge variant="secondary">{b.quantity} ex.</Badge> : <span className="text-muted-foreground">—</span>}
-                </div>
-                <div className="col-span-3 text-xs text-muted-foreground truncate">
-                  {[b.format, b.support].filter(Boolean).join(" · ") || "—"}
-                </div>
-                <div className="col-span-1 text-xs text-muted-foreground">{fmtDate(b.validated_at)}</div>
-                <div className="col-span-2">
-                  <Select value={b.print_status ?? "a_imprimer"} onValueChange={(v) => updateBatStatus(b.id, v)}>
-                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(BAT_PRINT_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+      <div className="flex flex-col md:flex-row md:items-center gap-2 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher (description, client, référence…)"
+            className="pl-8 h-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-9 w-full md:w-44"><SelectValue placeholder="Statut" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tous">Tous les statuts</SelectItem>
+            {Object.entries(PRINT_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+          <SelectTrigger className="h-9 w-full md:w-44"><SelectValue placeholder="Paiement" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tous">Tous les paiements</SelectItem>
+            {Object.entries(PRINT_PAYMENT_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Commandes manuelles</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          Commandes {filteredOrders.length !== orders.length && `(${filteredOrders.length}/${orders.length})`}
+        </h2>
         {selected.size > 0 && (
           <Button size="sm" variant="destructive" onClick={deleteSelected}>
             <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer ({selected.size})
