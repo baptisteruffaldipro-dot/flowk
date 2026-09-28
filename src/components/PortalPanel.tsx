@@ -567,6 +567,12 @@ export default function PortalPanel({
           {deliverables.map((d, i) => (
             <div key={i} className="flex items-center gap-2 text-sm rounded border border-border px-2 py-1.5">
               <span className="flex-1 truncate">{d.name}</span>
+              {(() => {
+                const rv = (((portal as any).deliverable_reviews ?? []) as any[]).find((r) => r.file === d.name);
+                if (rv?.status === "approved") return <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500">BAT validé</Badge>;
+                if (rv?.status === "changes_requested") return <Badge variant="destructive" className="text-[10px]">Modif. demandée</Badge>;
+                return <Badge variant="outline" className="text-[10px]">BAT en attente</Badge>;
+              })()}
               <a href={d.url} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground underline truncate max-w-[40%]">{d.url}</a>
               <Button size="icon" variant="ghost" onClick={() => saveDeliverables(deliverables.filter((_, j) => j !== i))}>
                 <Trash2 className="h-3.5 w-3.5" />

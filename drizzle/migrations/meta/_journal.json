@@ -8,6 +8,13 @@
       "when": 1790006502425,
       "tag": "0000_include_print_order_price_tiers_in_client_portal",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790609464371,
+      "tag": "0001_client_activity_flags_and_quantity_choice",
+      "breakpoints": true
     }
   ]
 }

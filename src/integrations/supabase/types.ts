@@ -664,6 +664,7 @@ export type Database = {
           payment_terms: string
           print_order_id: string | null
           print_order_ids: string[]
+          print_selections: Json
           published_at: string | null
           refusal_reason: string | null
           share_token: string
@@ -699,6 +700,7 @@ export type Database = {
           payment_terms?: string
           print_order_id?: string | null
           print_order_ids?: string[]
+          print_selections?: Json
           published_at?: string | null
           refusal_reason?: string | null
           share_token?: string
@@ -734,6 +736,7 @@ export type Database = {
           payment_terms?: string
           print_order_id?: string | null
           print_order_ids?: string[]
+          print_selections?: Json
           published_at?: string | null
           refusal_reason?: string | null
           share_token?: string
@@ -2267,6 +2270,7 @@ export type Database = {
           finitions: string | null
           format: string | null
           grammage: string | null
+          has_unread_client_activity: boolean
           id: string
           invoice_file_path: string | null
           invoice_url: string | null
@@ -2277,6 +2281,7 @@ export type Database = {
           project_id: string | null
           quantity: number | null
           reference: string | null
+          selected_tier: Json | null
           status: Database["public"]["Enums"]["print_status"]
           support: string | null
           total_minutes: number
@@ -2303,6 +2308,7 @@ export type Database = {
           finitions?: string | null
           format?: string | null
           grammage?: string | null
+          has_unread_client_activity?: boolean
           id?: string
           invoice_file_path?: string | null
           invoice_url?: string | null
@@ -2313,6 +2319,7 @@ export type Database = {
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
+          selected_tier?: Json | null
           status?: Database["public"]["Enums"]["print_status"]
           support?: string | null
           total_minutes?: number
@@ -2339,6 +2346,7 @@ export type Database = {
           finitions?: string | null
           format?: string | null
           grammage?: string | null
+          has_unread_client_activity?: boolean
           id?: string
           invoice_file_path?: string | null
           invoice_url?: string | null
@@ -2349,6 +2357,7 @@ export type Database = {
           project_id?: string | null
           quantity?: number | null
           reference?: string | null
+          selected_tier?: Json | null
           status?: Database["public"]["Enums"]["print_status"]
           support?: string | null
           total_minutes?: number
@@ -2452,6 +2461,7 @@ export type Database = {
           deadline: string | null
           deliverable_files: Json
           description: string | null
+          has_unread_client_activity: boolean
           id: string
           name: string
           notes: string | null
@@ -2469,6 +2479,7 @@ export type Database = {
           deadline?: string | null
           deliverable_files?: Json
           description?: string | null
+          has_unread_client_activity?: boolean
           id?: string
           name: string
           notes?: string | null
@@ -2486,6 +2497,7 @@ export type Database = {
           deadline?: string | null
           deliverable_files?: Json
           description?: string | null
+          has_unread_client_activity?: boolean
           id?: string
           name?: string
           notes?: string | null
@@ -3108,6 +3120,7 @@ export type Database = {
           extra_revision_rate: number | null
           flat_amount: number | null
           free_revisions: number
+          has_unread_client_activity: boolean
           hourly_rate: number | null
           id: string
           invoice_file_path: string | null
@@ -3147,6 +3160,7 @@ export type Database = {
           extra_revision_rate?: number | null
           flat_amount?: number | null
           free_revisions?: number
+          has_unread_client_activity?: boolean
           hourly_rate?: number | null
           id?: string
           invoice_file_path?: string | null
@@ -3186,6 +3200,7 @@ export type Database = {
           extra_revision_rate?: number | null
           flat_amount?: number | null
           free_revisions?: number
+          has_unread_client_activity?: boolean
           hourly_rate?: number | null
           id?: string
           invoice_file_path?: string | null
@@ -3572,8 +3587,18 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      mark_portal_unread: { Args: { _portal_id: string }; Returns: undefined }
       portal_action_by_token: {
         Args: { _action: string; _payload?: Json; _token: string }
+        Returns: Json
+      }
+      portal_choose_quantity_by_token: {
+        Args: {
+          _price: number
+          _print_order_id: string
+          _quantity: number
+          _token: string
+        }
         Returns: Json
       }
       portal_deliverables_by_token: { Args: { _token: string }; Returns: Json }

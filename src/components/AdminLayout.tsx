@@ -14,7 +14,6 @@ import { toast } from "sonner";
 type NavItem = { to: string; icon: any; label: string; end?: boolean; badgeKey?: "leads" | "demandes" };
 const nav: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
-  { to: "/inbox", icon: Inbox, label: "Inbox" },
   { to: "/demandes", icon: MailQuestion, label: "Demandes clients", badgeKey: "demandes" },
   { to: "/leads", icon: UserPlus, label: "Leads", badgeKey: "leads" },
   { to: "/clients", icon: Users, label: "Clients" },
@@ -25,14 +24,8 @@ const nav: NavItem[] = [
   { to: "/questionnaires", icon: ClipboardList, label: "Questionnaires" },
   { to: "/strategies", icon: Sparkle, label: "Stratégies de marque" },
   { to: "/logos", icon: Palette, label: "Présentations logo" },
-  { to: "/social", icon: Share2, label: "Réseaux sociaux" },
   { to: "/impressions", icon: Printer, label: "Impressions" },
-  { to: "/bats", icon: FileCheck2, label: "BAT" },
-  { to: "/ca", icon: TrendingUp, label: "Chiffre d'affaires" },
-  { to: "/facturation", icon: Receipt, label: "Facturation" },
-  { to: "/finance", icon: Wallet, label: "Finance & pilotage" },
   { to: "/parametres/paiement", icon: Landmark, label: "Paiement (RIB)" },
-  { to: "/telegram", icon: Send, label: "Bot Telegram" },
 ];
 
 export default function AdminLayout() {

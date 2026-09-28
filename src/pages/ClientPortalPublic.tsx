@@ -316,26 +316,52 @@ export default function ClientPortalPublic() {
                   {po.observations && (
                     <p className="text-xs text-muted-foreground whitespace-pre-wrap">{po.observations}</p>
                   )}
-                  {getPriceTiers(po).length > 0 && (
-                    <div className="rounded-lg border border-border/60 p-3 space-y-2">
-                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Tarifs par quantité HT</div>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {getPriceTiers(po).map((tier, tierIndex) => {
-                          const quantity = Number(tier.quantity ?? 0);
-                          const price = Number(tier.price ?? 0);
-                          return (
-                            <div key={`${po.id ?? i}-tier-${tierIndex}`} className="flex items-center justify-between gap-3 text-sm">
-                              <span className="text-muted-foreground">
-                                {formatTierNumber(quantity)} ex.
-                                {tier.models ? ` · ${formatTierNumber(Number(tier.models))} modèles` : ""}
-                              </span>
-                              <span className="font-medium tabular-nums">{price.toFixed(2)} € HT</span>
-                            </div>
-                          );
-                        })}
+                  {getPriceTiers(po).length > 0 && (() => {
+                    const chosen = (p.print_selections ?? {})[po.id];
+                    return (
+                      <div className="rounded-lg border border-border/60 p-3 space-y-2">
+                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          Choisissez votre quantité (tarifs HT)
+                        </div>
+                        <div className="grid gap-1.5 sm:grid-cols-2">
+                          {getPriceTiers(po).map((tier, tierIndex) => {
+                            const quantity = Number(tier.quantity ?? 0);
+                            const price = Number(tier.price ?? 0);
+                            const isChosen = chosen && Number(chosen.quantity) === quantity && Number(chosen.price) === price;
+                            return (
+                              <button
+                                type="button"
+                                key={`${po.id ?? i}-tier-${tierIndex}`}
+                                disabled={busy}
+                                onClick={async () => {
+                                  setBusy(true);
+                                  const { error } = await supabase.rpc("portal_choose_quantity_by_token" as any, {
+                                    _token: token, _print_order_id: po.id, _quantity: quantity, _price: price,
+                                  });
+                                  setBusy(false);
+                                  if (error) return toast.error(error.message);
+                                  toast.success(`${formatTierNumber(quantity)} ex. sélectionnés`);
+                                  load();
+                                }}
+                                className={`flex items-center justify-between gap-3 text-sm rounded-md border px-3 py-2 text-left transition ${
+                                  isChosen ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50"
+                                }`}
+                              >
+                                <span className="flex items-center gap-2">
+                                  <span className={`h-4 w-4 rounded border flex items-center justify-center ${isChosen ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40"}`}>
+                                    {isChosen && <CheckCircle2 className="h-3 w-3" />}
+                                  </span>
+                                  {formatTierNumber(quantity)} ex.
+                                  {tier.models ? ` · ${formatTierNumber(Number(tier.models))} modèles` : ""}
+                                </span>
+                                <span className="font-medium tabular-nums">{price.toFixed(2)} € HT</span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               ))}
             </div>
@@ -387,6 +413,24 @@ export default function ClientPortalPublic() {
                         {f.name}
                       </span>
                       <div className="flex items-center gap-1.5">
+                        {(() => {
+                          const rv = reviews.find((r: any) => r.file === f.name);
+                          if (rv?.status === "approved") {
+                            return <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px] gap-1"><CheckCircle2 className="h-3 w-3" /> BAT validé</Badge>;
+                          }
+                          return (
+                            <Button
+                              size="sm"
+                              disabled={busy}
+                              onClick={async () => {
+                                await act("approve_file", { file: f.name, note: obs[key]?.trim() || null });
+                                toast.success("BAT validé pour ce fichier");
+                              }}
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Valider BAT
+                            </Button>
+                          );
+                        })()}
                         <Button size="sm" variant="outline" onClick={() => setOpenFile(open ? null : key)}>
                           <Eye className="h-3.5 w-3.5 mr-1" /> {open ? "Fermer" : "Visionner"}
                         </Button>

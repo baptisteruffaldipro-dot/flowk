@@ -9,7 +9,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, Loader2, Sparkles } from "lucide-react";
+import { Plus, Upload, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
@@ -62,6 +63,20 @@ export default function PrintOrders() {
     setPaidPrintIds(new Set(((inv.data as any[]) ?? []).map((r) => r.print_order_id)));
   };
   useEffect(() => { load(); }, []);
+
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const isUnpaid = (o: any) =>
+    !paidPrintIds.has(o.id) && o.status !== "livre_paye" && (o.payment_status ?? "non_regle") !== "regle";
+  const sortedOrders = [...orders].sort((a, b) => Number(isUnpaid(b)) - Number(isUnpaid(a)));
+
+  const deleteSelected = async () => {
+    if (!confirm(`Supprimer ${selected.size} commande(s) ? Cette action est définitive.`)) return;
+    const { error } = await supabase.from("print_orders").delete().in("id", Array.from(selected));
+    if (error) return toast.error(error.message);
+    toast.success("Commande(s) supprimée(s)");
+    setSelected(new Set());
+    load();
+  };
 
   const updateBatStatus = async (id: string, print_status: string) => {
     const { error } = await supabase.from("bats").update({ print_status: print_status as any }).eq("id", id);
@@ -393,18 +408,41 @@ export default function PrintOrders() {
         )}
       </Card>
 
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Commandes manuelles</h2>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Commandes manuelles</h2>
+        {selected.size > 0 && (
+          <Button size="sm" variant="destructive" onClick={deleteSelected}>
+            <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer ({selected.size})
+          </Button>
+        )}
+      </div>
       <Card className="overflow-hidden">
         {orders.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Aucune commande manuelle</div>
         ) : (
           <div className="divide-y">
-            {orders.map((o) => (
+            {sortedOrders.map((o) => (
               <div key={o.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm hover:bg-secondary/40">
-                <Link to={`/impressions/${o.id}`} className="col-span-4 min-w-0">
-                  <div className="font-medium truncate hover:underline">{o.description}</div>
-                  <div className="text-xs text-muted-foreground">{o.clients?.name}</div>
-                </Link>
+                <div className="col-span-4 min-w-0 flex items-center gap-3">
+                  <Checkbox
+                    checked={selected.has(o.id)}
+                    onCheckedChange={(v) => {
+                      const n = new Set(selected);
+                      v ? n.add(o.id) : n.delete(o.id);
+                      setSelected(n);
+                    }}
+                  />
+                  <Link to={`/impressions/${o.id}`} className="min-w-0">
+                    <div className="font-medium truncate hover:underline">
+                      {o.has_unread_client_activity && <span className="inline-block mr-1.5 h-2 w-2 rounded-full bg-destructive align-middle" />}
+                      {o.description}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {o.clients?.name}
+                      {o.selected_tier?.quantity ? ` · choix client : ${o.selected_tier.quantity} ex.` : ""}
+                    </div>
+                  </Link>
+                </div>
                 <div className="col-span-2 text-xs text-muted-foreground">
                   {o.estimated_delivery_date ? fmtDate(o.estimated_delivery_date) : "—"}
                 </div>
