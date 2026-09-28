@@ -510,16 +510,8 @@ export default function TaskDetail() {
 
 
       <Card className="p-4 sm:p-5 mb-4 overflow-hidden">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold">Facturation</h2>
-          <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
-            <Button size="sm" variant="outline" onClick={invoiceAcompte} disabled={task.acompte_invoiced} className="w-full sm:w-auto min-w-0 justify-center whitespace-normal text-center">
-              {task.acompte_invoiced ? "Acompte facturé" : `Facturer l'acompte (${fmtMoney(billing?.acompte ?? 0)})`}
-            </Button>
-            <Button size="sm" onClick={() => invoiceBalance(false)} className="w-full sm:w-auto">
-              Facturer le solde
-            </Button>
-          </div>
         </div>
 
         {/* Type de facturation + champs conditionnels */}
