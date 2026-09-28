@@ -63,6 +63,16 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Agenda categories */
+    --cat-creation: 262 83% 58%;
+    --cat-impression: 199 89% 45%;
+    --cat-devis: 38 92% 50%;
+    --cat-gestion: 160 64% 38%;
+    --cat-production: 330 81% 56%;
+    --cat-web: 221 83% 53%;
+    --cat-client: 14 90% 55%;
+    --cat-autre: 220 9% 55%;
   }
 
   .dark {
