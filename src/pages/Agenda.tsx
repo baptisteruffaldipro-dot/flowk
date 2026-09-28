@@ -42,6 +42,8 @@ export default function Agenda() {
   const [editingBlock, setEditingBlock] = useState<Block | null>(null);
   const [bForm, setBForm] = useState<Omit<Block, "id">>(emptyBlock());
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [dragHint, setDragHint] = useState<{ key: string; min: number } | null>(null);
+  const gridScrollRef = { current: null as HTMLDivElement | null };
 
   const load = async () => {
     const [t, b] = await Promise.all([
