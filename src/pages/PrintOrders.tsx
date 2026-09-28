@@ -67,7 +67,19 @@ export default function PrintOrders() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const isUnpaid = (o: any) =>
     !paidPrintIds.has(o.id) && o.status !== "livre_paye" && (o.payment_status ?? "non_regle") !== "regle";
-  const sortedOrders = [...orders].sort((a, b) => Number(isUnpaid(b)) - Number(isUnpaid(a)));
+
+  const q = search.trim().toLowerCase();
+  const filteredOrders = orders.filter((o) => {
+    if (statusFilter !== "tous" && o.status !== statusFilter) return false;
+    if (paymentFilter !== "tous" && (o.payment_status ?? "non_regle") !== paymentFilter) return false;
+    if (!q) return true;
+    const haystack = [o.description, o.reference, o.clients?.name, o.format, o.support, o.observations]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  });
+  const sortedOrders = [...filteredOrders].sort((a, b) => Number(isUnpaid(b)) - Number(isUnpaid(a)));
 
   const deleteSelected = async () => {
     if (!confirm(`Supprimer ${selected.size} commande(s) ? Cette action est définitive.`)) return;
@@ -75,12 +87,6 @@ export default function PrintOrders() {
     if (error) return toast.error(error.message);
     toast.success("Commande(s) supprimée(s)");
     setSelected(new Set());
-    load();
-  };
-
-  const updateBatStatus = async (id: string, print_status: string) => {
-    const { error } = await supabase.from("bats").update({ print_status: print_status as any }).eq("id", id);
-    if (error) return toast.error(error.message);
     load();
   };
 
@@ -221,7 +227,7 @@ export default function PrintOrders() {
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Impressions"
-        description={`${bats.length} BAT validé${bats.length > 1 ? "s" : ""} · ${orders.length} commande${orders.length > 1 ? "s" : ""} manuelle${orders.length > 1 ? "s" : ""}`}
+        description={`${orders.length} commande${orders.length > 1 ? "s" : ""} d'impression`}
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
