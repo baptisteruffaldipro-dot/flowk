@@ -77,7 +77,7 @@ export default function Agenda() {
   const backlog = useMemo(() => {
     const q = search.toLowerCase();
     return tasks
-      .filter((t) => !t.scheduled_date && !DONE_STATUSES.includes(t.status))
+      .filter((t) => !t.scheduled_date && ["a_faire", "aujourdhui"].includes(t.status))
       .filter((t) => !q || t.title.toLowerCase().includes(q) || (t.clients?.name ?? "").toLowerCase().includes(q))
       .sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"));
   }, [tasks, search]);
