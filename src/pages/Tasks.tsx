@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Archive, UserPlus, AlertTriangle, Zap, FolderPlus, Star } from "lucide-react";
+import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Archive, UserPlus, AlertTriangle, Zap, FolderPlus, Star, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBudget } from "@/lib/budget";
@@ -869,6 +869,7 @@ export default function Tasks() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [focusMode, setFocusMode] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [showProjectHint, setShowProjectHint] = useState(false);
   const [batForTask, setBatForTask] = useState<any | null>(null);
   const [printForTask, setPrintForTask] = useState<any | null>(null);
@@ -1540,44 +1541,93 @@ export default function Tasks() {
         </TabsList>
 
         <TabsContent value="list" className="mt-4">
-          <Card className="overflow-hidden">
-            {filteredTasks.length === 0 ? (
-              <div className="p-12 text-center text-sm text-muted-foreground">Aucune tâche</div>
-            ) : (
-              <div className="divide-y">
-                {filteredTasks.map((t) => (
-                  <Link key={t.id} to={`/taches/${t.id}`} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-secondary/40 items-center text-sm">
-                    <div className="col-span-5 truncate font-medium">{(t as any).has_unread_client_activity && <span className="inline-block mr-1.5 h-2 w-2 rounded-full bg-destructive align-middle" />}{t.title?.trim() ? t.title : (t.projects?.name ?? "Sans titre")}</div>
-                    <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
-                    <div className="col-span-1 text-muted-foreground text-xs truncate">
-                      {(() => {
-                        const list: string[] = (t.prestations && t.prestations.length > 0)
-                          ? t.prestations
-                          : (t.prestation ? [t.prestation] : []);
-                        return list.map((k) => PRESTATION_LABEL[k] ?? k).join(" · ") || "—";
-                      })()}
-                    </div>
-                    <div className="col-span-2">
-                      {t.priority && t.priority !== "secondaire" && (
-                        <Badge variant="outline" className={`text-[10px] ${PRIORITY_COLOR[t.priority]}`}>
-                          {PRIORITY_LABEL[t.priority]}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="col-span-1 text-muted-foreground text-xs flex items-center gap-1">
-                      {t.deadline && <Calendar className="h-3 w-3" />}{fmtDate(t.deadline)}
-                    </div>
-                    <div className="col-span-1 flex items-center gap-1">
-                      <Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status]}</Badge>
-                      {paidTaskIds.has(t.id) && (
-                        <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">Payé</Badge>
-                      )}
-                    </div>
-                  </Link>
-                ))}
+          {(() => {
+            const withProject = filteredTasks.filter((t: any) => t.projects?.name);
+            const withoutProject = filteredTasks.filter((t: any) => !t.projects?.name);
+            const groups = new Map<string, any[]>();
+            for (const t of withProject) {
+              const k = t.projects.name as string;
+              if (!groups.has(k)) groups.set(k, []);
+              groups.get(k)!.push(t);
+            }
+            const groupKeys = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b, "fr"));
+            const toggle = (k: string) => setCollapsedGroups((prev) => {
+              const n = new Set(prev);
+              if (n.has(k)) n.delete(k); else n.add(k);
+              return n;
+            });
+            if (filteredTasks.length === 0) {
+              return (
+                <Card className="overflow-hidden">
+                  <div className="p-12 text-center text-sm text-muted-foreground">Aucune tâche</div>
+                </Card>
+              );
+            }
+            const Row = (t: any) => (
+              <Link key={t.id} to={`/taches/${t.id}`} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-secondary/40 items-center text-sm">
+                <div className="col-span-5 truncate font-medium">{(t as any).has_unread_client_activity && <span className="inline-block mr-1.5 h-2 w-2 rounded-full bg-destructive align-middle" />}{t.title?.trim() ? t.title : (t.projects?.name ?? "Sans titre")}</div>
+                <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
+                <div className="col-span-1 text-muted-foreground text-xs truncate">
+                  {(() => {
+                    const list: string[] = (t.prestations && t.prestations.length > 0)
+                      ? t.prestations
+                      : (t.prestation ? [t.prestation] : []);
+                    return list.map((k) => PRESTATION_LABEL[k] ?? k).join(" · ") || "—";
+                  })()}
+                </div>
+                <div className="col-span-2">
+                  {t.priority && t.priority !== "secondaire" && (
+                    <Badge variant="outline" className={`text-[10px] ${PRIORITY_COLOR[t.priority]}`}>
+                      {PRIORITY_LABEL[t.priority]}
+                    </Badge>
+                  )}
+                </div>
+                <div className="col-span-1 text-muted-foreground text-xs flex items-center gap-1">
+                  {t.deadline && <Calendar className="h-3 w-3" />}{fmtDate(t.deadline)}
+                </div>
+                <div className="col-span-1 flex items-center gap-1">
+                  <Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status]}</Badge>
+                  {paidTaskIds.has(t.id) && (
+                    <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">Payé</Badge>
+                  )}
+                </div>
+              </Link>
+            );
+            const GroupHeader = ({ k, label, client, count }: { k: string; label: string; client?: string; count: number }) => (
+              <button
+                type="button"
+                onClick={() => toggle(k)}
+                className="w-full flex items-center gap-2 px-5 py-2.5 hover:bg-secondary/40 text-left"
+              >
+                {collapsedGroups.has(k) ? <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
+                <span className="text-sm font-semibold truncate">{label}</span>
+                {client && <Badge variant="outline" className={`text-[10px] ${tagColor(client)} shrink-0`}>{client}</Badge>}
+                <span className="text-xs text-muted-foreground ml-auto shrink-0">{count} tâche{count > 1 ? "s" : ""}</span>
+              </button>
+            );
+            return (
+              <div className="space-y-3">
+                {groupKeys.map((k) => {
+                  const list = groups.get(k)!;
+                  const collapsed = collapsedGroups.has(k);
+                  return (
+                    <Card key={k} className="overflow-hidden">
+                      <GroupHeader k={k} label={k} client={list[0]?.clients?.name} count={list.length} />
+                      {!collapsed && <div className="divide-y border-t">{list.map((t) => Row(t))}</div>}
+                    </Card>
+                  );
+                })}
+                {withoutProject.length > 0 && (
+                  <Card className="overflow-hidden">
+                    <GroupHeader k="__sans_projet__" label="Sans projet" count={withoutProject.length} />
+                    {collapsedGroups.has("__sans_projet__") ? null : (
+                      <div className="divide-y border-t">{withoutProject.map((t) => Row(t))}</div>
+                    )}
+                  </Card>
+                )}
               </div>
-            )}
-          </Card>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="kanban" className="mt-4">
