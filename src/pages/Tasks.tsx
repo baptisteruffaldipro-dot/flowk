@@ -869,6 +869,7 @@ export default function Tasks() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [focusMode, setFocusMode] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [showProjectHint, setShowProjectHint] = useState(false);
   const [batForTask, setBatForTask] = useState<any | null>(null);
   const [printForTask, setPrintForTask] = useState<any | null>(null);
