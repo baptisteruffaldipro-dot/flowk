@@ -715,15 +715,6 @@ export default function TaskDetail() {
   );
 }
 
-function StatBlock({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <Card className={`p-4 ${highlight ? "border-accent" : ""}`}>
-      <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className={`text-xl font-semibold mt-2 ${highlight ? "text-accent" : ""}`}>{value}</div>
-    </Card>
-  );
-}
-
 function BillingRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
     <div className={`flex items-center justify-between ${muted ? "text-muted-foreground" : ""}`}>
