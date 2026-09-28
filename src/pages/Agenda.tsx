@@ -355,8 +355,8 @@ export default function Agenda() {
           const inMonth = d.getMonth() === anchor.getMonth();
           const isToday = ymd(d) === ymd(new Date());
           return (
-            <div key={key} onDragOver={allowDrop(key)} onDragLeave={() => setDragOver(null)} onDrop={(e) => onDrop(e, d, null)}
-              className={cn("min-h-[120px] border-b border-r p-1.5 space-y-1 transition-colors", !inMonth && "bg-muted/30 opacity-60", (i + 1) % 7 === 0 && "border-r-0", dragOver === key && "bg-accent/10")}>
+            <div key={key} onDragOver={allowDrop(key)} onDragLeave={clearDrag} onDrop={(e) => onDrop(e, d, null)}
+              className={cn("min-h-[120px] border-b border-r p-1.5 space-y-1 transition-colors", !inMonth && "bg-muted/30 opacity-60", (i + 1) % 7 === 0 && "border-r-0", dragOver === key && "bg-accent/15 ring-2 ring-inset ring-accent/40")}>
               <div className="flex items-center justify-between">
                 <button onClick={() => { setAnchor(d); setView("day"); }} className={cn("text-xs font-semibold px-1.5 rounded", isToday && "bg-accent text-accent-foreground")}>{d.getDate()}</button>
                 <div className="flex gap-0.5">{l.bs.slice(0, 4).map((b) => <span key={b.id} className="h-1.5 w-1.5 rounded-full" style={{ background: catVar(b.category) }} title={b.title} />)}</div>
@@ -403,9 +403,9 @@ export default function Agenda() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-        <Card className="p-3 h-fit lg:sticky lg:top-4 space-y-2"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { const id = e.dataTransfer.getData("text/task"); if (id) updateTask(id, { scheduled_date: null, scheduled_start: null }); }}>
+        <Card className={cn("p-3 h-fit lg:sticky lg:top-4 space-y-2 transition-colors", dragOver === "backlog" && "ring-2 ring-accent/40 bg-accent/5")}
+          onDragOver={allowDrop("backlog")} onDragLeave={clearDrag}
+          onDrop={(e) => { e.preventDefault(); clearDrag(); const id = e.dataTransfer.getData("text/task"); if (id) updateTask(id, { scheduled_date: null, scheduled_start: null }); }}>
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">À programmer</h2>
             <span className="text-xs text-muted-foreground">{backlog.length}</span>
