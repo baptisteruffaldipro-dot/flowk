@@ -9,11 +9,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Upload, Loader2, Sparkles, Trash2, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
+import { PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney } from "@/lib/format";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
 import PriceTiersEditor, { PriceTier } from "@/components/PriceTiersEditor";
 import ClientSelectField from "@/components/ClientSelectField";
@@ -32,10 +32,12 @@ function parseTiersText(raw: string): PriceTier[] {
 }
 
 export default function PrintOrders() {
-  const [bats, setBats] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [paidPrintIds, setPaidPrintIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("tous");
+  const [paymentFilter, setPaymentFilter] = useState("tous");
   const [open, setOpen] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [noteText, setNoteText] = useState("");
@@ -50,14 +52,12 @@ export default function PrintOrders() {
   const [tiersText, setTiersText] = useState("");
 
   const load = async () => {
-    const [b, o, c, inv] = await Promise.all([
-      supabase.from("bats").select("*, clients(name), projects(name)").eq("status", "valide").order("validated_at", { ascending: false }),
+    const [o, c, inv] = await Promise.all([
       supabase.from("print_orders").select("*, clients(name)").order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("invoices").select("print_order_id,status").eq("status", "payee").not("print_order_id", "is", null),
     ]);
-    if (b.error) toast.error(b.error.message);
-    setBats(b.data ?? []);
+    if (o.error) toast.error(o.error.message);
     setOrders(o.data ?? []);
     setClients(c.data ?? []);
     setPaidPrintIds(new Set(((inv.data as any[]) ?? []).map((r) => r.print_order_id)));
