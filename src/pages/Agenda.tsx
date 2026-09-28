@@ -277,7 +277,7 @@ export default function Agenda() {
           );
         })}
       </div>
-      <div className="max-h-[70vh] overflow-y-auto">
+      <div className="max-h-[70vh] overflow-y-auto" ref={(el) => { gridScrollRef.current = el; }} onDragLeave={clearDrag}>
         <div className="grid relative" style={{ gridTemplateColumns: `52px repeat(${days.length}, minmax(0, 1fr))` }}>
           <div>
             {hours.map((h) => <div key={h} style={{ height: HOUR_PX }} className="text-[10px] text-muted-foreground text-right pr-1.5 pt-0.5">{h}:00</div>)}
@@ -301,8 +301,14 @@ export default function Agenda() {
             const nowMin = now.getHours() * 60 + now.getMinutes();
             const isToday = ymd(d) === ymd(now);
             return (
-              <div key={key} onDragOver={allowDrop(key)} onDragLeave={() => setDragOver(null)} onDrop={(e) => dropOnGrid(e, d)}
-                className={cn("relative border-l", dragOver === key && "bg-accent/5")} style={{ height: hours.length * HOUR_PX }}>
+              <div key={key} onDragOver={allowGridDrop(key)} onDragLeave={clearDrag} onDrop={(e) => dropOnGrid(e, d)}
+                className={cn("relative border-l transition-colors", dragOver === key && "bg-accent/10")} style={{ height: hours.length * HOUR_PX }}>
+                {dragHint?.key === key && (
+                  <div className="absolute inset-x-0 z-20 pointer-events-none" style={{ top: ((dragHint.min - START_H * 60) / 60) * HOUR_PX }}>
+                    <div className="h-0.5 bg-accent" />
+                    <div className="absolute right-1 -top-2.5 rounded bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-foreground shadow">{minToTime(dragHint.min)}</div>
+                  </div>
+                )}
                 {hours.map((h, i) => <div key={h} className={cn("absolute inset-x-0 border-t", i % 1 === 0 && "border-border/60")} style={{ top: i * HOUR_PX }} />)}
                 {placed.map((ev) => {
                   const top = ((ev.start - START_H * 60) / 60) * HOUR_PX;
