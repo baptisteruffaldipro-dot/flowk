@@ -96,20 +96,36 @@ export default function Agenda() {
     if (error) { toast.error(error.message); load(); }
   };
 
+  const clearDrag = () => { setDragOver(null); setDragHint(null); };
+
   const onDrop = (e: React.DragEvent, date: Date, startMin: number | null) => {
-    e.preventDefault(); setDragOver(null);
+    e.preventDefault(); clearDrag();
     const id = e.dataTransfer.getData("text/task");
     if (!id) return;
     updateTask(id, { scheduled_date: ymd(date), scheduled_start: startMin == null ? null : minToTime(startMin) });
   };
-  const dropOnGrid = (e: React.DragEvent, date: Date) => {
+  const snapMin = (e: React.DragEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const y = e.clientY - rect.top;
     let min = START_H * 60 + Math.round((y / HOUR_PX) * 60 / 15) * 15;
-    min = Math.max(START_H * 60, Math.min(END_H * 60 - 15, min));
-    onDrop(e, date, min);
+    return Math.max(START_H * 60, Math.min(END_H * 60 - 15, min));
   };
-  const allowDrop = (key: string) => (e: React.DragEvent) => { e.preventDefault(); if (dragOver !== key) setDragOver(key); };
+  const dropOnGrid = (e: React.DragEvent, date: Date) => onDrop(e, date, snapMin(e));
+  const allowDrop = (key: string) => (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (dragOver !== key) setDragOver(key); };
+  const allowGridDrop = (key: string) => (e: React.DragEvent) => {
+    e.preventDefault(); e.dataTransfer.dropEffect = "move";
+    if (dragOver !== key) setDragOver(key);
+    const min = snapMin(e);
+    setDragHint((h) => (h && h.key === key && h.min === min ? h : { key, min }));
+    // auto-scroll the grid when dragging near its top/bottom edge
+    const scroller = gridScrollRef.current;
+    if (scroller) {
+      const r = scroller.getBoundingClientRect();
+      const EDGE = 70, SPEED = 14;
+      if (e.clientY < r.top + EDGE) scroller.scrollTop -= SPEED;
+      else if (e.clientY > r.bottom - EDGE) scroller.scrollTop += SPEED;
+    }
+  };
 
   const shift = (dir: number) => {
     if (view === "day") setAnchor(addDays(anchor, dir));
