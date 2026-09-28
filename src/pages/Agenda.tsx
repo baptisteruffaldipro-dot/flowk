@@ -419,7 +419,7 @@ export default function Agenda() {
             {backlog.map((t) => {
               const cat = taskCategory(t);
               return (
-                <div key={t.id} draggable onDragStart={(e) => e.dataTransfer.setData("text/task", t.id)}
+                <div key={t.id} draggable onDragStart={(e) => { e.dataTransfer.setData("text/task", t.id); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={clearDrag}
                   style={{ borderLeftColor: catVar(cat), background: catBg(cat, 0.08) }}
                   className="flex items-start gap-1.5 rounded-md border border-l-4 px-2 py-1.5 cursor-grab active:cursor-grabbing hover:shadow-sm">
                   <GripVertical className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
