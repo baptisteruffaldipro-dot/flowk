@@ -1537,7 +1537,6 @@ export default function Tasks() {
         <TabsList>
           <TabsTrigger value="kanban">Kanban</TabsTrigger>
           <TabsTrigger value="list">Liste</TabsTrigger>
-          <TabsTrigger value="social">Réseaux sociaux</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="mt-4">
