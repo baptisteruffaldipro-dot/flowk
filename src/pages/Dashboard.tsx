@@ -68,17 +68,6 @@ export default function Dashboard() {
         <QuickCreate onCreated={load} />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <ProgressStatCard
-          label="Tâches à faire"
-          value={stats.todoCount}
-          done={stats.doneCount}
-          total={stats.totalCount}
-        />
-        <StatCard label="BAT à valider" value={String(stats.awaitingBat)} href="/bats" highlight={stats.awaitingBat > 0} />
-        <StatCard label="Chiffre d'affaires" value="Voir le CA" href="/ca" />
-        <StatCard label="Facturation" value="Voir factures" href="/facturation" />
-      </div>
 
       <TodayBoard tasks={tasks} printOrders={orders} />
 
@@ -103,20 +92,6 @@ export default function Dashboard() {
           })}
         </Column>
 
-        <Column title="Projets en cours" href="/projets" empty="Aucun projet en cours">
-          {projects.slice(0, 8).map((p) => (
-            <Link key={p.id} to={`/projets/${p.id}`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
-              <div className="flex items-start justify-between gap-2">
-                <div className="text-sm font-medium leading-snug truncate inline-flex items-center gap-1.5">
-                  <FolderKanban className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  {p.name}
-                </div>
-                <Badge variant="outline" className="shrink-0 text-[10px]">{PROJECT_TYPE_LABEL[p.type] ?? p.type}</Badge>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1 truncate">{p.clients?.name ?? "—"}</div>
-            </Link>
-          ))}
-        </Column>
 
         <Column title="Impressions en cours" href="/impressions" empty="Aucune commande en cours">
           {orders.slice(0, 8).map((o) => (
@@ -154,9 +129,6 @@ export default function Dashboard() {
         </Column>
       </div>
 
-      <div className="mt-6">
-        <VacationWindows />
-      </div>
     </div>
   );
 }

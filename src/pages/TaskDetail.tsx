@@ -512,14 +512,6 @@ export default function TaskDetail() {
         <StatBlock label="Montant total" value={fmtMoney(billing?.total ?? null)} />
       </div>
 
-      <BusinessUnitCard
-        entity="task"
-        id={task.id}
-        businessUnitId={(task as any).business_unit_id ?? null}
-        clientId={task.client_id}
-        label={task.title}
-        amountHt={billing?.total ?? 0}
-      />
 
       <Card className="p-4 sm:p-5 mb-4 overflow-hidden">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
