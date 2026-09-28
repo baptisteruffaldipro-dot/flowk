@@ -55,6 +55,7 @@ import FinancePoles from "./pages/finance/FinancePoles";
 import FinanceUnitDetail from "./pages/finance/FinanceUnitDetail";
 import PortalRedirect from "./pages/PortalRedirect";
 import Ideas from "./pages/Ideas";
+import Agenda from "./pages/Agenda";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +88,7 @@ const App = () => (
               <Route path="/projets" element={<Projects />} />
               <Route path="/projets/:id" element={<ProjectDetail />} />
               <Route path="/notes" element={<Ideas />} />
+              <Route path="/agenda" element={<Agenda />} />
               <Route path="/taches" element={<Tasks />} />
               <Route path="/taches/:id" element={<TaskDetail />} />
               <Route path="/impressions" element={<PrintOrders />} />
