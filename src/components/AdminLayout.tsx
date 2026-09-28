@@ -17,7 +17,6 @@ const nav: NavItem[] = [
   { to: "/demandes", icon: MailQuestion, label: "Demandes clients", badgeKey: "demandes" },
   { to: "/leads", icon: UserPlus, label: "Leads", badgeKey: "leads" },
   { to: "/clients", icon: Users, label: "Clients" },
-  { to: "/projets", icon: FolderKanban, label: "Projets" },
   { to: "/taches", icon: ListChecks, label: "Tâches" },
   { to: "/notes", icon: Lightbulb, label: "Idées / Notes" },
   { to: "/rdv", icon: CalendarDays, label: "Rendez-vous" },
