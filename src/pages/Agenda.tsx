@@ -253,7 +253,7 @@ export default function Agenda() {
       <div className="max-h-[70vh] overflow-y-auto">
         <div className="grid relative" style={{ gridTemplateColumns: `52px repeat(${days.length}, minmax(0, 1fr))` }}>
           <div>
-            {hours.map((h) => <div key={h} style={{ height: HOUR_PX }} className="text-[10px] text-muted-foreground text-right pr-1.5 -mt-1.5">{h}:00</div>)}
+            {hours.map((h) => <div key={h} style={{ height: HOUR_PX }} className="text-[10px] text-muted-foreground text-right pr-1.5 pt-0.5">{h}:00</div>)}
           </div>
           {days.map((d) => {
             const key = `grid-${ymd(d)}`;
