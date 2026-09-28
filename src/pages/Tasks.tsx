@@ -1351,7 +1351,7 @@ export default function Tasks() {
           .toLowerCase();
         return haystack.includes(q);
       })
-    : tasks;
+    : preFiltered;
 
   const filteredSocialTasks = q
     ? socialTasks.filter((t) => {
