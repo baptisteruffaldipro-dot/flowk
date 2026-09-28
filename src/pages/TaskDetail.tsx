@@ -507,11 +507,6 @@ export default function TaskDetail() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        <StatBlock label="Temps estimé" value={fmtMinutes(task.estimated_minutes)} />
-        <StatBlock label="Temps passé" value={fmtMinutes(totalMinutesLive)} highlight={running} />
-        <StatBlock label="Montant total" value={fmtMoney(billing?.total ?? null)} />
-      </div>
 
 
       <Card className="p-4 sm:p-5 mb-4 overflow-hidden">
@@ -717,15 +712,6 @@ export default function TaskDetail() {
         onCreated={() => { setBatDialogOpen(false); load(); }}
       />
     </div>
-  );
-}
-
-function StatBlock({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <Card className={`p-4 ${highlight ? "border-accent" : ""}`}>
-      <div className="text-xs text-muted-foreground uppercase tracking-wider">{label}</div>
-      <div className={`text-xl font-semibold mt-2 ${highlight ? "text-accent" : ""}`}>{value}</div>
-    </Card>
   );
 }
 
