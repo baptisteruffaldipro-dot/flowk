@@ -9,11 +9,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Upload, Loader2, Sparkles, Trash2, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { BAT_PRINT_STATUS_LABEL, PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney, fmtMinutes } from "@/lib/format";
+import { PRINT_STATUS_LABEL, PRINT_PAYMENT_LABEL, fmtDate, fmtMoney } from "@/lib/format";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
 import PriceTiersEditor, { PriceTier } from "@/components/PriceTiersEditor";
 import ClientSelectField from "@/components/ClientSelectField";
@@ -32,10 +32,12 @@ function parseTiersText(raw: string): PriceTier[] {
 }
 
 export default function PrintOrders() {
-  const [bats, setBats] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [paidPrintIds, setPaidPrintIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("tous");
+  const [paymentFilter, setPaymentFilter] = useState("tous");
   const [open, setOpen] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [noteText, setNoteText] = useState("");
@@ -50,14 +52,12 @@ export default function PrintOrders() {
   const [tiersText, setTiersText] = useState("");
 
   const load = async () => {
-    const [b, o, c, inv] = await Promise.all([
-      supabase.from("bats").select("*, clients(name), projects(name)").eq("status", "valide").order("validated_at", { ascending: false }),
+    const [o, c, inv] = await Promise.all([
       supabase.from("print_orders").select("*, clients(name)").order("created_at", { ascending: false }),
       supabase.from("clients").select("id,name").order("name"),
       supabase.from("invoices").select("print_order_id,status").eq("status", "payee").not("print_order_id", "is", null),
     ]);
-    if (b.error) toast.error(b.error.message);
-    setBats(b.data ?? []);
+    if (o.error) toast.error(o.error.message);
     setOrders(o.data ?? []);
     setClients(c.data ?? []);
     setPaidPrintIds(new Set(((inv.data as any[]) ?? []).map((r) => r.print_order_id)));
@@ -67,7 +67,19 @@ export default function PrintOrders() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const isUnpaid = (o: any) =>
     !paidPrintIds.has(o.id) && o.status !== "livre_paye" && (o.payment_status ?? "non_regle") !== "regle";
-  const sortedOrders = [...orders].sort((a, b) => Number(isUnpaid(b)) - Number(isUnpaid(a)));
+
+  const q = search.trim().toLowerCase();
+  const filteredOrders = orders.filter((o) => {
+    if (statusFilter !== "tous" && o.status !== statusFilter) return false;
+    if (paymentFilter !== "tous" && (o.payment_status ?? "non_regle") !== paymentFilter) return false;
+    if (!q) return true;
+    const haystack = [o.description, o.reference, o.clients?.name, o.format, o.support, o.observations]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  });
+  const sortedOrders = [...filteredOrders].sort((a, b) => Number(isUnpaid(b)) - Number(isUnpaid(a)));
 
   const deleteSelected = async () => {
     if (!confirm(`Supprimer ${selected.size} commande(s) ? Cette action est définitive.`)) return;
@@ -75,12 +87,6 @@ export default function PrintOrders() {
     if (error) return toast.error(error.message);
     toast.success("Commande(s) supprimée(s)");
     setSelected(new Set());
-    load();
-  };
-
-  const updateBatStatus = async (id: string, print_status: string) => {
-    const { error } = await supabase.from("bats").update({ print_status: print_status as any }).eq("id", id);
-    if (error) return toast.error(error.message);
     load();
   };
 
@@ -221,7 +227,7 @@ export default function PrintOrders() {
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
       <PageHeader
         title="Impressions"
-        description={`${bats.length} BAT validé${bats.length > 1 ? "s" : ""} · ${orders.length} commande${orders.length > 1 ? "s" : ""} manuelle${orders.length > 1 ? "s" : ""}`}
+        description={`${orders.length} commande${orders.length > 1 ? "s" : ""} d'impression`}
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -370,46 +376,36 @@ export default function PrintOrders() {
         }
       />
 
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">BAT validés</h2>
-      <Card className="overflow-hidden mb-6">
-        {bats.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            Aucun BAT validé. Les BAT apparaîtront ici une fois validés par le client.
-          </div>
-        ) : (
-          <div className="divide-y">
-            {bats.map((b) => (
-              <div key={b.id} className="grid grid-cols-12 gap-3 px-5 py-3 items-center text-sm hover:bg-secondary/40">
-                <Link to={`/bats/${b.id}`} className="col-span-4 min-w-0">
-                  <div className="font-medium truncate hover:underline">{b.title}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {b.clients?.name}{b.projects?.name ? ` · ${b.projects.name}` : ""}
-                    {b.reference ? ` · réf. ${b.reference}` : ""}
-                  </div>
-                </Link>
-                <div className="col-span-2 text-xs">
-                  {b.quantity ? <Badge variant="secondary">{b.quantity} ex.</Badge> : <span className="text-muted-foreground">—</span>}
-                </div>
-                <div className="col-span-3 text-xs text-muted-foreground truncate">
-                  {[b.format, b.support].filter(Boolean).join(" · ") || "—"}
-                </div>
-                <div className="col-span-1 text-xs text-muted-foreground">{fmtDate(b.validated_at)}</div>
-                <div className="col-span-2">
-                  <Select value={b.print_status ?? "a_imprimer"} onValueChange={(v) => updateBatStatus(b.id, v)}>
-                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(BAT_PRINT_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+      <div className="flex flex-col md:flex-row md:items-center gap-2 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher (description, client, référence…)"
+            className="pl-8 h-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-9 w-full md:w-44"><SelectValue placeholder="Statut" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tous">Tous les statuts</SelectItem>
+            {Object.entries(PRINT_STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+          <SelectTrigger className="h-9 w-full md:w-44"><SelectValue placeholder="Paiement" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tous">Tous les paiements</SelectItem>
+            {Object.entries(PRINT_PAYMENT_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Commandes manuelles</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          Commandes {filteredOrders.length !== orders.length && `(${filteredOrders.length}/${orders.length})`}
+        </h2>
         {selected.size > 0 && (
           <Button size="sm" variant="destructive" onClick={deleteSelected}>
             <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer ({selected.size})
