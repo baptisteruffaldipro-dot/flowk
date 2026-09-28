@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Archive, UserPlus, AlertTriangle, Zap, FolderPlus, Star, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, FileText, Printer, Archive, UserPlus, AlertTriangle, Zap, FolderPlus, Star, ChevronDown, ChevronRight, PenTool } from "lucide-react";
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBudget } from "@/lib/budget";
@@ -870,6 +870,7 @@ export default function Tasks() {
   const [search, setSearch] = useState("");
   const [focusMode, setFocusMode] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [prestationFilter, setPrestationFilter] = useState<string | null>(null);
   const [showProjectHint, setShowProjectHint] = useState(false);
   const [batForTask, setBatForTask] = useState<any | null>(null);
   const [printForTask, setPrintForTask] = useState<any | null>(null);
@@ -1318,8 +1319,16 @@ export default function Tasks() {
   const filteredProjects = projects.filter((p) => !form.client_id || p.client_id === form.client_id);
 
   const q = search.trim().toLowerCase();
-  const filteredTasks = q
+  const preFiltered = prestationFilter
     ? tasks.filter((t) => {
+        const list: string[] = (t.prestations && t.prestations.length > 0)
+          ? t.prestations
+          : (t.prestation ? [t.prestation] : []);
+        return list.includes(prestationFilter);
+      })
+    : tasks;
+  const filteredTasks = q
+    ? preFiltered.filter((t) => {
         const prestList: string[] = (t.prestations && t.prestations.length > 0)
           ? t.prestations
           : (t.prestation ? [t.prestation] : []);
@@ -1342,7 +1351,7 @@ export default function Tasks() {
           .toLowerCase();
         return haystack.includes(q);
       })
-    : tasks;
+    : preFiltered;
 
   const filteredSocialTasks = q
     ? socialTasks.filter((t) => {
@@ -1531,6 +1540,19 @@ export default function Tasks() {
             Seule la colonne « Aujourd'hui » est affichée. Glisse 1 à 3 tâches dedans pour la journée.
           </span>
         )}
+        <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+        {(["impression", "devis", "creation"] as const).map((k) => (
+          <Button
+            key={k}
+            size="sm"
+            variant={prestationFilter === k ? "default" : "outline"}
+            onClick={() => setPrestationFilter((v) => (v === k ? null : k))}
+            className="gap-1.5"
+          >
+            {k === "impression" ? <Printer className="h-3.5 w-3.5" /> : k === "devis" ? <FileText className="h-3.5 w-3.5" /> : <PenTool className="h-3.5 w-3.5" />}
+            {PRESTATION_LABEL[k]}
+          </Button>
+        ))}
       </div>
 
       <Tabs defaultValue="kanban">
