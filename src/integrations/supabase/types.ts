@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      agenda_blocks: {
+        Row: {
+          category: string
+          created_at: string
+          duration_minutes: number
+          end_date: string | null
+          id: string
+          month_day: number | null
+          notes: string | null
+          recurrence: string
+          start_date: string
+          start_time: string
+          title: string
+          weekdays: number[]
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          duration_minutes?: number
+          end_date?: string | null
+          id?: string
+          month_day?: number | null
+          notes?: string | null
+          recurrence?: string
+          start_date?: string
+          start_time?: string
+          title: string
+          weekdays?: number[]
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          duration_minutes?: number
+          end_date?: string | null
+          id?: string
+          month_day?: number | null
+          notes?: string | null
+          recurrence?: string
+          start_date?: string
+          start_time?: string
+          title?: string
+          weekdays?: number[]
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           client_id: string | null
@@ -3133,6 +3178,8 @@ export type Database = {
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
           questionnaire_id: string | null
+          scheduled_date: string | null
+          scheduled_start: string | null
           status: Database["public"]["Enums"]["task_status"]
           timer_started_at: string | null
           title: string
@@ -3173,6 +3220,8 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           questionnaire_id?: string | null
+          scheduled_date?: string | null
+          scheduled_start?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           timer_started_at?: string | null
           title: string
@@ -3213,6 +3262,8 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
           questionnaire_id?: string | null
+          scheduled_date?: string | null
+          scheduled_start?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           timer_started_at?: string | null
           title?: string
