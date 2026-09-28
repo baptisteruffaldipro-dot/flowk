@@ -436,6 +436,9 @@ function KanbanCard({
           <span className="text-base leading-none mt-0.5">📄</span>
           <div className="text-[15px] font-semibold leading-snug text-foreground flex-1">
             {projectName}
+            {task.has_unread_client_activity && (
+              <span title="Nouvelle activité client" className="inline-block ml-1.5 h-2.5 w-2.5 rounded-full bg-destructive align-middle animate-pulse" />
+            )}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1557,7 +1560,7 @@ export default function Tasks() {
               <div className="divide-y">
                 {filteredTasks.map((t) => (
                   <Link key={t.id} to={`/taches/${t.id}`} className="grid grid-cols-12 gap-3 px-5 py-3 hover:bg-secondary/40 items-center text-sm">
-                    <div className="col-span-5 truncate font-medium">{t.title?.trim() ? t.title : (t.projects?.name ?? "Sans titre")}</div>
+                    <div className="col-span-5 truncate font-medium">{(t as any).has_unread_client_activity && <span className="inline-block mr-1.5 h-2 w-2 rounded-full bg-destructive align-middle" />}{t.title?.trim() ? t.title : (t.projects?.name ?? "Sans titre")}</div>
                     <div className="col-span-2 text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
                     <div className="col-span-1 text-muted-foreground text-xs truncate">
                       {(() => {

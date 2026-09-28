@@ -74,6 +74,7 @@ export default function TaskDetail() {
     setQuestionnaires(q.data ?? []);
   };
   useEffect(() => { load(); }, [id]);
+  useEffect(() => { if (id) supabase.from("tasks").update({ has_unread_client_activity: false } as any).eq("id", id).then(() => {}); }, [id]);
 
   const createClient = async () => {
     const company = newClientCompany.trim();

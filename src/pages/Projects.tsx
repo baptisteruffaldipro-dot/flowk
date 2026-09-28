@@ -236,6 +236,7 @@ export default function Projects() {
                         onClick={(e) => e.stopPropagation()}
                       />
                       <Link to={`/projets/${p.id}`} className="truncate font-medium hover:underline">
+                        {(p as any).has_unread_client_activity && <span className="inline-block mr-1.5 h-2 w-2 rounded-full bg-destructive align-middle" />}
                         {p.name}
                       </Link>
                     </div>

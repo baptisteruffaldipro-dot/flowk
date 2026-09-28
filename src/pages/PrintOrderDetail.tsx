@@ -66,6 +66,7 @@ export default function PrintOrderDetail() {
   };
 
   useEffect(() => { load(); }, [id]);
+  useEffect(() => { if (id) supabase.from("print_orders").update({ has_unread_client_activity: false } as any).eq("id", id).then(() => {}); }, [id]);
 
   useEffect(() => {
     supabase.from("clients").select("id,name,company").order("name").then(({ data }) => {

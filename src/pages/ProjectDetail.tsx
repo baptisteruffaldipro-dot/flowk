@@ -91,6 +91,7 @@ export default function ProjectDetail() {
     }
   };
   useEffect(() => { load(); }, [id]);
+  useEffect(() => { if (id) supabase.from("projects").update({ has_unread_client_activity: false } as any).eq("id", id).then(() => {}); }, [id]);
 
   const linkTask = async (taskId: string) => {
     if (!taskId || !id) return;
