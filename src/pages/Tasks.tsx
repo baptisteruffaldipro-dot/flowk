@@ -1680,9 +1680,6 @@ export default function Tasks() {
           </DndContext>
         </TabsContent>
 
-        <TabsContent value="social" className="mt-4">
-          <SocialTasksAggregate />
-        </TabsContent>
       </Tabs>
       <NewBatDialog
         task={batForTask}
