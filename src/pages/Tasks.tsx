@@ -537,20 +537,7 @@ function KanbanCard({
               );
             })()}
             {(() => {
-              if (noBudget) {
-                return (
-                  <BudgetEditBadge task={task} onUpdate={onUpdate}>
-                    <Badge
-                      variant="outline"
-                      className="text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10 inline-flex items-center gap-1 cursor-pointer hover:bg-red-500/20"
-                      title="Cliquer pour renseigner le budget"
-                    >
-                      <AlertTriangle className="h-3 w-3" />
-                      Non budgétisé
-                    </Badge>
-                  </BudgetEditBadge>
-                );
-              }
+              if (noBudget) return null;
               const overrun = budget.estimatedTotal > 0 && budget.realTotal > budget.estimatedTotal;
               return (
                 <BudgetEditBadge task={task} onUpdate={onUpdate}>
