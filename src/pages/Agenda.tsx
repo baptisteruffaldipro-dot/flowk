@@ -169,7 +169,16 @@ export default function Agenda() {
         <PopoverTrigger asChild>
           <div
             draggable
-            onDragStart={(e) => { e.dataTransfer.setData("text/task", t.id); e.dataTransfer.effectAllowed = "move"; }}
+            onDragStart={(e) => {
+              e.dataTransfer.setData("text/task", t.id);
+              e.dataTransfer.effectAllowed = "move";
+              const ghost = e.currentTarget.cloneNode(true) as HTMLElement;
+              ghost.style.width = "180px"; ghost.style.opacity = "0.9";
+              document.body.appendChild(ghost);
+              e.dataTransfer.setDragImage(ghost, 20, 12);
+              requestAnimationFrame(() => document.body.removeChild(ghost));
+            }}
+            onDragEnd={clearDrag}
             style={{ background: catBg(cat, 0.16), borderLeftColor: catVar(cat), ...style }}
             className={cn(
               "group cursor-grab active:cursor-grabbing rounded-md border-l-4 px-2 py-1 text-left overflow-hidden hover:brightness-95 transition",
@@ -260,8 +269,8 @@ export default function Agenda() {
           const key = `all-${ymd(d)}`;
           const list = (tasksByDay.get(ymd(d)) ?? []).filter((t) => !t.scheduled_start);
           return (
-            <div key={key} onDragOver={allowDrop(key)} onDragLeave={() => setDragOver(null)} onDrop={(e) => onDrop(e, d, null)}
-              className={cn("border-b border-l p-1 min-h-[56px] space-y-1 transition-colors", dragOver === key && "bg-accent/10")}>
+            <div key={key} onDragOver={allowDrop(key)} onDragLeave={clearDrag} onDrop={(e) => onDrop(e, d, null)}
+              className={cn("border-b border-l p-1 min-h-[56px] space-y-1 transition-colors", dragOver === key && "bg-accent/15 ring-2 ring-inset ring-accent/40")}>
               {list.map((t) => <TaskChip key={t.id} t={t} compact={view === "week"} />)}
               {list.length === 0 && <div className="text-[10px] text-muted-foreground/60 text-center pt-3">glisse ici</div>}
             </div>
