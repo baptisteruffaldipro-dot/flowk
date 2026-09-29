@@ -116,6 +116,19 @@ export default function ClientPortalPublic() {
   const totalAmount = taskBilling?.total ?? 0;
 
   const prestationHT = isTask ? totalAmount : projectTasksTotal;
+  // Montant effectif d'une commande : le tarif choisi par le client s'il existe,
+  // sinon le montant saisi côté admin.
+  const poAmount = (po: any): number => {
+    const chosen = (p.print_selections ?? {})[po.id];
+    if (chosen && chosen.price != null) return Number(chosen.price);
+    return Number(po?.amount ?? 0);
+  };
+  const poQuantity = (po: any): number | null => {
+    const chosen = (p.print_selections ?? {})[po.id];
+    if (chosen && chosen.quantity != null) return Number(chosen.quantity);
+    return po?.quantity != null ? Number(po.quantity) : null;
+  };
+
   const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + poAmount(o), 0);
   const componentsHT = prestationHT + printHT;
   // Le total HT est la somme des composants (prestation + impressions).
@@ -142,16 +155,6 @@ export default function ClientPortalPublic() {
 
   // Montant effectif d'une commande : le tarif choisi par le client s'il existe,
   // sinon le montant saisi côté admin.
-  const poAmount = (po: any): number => {
-    const chosen = (p.print_selections ?? {})[po.id];
-    if (chosen && chosen.price != null) return Number(chosen.price);
-    return Number(po?.amount ?? 0);
-  };
-  const poQuantity = (po: any): number | null => {
-    const chosen = (p.print_selections ?? {})[po.id];
-    if (chosen && chosen.quantity != null) return Number(chosen.quantity);
-    return po?.quantity != null ? Number(po.quantity) : null;
-  };
 
   return (
     <div className="min-h-screen bg-background">
