@@ -10,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Plus, Repeat, Clock, X, ExternalLink, GripVertical, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Repeat, Clock, X, ExternalLink, GripVertical, Search, CalendarPlus, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Block, CATEGORY_LABEL, DONE_STATUSES, blockOccursOn, catBg, catVar, fmtDur, minToTime, parseYmd, taskCategory, timeToMin, ymd,
 } from "@/lib/agenda";
@@ -33,6 +34,7 @@ const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.get
 
 export default function Agenda() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [view, setView] = useState<View>("week");
   const [anchor, setAnchor] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
   const [tasks, setTasks] = useState<any[]>([]);
@@ -43,6 +45,10 @@ export default function Agenda() {
   const [bForm, setBForm] = useState<Omit<Block, "id">>(emptyBlock());
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [dragHint, setDragHint] = useState<{ key: string; min: number } | null>(null);
+  const [backlogOpen, setBacklogOpen] = useState(false);
+  const [schedulingTask, setSchedulingTask] = useState<any | null>(null);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
   const gridScrollRef = { current: null as HTMLDivElement | null };
 
   const load = async () => {
@@ -57,10 +63,12 @@ export default function Agenda() {
   useEffect(() => { load(); }, []);
 
   const days = useMemo(() => {
-    if (view === "day") return [anchor];
+    if (view === "day" || isMobile) return [anchor];
     const m = mondayOf(anchor);
     return Array.from({ length: 7 }, (_, i) => addDays(m, i));
-  }, [view, anchor]);
+  }, [view, anchor, isMobile]);
+
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(mondayOf(anchor), i)), [anchor]);
 
   const monthCells = useMemo(() => {
     const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
@@ -137,9 +145,21 @@ export default function Agenda() {
     ? `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`
     : view === "day"
       ? anchor.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
-      : `${days[0].getDate()} ${MONTHS[days[0].getMonth()].slice(0, 4)}. – ${days[6].getDate()} ${MONTHS[days[6].getMonth()].slice(0, 4)}. ${days[6].getFullYear()}`;
+      : `${weekDays[0].getDate()} ${MONTHS[weekDays[0].getMonth()].slice(0, 4)}. – ${weekDays[6].getDate()} ${MONTHS[weekDays[6].getMonth()].slice(0, 4)}. ${weekDays[6].getFullYear()}`;
 
-  const weekTotal = view !== "month" ? days.reduce((s, d) => s + dayLoad(d).minutes, 0) : 0;
+  const weekTotal = view !== "month" ? (view === "week" ? weekDays : days).reduce((s, d) => s + dayLoad(d).minutes, 0) : 0;
+
+  const openSchedule = (t: any) => {
+    setSchedulingTask(t);
+    setScheduleDate(t.scheduled_date || ymd(anchor));
+    setScheduleTime(t.scheduled_start?.slice(0, 5) || "");
+  };
+  const saveSchedule = async () => {
+    if (!schedulingTask || !scheduleDate) return;
+    await updateTask(schedulingTask.id, { scheduled_date: scheduleDate, scheduled_start: scheduleTime || null });
+    setAnchor(parseYmd(scheduleDate));
+    setSchedulingTask(null);
+  };
 
   // ---------- Block dialog ----------
   const openNewBlock = () => { setEditingBlock(null); setBForm(emptyBlock()); setBlockOpen(true); };
@@ -217,6 +237,7 @@ export default function Agenda() {
             </div>
           </div>
           <div className="flex gap-2">
+            {isMobile && <Button size="sm" variant="outline" className="h-7 text-xs flex-1" onClick={() => openSchedule(t)}><CalendarPlus className="h-3 w-3 mr-1" />Déplacer</Button>}
             {t.scheduled_start && <Button size="sm" variant="outline" className="h-7 text-xs flex-1" onClick={() => updateTask(t.id, { scheduled_start: null })}>Sans heure</Button>}
             <Button size="sm" variant="outline" className="h-7 text-xs flex-1" onClick={() => updateTask(t.id, { scheduled_date: null, scheduled_start: null })}><X className="h-3 w-3 mr-1" />Retirer</Button>
             <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => navigate(`/taches/${t.id}`)}><ExternalLink className="h-3 w-3" /></Button>
@@ -346,7 +367,7 @@ export default function Agenda() {
   const renderMonth = () => (
     <Card className="overflow-hidden">
       <div className="grid grid-cols-7 border-b text-[11px] uppercase tracking-wider text-muted-foreground">
-        {DAY_NAMES.map((d) => <div key={d} className="px-2 py-2">{d}</div>)}
+        {DAY_NAMES.map((d) => <div key={d} className="px-1 py-2 text-center md:px-2 md:text-left">{d}</div>)}
       </div>
       <div className="grid grid-cols-7">
         {monthCells.map((d, i) => {
@@ -356,14 +377,19 @@ export default function Agenda() {
           const isToday = ymd(d) === ymd(new Date());
           return (
             <div key={key} onDragOver={allowDrop(key)} onDragLeave={clearDrag} onDrop={(e) => onDrop(e, d, null)}
-              className={cn("min-h-[120px] border-b border-r p-1.5 space-y-1 transition-colors", !inMonth && "bg-muted/30 opacity-60", (i + 1) % 7 === 0 && "border-r-0", dragOver === key && "bg-accent/15 ring-2 ring-inset ring-accent/40")}>
-              <div className="flex items-center justify-between">
-                <button onClick={() => { setAnchor(d); setView("day"); }} className={cn("text-xs font-semibold px-1.5 rounded", isToday && "bg-accent text-accent-foreground")}>{d.getDate()}</button>
-                <div className="flex gap-0.5">{l.bs.slice(0, 4).map((b) => <span key={b.id} className="h-1.5 w-1.5 rounded-full" style={{ background: catVar(b.category) }} title={b.title} />)}</div>
+               className={cn("min-h-14 border-b border-r p-0.5 space-y-1 transition-colors md:min-h-[120px] md:p-1.5", !inMonth && "bg-muted/30 opacity-60", (i + 1) % 7 === 0 && "border-r-0", isMobile && ymd(d) === ymd(anchor) && "bg-secondary", dragOver === key && "bg-accent/15 ring-2 ring-inset ring-accent/40")}>
+               <div className="flex items-center justify-center md:justify-between">
+                 <Button variant="ghost" size="sm" onClick={() => { setAnchor(d); if (!isMobile) setView("day"); }} className={cn("h-7 min-w-7 p-0 text-xs font-semibold", isToday && "bg-accent text-accent-foreground")}>{d.getDate()}</Button>
+                 <div className="hidden md:flex gap-0.5">{l.bs.slice(0, 4).map((b) => <span key={b.id} className="h-1.5 w-1.5 rounded-full" style={{ background: catVar(b.category) }} title={b.title} />)}</div>
               </div>
-              {l.ts.slice(0, 4).map((t) => <TaskChip key={t.id} t={t} compact />)}
-              {l.ts.length > 4 && <div className="text-[10px] text-muted-foreground px-1">+{l.ts.length - 4} tâches</div>}
-              {(l.minutes > 0 || l.count > 0) && <LoadBar d={d} />}
+               <div className="md:hidden flex justify-center gap-0.5" aria-label={`${l.count} tâches, ${l.bs.length} périodes`}>
+                 {[...l.ts.map(taskCategory), ...l.bs.map((b) => b.category)].slice(0, 3).map((c, j) => <span key={j} className="h-1.5 w-1.5 rounded-full" style={{ background: catVar(c) }} />)}
+               </div>
+               <div className="hidden md:block space-y-1">
+                 {l.ts.slice(0, 4).map((t) => <TaskChip key={t.id} t={t} compact />)}
+                 {l.ts.length > 4 && <div className="text-[10px] text-muted-foreground px-1">+{l.ts.length - 4} tâches</div>}
+                 {(l.minutes > 0 || l.count > 0) && <LoadBar d={d} />}
+               </div>
             </div>
           );
         })}
@@ -379,7 +405,7 @@ export default function Agenda() {
         actions={<Button size="sm" onClick={openNewBlock}><Repeat className="h-4 w-4 mr-1" /> Période récurrente</Button>}
       />
 
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="inline-flex rounded-md border bg-card p-0.5">
           {(["day", "week", "month"] as View[]).map((v) => (
             <Button key={v} size="sm" variant={view === v ? "secondary" : "ghost"} className="h-7 px-3" onClick={() => setView(v)}>
@@ -392,8 +418,8 @@ export default function Agenda() {
           <Button variant="outline" size="sm" className="h-8" onClick={() => { const d = new Date(); d.setHours(0, 0, 0, 0); setAnchor(d); }}>Aujourd'hui</Button>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
         </div>
-        <div className="text-lg font-semibold capitalize">{title}</div>
-        <div className="ml-auto flex flex-wrap gap-x-3 gap-y-1">
+         <div className="w-full md:w-auto text-base md:text-lg font-semibold capitalize">{title}</div>
+         <div className="hidden md:flex ml-auto flex-wrap gap-x-3 gap-y-1">
           {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
             <span key={k} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <span className="h-2.5 w-2.5 rounded-sm" style={{ background: catVar(k) }} />{v}
@@ -402,20 +428,35 @@ export default function Agenda() {
         </div>
       </div>
 
+       {isMobile && view === "week" && (
+         <div className="grid grid-cols-7 gap-1 mb-4" aria-label="Jours de la semaine">
+           {weekDays.map((d) => {
+             const selected = ymd(d) === ymd(anchor);
+             const l = dayLoad(d);
+             return <Button key={ymd(d)} variant={selected ? "secondary" : "ghost"} size="sm" onClick={() => setAnchor(d)}
+               className={cn("h-16 min-w-0 flex flex-col gap-1 px-0 border", selected ? "border-ring" : "border-transparent")}>
+               <span className="text-[10px] text-muted-foreground">{DAY_NAMES[(d.getDay() + 6) % 7]}</span>
+               <span className="text-sm font-semibold">{d.getDate()}</span>
+               <span className="flex gap-0.5 h-1.5">{[...l.ts.map(taskCategory), ...l.bs.map((b) => b.category)].slice(0, 3).map((c, j) => <span key={j} className="h-1.5 w-1.5 rounded-full" style={{ background: catVar(c) }} />)}</span>
+             </Button>;
+           })}
+         </div>
+       )}
+
       <div className="grid gap-4 lg:grid-cols-[260px_1fr]">
-        <Card className={cn("p-3 h-fit lg:sticky lg:top-4 space-y-2 transition-colors", dragOver === "backlog" && "ring-2 ring-accent/40 bg-accent/5")}
+         <Card className={cn("p-3 h-fit lg:sticky lg:top-4 space-y-2 transition-colors", dragOver === "backlog" && "ring-2 ring-accent/40 bg-accent/5")}
           onDragOver={allowDrop("backlog")} onDragLeave={clearDrag}
           onDrop={(e) => { e.preventDefault(); clearDrag(); const id = e.dataTransfer.getData("text/task"); if (id) updateTask(id, { scheduled_date: null, scheduled_start: null }); }}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">À programmer</h2>
-            <span className="text-xs text-muted-foreground">{backlog.length}</span>
-          </div>
-          <div className="relative">
+           <Button variant="ghost" size="sm" className="w-full justify-between px-0 hover:bg-transparent" onClick={() => setBacklogOpen((v) => !v)}>
+             <span className="text-sm font-semibold">À programmer <span className="text-muted-foreground font-normal">({backlog.length})</span></span>
+             <ChevronDown className={cn("h-4 w-4 transition-transform lg:hidden", backlogOpen && "rotate-180")} />
+           </Button>
+           <div className={cn("relative", !backlogOpen && "hidden lg:block")}>
             <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher…" className="h-8 pl-7 text-xs" />
           </div>
-          <p className="text-[11px] text-muted-foreground">Glisse une tâche sur un jour ou une heure. Remets-la ici pour la déprogrammer.</p>
-          <div className="space-y-1.5 max-h-[65vh] overflow-y-auto pr-1">
+           <p className="hidden lg:block text-[11px] text-muted-foreground">Glisse une tâche sur un jour ou une heure. Remets-la ici pour la déprogrammer.</p>
+           <div className={cn("space-y-1.5 max-h-[65vh] overflow-y-auto pr-1", !backlogOpen && "hidden lg:block")}>
             {backlog.map((t) => {
               const cat = taskCategory(t);
               return (
@@ -423,12 +464,13 @@ export default function Agenda() {
                   style={{ borderLeftColor: catVar(cat), background: catBg(cat, 0.08) }}
                   className="flex items-start gap-1.5 rounded-md border border-l-4 px-2 py-1.5 cursor-grab active:cursor-grabbing hover:shadow-sm">
                   <GripVertical className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
-                  <div className="min-w-0">
+                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-medium truncate">{t.title}</div>
                     <div className="text-[10px] text-muted-foreground truncate">
                       {CATEGORY_LABEL[cat]}{t.clients?.name ? ` · ${t.clients.name}` : ""}
                       {t.deadline ? ` · ⏰ ${new Date(t.deadline).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}` : ""}
                     </div>
+                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 lg:hidden" aria-label={`Planifier ${t.title}`} onClick={() => openSchedule(t)}><CalendarPlus className="h-4 w-4" /></Button>
                   </div>
                 </div>
               );
@@ -437,8 +479,20 @@ export default function Agenda() {
           </div>
         </Card>
 
-        <div className="min-w-0">{view === "month" ? renderMonth() : renderGrid()}</div>
+         <div className="min-w-0">{view === "month" ? <>{renderMonth()}{isMobile && <div className="mt-4"><h2 className="text-sm font-semibold mb-2 capitalize">{anchor.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}</h2>{renderGrid()}</div>}</> : renderGrid()}</div>
       </div>
+
+       <Dialog open={!!schedulingTask} onOpenChange={(open) => { if (!open) setSchedulingTask(null); }}>
+         <DialogContent className="w-[calc(100%-2rem)] max-w-sm rounded-md">
+           <DialogHeader><DialogTitle>Planifier la tâche</DialogTitle></DialogHeader>
+           <p className="text-sm truncate">{schedulingTask?.title}</p>
+           <div className="space-y-3">
+             <div className="space-y-1"><Label htmlFor="agenda-date">Jour</Label><Input id="agenda-date" type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} /></div>
+             <div className="space-y-1"><Label htmlFor="agenda-time">Heure (facultative)</Label><Input id="agenda-time" type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} /></div>
+           </div>
+           <DialogFooter><Button onClick={saveSchedule} disabled={!scheduleDate}>Enregistrer</Button></DialogFooter>
+         </DialogContent>
+       </Dialog>
 
       <Dialog open={blockOpen} onOpenChange={setBlockOpen}>
         <DialogContent className="max-w-lg">
