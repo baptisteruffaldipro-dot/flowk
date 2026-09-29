@@ -140,6 +140,19 @@ export default function ClientPortalPublic() {
       ? po.price_tiers.filter((tier: PriceTier) => tier.quantity != null && tier.price != null)
       : [];
 
+  // Montant effectif d'une commande : le tarif choisi par le client s'il existe,
+  // sinon le montant saisi côté admin.
+  const poAmount = (po: any): number => {
+    const chosen = (p.print_selections ?? {})[po.id];
+    if (chosen && chosen.price != null) return Number(chosen.price);
+    return Number(po?.amount ?? 0);
+  };
+  const poQuantity = (po: any): number | null => {
+    const chosen = (p.print_selections ?? {})[po.id];
+    if (chosen && chosen.quantity != null) return Number(chosen.quantity);
+    return po?.quantity != null ? Number(po.quantity) : null;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-6">
