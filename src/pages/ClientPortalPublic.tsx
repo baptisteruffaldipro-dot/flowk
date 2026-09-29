@@ -116,7 +116,7 @@ export default function ClientPortalPublic() {
   const totalAmount = taskBilling?.total ?? 0;
 
   const prestationHT = isTask ? totalAmount : projectTasksTotal;
-  const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0);
+  const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + poAmount(o), 0);
   const componentsHT = prestationHT + printHT;
   // Le total HT est la somme des composants (prestation + impressions).
   // On ne retombe sur amount_due_ttc que si aucun composant n'est chiffré.
@@ -315,13 +315,13 @@ export default function ClientPortalPublic() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                    {po.quantity != null && <Info label="Quantité" value={String(po.quantity)} />}
+                    {poQuantity(po) != null && <Info label="Quantité" value={String(poQuantity(po))} />}
                     {po.format && <Info label="Format" value={po.format} />}
                     {po.support && <Info label="Support" value={po.support} />}
                     {po.grammage && <Info label="Grammage" value={po.grammage} />}
                     {po.colors && <Info label="Couleurs" value={po.colors} />}
                     {po.finitions && <Info label="Finitions" value={po.finitions} />}
-                    {po.amount != null && <Info label="Montant" value={`${Number(po.amount).toFixed(2)} € HT`} />}
+                    {poAmount(po) > 0 && <Info label="Montant" value={`${poAmount(po).toFixed(2)} € HT`} />}
                     {po.estimated_delivery_date && (
                       <Info label="Livraison estimée" value={new Date(po.estimated_delivery_date).toLocaleDateString("fr-FR")} />
                     )}
