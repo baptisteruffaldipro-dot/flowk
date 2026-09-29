@@ -116,7 +116,20 @@ export default function ClientPortalPublic() {
   const totalAmount = taskBilling?.total ?? 0;
 
   const prestationHT = isTask ? totalAmount : projectTasksTotal;
-  const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0);
+  // Montant effectif d'une commande : le tarif choisi par le client s'il existe,
+  // sinon le montant saisi côté admin.
+  const poAmount = (po: any): number => {
+    const chosen = (p.print_selections ?? {})[po.id];
+    if (chosen && chosen.price != null) return Number(chosen.price);
+    return Number(po?.amount ?? 0);
+  };
+  const poQuantity = (po: any): number | null => {
+    const chosen = (p.print_selections ?? {})[po.id];
+    if (chosen && chosen.quantity != null) return Number(chosen.quantity);
+    return po?.quantity != null ? Number(po.quantity) : null;
+  };
+
+  const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + poAmount(o), 0);
   const componentsHT = prestationHT + printHT;
   // Le total HT est la somme des composants (prestation + impressions).
   // On ne retombe sur amount_due_ttc que si aucun composant n'est chiffré.
@@ -139,6 +152,9 @@ export default function ClientPortalPublic() {
     Array.isArray(po?.price_tiers)
       ? po.price_tiers.filter((tier: PriceTier) => tier.quantity != null && tier.price != null)
       : [];
+
+  // Montant effectif d'une commande : le tarif choisi par le client s'il existe,
+  // sinon le montant saisi côté admin.
 
   return (
     <div className="min-h-screen bg-background">
@@ -302,13 +318,13 @@ export default function ClientPortalPublic() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                    {po.quantity != null && <Info label="Quantité" value={String(po.quantity)} />}
+                    {poQuantity(po) != null && <Info label="Quantité" value={String(poQuantity(po))} />}
                     {po.format && <Info label="Format" value={po.format} />}
                     {po.support && <Info label="Support" value={po.support} />}
                     {po.grammage && <Info label="Grammage" value={po.grammage} />}
                     {po.colors && <Info label="Couleurs" value={po.colors} />}
                     {po.finitions && <Info label="Finitions" value={po.finitions} />}
-                    {po.amount != null && <Info label="Montant" value={`${Number(po.amount).toFixed(2)} € HT`} />}
+                    {poAmount(po) > 0 && <Info label="Montant" value={`${poAmount(po).toFixed(2)} € HT`} />}
                     {po.estimated_delivery_date && (
                       <Info label="Livraison estimée" value={new Date(po.estimated_delivery_date).toLocaleDateString("fr-FR")} />
                     )}
@@ -341,6 +357,17 @@ export default function ClientPortalPublic() {
                                   setBusy(false);
                                   if (error) return toast.error(error.message);
                                   toast.success(`${formatTierNumber(quantity)} ex. sélectionnés`);
+                                  // Mise à jour optimiste : le prix change tout de suite à l'écran.
+                                  setData((prev: any) => prev ? {
+                                    ...prev,
+                                    portal: {
+                                      ...prev.portal,
+                                      print_selections: {
+                                        ...(prev.portal.print_selections ?? {}),
+                                        [po.id]: { quantity, price },
+                                      },
+                                    },
+                                  } : prev);
                                   load();
                                 }}
                                 className={`flex items-center justify-between gap-3 text-sm rounded-md border px-3 py-2 text-left transition ${
@@ -366,7 +393,7 @@ export default function ClientPortalPublic() {
               ))}
             </div>
             {(() => {
-              const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0);
+              const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + poAmount(o), 0);
               if (!printHT) return null;
               return (
                 <div className="border-t border-border/60 pt-3 space-y-1 text-sm">
