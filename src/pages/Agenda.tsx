@@ -281,10 +281,10 @@ export default function Agenda() {
           const isToday = ymd(d) === ymd(new Date());
           return (
             <div key={ymd(d)} className={cn("border-b border-l px-2 py-2 space-y-1.5", isToday && "bg-accent/5")}>
-              <button className="flex items-baseline gap-1.5" onClick={() => { setAnchor(d); setView("day"); }}>
+               <Button variant="ghost" size="sm" className="h-auto p-0 flex items-baseline gap-1.5 hover:bg-transparent" onClick={() => { setAnchor(d); setView("day"); }}>
                 <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{DAY_NAMES[(d.getDay() + 6) % 7]}</span>
                 <span className={cn("text-lg font-semibold leading-none", isToday && "rounded-full bg-accent text-accent-foreground px-1.5 py-0.5 text-base")}>{d.getDate()}</span>
-              </button>
+               </Button>
               <LoadBar d={d} big={view === "day"} />
             </div>
           );
@@ -298,7 +298,7 @@ export default function Agenda() {
             <div key={key} onDragOver={allowDrop(key)} onDragLeave={clearDrag} onDrop={(e) => onDrop(e, d, null)}
               className={cn("border-b border-l p-1 min-h-[56px] space-y-1 transition-colors", dragOver === key && "bg-accent/15 ring-2 ring-inset ring-accent/40")}>
               {list.map((t) => <TaskChip key={t.id} t={t} compact={view === "week"} />)}
-              {list.length === 0 && <div className="text-[10px] text-muted-foreground/60 text-center pt-3">glisse ici</div>}
+               {list.length === 0 && <div className="text-[10px] text-muted-foreground/60 text-center pt-3">{isMobile ? "Aucune tâche" : "glisse ici"}</div>}
             </div>
           );
         })}
@@ -424,7 +424,7 @@ export default function Agenda() {
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => shift(1)}><ChevronRight className="h-4 w-4" /></Button>
         </div>
          <div className="w-full md:w-auto text-base md:text-lg font-semibold capitalize">{title}</div>
-         <div className="hidden md:flex ml-auto flex-wrap gap-x-3 gap-y-1">
+         <div className="flex w-full lg:w-auto lg:ml-auto gap-x-3 gap-y-1 overflow-x-auto whitespace-nowrap pb-1 lg:flex-wrap lg:overflow-visible">
           {Object.entries(CATEGORY_LABEL).map(([k, v]) => (
             <span key={k} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <span className="h-2.5 w-2.5 rounded-sm" style={{ background: catVar(k) }} />{v}
