@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, ChevronRight, Plus, Repeat, Clock, X, ExternalLink, GripVertical, Search, CalendarPlus, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Block, CATEGORY_LABEL, DONE_STATUSES, blockOccursOn, catBg, catVar, fmtDur, minToTime, parseYmd, taskCategory, timeToMin, ymd,
 } from "@/lib/agenda";
@@ -34,7 +33,13 @@ const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.get
 
 export default function Agenda() {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia("(max-width: 1023px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const onChange = () => setIsMobile(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
   const [view, setView] = useState<View>("week");
   const [anchor, setAnchor] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
   const [tasks, setTasks] = useState<any[]>([]);
