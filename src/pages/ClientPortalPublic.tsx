@@ -357,6 +357,17 @@ export default function ClientPortalPublic() {
                                   setBusy(false);
                                   if (error) return toast.error(error.message);
                                   toast.success(`${formatTierNumber(quantity)} ex. sélectionnés`);
+                                  // Mise à jour optimiste : le prix change tout de suite à l'écran.
+                                  setData((prev: any) => prev ? {
+                                    ...prev,
+                                    portal: {
+                                      ...prev.portal,
+                                      print_selections: {
+                                        ...(prev.portal.print_selections ?? {}),
+                                        [po.id]: { quantity, price },
+                                      },
+                                    },
+                                  } : prev);
                                   load();
                                 }}
                                 className={`flex items-center justify-between gap-3 text-sm rounded-md border px-3 py-2 text-left transition ${
@@ -382,7 +393,7 @@ export default function ClientPortalPublic() {
               ))}
             </div>
             {(() => {
-              const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + Number(o.amount ?? 0), 0);
+              const printHT = linkedPrintOrders.reduce((s: number, o: any) => s + poAmount(o), 0);
               if (!printHT) return null;
               return (
                 <div className="border-t border-border/60 pt-3 space-y-1 text-sm">
