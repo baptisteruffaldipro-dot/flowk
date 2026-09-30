@@ -11,7 +11,15 @@ import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileTe
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 type PriceTier = { quantity?: number | null; models?: number | null; price?: number | null };
+
+const BAT_CHECKS = [
+  "Textes et orthographe vérifiés",
+  "Couleurs, visuels et mise en page conformes (rendu écran indicatif)",
+  "Format, quantités et indications techniques validés",
+];
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "En préparation",
@@ -38,6 +46,10 @@ export default function ClientPortalPublic() {
   const [obs, setObs] = useState<Record<string, string>>({});
   const [zoom, setZoom] = useState<Record<string, number>>({});
   const [ribOpen, setRibOpen] = useState(false);
+  const [signFile, setSignFile] = useState<{ name: string; key: string } | null>(null);
+  const [checks, setChecks] = useState([false, false, false]);
+  const [signer, setSigner] = useState("");
+  const [certView, setCertView] = useState<any>(null);
 
   const load = async () => {
     if (!token) return;
@@ -443,16 +455,17 @@ export default function ClientPortalPublic() {
                         {(() => {
                           const rv = reviews.find((r: any) => r.file === f.name);
                           if (rv?.status === "approved") {
-                            return <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px] gap-1"><CheckCircle2 className="h-3 w-3" /> BAT validé</Badge>;
+                            return (
+                              <button type="button" onClick={() => setCertView(rv)} title="Voir le certificat">
+                                <Badge className="bg-emerald-500 hover:bg-emerald-600 text-[10px] gap-1"><CheckCircle2 className="h-3 w-3" /> BAT signé · certificat</Badge>
+                              </button>
+                            );
                           }
                           return (
                             <Button
                               size="sm"
                               disabled={busy}
-                              onClick={async () => {
-                                await act("approve_file", { file: f.name, note: obs[key]?.trim() || null });
-                                toast.success("BAT validé pour ce fichier");
-                              }}
+                              onClick={() => { setChecks([false, false, false]); setSignFile({ name: f.name, key }); }}
                             >
                               <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Valider BAT
                             </Button>
@@ -730,6 +743,72 @@ export default function ClientPortalPublic() {
           </div>
         </section>
       </div>
+
+      <Dialog open={!!signFile} onOpenChange={(o) => !o && setSignFile(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Signer le Bon à Tirer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div className="text-xs text-muted-foreground truncate">Fichier : <span className="font-medium text-foreground">{signFile?.name}</span></div>
+            <div className="space-y-2.5">
+              {BAT_CHECKS.map((c, i) => (
+                <label key={i} className="flex items-start gap-2.5 cursor-pointer">
+                  <Checkbox checked={checks[i]} onCheckedChange={(v) => setChecks(checks.map((x, j) => (j === i ? !!v : x)))} className="mt-0.5" />
+                  <span>{c}</span>
+                </label>
+              ))}
+            </div>
+            <div className="space-y-1.5">
+              <div className="text-xs font-medium">Nom et prénom (signature) *</div>
+              <Input value={signer} onChange={(e) => setSigner(e.target.value)} maxLength={100} placeholder="Jean Dupont" />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Votre signature vaut « Bon pour impression ». La date, l'heure et le fichier validé sont enregistrés dans un certificat.
+              Toute erreur non signalée avant validation ne pourra engager la responsabilité du studio.
+            </p>
+            <Button
+              className="w-full"
+              disabled={busy || !checks.every(Boolean) || !signer.trim()}
+              onClick={async () => {
+                if (!signFile) return;
+                await act("approve_file", {
+                  file: signFile.name, note: obs[signFile.key]?.trim() || null,
+                  signed_by: signer.trim(), checks: checks.filter(Boolean).length, user_agent: navigator.userAgent,
+                });
+                setSignFile(null);
+                toast.success("BAT signé — certificat généré");
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1" /> Bon pour impression — Signer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!certView} onOpenChange={(o) => !o && setCertView(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Certificat de validation BAT</DialogTitle>
+          </DialogHeader>
+          {certView && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-md border border-border p-4 space-y-2">
+                <Info label="N° de certificat" value={certView.certificate_id ?? "—"} />
+                <Info label="Fichier validé" value={certView.file} />
+                <Info label="Signé par" value={certView.signed_by ?? "—"} />
+                <Info label="Date et heure" value={new Date(certView.at).toLocaleString("fr-FR")} />
+                {client?.name && <Info label="Client" value={client.name} />}
+                {certView.note && <Info label="Observation" value={certView.note} />}
+              </div>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                {BAT_CHECKS.map((c, i) => <li key={i}>✓ {c}</li>)}
+              </ul>
+              <Button variant="outline" className="w-full" onClick={() => window.print()}>Imprimer / PDF</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={ribOpen} onOpenChange={setRibOpen}>
         <DialogContent className="max-w-md">

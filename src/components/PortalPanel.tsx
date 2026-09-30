@@ -569,7 +569,14 @@ export default function PortalPanel({
               <span className="flex-1 truncate">{d.name}</span>
               {(() => {
                 const rv = (((portal as any).deliverable_reviews ?? []) as any[]).find((r) => r.file === d.name);
-                if (rv?.status === "approved") return <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500">BAT validé</Badge>;
+                if (rv?.status === "approved") return (
+                  <Badge
+                    className="text-[10px] bg-emerald-500 hover:bg-emerald-500"
+                    title={rv.certificate_id ? `Certificat ${rv.certificate_id} — signé par ${rv.signed_by} le ${new Date(rv.at).toLocaleString("fr-FR")}` : undefined}
+                  >
+                    BAT validé{rv.signed_by ? ` · ${rv.signed_by} · ${new Date(rv.at).toLocaleDateString("fr-FR")}` : ""}
+                  </Badge>
+                );
                 if (rv?.status === "changes_requested") return <Badge variant="destructive" className="text-[10px]">Modif. demandée</Badge>;
                 return <Badge variant="outline" className="text-[10px]">BAT en attente</Badge>;
               })()}
