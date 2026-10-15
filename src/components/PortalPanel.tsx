@@ -1,4 +1,5 @@
 import PortalAnnotationsAdmin from "@/components/PortalAnnotationsAdmin";
+import { isFileApproved, reviewForFile } from "@/lib/deliverableReview";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ClipboardList, Printer, FolderOpen, ChevronDown } from "lucide-react";
@@ -49,7 +50,7 @@ type Portal = {
   print_order_ids?: string[] | null;
 };
 
-type Deliverable = { name: string; url: string };
+type Deliverable = { name: string; url: string; uploaded_at?: string };
 type PortalMessage = {
   id: string;
   author: string;
@@ -353,7 +354,7 @@ export default function PortalPanel({
         const { error } = await supabase.storage.from(bucket).upload(path, file);
         if (error) { toast.error(error.message); continue; }
         const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(path, SIGNED_URL_TTL);
-        if (signed?.signedUrl) next.push({ name: file.name, url: signed.signedUrl });
+        if (signed?.signedUrl) next.push({ name: file.name, url: signed.signedUrl, uploaded_at: new Date().toISOString() });
       }
       await saveDeliverables(next);
       toast.success("Fichier(s) ajouté(s)");
@@ -618,7 +619,7 @@ export default function PortalPanel({
 
   const clientObservations = messages.filter(isClientObservation).length;
   const reviews = ((portal as any).deliverable_reviews ?? []) as { file: string; status: string }[];
-  const approvedFiles = deliverables.filter((file) => reviews.some((review) => review.file === file.name && review.status === "approved")).length;
+  const approvedFiles = deliverables.filter((file) => isFileApproved(reviews, file)).length;
 
   const portalHeader = (<>
 <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -677,7 +678,7 @@ export default function PortalPanel({
             <div key={i} className="flex flex-wrap items-center gap-2 text-sm rounded-md border border-border p-3">
               <span className="min-w-0 basis-full font-medium break-all sm:basis-auto sm:flex-1">{d.name}</span>
               {(() => {
-                const rv = (((portal as any).deliverable_reviews ?? []) as any[]).find((r) => r.file === d.name);
+                const rv = reviewForFile(((portal as any).deliverable_reviews ?? []) as any[], d);
                 if (rv?.status === "approved") return (
                   <Badge
                     className="text-[10px] bg-success text-success-foreground hover:bg-success"

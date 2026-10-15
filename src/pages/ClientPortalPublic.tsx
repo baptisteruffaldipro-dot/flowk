@@ -1,4 +1,5 @@
 import ClientBatApproval, { CLIENT_BAT_CHECKS } from "@/components/ClientBatApproval";
+import { isFileApproved, reviewForFile } from "@/lib/deliverableReview";
 import ClientOrderProgress, { ClientOrderHistory } from "@/components/ClientOrderProgress";
 import DocumentViewer from "@/components/DocumentViewer";
 import { useEffect, useState } from "react";
@@ -165,8 +166,8 @@ export default function ClientPortalPublic() {
   const files = deliv?.files ?? [];
   const selectedFile = files.find((f: any) => String(f.url ?? f.name) === openFile) ?? files[0];
   const selectedKey = selectedFile ? String(selectedFile.url ?? selectedFile.name) : "";
-  const selectedReview = reviews.find((r: any) => r.file === selectedFile?.name && r.status === "approved");
-  const allApproved = files.length > 0 && files.every((f: any) => reviews.some((r: any) => r.file === f.name && r.status === "approved"));
+  const selectedReview = selectedFile && isFileApproved(reviews, selectedFile) ? reviewForFile(reviews, selectedFile) : undefined;
+  const allApproved = files.length > 0 && files.every((f: any) => isFileApproved(reviews, f));
   const delivered = p.status === "delivered" || (linkedPrintOrders.length > 0 && linkedPrintOrders.every((o: any) => ["livre", "livre_paye"].includes(o.status)));
   const printing = linkedPrintOrders.some((o: any) => ["en_impression", "livre", "livre_paye"].includes(o.status)) || (linkedPrintOrders.length === 0 && entity.status === "impression");
   const impression = linkedPrintOrders.length > 0 || entity.status === "impression";
@@ -212,7 +213,7 @@ export default function ClientPortalPublic() {
         {files.length > 0 && selectedFile ? (
           <section aria-label="Votre BAT" className="grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-10">
             <div className="min-w-0 space-y-4">
-              {files.length > 1 && <div className="flex flex-wrap gap-2">{files.map((f: any, i: number) => <Button key={f.name ?? i} size="sm" variant={selectedFile === f ? "default" : "outline"} onClick={() => setOpenFile(String(f.url ?? f.name))}>BAT {i + 1}{reviews.some((r: any) => r.file === f.name && r.status === "approved") && <CheckCircle2 className="ml-2 h-3 w-3" />}</Button>)}</div>}
+              {files.length > 1 && <div className="flex flex-wrap gap-2">{files.map((f: any, i: number) => <Button key={f.name ?? i} size="sm" variant={selectedFile === f ? "default" : "outline"} onClick={() => setOpenFile(String(f.url ?? f.name))}>BAT {i + 1}{isFileApproved(reviews, f) && <CheckCircle2 className="ml-2 h-3 w-3" />}</Button>)}</div>}
               {(selectedFile.preview_url ?? selectedFile.url) ? <DocumentViewer
                 key={selectedKey}
                 viewportClassName={allApproved ? "h-[min(38vh,420px)]" : "h-[min(65vh,760px)]"}
