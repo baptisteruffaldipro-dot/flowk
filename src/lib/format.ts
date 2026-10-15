@@ -26,7 +26,7 @@ export const STATUS_LABEL: Record<string, string> = {
   aujourdhui: "Aujourd'hui",
   bat: "BAT",
   envoye: "Traité / En validation",
-  impression: "En impression",
+  impression: "Impression",
   tiime: "Tiime",
   a_facturer: "En facturation",
   facture_envoyee: "Facture envoyée",
