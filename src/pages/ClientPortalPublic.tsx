@@ -170,6 +170,17 @@ export default function ClientPortalPublic() {
   const delivered = p.status === "delivered" || (linkedPrintOrders.length > 0 && linkedPrintOrders.every((o: any) => ["livre", "livre_paye"].includes(o.status)));
   const printing = linkedPrintOrders.some((o: any) => ["en_impression", "livre", "livre_paye"].includes(o.status));
   const progressStep = delivered ? 3 : printing ? 2 : files.length > 0 ? 1 : 0;
+  const progressDetail = delivered
+    ? "La livraison de votre commande est confirmée."
+    : printing
+      ? "Votre commande est en production à l’atelier."
+      : allApproved
+        ? "BAT validé — en attente du lancement de l’impression."
+        : files.length > 0
+          ? "Votre accord est attendu avant de poursuivre."
+          : "L’atelier prépare votre maquette.";
+  const deliveryDates = linkedPrintOrders.map((order: any) => order.estimated_delivery_date).filter((date: unknown): date is string => typeof date === "string" && !Number.isNaN(new Date(date).getTime()));
+  const deliveryDeadline = deliveryDates.sort().at(-1);
   const history = [
     ...reviews.filter((r: any) => r.status === "approved").map((r: any) => ({ label: `BAT validé : ${r.file}`, at: r.at, detail: r.signed_by ? `Signé par ${r.signed_by}` : undefined })),
     ...(p.client_validated_at ? [{ label: "Validation de la commande", at: p.client_validated_at }] : []),
@@ -185,6 +196,7 @@ export default function ClientPortalPublic() {
         </div>
       </div>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <ClientOrderProgress step={progressStep} events={[]} deadline={deliveryDeadline} completed={delivered} detail={progressDetail} />
         {files.length > 0 && selectedFile ? (
           <section aria-label="Votre BAT" className="grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-10">
             <div className="min-w-0 space-y-4">
@@ -220,7 +232,7 @@ export default function ClientPortalPublic() {
           </section>
         ) : <header className="space-y-2"><h1 className="text-3xl font-semibold tracking-normal">{title}</h1>{client?.name && <p className="text-sm text-muted-foreground">Pour {client.name}</p>}<p className="text-sm text-muted-foreground">Votre BAT est en cours de préparation.</p></header>}
         {canValidate && files.length === 0 && <Button disabled={busy} onClick={() => act("validate")}><CheckCircle2 className="mr-2 h-4 w-4" />Valider la commande</Button>}
-        <ClientOrderProgress step={progressStep} events={history} deadline={printOrder?.estimated_delivery_date} />
+        <ClientOrderHistory step={progressStep} events={history} deadline={deliveryDeadline} completed={delivered} detail={progressDetail} />
 
         {/* Brief */}
         {(entity.notes || entity.description) && (
