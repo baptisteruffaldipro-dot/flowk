@@ -9,7 +9,7 @@ type Ball = "moi" | "client" | "imprimeur";
 type Row = { id: string; title: string; client: string | null; status: string; deadline: string | null; updated_at: string; ball: Ball; where: string; category: string };
 
 const STATUS_LABEL: Record<string, string> = {
-  a_faire: "À faire", en_cours: "En cours", aujourdhui: "Aujourd'hui", fait: "Fait",
+  a_faire: "À faire", en_cours: "En cours", aujourdhui: "En production", fait: "Fait",
   bat: "BAT client · en attente", impression: "Impression en cours", a_facturer: "À facturer",
 };
 
@@ -75,7 +75,7 @@ export default function Dashboard() {
   const today = now.toISOString().slice(0, 10);
 
   const kpis = [
-    { label: "Aujourd'hui", value: k.today, sub: "tâches prévues", dot: true },
+    { label: "En production", value: k.today, sub: "tâches en cours", dot: true },
     { label: "En attente du client", value: counts.client, sub: "BAT envoyés non validés" },
     { label: "En retard", value: k.late, sub: "échéance dépassée", alert: k.late > 0 },
     { label: "Impressions à commander", value: k.printsToOrder, sub: "à passer chez l'imprimeur", alert: k.printsToOrder > 0 },
@@ -83,14 +83,14 @@ export default function Dashboard() {
 
   const quick = [
     { to: "/taches", icon: CheckSquare, label: "Nouvelle tâche", sub: "Créer une prestation" },
-    { to: "/demandes", icon: Mail, label: "Demande client", sub: "Envoyer par email" },
+    { to: "/demandes", icon: Mail, label: "Devis", sub: "Envoyer par email" },
     { to: "/impressions", icon: Printer, label: "Commande d'impression", sub: "Tarifs par quantité" },
     { to: "/notes", icon: StickyNote, label: "Note / idée", sub: "Noter rapidement" },
   ];
 
   const recap = [
     { to: "/leads", label: "Nouveaux leads", value: String(k.leads), alert: k.leads > 0 },
-    { to: "/demandes", label: "Demandes clients", value: String(k.requests), alert: k.requests > 0 },
+    { to: "/demandes", label: "Devis", value: String(k.requests), alert: k.requests > 0 },
     { to: "/rdv", label: "Prochain RDV", value: k.rdv ?? "—" },
     { to: "/finance/tresorerie", label: "Trésorerie", value: k.cash != null ? eur(k.cash) : "—" },
     { to: "/finance/transactions", label: "Dettes clients", value: eur(k.debts), alert: k.debts > 0 },
@@ -113,7 +113,7 @@ export default function Dashboard() {
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">{hello} Baptiste</h1>
         <p className="text-muted-foreground mt-1 first-letter:uppercase">
-          {dateLabel} · semaine {week} · {k.today} tâche{k.today > 1 ? "s" : ""} aujourd'hui{k.late ? `, ${k.late} en retard` : ", aucun retard"}
+          {dateLabel} · semaine {week} · {k.today} tâche{k.today > 1 ? "s" : ""} en production{k.late ? `, ${k.late} en retard` : ", aucun retard"}
         </p>
       </div>
 

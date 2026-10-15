@@ -13,4 +13,7 @@
 - [x] Placer la colonne « En impression » juste à droite de « Aujourd'hui » dans le Kanban
 - [x] Retirer le pop-up automatique de commande d'impression au glisser dans la colonne (action manuelle conservée)
 - [x] Renommer la colonne du Kanban « En impression » en « Impression »
+- [x] Retirer l'affichage « Payé » et des montants (ex. 2000€) des cartes et lignes de tâches
+- [x] Renommer la rubrique « Demandes clients » en « Devis » et la placer dans Gestion, à côté de Tâches
+- [x] Renommer la colonne « Aujourd'hui » en « En production » (kanban, accueil, libellés)
 - [ ] Point Finance à faire ensemble : pôles, labels, TVA, trésorerie, dettes clients

@@ -170,11 +170,11 @@ export default function ClientRequests() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <PageHeader
-        title="Demandes clients"
+        title="Devis"
         description="Centralise les demandes entrantes et envoie un récap’ au client."
         actions={
           <Button onClick={() => { setEditing(null); setOpen(true); }} size="sm">
-            <Plus className="h-4 w-4 mr-1" /> Nouvelle demande
+            <Plus className="h-4 w-4 mr-1" /> Nouveau devis
           </Button>
         }
       />
@@ -381,7 +381,7 @@ function RequestDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editing ? "Demande client" : "Nouvelle demande client"}</DialogTitle>
+          <DialogTitle>{editing ? "Devis" : "Nouveau devis"}</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3">

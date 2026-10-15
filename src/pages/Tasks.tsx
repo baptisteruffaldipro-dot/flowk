@@ -476,11 +476,6 @@ function KanbanCard({
           </DropdownMenu>
         </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            {paid && (
-              <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white px-2 py-0.5">
-                Payé
-              </Badge>
-            )}
             <QuickEditBadge
               className={tagColor(task.clients?.name ?? "—")}
               options={clients.map((c) => ({ value: c.id, label: c.name }))}
@@ -534,28 +529,6 @@ function KanbanCard({
                   <Star className="h-3 w-3" />
                   {score}
                 </Badge>
-              );
-            })()}
-            {(() => {
-              if (noBudget) return null;
-              const overrun = budget.estimatedTotal > 0 && budget.realTotal > budget.estimatedTotal;
-              return (
-                <BudgetEditBadge task={task} onUpdate={onUpdate}>
-                  <Badge
-                    variant="outline"
-                    className={`text-[11px] font-semibold px-2 py-0.5 ml-auto tabular-nums inline-flex items-center gap-1 cursor-pointer ${
-                      overrun
-                        ? "text-red-700 dark:text-red-400 border-red-400/60 bg-red-500/10"
-                        : "text-emerald-700 dark:text-emerald-400 border-emerald-300/50"
-                    }`}
-                    title={`Estimé ${fmtMoney(budget.estimatedTotal)} (presta ${fmtMoney(budget.estimatedPresta)} · impression ${fmtMoney(budget.estimatedPrint)}) · Réel ${fmtMoney(budget.realTotal)}`}
-                  >
-                    {fmtMoney(budget.estimatedTotal)}
-                    {budget.realTotal > 0 && budget.realTotal !== budget.estimatedTotal && (
-                      <span className="opacity-70">→ {fmtMoney(budget.realTotal)}</span>
-                    )}
-                  </Badge>
-                </BudgetEditBadge>
               );
             })()}
           </div>
@@ -1525,7 +1498,7 @@ export default function Tasks() {
         </Button>
         {focusMode && (
           <span className="text-xs text-muted-foreground">
-            Seule la colonne « Aujourd'hui » est affichée. Glisse 1 à 3 tâches dedans pour la journée.
+            Seule la colonne « En production » est affichée. Glisse 1 à 3 tâches dedans pour la journée.
           </span>
         )}
         <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
@@ -1596,9 +1569,6 @@ export default function Tasks() {
                 </div>
                 <div className="col-span-1 flex items-center gap-1">
                   <Badge variant="outline" className="text-[10px]">{STATUS_LABEL[t.status]}</Badge>
-                  {paidTaskIds.has(t.id) && (
-                    <Badge className="text-[10px] bg-emerald-500 hover:bg-emerald-500 text-white">Payé</Badge>
-                  )}
                 </div>
               </Link>
             );
