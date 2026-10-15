@@ -197,7 +197,7 @@ export default function ClientPortalPublic() {
   ].sort((a, b) => String(b.at ?? "").localeCompare(String(a.at ?? "")));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-muted/30">
       <div className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <span className="font-semibold">Suivi de votre commande</span>
@@ -244,19 +244,18 @@ export default function ClientPortalPublic() {
           </section>
         ) : <header className="space-y-2"><h1 className="text-3xl font-semibold tracking-normal">{title}</h1>{client?.name && <p className="text-sm text-muted-foreground">Pour {client.name}</p>}<p className="text-sm text-muted-foreground">Votre BAT est en cours de préparation.</p></header>}
         {canValidate && files.length === 0 && <Button disabled={busy} onClick={() => act("validate")}><CheckCircle2 className="mr-2 h-4 w-4" />Valider la commande</Button>}
-        <ClientOrderHistory step={progressStep} events={history} deadline={deliveryDeadline} completed={progressCompleted} detail={progressDetail} impression={impression} />
-
         {/* Brief */}
         {(entity.notes || entity.description) && (
-          <section className="border-b border-border py-6 space-y-2">
+          <section className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief</h2>
             <p className="text-sm whitespace-pre-wrap">{entity.notes || entity.description}</p>
           </section>
         )}
 
+        <div className="grid items-start gap-6 lg:grid-cols-2">
         {/* Récap */}
-        <section className="border-b border-border py-6 space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Récapitulatif</h2>
+        <section className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Récapitulatif de la commande</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
             {isTask && entity.billing_type && (
               <Info label="Facturation" value={entity.billing_type === "forfait" ? "Forfait" : "Au temps"} />
