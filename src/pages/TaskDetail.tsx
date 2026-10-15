@@ -524,7 +524,18 @@ export default function TaskDetail() {
         </section>
 
         <section className="min-w-0">
-          <h2 className="text-sm font-semibold mb-3">Notes</h2>
+          <h2 className="text-sm font-semibold mb-3">Brief</h2>
+          <Textarea
+            value={task.brief ?? ""}
+            onChange={(e) => setTask({ ...task, brief: e.target.value })}
+            onBlur={() => updateField({ brief: task.brief })}
+            rows={5}
+            placeholder="Brief de la tâche : contexte, objectifs, consignes client…"
+          />
+        </section>
+
+        <section className="min-w-0">
+          <h2 className="text-sm font-semibold mb-3">Notes complémentaires</h2>
           <Textarea
             value={task.notes ?? ""}
             onChange={(e) => setTask({ ...task, notes: e.target.value })}
