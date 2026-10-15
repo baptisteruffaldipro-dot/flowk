@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Adapter les quatre étapes client au règlement, téléchargement ou impression sélectionnée
-- [ ] Vérifier validation puis règlement et mise à disposition sans modifier de commande réelle
+- [x] Adapter les quatre étapes client au règlement, téléchargement ou impression sélectionnée
+- [x] Vérifier validation puis règlement et mise à disposition sans modifier de commande réelle
 
 - [x] Enrichir l’avancement client avec étape en cours, dates prévues et historique fidèle aux états réels
 - [x] Vérifier les étapes et leur affichage sur ordinateur et téléphone sans modifier de commande réelle
