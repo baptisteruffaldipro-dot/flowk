@@ -1,3 +1,4 @@
+import PortalAnnotationsAdmin from "@/components/PortalAnnotationsAdmin";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -965,6 +966,8 @@ export default function PortalPanel({
         </div>
       </div>
       </section>
+
+      {portal?.id && <PortalAnnotationsAdmin portalId={portal.id} />}
 
       <section className="rounded-lg border border-border/70 p-4 space-y-3">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">

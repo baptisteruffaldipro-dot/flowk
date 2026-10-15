@@ -2299,6 +2299,53 @@ export type Database = {
           },
         ]
       }
+      portal_annotations: {
+        Row: {
+          author: string
+          comment: string
+          created_at: string
+          file_name: string
+          id: string
+          page: number
+          portal_id: string
+          resolved: boolean
+          x: number
+          y: number
+        }
+        Insert: {
+          author?: string
+          comment: string
+          created_at?: string
+          file_name: string
+          id?: string
+          page?: number
+          portal_id: string
+          resolved?: boolean
+          x: number
+          y: number
+        }
+        Update: {
+          author?: string
+          comment?: string
+          created_at?: string
+          file_name?: string
+          id?: string
+          page?: number
+          portal_id?: string
+          resolved?: boolean
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_annotations_portal_id_fkey"
+            columns: ["portal_id"]
+            isOneToOne: false
+            referencedRelation: "client_portals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       print_orders: {
         Row: {
           amount: number | null
@@ -3649,6 +3696,38 @@ export type Database = {
         Args: { _action: string; _payload?: Json; _token: string }
         Returns: Json
       }
+      portal_add_annotation_by_token: {
+        Args: {
+          _comment: string
+          _file: string
+          _page: number
+          _token: string
+          _x: number
+          _y: number
+        }
+        Returns: string
+      }
+      portal_annotations_by_token: {
+        Args: { _token: string }
+        Returns: {
+          author: string
+          comment: string
+          created_at: string
+          file_name: string
+          id: string
+          page: number
+          portal_id: string
+          resolved: boolean
+          x: number
+          y: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "portal_annotations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       portal_choose_quantity_by_token: {
         Args: {
           _price: number
@@ -3657,6 +3736,10 @@ export type Database = {
           _token: string
         }
         Returns: Json
+      }
+      portal_delete_annotation_by_token: {
+        Args: { _id: string; _token: string }
+        Returns: undefined
       }
       portal_deliverables_by_token: { Args: { _token: string }; Returns: Json }
     }

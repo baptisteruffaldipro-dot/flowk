@@ -1,4 +1,4 @@
-import PdfCanvasViewer from "@/components/PdfCanvasViewer";
+import DocumentViewer from "@/components/DocumentViewer";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,7 +58,13 @@ export default function ClientPortalPublic() {
     const { data: dl } = await supabase.rpc("portal_deliverables_by_token" as any, { _token: token });
     setDeliv(dl as any);
   };
-  useEffect(() => { load(); }, [token]);
+  const [annots, setAnnots] = useState<any[]>([]);
+  const loadAnnots = async () => {
+    if (!token) return;
+    const { data: a } = await supabase.rpc("portal_annotations_by_token" as any, { _token: token });
+    setAnnots((a as any[]) ?? []);
+  };
+  useEffect(() => { load(); loadAnnots(); }, [token]);
 
   const act = async (action: string, payload: any = {}) => {
     setBusy(true);
@@ -484,47 +490,29 @@ export default function ClientPortalPublic() {
                       <div className="border-t border-border p-3 space-y-3">
                         {(() => {
                           const src = f.preview_url ?? f.url;
-                          const z = zoom[key] ?? 100;
                           const isImg = /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i.test(String(f.name ?? src ?? ""));
-                          const setZ = (v: number) => setZoom({ ...zoom, [key]: Math.min(400, Math.max(50, v)) });
+                          if (!src) return <div className="p-6 text-center text-xs text-muted-foreground">Aperçu indisponible pour ce fichier.</div>;
                           return (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1.5">
-                                <Button size="sm" variant="outline" onClick={() => setZ(z - 25)}>
-                                  <ZoomOut className="h-3.5 w-3.5" />
-                                </Button>
-                                <span className="text-[11px] tabular-nums text-muted-foreground w-12 text-center">{z}%</span>
-                                <Button size="sm" variant="outline" onClick={() => setZ(z + 25)}>
-                                  <ZoomIn className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button size="sm" variant="ghost" className="text-[11px]" onClick={() => setZ(100)}>
-                                  <Maximize2 className="h-3.5 w-3.5 mr-1" /> 100%
-                                </Button>
-                              </div>
-                              <div
-                                className="relative w-full h-[75vh] rounded-md overflow-auto bg-muted"
-                                onContextMenu={(e) => !deliv.unlocked && e.preventDefault()}
-                              >
-                                {src ? (
-                                  isImg ? (
-                                    <img
-                                      src={src}
-                                      alt={f.name}
-                                      draggable={false}
-                                      style={{ width: `${z}%`, minWidth: "100%" }}
-                                      className="max-w-none block select-none"
-                                    />
-                                  ) : (
-                                    <PdfCanvasViewer src={src} zoom={z} />
-                                  )
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
-                                    Aperçu indisponible pour ce fichier.
-                                  </div>
-                                )}
-                                {!deliv.unlocked && <div className="absolute inset-x-0 top-0 h-10 bg-transparent" />}
-                              </div>
-                            </div>
+                            <DocumentViewer
+                              src={src}
+                              isImage={isImg}
+                              alt={f.name}
+                              protect={!deliv.unlocked}
+                              canAnnotate
+                              annotations={annots.filter((a) => a.file_name === f.name)}
+                              onAdd={async (a) => {
+                                const { error } = await supabase.rpc("portal_add_annotation_by_token" as any, {
+                                  _token: token, _file: f.name, _page: a.page, _x: a.x, _y: a.y, _comment: a.comment,
+                                });
+                                if (error) return void toast.error(error.message);
+                                toast.success("Annotation envoyée à l'atelier");
+                                loadAnnots();
+                              }}
+                              onDelete={async (id) => {
+                                await supabase.rpc("portal_delete_annotation_by_token" as any, { _token: token, _id: id });
+                                loadAnnots();
+                              }}
+                            />
                           );
                         })()}
                         <div className="space-y-2">
