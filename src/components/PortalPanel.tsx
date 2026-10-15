@@ -599,7 +599,18 @@ export default function PortalPanel({
     !portal.delivery_locked &&
     (portal.delivery_override || portal.status === "delivered" || paidOk);
 
-  const clientObservations = messages.filter((message) => message.author === "client" && !message.resolved && (!message.kind || message.kind === "message")).length;
+  const isBatRecord = (message: { kind?: string; body?: string }) =>
+    message.kind === "approve_file" ||
+    message.kind === "request_changes" ||
+    /^(BAT signé par |Modification demandée sur )/.test(message.body ?? "");
+
+  const isClientObservation = (message: { author: string; resolved?: boolean; kind?: string; body?: string }) =>
+    message.author === "client" &&
+    !message.resolved &&
+    !isBatRecord(message) &&
+    (!message.kind || message.kind === "message");
+
+  const clientObservations = messages.filter(isClientObservation).length;
   const reviews = ((portal as any).deliverable_reviews ?? []) as { file: string; status: string }[];
   const approvedFiles = deliverables.filter((file) => reviews.some((review) => review.file === file.name && review.status === "approved")).length;
 
@@ -995,13 +1006,13 @@ export default function PortalPanel({
                       Corrigé
                     </Badge>
                   )}
-                  {message.author === "client" && message.resolved && (
+                  {message.author === "client" && message.resolved && !isBatRecord(message) && (
                     <Badge className="bg-success/15 text-success text-[9px] uppercase">
                       <CheckCircle2 className="mr-1 h-2.5 w-2.5" />
                       Corrigé
                     </Badge>
                   )}
-                  {message.author === "client" && !message.resolved && (
+                  {isClientObservation(message) && (
                     <Button
                       variant="outline" size="sm"
                       onClick={() => sendCorrectionFor(message)}
