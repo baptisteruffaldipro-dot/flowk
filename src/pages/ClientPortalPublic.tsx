@@ -172,9 +172,9 @@ export default function ClientPortalPublic() {
   const impression = linkedPrintOrders.length > 0 || entity.status === "impression";
   const downloadReady = !impression && allApproved && !!deliv?.unlocked;
   const progressCompleted = impression ? delivered : downloadReady;
-  // Un nouveau fichier non validé ramène le suivi à l'étape BAT, même si une validation précédente existe
+  // Un nouveau fichier non validé ramène toujours le suivi à la première étape (Maquette), quel que soit l'état précédent
   const pendingFile = files.length > 0 && !allApproved;
-  const progressStep = delivered || printing || downloadReady ? 3 : pendingFile ? 1 : allApproved || p.client_validated_at ? 2 : 0;
+  const progressStep = pendingFile ? 0 : delivered || printing || downloadReady ? 3 : allApproved || p.client_validated_at ? 2 : 0;
   const progressDetail = downloadReady
     ? "Vos fichiers sont disponibles au téléchargement."
     : delivered
