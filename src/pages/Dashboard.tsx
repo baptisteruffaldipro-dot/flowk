@@ -46,8 +46,8 @@ export default function Dashboard() {
         supabase.from("questionnaires").select("id", { count: "exact", head: true }),
         supabase.from("brand_strategies").select("id", { count: "exact", head: true }),
         supabase.from("logo_presentations").select("id", { count: "exact", head: true }),
-        supabase.from("finance_cash_view" as any).select("balance").limit(1).maybeSingle(),
-        supabase.from("finance_client_debts" as any).select("amount_due"),
+        supabase.from("bank_balances" as any).select("amount").order("as_of_date", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("finance_transactions").select("amount_ttc").eq("kind", "sale").is("paid_date", null),
       ]);
 
       const printRows = (prints.data as any) ?? [];
