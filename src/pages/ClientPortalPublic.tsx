@@ -1,5 +1,5 @@
 import ClientBatApproval, { CLIENT_BAT_CHECKS } from "@/components/ClientBatApproval";
-import ClientOrderProgress from "@/components/ClientOrderProgress";
+import ClientOrderProgress, { ClientOrderHistory } from "@/components/ClientOrderProgress";
 import DocumentViewer from "@/components/DocumentViewer";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -168,7 +168,7 @@ export default function ClientPortalPublic() {
   const selectedReview = reviews.find((r: any) => r.file === selectedFile?.name && r.status === "approved");
   const allApproved = files.length > 0 && files.every((f: any) => reviews.some((r: any) => r.file === f.name && r.status === "approved"));
   const delivered = p.status === "delivered" || (linkedPrintOrders.length > 0 && linkedPrintOrders.every((o: any) => ["livre", "livre_paye"].includes(o.status)));
-  const printing = linkedPrintOrders.some((o: any) => ["en_impression", "livre", "livre_paye"].includes(o.status));
+  const printing = linkedPrintOrders.some((o: any) => ["en_impression", "livre", "livre_paye"].includes(o.status)) || (linkedPrintOrders.length === 0 && entity.status === "impression");
   const progressStep = delivered ? 3 : printing ? 2 : files.length > 0 ? 1 : 0;
   const progressDetail = delivered
     ? "La livraison de votre commande est confirmée."
@@ -180,9 +180,11 @@ export default function ClientPortalPublic() {
           ? "Votre accord est attendu avant de poursuivre."
           : "L’atelier prépare votre maquette.";
   const deliveryDates = linkedPrintOrders.map((order: any) => order.estimated_delivery_date).filter((date: unknown): date is string => typeof date === "string" && !Number.isNaN(new Date(date).getTime()));
-  const deliveryDeadline = deliveryDates.sort().at(-1);
+  const deliveryDeadline = deliveryDates.sort().slice(-1)[0];
   const history = [
+    ...(p.delivered_at ? [{ label: "Commande livrée", at: p.delivered_at }] : []),
     ...reviews.filter((r: any) => r.status === "approved").map((r: any) => ({ label: `BAT validé : ${r.file}`, at: r.at, detail: r.signed_by ? `Signé par ${r.signed_by}` : undefined })),
+    ...linkedPrintOrders.filter((o: any) => o.bat_validated_at).map((o: any) => ({ label: `BAT de la commande ${o.reference ?? o.description ?? "d’impression"} validé`, at: o.bat_validated_at })),
     ...(p.client_validated_at ? [{ label: "Validation de la commande", at: p.client_validated_at }] : []),
     ...(p.created_at ? [{ label: "Commande reçue", at: p.created_at }] : []),
   ].sort((a, b) => String(b.at ?? "").localeCompare(String(a.at ?? "")));
