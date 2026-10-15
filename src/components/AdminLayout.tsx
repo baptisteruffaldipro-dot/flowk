@@ -19,7 +19,6 @@ const groups: NavGroup[] = [
   { label: "Aujourd'hui", icon: Home, items: [
     { to: "/", label: "Accueil", end: true },
     { to: "/agenda", label: "Agenda" },
-    { to: "/demandes", label: "Demandes clients", badgeKey: "demandes" },
     { to: "/leads", label: "Leads", badgeKey: "leads" },
   ]},
   { label: "Gestion", icon: ShoppingCart, items: [
