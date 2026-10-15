@@ -4,9 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import ClientBatApproval from "@/components/ClientBatApproval";
 import ClientOrderProgress from "@/components/ClientOrderProgress";
 
-
-
-
 import { Badge } from "@/components/ui/badge";
 
 import { ArrowLeft } from "lucide-react";
@@ -26,8 +23,8 @@ export default function ClientBatPortal() {
   };
   useEffect(() => { load(); }, [id]);
 
-  const validate = async (signedBy: string) => {
-    if (!signedBy.trim()) return toast.error("Indiquez votre nom pour signer");
+  const validate = async (signedBy: string): Promise<boolean> => {
+    if (!signedBy.trim()) { toast.error("Indiquez votre nom pour signer"); return false; }
     setBusy(true);
     const { error } = await supabase.from("bats").update({
       status: "valide",
@@ -44,8 +41,8 @@ export default function ClientBatPortal() {
     return true;
   };
 
-  const reject = async (reason: string) => {
-    if (!reason.trim()) return toast.error("Indiquez la raison");
+  const reject = async (reason: string): Promise<boolean> => {
+    if (!reason.trim()) { toast.error("Indiquez la raison"); return false; }
     setBusy(true);
     const { error } = await supabase.from("bats").update({
       status: "rejete",

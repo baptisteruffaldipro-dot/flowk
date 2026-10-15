@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 export const CLIENT_BAT_CHECKS = [
-  "Les textes sont justes : orthographe, dates et coordonnées",
-  "Le format, le sens de lecture et les indications techniques sont bons",
-  "Les couleurs, les visuels et les logos sont conformes (rendu écran indicatif)",
+  "Textes et orthographe vérifiés",
+  "Couleurs, visuels et mise en page conformes (rendu écran indicatif)",
+  "Format, quantités et indications techniques validés",
 ];
 
 interface Props {
@@ -57,11 +57,11 @@ export default function ClientBatApproval({ busy, approved, signedBy, signedAt, 
           {canValidate && <>
             <div className="flex justify-between text-xs font-semibold uppercase text-muted-foreground"><span>Avant de valider</span><span aria-live="polite">{count}/3</span></div>
             <div className="space-y-2">{CLIENT_BAT_CHECKS.map((text, i) => <label key={text} className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm leading-relaxed transition-colors ${checks[i] ? "border-primary/40 bg-primary/5" : "border-border bg-card"}`}><Checkbox className="mt-1 shrink-0" checked={checks[i]} onCheckedChange={v => setChecks(prev => prev.map((c, j) => j === i ? v === true : c))} /><span>{text}</span></label>)}</div>
-            <div className="space-y-2"><label htmlFor="bat-signer" className="text-xs font-semibold">Votre nom, pour le certificat de validation</label><Input id="bat-signer" autoComplete="name" value={name} maxLength={100} onChange={e => setName(e.target.value)} /></div>
+            <div className="space-y-2"><label htmlFor="bat-signer" className="text-xs font-semibold">Nom et prénom (signature)</label><Input id="bat-signer" autoComplete="name" value={name} maxLength={100} onChange={e => setName(e.target.value)} /></div>
             <Button className="w-full justify-between" disabled={busy || count !== 3 || !name.trim()} onClick={() => onApprove(name.trim())}>Je valide le BAT<ArrowRight className="h-4 w-4" /></Button>
           </>}
           <Button variant="outline" className="w-full" disabled={busy} onClick={() => setCorrection(true)}><Pencil className="mr-2 h-4 w-4" />Demander une correction</Button>
-          <p className="text-xs leading-relaxed text-muted-foreground">La validation autorise la production ou la diffusion en l’état. Vérifiez également les mentions légales. Toute erreur non signalée avant validation reste sous votre responsabilité. Les couleurs à l’écran sont indicatives. Toute modification ultérieure peut entraîner un coût et un délai supplémentaires.</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">Votre signature vaut « Bon pour impression ». Vérifiez l’orthographe, les visuels, la mise en page, le format et les indications techniques. Les couleurs à l’écran sont indicatives. Toute erreur non signalée avant validation ne pourra engager la responsabilité du studio.</p>
         </>
       )}
     </div>

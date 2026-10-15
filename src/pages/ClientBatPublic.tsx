@@ -5,10 +5,7 @@ import ClientBatApproval from "@/components/ClientBatApproval";
 import ClientOrderProgress from "@/components/ClientOrderProgress";
 import DocumentViewer from "@/components/DocumentViewer";
 
-
-
 import { Badge } from "@/components/ui/badge";
-
 
 import { toast } from "sonner";
 import { BAT_STATUS_LABEL } from "@/lib/format";
@@ -34,8 +31,8 @@ export default function ClientBatPublic() {
   };
   useEffect(() => { load(); }, [token]);
 
-  const validate = async (signedBy: string) => {
-    if (!signedBy.trim()) return toast.error("Indiquez votre nom pour signer");
+  const validate = async (signedBy: string): Promise<boolean> => {
+    if (!signedBy.trim()) { toast.error("Indiquez votre nom pour signer"); return false; }
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("bat-public", {
       body: { action: "validate", token, signed_by: signedBy.trim() },
@@ -47,8 +44,8 @@ export default function ClientBatPublic() {
     return true;
   };
 
-  const reject = async (reason: string) => {
-    if (!reason.trim()) return toast.error("Indiquez la raison");
+  const reject = async (reason: string): Promise<boolean> => {
+    if (!reason.trim()) { toast.error("Indiquez la raison"); return false; }
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("bat-public", {
       body: { action: "reject", token, reason: reason.trim() },
