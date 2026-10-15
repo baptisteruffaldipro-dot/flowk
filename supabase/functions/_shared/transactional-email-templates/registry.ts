@@ -15,6 +15,7 @@ import { template as onboardingReady } from './onboarding-ready.tsx'
 import { template as logoReady } from './logo-ready.tsx'
 import { template as clientRequestLink } from './client-request-link.tsx'
 import { template as paymentReminder } from './payment-reminder.tsx'
+import { template as paymentLinkRequest } from './payment-link-request.tsx'
 import { template as portalMessage } from './portal-message.tsx'
 import { template as portalCorrected } from './portal-corrected.tsx'
 
