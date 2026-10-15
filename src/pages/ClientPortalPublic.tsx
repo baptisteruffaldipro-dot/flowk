@@ -197,8 +197,10 @@ export default function ClientPortalPublic() {
           <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="max-w-64 truncate">{title}</span><Badge variant="outline">{STATUS_LABEL[p.status] ?? p.status}</Badge></div>
         </div>
       </div>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <ClientOrderProgress step={progressStep} events={[]} deadline={deliveryDeadline} completed={delivered} detail={progressDetail} />
+      </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {files.length > 0 && selectedFile ? (
           <section aria-label="Votre BAT" className="grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-10">
             <div className="min-w-0 space-y-4">
