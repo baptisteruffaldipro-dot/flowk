@@ -744,6 +744,11 @@ export default function ClientPortalPublic() {
                         <CheckCircle2 className="h-2.5 w-2.5" /> Corrigé
                       </span>
                     )}
+                    {m.author === "client" && m.resolved && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="h-2.5 w-2.5" /> Prise en compte
+                      </span>
+                    )}
                   </div>
                   <div className="whitespace-pre-wrap">{m.body}</div>
                 </div>

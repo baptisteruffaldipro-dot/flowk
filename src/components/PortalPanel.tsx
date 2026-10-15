@@ -51,6 +51,7 @@ type PortalMessage = {
   body: string;
   created_at: string;
   kind?: string;
+  resolved?: boolean;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -156,7 +157,7 @@ export default function PortalPanel({
     if (row?.id) {
       const { data: portalMessages } = await supabase
         .from("client_portal_messages")
-        .select("id,author,body,created_at,kind")
+        .select("id,author,body,created_at,kind,resolved")
         .eq("portal_id", row.id)
         .order("created_at", { ascending: true });
       setMessages((portalMessages as PortalMessage[] | null) ?? []);
@@ -506,11 +507,8 @@ export default function PortalPanel({
     }
   };
 
-  const sendCorrection = async () => {
+  const dispatchCorrection = async (body: string, sourceMessage?: PortalMessage) => {
     if (!portal?.id) return;
-    const body =
-      messageReply.trim() ||
-      "La modification demandée a été effectuée. Vous la trouverez dans votre espace client.";
     setSendingCorrection(true);
     try {
       const { data, error } = await supabase
@@ -520,7 +518,16 @@ export default function PortalPanel({
         .single();
       if (error) throw error;
       setMessages((current) => [...current, data as PortalMessage]);
-      setMessageReply("");
+      if (sourceMessage) {
+        const { error: upErr } = await supabase
+          .from("client_portal_messages")
+          .update({ resolved: true })
+          .eq("id", sourceMessage.id);
+        if (upErr) throw upErr;
+        setMessages((current) =>
+          current.map((m) => (m.id === sourceMessage.id ? { ...m, resolved: true } : m))
+        );
+      }
       if (notifyClient && effEmail) {
         if (!portal.is_published) await publish(true);
         const { data: r, error: e2 } = await supabase.functions.invoke("send-app-email", {
@@ -546,6 +553,23 @@ export default function PortalPanel({
     } finally {
       setSendingCorrection(false);
     }
+  };
+
+  const sendCorrection = () =>
+    dispatchCorrection(
+      messageReply.trim() ||
+        "La modification demandée a été effectuée. Vous la trouverez dans votre espace client."
+    ).then(() => setMessageReply(""));
+
+  const sendCorrectionFor = (m: PortalMessage) => {
+    const raw = m.body.replace(/^Observation du client\s*:?\s*/i, "").trim();
+    const short = raw.length > 140 ? `${raw.slice(0, 140)}…` : raw;
+    dispatchCorrection(
+      short
+        ? `Correction effectuée suite à votre observation : « ${short} »`
+        : "Correction effectuée, vous la trouverez dans votre espace client.",
+      m
+    );
   };
 
 
@@ -971,6 +995,23 @@ export default function PortalPanel({
                     <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[9px] uppercase">
                       Corrigé
                     </Badge>
+                  )}
+                  {message.author === "client" && message.resolved && (
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[9px] uppercase">
+                      <CheckCircle2 className="mr-1 h-2.5 w-2.5" />
+                      Corrigé
+                    </Badge>
+                  )}
+                  {message.author === "client" && !message.resolved && (
+                    <button
+                      onClick={() => sendCorrectionFor(message)}
+                      disabled={sendingCorrection}
+                      title="Prévenir le client que cette observation a été traitée"
+                      className="ml-auto inline-flex items-center gap-1 rounded-full border border-emerald-500/40 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400"
+                    >
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                      {sendingCorrection ? "Envoi…" : "Corrigé"}
+                    </button>
                   )}
                 </div>
                 <div className="whitespace-pre-wrap">{message.body}</div>
