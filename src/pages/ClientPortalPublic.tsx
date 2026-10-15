@@ -319,9 +319,12 @@ export default function ClientPortalPublic() {
           )}
         </section>
 
+        <ClientOrderHistory step={progressStep} events={history} deadline={deliveryDeadline} completed={progressCompleted} detail={progressDetail} impression={impression} />
+        </div>
+
         {/* Commande d'impression liée */}
         {!isTask && projectTasks.length > 0 && (
-          <section className="border-b border-border py-6 space-y-3">
+          <section className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Prestations du projet
             </h2>
