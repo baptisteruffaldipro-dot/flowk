@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { CheckSquare, Printer, Mail, StickyNote, ArrowUpRight } from "lucide-react";
 
 type Ball = "moi" | "client" | "imprimeur";
-type Row = { id: string; title: string; client: string | null; status: string; deadline: string | null; updated_at: string; ball: Ball; where: string };
+type Row = { id: string; title: string; client: string | null; status: string; deadline: string | null; updated_at: string; ball: Ball; where: string; category: string };
 
 const STATUS_LABEL: Record<string, string> = {
   a_faire: "À faire", en_cours: "En cours", aujourdhui: "Aujourd'hui", fait: "Fait",
