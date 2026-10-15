@@ -522,6 +522,15 @@ export default function PortalPanel({
         </div>
       </div>
 
+      {portal.status === "refused" && portal.refusal_reason && (
+        <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 space-y-1">
+          <div className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+            Motif du refus client{portal.client_refused_at ? ` — ${new Date(portal.client_refused_at).toLocaleString("fr-FR")}` : ""}
+          </div>
+          <p className="text-sm whitespace-pre-wrap">{portal.refusal_reason}</p>
+        </div>
+      )}
+
       <section className="rounded-lg border border-border/70 p-4 space-y-3">
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">1 · Lien client</div>
       {/* Lien */}
