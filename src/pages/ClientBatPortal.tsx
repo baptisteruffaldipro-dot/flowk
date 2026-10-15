@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import ClientBatApproval from "@/components/ClientBatApproval";
-import ClientOrderProgress from "@/components/ClientOrderProgress";
+import ClientOrderProgress, { ClientOrderHistory } from "@/components/ClientOrderProgress";
 
 import { Badge } from "@/components/ui/badge";
 
@@ -77,11 +77,12 @@ export default function ClientBatPortal() {
         </div>
       </div>
 
+      <div className="mb-8"><ClientOrderProgress step={bat.file_path ? 1 : 0} events={[]} /></div>
       <section className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
         <div className="min-w-0">{bat.file_path ? <BatViewer batId={bat.id} filePath={bat.file_path} canAnnotate={canDecide} canResolve={false} /> : <div className="bg-muted py-24 text-center text-sm text-muted-foreground">Le BAT est en cours de préparation.</div>}</div>
         <div className="min-w-0">{(canDecide || bat.status === "valide") && <ClientBatApproval busy={busy} approved={bat.status === "valide"} signedBy={bat.signed_by_name} signedAt={bat.signed_at ?? bat.validated_at} onApprove={validate} onCorrection={reject} />}</div>
       </section>
-      <div className="mt-8"><ClientOrderProgress step={bat.file_path ? 1 : 0} events={bat.validated_at ? [{ label: "BAT validé", at: bat.validated_at, detail: bat.signed_by_name }] : []} /></div>
+      {bat.validated_at && <ClientOrderHistory step={bat.file_path ? 1 : 0} events={[{ label: "BAT validé", at: bat.validated_at, detail: bat.signed_by_name }]} />}
       <section className="border-y border-border py-6 mt-8">
         <h2 className="text-sm font-semibold mb-3">Spécifications</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
