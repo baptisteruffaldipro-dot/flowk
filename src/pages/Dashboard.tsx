@@ -25,7 +25,7 @@ export default function Dashboard() {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
       const [tasks, prints, leads, requests, cash, debts, appts, events] = await Promise.all([
-        supabase.from("tasks").select("id,title,status,deadline,updated_at,scheduled_date,clients(name)").not("status", "in", "(envoye,archive)").order("updated_at", { ascending: false }).limit(200),
+        supabase.from("tasks").select("id,title,status,deadline,updated_at,scheduled_date,prestation,prestations,clients(name)").not("status", "in", "(envoye,archive)").order("updated_at", { ascending: false }).limit(200),
         supabase.from("print_orders").select("status").eq("status", "a_commander" as any),
         supabase.from("leads").select("id", { count: "exact", head: true }).is("read_at", null),
         supabase.from("client_requests").select("id", { count: "exact", head: true }).eq("status", "nouveau" as any),
