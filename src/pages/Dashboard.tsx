@@ -61,7 +61,7 @@ export default function Dashboard() {
   useEffect(() => { load(); }, []);
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-8 w-full">
       <PageHeader title="Dashboard" description="Vue d'ensemble de ton activité" />
 
       <div className="mb-6">
@@ -71,7 +71,7 @@ export default function Dashboard() {
 
       <TodayBoard tasks={tasks} printOrders={orders} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Column title="Nouveaux leads" href="/leads" empty="Aucun nouveau lead">
           {leads.map((lead) => {
             const dateStr = new Date(lead.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
