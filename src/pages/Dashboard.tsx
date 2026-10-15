@@ -91,8 +91,8 @@ export default function Dashboard() {
     { to: "/leads", label: "Nouveaux leads", value: String(k.leads), alert: k.leads > 0 },
     { to: "/demandes", label: "Demandes clients", value: String(k.requests), alert: k.requests > 0 },
     { to: "/rdv", label: "Prochain RDV", value: k.rdv ?? "—" },
-    { to: "/finance", label: "Trésorerie", value: k.cash != null ? eur(k.cash) : "—" },
-    { to: "/finance", label: "Dettes clients", value: eur(k.debts), alert: k.debts > 0 },
+    { to: "/finance/tresorerie", label: "Trésorerie", value: k.cash != null ? eur(k.cash) : "—" },
+    { to: "/finance/transactions", label: "Dettes clients", value: eur(k.debts), alert: k.debts > 0 },
   ];
 
   const ballChip = (b: Ball) => (
