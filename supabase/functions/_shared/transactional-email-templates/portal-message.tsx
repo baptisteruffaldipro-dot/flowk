@@ -79,4 +79,5 @@ const button = {
 }
 const footer = { fontSize: '13px', color: 'hsl(220, 9%, 46%)', margin: '32px 0 0' }
 const small = { fontSize: '13px', color: 'hsl(220, 9%, 46%)', lineHeight: '1.6', margin: '0 0 8px', wordBreak: 'break-all' as const }
-const link = { color: 'hsl(220, 13%, 13%)', textDecoration: 'underline' }const quote = { fontSize: '15px', color: 'hsl(220, 13%, 13%)', lineHeight: '1.6', margin: '0 0 20px', padding: '14px 16px', backgroundColor: '#f4f4f5', borderRadius: '8px', whiteSpace: 'pre-wrap' as const }
+const link = { color: 'hsl(220, 13%, 13%)', textDecoration: 'underline' }
+const quote = { fontSize: '15px', color: 'hsl(220, 13%, 13%)', lineHeight: '1.6', margin: '0 0 20px', padding: '14px 16px', backgroundColor: '#f4f4f5', borderRadius: '8px', whiteSpace: 'pre-wrap' as const }
