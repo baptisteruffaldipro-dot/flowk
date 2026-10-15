@@ -371,7 +371,7 @@ export default function ClientPortalPublic() {
         )}
 
         {linkedPrintOrders.length > 0 && (
-          <section className="border-b border-border py-6 space-y-4">
+          <section className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-4">
             <div className="flex items-center gap-2">
               <Printer className="h-4 w-4 text-muted-foreground" />
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -525,7 +525,7 @@ export default function ClientPortalPublic() {
 
         {/* Règlement */}
         {(termsLabel || dueAmount != null || printOrder || methods.length > 0 || invoiceDoc?.url || invoiceDoc?.has_file) && (
-          <section id="reglement" className="scroll-mt-6 border-b border-border py-6 space-y-3">
+          <section id="reglement" className="scroll-mt-6 rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-3">
             <h2 className="text-sm font-semibold">Règlement</h2>
             {(termsLabel || dueAmount != null) && (
               <div className="space-y-2">
