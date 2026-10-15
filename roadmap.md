@@ -11,4 +11,5 @@
 - [x] Déplacer « Rendez-vous » dans la rubrique Gestion du menu
 - [x] Passer la fiche Finance en « En construction » (données et écrans existants conservés)
 - [x] Placer la colonne « En impression » juste à droite de « Aujourd'hui » dans le Kanban
+- [x] Retirer le pop-up automatique de commande d'impression au glisser dans la colonne (action manuelle conservée)
 - [ ] Point Finance à faire ensemble : pôles, labels, TVA, trésorerie, dettes clients
