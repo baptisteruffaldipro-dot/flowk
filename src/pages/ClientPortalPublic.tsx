@@ -578,32 +578,19 @@ export default function ClientPortalPublic() {
               <p className="text-[11px] text-muted-foreground">
                 En validant, vous approuvez le(s) fichier(s) ci-dessus et autorisez la production et/ou la diffusion en l'état.
               </p>
-              {showRefuse ? (
-                <div className="space-y-2">
-                  <Textarea placeholder="Motif (optionnel)" value={refuseReason} onChange={(e) => setRefuseReason(e.target.value)} rows={2} />
-                  <div className="flex gap-2">
-                    <Button variant="destructive" onClick={() => act("refuse", { reason: refuseReason })} disabled={busy}>Confirmer le refus</Button>
-                    <Button variant="ghost" onClick={() => setShowRefuse(false)}>Annuler</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex gap-2 flex-wrap">
-                  <Button
-                    onClick={async () => {
-                      const note = Object.values(obs).filter((v) => v?.trim()).join("\n");
-                      if (note) await act("add_message", { body: `Observation du client :\n${note}` });
-                      await act("validate");
-                      setObs({});
-                    }}
-                    disabled={busy}
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" /> Valider (Bon à tirer)
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
-                    <XCircle className="h-4 w-4 mr-1" /> Refuser
-                  </Button>
-                </div>
-              )}
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  onClick={async () => {
+                    const note = Object.values(obs).filter((v) => v?.trim()).join("\n");
+                    if (note) await act("add_message", { body: `Observation du client :\n${note}` });
+                    await act("validate");
+                    setObs({});
+                  }}
+                  disabled={busy}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Valider (Bon à tirer)
+                </Button>
+              </div>
             </div>
           )}
         </section>
