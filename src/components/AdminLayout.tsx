@@ -24,6 +24,7 @@ const groups: NavGroup[] = [
   { label: "Gestion", icon: ShoppingCart, items: [
     { to: "/clients", label: "Clients" },
     { to: "/taches", label: "Tâches" },
+    { to: "/demandes", label: "Devis", badgeKey: "demandes" },
     { to: "/impressions", label: "Impressions" },
     { to: "/rdv", label: "Rendez-vous" },
   ]},
