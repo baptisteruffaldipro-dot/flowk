@@ -172,7 +172,9 @@ export default function ClientPortalPublic() {
   const impression = linkedPrintOrders.length > 0 || entity.status === "impression";
   const downloadReady = !impression && allApproved && !!deliv?.unlocked;
   const progressCompleted = impression ? delivered : downloadReady;
-  const progressStep = delivered || printing || downloadReady ? 3 : allApproved || p.client_validated_at ? 2 : files.length > 0 ? 1 : 0;
+  // Un nouveau fichier non validé ramène le suivi à l'étape BAT, même si une validation précédente existe
+  const pendingFile = files.length > 0 && !allApproved;
+  const progressStep = delivered || printing || downloadReady ? 3 : pendingFile ? 1 : allApproved || p.client_validated_at ? 2 : 0;
   const progressDetail = downloadReady
     ? "Vos fichiers sont disponibles au téléchargement."
     : delivered
@@ -202,9 +204,9 @@ export default function ClientPortalPublic() {
           <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="max-w-64 truncate">{title}</span><Badge variant="outline">{STATUS_LABEL[p.status] ?? p.status}</Badge></div>
         </div>
       </div>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
         <ClientOrderProgress step={progressStep} events={[]} deadline={deliveryDeadline} completed={progressCompleted} detail={progressDetail} impression={impression} />
-        {allApproved && !progressCompleted && !printing && <div className="pb-6"><Button variant="outline" asChild><a href="#reglement"><CreditCard className="mr-2 h-4 w-4" />Récapitulatif & règlement</a></Button></div>}
+        {allApproved && !progressCompleted && !printing && <div className="pt-4"><Button variant="outline" asChild><a href="#reglement"><CreditCard className="mr-2 h-4 w-4" />Récapitulatif & règlement</a></Button></div>}
       </div>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {files.length > 0 && selectedFile ? (
