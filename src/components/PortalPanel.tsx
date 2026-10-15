@@ -118,6 +118,7 @@ export default function PortalPanel({
   } | null>(null);
   const [messages, setMessages] = useState<PortalMessage[]>([]);
   const [messageReply, setMessageReply] = useState("");
+  const [notifyClient, setNotifyClient] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
@@ -477,7 +478,25 @@ export default function PortalPanel({
       if (error) throw error;
       setMessages((current) => [...current, data as PortalMessage]);
       setMessageReply("");
-      toast.success("Message envoyé au client");
+      if (notifyClient) {
+        if (!effEmail) {
+          toast.error("Message enregistré, mais aucun email client pour le prévenir");
+        } else {
+          if (!portal.is_published) await publish(true);
+          const { data: r, error: e2 } = await supabase.functions.invoke("send-app-email", {
+            body: {
+              templateName: "portal-message",
+              recipientEmail: effEmail,
+              idempotencyKey: `portal-message-${(data as any).id}`,
+              templateData: { name: effName ?? "", portalUrl: publicUrl, message: body, title: notifyContext?.description ?? "" },
+            },
+          });
+          if (e2 || (r as any)?.error) toast.error("Message enregistré, mais l'email n'a pas pu partir");
+          else toast.success("Message envoyé et client prévenu par email");
+        }
+      } else {
+        toast.success("Message envoyé au client");
+      }
     } catch (error: any) {
       toast.error(error?.message ?? "Impossible d’envoyer le message");
     } finally {
@@ -908,6 +927,10 @@ export default function PortalPanel({
             value={messageReply}
             onChange={(event) => setMessageReply(event.target.value)}
           />
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input type="checkbox" checked={notifyClient} onChange={(e) => setNotifyClient(e.target.checked)} />
+            Prévenir le client par email{effEmail ? ` (${effEmail})` : " — aucun email enregistré"}
+          </label>
           <Button size="sm" onClick={sendMessage} disabled={!messageReply.trim() || sendingMessage}>
             <Send className="mr-1.5 h-3.5 w-3.5" />
             {sendingMessage ? "Envoi…" : "Envoyer"}

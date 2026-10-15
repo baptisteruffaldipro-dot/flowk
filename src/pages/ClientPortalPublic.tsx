@@ -49,6 +49,7 @@ export default function ClientPortalPublic() {
   const [signer, setSigner] = useState("");
   const [certView, setCertView] = useState<any>(null);
 
+  const [seenTick, setSeenTick] = useState(0);
   const load = async () => {
     if (!token) return;
     const { data: d } = await supabase.rpc("get_client_portal_by_token" as any, { _token: token });
@@ -593,6 +594,26 @@ export default function ClientPortalPublic() {
           )}
         </section>
 
+        {(() => {
+          const lastAdmin = [...messages].reverse().find((m: any) => m.author === "admin");
+          if (!lastAdmin) return null;
+          const key = `portal-seen-${p.id}`;
+          void seenTick;
+          const seen = typeof window !== "undefined" ? window.localStorage.getItem(key) : null;
+          if (seen && seen >= lastAdmin.created_at) return null;
+          const markSeen = () => { window.localStorage.setItem(key, lastAdmin.created_at); setSeenTick((n) => n + 1); };
+          return (
+            <section className="rounded-xl border border-primary/40 bg-primary/5 p-5 space-y-2">
+              <div className="text-sm font-semibold">Nouveau message de l'atelier</div>
+              <div className="text-sm whitespace-pre-wrap">{lastAdmin.body}</div>
+              <div className="flex gap-3 text-xs">
+                <a href="#echanges" onClick={markSeen} className="underline">Voir les échanges</a>
+                <button onClick={markSeen} className="text-muted-foreground underline">J'ai lu</button>
+              </div>
+            </section>
+          );
+        })()}
+
         {/* Refus affiché */}
         {p.status === "refused" && (
           <section className="rounded-xl border border-rose-500/40 bg-rose-500/5 p-5">
@@ -704,7 +725,7 @@ export default function ClientPortalPublic() {
         )}
 
         {/* Messages */}
-        <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+        <section id="echanges" className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Échanges</h2>
           {messages.length === 0 ? (
             <div className="text-xs text-muted-foreground">Aucun message pour le moment.</div>
