@@ -76,7 +76,7 @@ export default function ClientBatPublic() {
       </div>
 
       <section className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
-        <div className="min-w-0">{fileUrl ? <DocumentViewer src={fileUrl} isImage={/\.(png|jpe?g|webp|gif)(\?|$)/i.test(bat.file_path ?? "")} alt={bat.title} annotations={[]} canAnnotate={false} /> : <div className="bg-muted py-24 text-center text-sm text-muted-foreground">Le BAT est en cours de préparation.</div>}</div>
+        <div className="min-w-0">{fileUrl ? <DocumentViewer viewportClassName="h-[min(65vh,760px)]" src={fileUrl} isImage={/\.(png|jpe?g|webp|gif)(\?|$)/i.test(bat.file_path ?? "")} alt={bat.title} annotations={[]} canAnnotate={false} /> : <div className="bg-muted py-24 text-center text-sm text-muted-foreground">Le BAT est en cours de préparation.</div>}</div>
         <div className="min-w-0">{(canDecide || bat.status === "valide") && <ClientBatApproval busy={busy} approved={bat.status === "valide"} signedBy={bat.signed_by_name} signedAt={bat.signed_at ?? bat.validated_at} onApprove={validate} onCorrection={reject} />}</div>
       </section>
       <div className="mt-8"><ClientOrderProgress step={bat.file_path ? 1 : 0} events={bat.validated_at ? [{ label: "BAT validé", at: bat.validated_at, detail: bat.signed_by_name }] : []} /></div>

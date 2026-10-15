@@ -191,6 +191,7 @@ export default function ClientPortalPublic() {
               {files.length > 1 && <div className="flex flex-wrap gap-2">{files.map((f: any, i: number) => <Button key={f.name ?? i} size="sm" variant={selectedFile === f ? "default" : "outline"} onClick={() => setOpenFile(String(f.url ?? f.name))}>BAT {i + 1}{reviews.some((r: any) => r.file === f.name && r.status === "approved") && <CheckCircle2 className="ml-2 h-3 w-3" />}</Button>)}</div>}
               {(selectedFile.preview_url ?? selectedFile.url) ? <DocumentViewer
                 key={selectedKey}
+                viewportClassName="h-[min(65vh,760px)]"
                 src={selectedFile.preview_url ?? selectedFile.url}
                 isImage={/\.(png|jpe?g|webp|gif|avif|svg)(\?|#|$)/i.test(String(selectedFile.name ?? selectedFile.url))}
                 alt={selectedFile.name}
