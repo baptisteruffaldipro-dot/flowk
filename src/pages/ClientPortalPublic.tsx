@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { CheckCircle2, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 
@@ -39,8 +39,6 @@ export default function ClientPortalPublic() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState("");
-  const [refuseReason, setRefuseReason] = useState("");
-  const [showRefuse, setShowRefuse] = useState(false);
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
   const [obs, setObs] = useState<Record<string, string>>({});
