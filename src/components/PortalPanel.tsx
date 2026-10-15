@@ -421,9 +421,9 @@ export default function PortalPanel({
     }
   };
 
-  const sendLinkByEmail = async () => {
+  const sendLinkByEmail = async (): Promise<boolean> => {
     const to = (linkEmail || effEmail || "").trim();
-    if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return toast.error("Email invalide");
+    if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) { toast.error("Email invalide"); return false; }
     setSendingLink(true);
     try {
       if (!portal.is_published) await publish(true);
@@ -437,8 +437,10 @@ export default function PortalPanel({
       });
       if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
       toast.success(`Lien envoyé à ${to}`);
+      return true;
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur d'envoi");
+      return false;
     } finally {
       setSendingLink(false);
     }
