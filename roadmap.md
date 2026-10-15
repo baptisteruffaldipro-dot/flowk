@@ -10,4 +10,5 @@
 - [x] Retirer le bouton « Corrigé » des BAT signés (conservé sur les observations clients)
 - [x] Déplacer « Rendez-vous » dans la rubrique Gestion du menu
 - [x] Passer la fiche Finance en « En construction » (données et écrans existants conservés)
+- [x] Placer la colonne « En impression » juste à droite de « Aujourd'hui » dans le Kanban
 - [ ] Point Finance à faire ensemble : pôles, labels, TVA, trésorerie, dettes clients
