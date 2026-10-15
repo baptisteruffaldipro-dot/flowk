@@ -932,7 +932,7 @@ export default function PortalPanel({
             title={effEmail ? `Relancer ${effEmail}` : "Aucun email client renseigné"}
           >
             <Send className="h-3.5 w-3.5 mr-1" />
-            {sendingReminder ? "Envoi…" : "Relancer le paiement par email"}
+            {sendingReminder ? "Envoi…" : "Demander un lien de paiement"}
           </Button>
           <p className="text-[11px] text-muted-foreground">
             Rappelle au client des moyens de règlement disponibles (carte ou virement) et que toute commande d'impression doit être réglée avant son lancement.
