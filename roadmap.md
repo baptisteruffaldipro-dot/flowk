@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Enrichir l’avancement client avec étape en cours, dates prévues et historique fidèle aux états réels
-- [ ] Vérifier les étapes et leur affichage sur ordinateur et téléphone sans modifier de commande réelle
+- [x] Enrichir l’avancement client avec étape en cours, dates prévues et historique fidèle aux états réels
+- [x] Vérifier les étapes et leur affichage sur ordinateur et téléphone sans modifier de commande réelle
 - [x] Représenter le portail client et la validation BAT d’après les captures, sans changer paiements ni actions existantes
 - [x] Vérifier aperçu, signature, corrections, certificat et suivi sur écran large et téléphone sans envoyer d’email réel
 
