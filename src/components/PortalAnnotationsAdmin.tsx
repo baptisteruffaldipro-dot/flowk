@@ -20,7 +20,7 @@ export default function PortalAnnotationsAdmin({ portalId }: { portalId: string 
         <MapPin className="h-3.5 w-3.5" /> Annotations du client sur les documents
         {open > 0 && <Badge variant="destructive" className="ml-auto text-[10px]">{open} à traiter</Badge>}
       </div>
-      {Object.entries(byFile).map(([file, list]) => (
+      {(Object.entries(byFile) as [string, any[]][]).map(([file, list]) => (
         <div key={file} className="space-y-1.5">
           <div className="text-xs font-medium">{file}</div>
           {list.map((a, i) => (
