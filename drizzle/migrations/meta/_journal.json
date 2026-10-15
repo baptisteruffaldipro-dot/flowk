@@ -50,6 +50,20 @@
       "when": 1792071004707,
       "tag": "0006_portal_annotations",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792071858648,
+      "tag": "0007_dedupe_portal_bat_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792071890530,
+      "tag": "0008_portal_message_kind_bat",
+      "breakpoints": true
     }
   ]
 }
