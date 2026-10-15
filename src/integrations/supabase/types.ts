@@ -3204,6 +3204,7 @@ export type Database = {
           acompte_invoiced: boolean
           bat_id: string | null
           billing_type: Database["public"]["Enums"]["billing_type"]
+          brief: string | null
           business_unit_id: string | null
           client_id: string | null
           client_revisions_count: number
@@ -3246,6 +3247,7 @@ export type Database = {
           acompte_invoiced?: boolean
           bat_id?: string | null
           billing_type?: Database["public"]["Enums"]["billing_type"]
+          brief?: string | null
           business_unit_id?: string | null
           client_id?: string | null
           client_revisions_count?: number
@@ -3288,6 +3290,7 @@ export type Database = {
           acompte_invoiced?: boolean
           bat_id?: string | null
           billing_type?: Database["public"]["Enums"]["billing_type"]
+          brief?: string | null
           business_unit_id?: string | null
           client_id?: string | null
           client_revisions_count?: number
