@@ -1,15 +1,46 @@
-import { Check, Clock3, LockKeyhole } from "lucide-react";
+import { CalendarClock, Check, Clock3 } from "lucide-react";
 
-interface Event { label: string; at?: string; detail?: string }
-export default function ClientOrderProgress({ step, events, deadline }: { step: number; events: Event[]; deadline?: string }) {
-  const labels = ["Maquette", "Validation du BAT", "Impression", "Livraison"];
-  return (
-    <section className="space-y-6 border-y border-border py-7">
-      <h2 className="text-xs font-semibold uppercase text-muted-foreground">Suivi de votre commande</h2>
-      <ol className="grid grid-cols-4 gap-2" aria-label="Avancement de la commande">{labels.map((label, i) => <li key={label} aria-current={step === i ? "step" : undefined} className="relative text-center"><div className={`relative z-10 mx-auto flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold ${i <= step ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted text-muted-foreground"}`}>{i < step ? <Check className="h-4 w-4" /> : i + 1}</div>{i < 3 && <div className={`absolute left-1/2 top-4 h-px w-full ${i < step ? "bg-primary" : "bg-border"}`} />}<span className={`relative mt-3 block text-xs sm:text-sm ${i > step ? "text-muted-foreground" : "font-medium"}`}>{label}</span></li>)}</ol>
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-muted p-4 rounded-md"><div className="flex items-center gap-3"><Clock3 className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Étape {step + 1} sur 4</p><p className="font-semibold">{labels[step]}</p></div></div>{deadline && <div className="text-sm"><span className="text-xs text-muted-foreground">Livraison estimée</span><p>{new Date(deadline).toLocaleDateString("fr-FR")}</p></div>}</div>
-      {events.length > 0 && <div><h3 className="mb-4 text-xs font-semibold uppercase text-muted-foreground">Historique</h3><ol className="space-y-4 border-l border-border ml-2 pl-5">{events.map((event, i) => <li key={`${event.label}-${i}`} className="relative"><span className="absolute -left-[25px] top-1 h-2 w-2 rounded-full bg-primary" /><div className="flex flex-wrap justify-between gap-2 text-sm"><span className="font-medium">{event.label}</span>{event.at && <time className="text-xs text-muted-foreground">{new Date(event.at).toLocaleString("fr-FR")}</time>}</div>{event.detail && <p className="mt-1 text-xs text-muted-foreground">{event.detail}</p>}</li>)}</ol></div>}
-      <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground"><LockKeyhole className="h-3 w-3 shrink-0" />Lien sécurisé, personnel à votre commande.</p>
-    </section>
-  );
+export interface OrderProgressEvent { label: string; at?: string; detail?: string }
+const labels = ["Maquette", "Validation du BAT", "Impression", "Livraison"];
+const validDate = (value?: string) => value && !Number.isNaN(new Date(value).getTime()) ? new Date(value) : null;
+const longDate = (value: Date) => value.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+
+interface Props {
+  step: number;
+  events: OrderProgressEvent[];
+  deadline?: string;
+  completed?: boolean;
+  detail?: string;
+}
+
+export function ClientOrderHistory({ step, events, deadline, completed = false, detail }: Props) {
+  const current = Math.max(0, Math.min(3, step));
+  const date = validDate(deadline);
+  const groups = new Map<string, OrderProgressEvent[]>();
+  const sorted = [...events].sort((a, b) => (validDate(b.at)?.getTime() ?? 0) - (validDate(a.at)?.getTime() ?? 0));
+  sorted.forEach(event => {
+    const at = validDate(event.at);
+    const key = at ? longDate(at) : "Événements enregistrés";
+    groups.set(key, [...(groups.get(key) ?? []), event]);
+  });
+  return <section aria-label="Historique de la commande" className="min-w-0 space-y-5 border-b border-border py-6">
+    <h2 className="text-xs font-semibold uppercase text-muted-foreground">Historique</h2>
+    {!completed && <div className="space-y-4">
+      <h3 className="text-sm font-semibold">En ce moment et à venir</h3>
+      <div className="flex items-start gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/30 text-primary"><Clock3 className="h-4 w-4" /></span><div className="min-w-0 flex-1"><div className="flex flex-wrap justify-between gap-2 text-sm"><strong>{labels[current]}</strong><span className="text-xs text-muted-foreground">en cours</span></div>{detail && <p className="mt-1 text-xs text-muted-foreground">{detail}</p>}</div></div>
+      {date && current < 3 && <div className="flex items-start gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-dashed border-border text-muted-foreground"><CalendarClock className="h-4 w-4" /></span><div><p className="text-sm font-semibold">Livraison prévue</p><time dateTime={deadline} className="text-xs text-muted-foreground">{longDate(date)}</time></div></div>}
+    </div>}
+    {[...groups.entries()].map(([group, items]) => <div key={group} className="space-y-4"><h3 className="flex justify-between gap-3 text-sm font-semibold"><span className="capitalize">{group}</span><span className="shrink-0 text-xs font-normal text-muted-foreground">{items.length} événement{items.length > 1 ? "s" : ""}</span></h3><ol className="space-y-4">{items.map((event, i) => <li key={`${event.label}-${i}`} className="flex items-start gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/10 text-success"><Check className="h-4 w-4" /></span><div className="min-w-0 flex-1"><div className="flex flex-wrap justify-between gap-2 text-sm"><span className="break-words font-medium">{event.label}</span>{validDate(event.at) && <time dateTime={event.at} className="shrink-0 text-xs text-muted-foreground">{validDate(event.at)?.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</time>}</div>{event.detail && <p className="mt-1 break-words text-xs text-muted-foreground">{event.detail}</p>}</div></li>)}</ol></div>)}
+  </section>;
+}
+
+export default function ClientOrderProgress({ step, events, deadline, completed = false, detail }: Props) {
+  const current = Math.max(0, Math.min(3, step));
+  const date = validDate(deadline);
+  return <section aria-label="Avancement" className="space-y-6 border-y border-border py-6">
+    <h2 className="text-xs font-semibold uppercase text-muted-foreground">Avancement</h2>
+    <ol className="grid grid-cols-4 gap-2" aria-label="Avancement de la commande">{labels.map((label, i) => <li key={label} aria-current={!completed && current === i ? "step" : undefined} className="relative text-center"><div className={`relative z-10 mx-auto flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold ${i <= current ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted text-muted-foreground"} ${i === current && !completed ? "ring-4 ring-primary/15" : ""}`}>{i < current || completed ? <Check className="h-4 w-4" /> : i + 1}</div>{i < 3 && <div className={`absolute left-1/2 top-4 h-px w-full ${i < current ? "bg-primary" : "bg-border"}`} />}<span className={`relative mt-3 block text-xs sm:text-sm ${i > current ? "text-muted-foreground" : "font-medium"}`}>{label}</span></li>)}</ol>
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-primary/20 bg-primary/5 p-4"><div className="flex min-w-0 items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">{completed ? <Check className="h-5 w-5" /> : <Clock3 className="h-5 w-5" />}</span><div className="min-w-0"><p className="text-xs font-semibold uppercase text-muted-foreground">{completed ? "Terminé" : "En cours"} · Étape {current + 1} sur 4</p><p className="font-semibold">{completed ? "Commande livrée" : labels[current]}</p>{detail && <p className="mt-1 text-xs text-muted-foreground">{detail}</p>}</div></div>{date && !completed && <div className="text-sm sm:text-right"><p className="text-xs text-muted-foreground">Livraison prévue le</p><time dateTime={deadline} className="font-semibold">{longDate(date)}</time></div>}</div>
+    {events.length > 0 && <ClientOrderHistory step={current} events={events} deadline={deadline} completed={completed} detail={detail} />}
+  </section>;
 }
