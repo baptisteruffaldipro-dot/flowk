@@ -169,9 +169,19 @@ export default function TaskDetail() {
 
   const addSubtask = async () => {
     if (!newSub.trim()) return;
-    const { error } = await supabase.from("subtasks").insert({ task_id: id, title: newSub.trim(), position: subtasks.length });
+    const parents = subtasks.filter((s) => !s.parent_id);
+    const { error } = await supabase.from("subtasks").insert({ task_id: id, title: newSub.trim(), position: parents.length });
     if (error) return toast.error(error.message);
     setNewSub("");
+    load();
+  };
+
+  const addChildSub = async (parent: any, title: string) => {
+    const next = title.trim();
+    if (!next) return;
+    const children = subtasks.filter((s) => s.parent_id === parent.id);
+    const { error } = await supabase.from("subtasks").insert({ task_id: id, parent_id: parent.id, title: next, position: children.length });
+    if (error) return toast.error(error.message);
     load();
   };
 
@@ -181,6 +191,7 @@ export default function TaskDetail() {
   };
 
   const removeSub = async (id2: string) => {
+    await supabase.from("subtasks").delete().eq("parent_id", id2);
     await supabase.from("subtasks").delete().eq("id", id2);
     load();
   };
@@ -196,11 +207,12 @@ export default function TaskDetail() {
   const reorderSubs = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = subtasks.findIndex((s) => s.id === active.id);
-    const newIndex = subtasks.findIndex((s) => s.id === over.id);
+    const parents = subtasks.filter((s) => !s.parent_id);
+    const oldIndex = parents.findIndex((s) => s.id === active.id);
+    const newIndex = parents.findIndex((s) => s.id === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
-    const reordered = arrayMove(subtasks, oldIndex, newIndex);
-    setSubtasks(reordered);
+    const reordered = arrayMove(parents, oldIndex, newIndex);
+    setSubtasks([...reordered, ...subtasks.filter((s) => s.parent_id)]);
     await Promise.all(
       reordered.map((s, idx) =>
         s.position === idx
@@ -488,31 +500,20 @@ export default function TaskDetail() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      <div className="space-y-6 mb-4">
         <section className="min-w-0">
-          <h2 className="text-sm font-semibold mb-3">Notes</h2>
-          <Textarea
-            value={task.notes ?? ""}
-            onChange={(e) => setTask({ ...task, notes: e.target.value })}
-            onBlur={() => updateField({ notes: task.notes })}
-            rows={6}
-            placeholder="Notes, brief, références…"
-          />
-          <NoteAttachments task={task} onChange={load} />
-        </section>
-
-        <section className="min-w-0">
-          <h2 className="text-sm font-semibold mb-3">Sous-tâches</h2>
-          <SubtaskList
+          <h2 className="text-sm font-semibold mb-3">Tâches</h2>
+          <TaskChecklist
             subtasks={subtasks}
             onToggle={toggleSub}
             onRemove={removeSub}
             onRename={renameSub}
             onReorder={reorderSubs}
+            onAddChild={addChildSub}
           />
           <div className="flex gap-2 min-w-0">
             <Input
-              placeholder="Ajouter une sous-tâche"
+              placeholder="Ajouter une tâche"
               value={newSub}
               onChange={(e) => setNewSub(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addSubtask()}
@@ -520,6 +521,18 @@ export default function TaskDetail() {
             />
             <Button size="sm" variant="outline" onClick={addSubtask}><Plus className="h-4 w-4" /></Button>
           </div>
+        </section>
+
+        <section className="min-w-0">
+          <h2 className="text-sm font-semibold mb-3">Notes</h2>
+          <Textarea
+            value={task.notes ?? ""}
+            onChange={(e) => setTask({ ...task, notes: e.target.value })}
+            onBlur={() => updateField({ notes: task.notes })}
+            rows={6}
+            placeholder="Espace de notes libre…"
+          />
+          <NoteAttachments task={task} onChange={load} />
         </section>
       </div>
 
@@ -917,22 +930,35 @@ function NoteAttachments({ task, onChange }: { task: any; onChange: () => void }
   );
 }
 
-function SubtaskList({
-  subtasks, onToggle, onRemove, onRename, onReorder,
+function TaskChecklist({
+  subtasks, onToggle, onRemove, onRename, onReorder, onAddChild,
 }: {
   subtasks: any[];
   onToggle: (s: any) => void;
   onRemove: (id: string) => void;
   onRename: (s: any, title: string) => void;
   onReorder: (e: DragEndEvent) => void;
+  onAddChild: (parent: any, title: string) => void;
 }) {
+  const parents = subtasks.filter((s) => !s.parent_id);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   return (
-    <div className="space-y-1.5 mb-3">
+    <div className="space-y-2 mb-3">
+      {parents.length === 0 && (
+        <p className="text-xs text-muted-foreground">Aucune tâche pour le moment.</p>
+      )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onReorder}>
-        <SortableContext items={subtasks.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-          {subtasks.map((s) => (
-            <SortableSubtask key={s.id} s={s} onToggle={onToggle} onRemove={onRemove} onRename={onRename} />
+        <SortableContext items={parents.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+          {parents.map((p) => (
+            <TaskRow
+              key={p.id}
+              task={p}
+              childItems={subtasks.filter((s) => s.parent_id === p.id)}
+              onToggle={onToggle}
+              onRemove={onRemove}
+              onRename={onRename}
+              onAddChild={onAddChild}
+            />
           ))}
         </SortableContext>
       </DndContext>
@@ -940,40 +966,136 @@ function SubtaskList({
   );
 }
 
-function SortableSubtask({
-  s, onToggle, onRemove, onRename,
+function TaskRow({
+  task, childItems, onToggle, onRemove, onRename, onAddChild,
 }: {
-  s: any;
+  task: any;
+  childItems: any[];
   onToggle: (s: any) => void;
   onRemove: (id: string) => void;
   onRename: (s: any, title: string) => void;
+  onAddChild: (parent: any, title: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: s.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
   const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(s.title);
-  useEffect(() => { setValue(s.title); }, [s.title]);
+  const [value, setValue] = useState(task.title);
+  useEffect(() => { setValue(task.title); }, [task.title]);
+  const [adding, setAdding] = useState(false);
+  const [childValue, setChildValue] = useState("");
+  const doneChildren = childItems.filter((c) => c.done).length;
 
   const commit = () => {
     setEditing(false);
-    if (value.trim() && value !== s.title) onRename(s, value);
-    else setValue(s.title);
+    if (value.trim() && value !== task.title) onRename(task, value);
+    else setValue(task.title);
+  };
+
+  const submitChild = () => {
+    if (childValue.trim()) onAddChild(task, childValue);
+    setChildValue("");
+    setAdding(false);
   };
 
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-2 group rounded ${isDragging ? "bg-muted/50" : ""}`}
+      className={`rounded border px-2.5 py-2 group ${isDragging ? "bg-muted/50 border-primary/40" : "bg-card/40"}`}
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing text-muted-foreground opacity-0 group-hover:opacity-100 touch-none"
-        title="Réordonner"
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </button>
-      <Checkbox checked={s.done} onCheckedChange={() => onToggle(s)} />
+      <div className="flex items-center gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground opacity-0 group-hover:opacity-100 touch-none"
+          title="Réordonner"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
+        <Checkbox checked={task.done} onCheckedChange={() => onToggle(task)} />
+        {editing ? (
+          <Input
+            autoFocus
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") { setValue(task.title); setEditing(false); }
+            }}
+            className="h-7 text-sm flex-1 min-w-0"
+          />
+        ) : (
+          <span
+            onClick={() => setEditing(true)}
+            className={`flex-1 min-w-0 break-words text-sm font-medium cursor-text ${task.done ? "line-through text-muted-foreground" : ""}`}
+          >
+            {task.title}
+          </span>
+        )}
+        {childItems.length > 0 && (
+          <span className="text-[11px] text-muted-foreground whitespace-nowrap">{doneChildren}/{childItems.length}</span>
+        )}
+        <button
+          onClick={() => setAdding((a) => !a)}
+          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+          title="Ajouter une sous-tâche"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={() => onRemove(task.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {childItems.length > 0 && (
+        <div className="mt-1.5 ml-8 space-y-1 border-l pl-3">
+          {childItems.map((c) => (
+            <ChildRow key={c.id} c={c} onToggle={onToggle} onRemove={onRemove} onRename={onRename} />
+          ))}
+        </div>
+      )}
+
+      {adding && (
+        <div className="mt-1.5 ml-8 flex gap-2">
+          <Input
+            autoFocus
+            placeholder="Ajouter une sous-tâche"
+            value={childValue}
+            onChange={(e) => setChildValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitChild();
+              if (e.key === "Escape") { setChildValue(""); setAdding(false); }
+            }}
+            className="h-7 text-sm min-w-0"
+          />
+          <Button size="sm" variant="outline" onClick={submitChild}><Plus className="h-4 w-4" /></Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChildRow({
+  c, onToggle, onRemove, onRename,
+}: {
+  c: any;
+  onToggle: (s: any) => void;
+  onRemove: (id: string) => void;
+  onRename: (s: any, title: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(c.title);
+  useEffect(() => { setValue(c.title); }, [c.title]);
+
+  const commit = () => {
+    setEditing(false);
+    if (value.trim() && value !== c.title) onRename(c, value);
+    else setValue(c.title);
+  };
+
+  return (
+    <div className="flex items-center gap-2 group">
+      <Checkbox checked={c.done} onCheckedChange={() => onToggle(c)} />
       {editing ? (
         <Input
           autoFocus
@@ -982,19 +1104,19 @@ function SortableSubtask({
           onBlur={commit}
           onKeyDown={(e) => {
             if (e.key === "Enter") commit();
-            if (e.key === "Escape") { setValue(s.title); setEditing(false); }
+            if (e.key === "Escape") { setValue(c.title); setEditing(false); }
           }}
           className="h-7 text-sm flex-1 min-w-0"
         />
       ) : (
         <span
           onClick={() => setEditing(true)}
-          className={`flex-1 min-w-0 break-words text-sm cursor-text ${s.done ? "line-through text-muted-foreground" : ""}`}
+          className={`flex-1 min-w-0 break-words text-sm cursor-text ${c.done ? "line-through text-muted-foreground" : ""}`}
         >
-          {s.title}
+          {c.title}
         </span>
       )}
-      <button onClick={() => onRemove(s.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
+      <button onClick={() => onRemove(c.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
         <Trash2 className="h-3.5 w-3.5" />
       </button>
     </div>
