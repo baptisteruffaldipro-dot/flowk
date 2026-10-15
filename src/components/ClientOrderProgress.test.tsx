@@ -23,7 +23,8 @@ describe("Client order progress", () => {
   });
   it("groups recorded events and hides invalid or missing planned dates", () => {
     render(<ClientOrderHistory step={0} deadline="not-a-date" events={[{ label: "Commande reçue", at: "2026-10-15T09:00:00Z" }, { label: "BAT validé", at: "2026-10-15T12:00:00Z", detail: "Signé par Client test" }]} />);
-    expect(screen.getByText("2 événements")).toBeVisible();
+    expect(screen.getByText("Aujourd'hui")).toBeVisible();
+    expect(screen.getByText("2 étapes")).toBeVisible();
     expect(screen.getByText("Signé par Client test")).toBeVisible();
     expect(screen.queryByText("Livraison prévue")).not.toBeInTheDocument();
     expect(screen.queryByText("Invalid Date")).not.toBeInTheDocument();
