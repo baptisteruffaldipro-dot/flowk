@@ -1,4 +1,4 @@
-import ClientBatApproval from "@/components/ClientBatApproval";
+import ClientBatApproval, { CLIENT_BAT_CHECKS } from "@/components/ClientBatApproval";
 import ClientOrderProgress from "@/components/ClientOrderProgress";
 import DocumentViewer from "@/components/DocumentViewer";
 import { useEffect, useState } from "react";
@@ -9,19 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { CheckCircle2, Copy, Send, Download, FileText, Printer, CreditCard, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 
-import { Checkbox } from "@/components/ui/checkbox";
+
 
 type PriceTier = { quantity?: number | null; models?: number | null; price?: number | null };
-
-const BAT_CHECKS = [
-  "Textes et orthographe vérifiés",
-  "Couleurs, visuels et mise en page conformes (rendu écran indicatif)",
-  "Format, quantités et indications techniques validés",
-];
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "En préparation",
@@ -43,12 +37,7 @@ export default function ClientPortalPublic() {
   const [reply, setReply] = useState("");
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
-  const [obs, setObs] = useState<Record<string, string>>({});
-  const [zoom, setZoom] = useState<Record<string, number>>({});
   const [ribOpen, setRibOpen] = useState(false);
-  const [signFile, setSignFile] = useState<{ name: string; key: string } | null>(null);
-  const [checks, setChecks] = useState([false, false, false]);
-  const [signer, setSigner] = useState("");
   const [certView, setCertView] = useState<any>(null);
 
   const [seenTick, setSeenTick] = useState(0);
@@ -178,8 +167,8 @@ export default function ClientPortalPublic() {
   const selectedKey = selectedFile ? String(selectedFile.url ?? selectedFile.name) : "";
   const selectedReview = reviews.find((r: any) => r.file === selectedFile?.name && r.status === "approved");
   const allApproved = files.length > 0 && files.every((f: any) => reviews.some((r: any) => r.file === f.name && r.status === "approved"));
-  const delivered = p.status === "delivered";
-  const printing = linkedPrintOrders.some((o: any) => ["en_impression", "impression", "livre", "livree", "received"].includes(o.status));
+  const delivered = p.status === "delivered" || (linkedPrintOrders.length > 0 && linkedPrintOrders.every((o: any) => ["livre", "livre_paye"].includes(o.status)));
+  const printing = linkedPrintOrders.some((o: any) => ["en_impression", "livre", "livre_paye"].includes(o.status));
   const progressStep = delivered ? 3 : printing ? 2 : files.length > 0 ? 1 : 0;
   const history = [
     ...reviews.filter((r: any) => r.status === "approved").map((r: any) => ({ label: `BAT validé : ${r.file}`, at: r.at, detail: r.signed_by ? `Signé par ${r.signed_by}` : undefined })),
@@ -221,7 +210,7 @@ export default function ClientPortalPublic() {
               <header className="space-y-2">{client?.name && <p className="text-sm text-muted-foreground">Bonjour <strong className="text-foreground">{client.name}</strong>,</p>}<h1 className="text-3xl font-semibold leading-tight tracking-normal">{selectedReview ? "Merci, c’est validé" : "Votre BAT est prêt à être validé"}</h1><p className="text-sm text-muted-foreground break-words">{title}</p></header>
               <ClientBatApproval key={selectedKey} busy={busy} approved={!!selectedReview} signedBy={selectedReview?.signed_by} signedAt={selectedReview?.at}
                 onApprove={async name => { const ok = await act("approve_file", { file: selectedFile.name, signed_by: name, checks: 3, user_agent: navigator.userAgent }); if (ok) toast.success("BAT signé — certificat généré"); return ok; }}
-                onCorrection={async note => { const ok = await act("add_message", { body: `Demande de correction — ${selectedFile.name} :\n${note}` }); if (ok) toast.success("Demande de correction envoyée à l’atelier"); return ok; }}
+                onCorrection={async note => { const ok = await act("request_changes", { file: selectedFile.name, note }); if (ok) toast.success("Demande de correction envoyée à l’atelier"); return ok; }}
                 onCertificate={selectedReview ? () => setCertView(selectedReview) : undefined}
                 downloadUrl={deliv?.unlocked && selectedReview ? selectedFile.url : undefined}
               />
@@ -229,6 +218,7 @@ export default function ClientPortalPublic() {
             </div>
           </section>
         ) : <header className="space-y-2"><h1 className="text-3xl font-semibold tracking-normal">{title}</h1>{client?.name && <p className="text-sm text-muted-foreground">Pour {client.name}</p>}<p className="text-sm text-muted-foreground">Votre BAT est en cours de préparation.</p></header>}
+        {canValidate && files.length === 0 && <Button disabled={busy} onClick={() => act("validate")}><CheckCircle2 className="mr-2 h-4 w-4" />Valider la commande</Button>}
         <ClientOrderProgress step={progressStep} events={history} deadline={printOrder?.estimated_delivery_date} />
 
         {/* Brief */}
@@ -297,7 +287,7 @@ export default function ClientPortalPublic() {
               <div className="text-[10px] uppercase text-muted-foreground">Étapes</div>
               {subtasks.map((s: any) => (
                 <div key={s.id} className="flex items-center gap-2 text-sm">
-                  <span className={`h-2 w-2 rounded-full ${s.done ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                  <span className={`h-2 w-2 rounded-full ${s.done ? "bg-success" : "bg-muted-foreground/40"}`} />
                   <span className={s.done ? "line-through text-muted-foreground" : ""}>{s.title}</span>
                 </div>
               ))}
@@ -403,7 +393,8 @@ export default function ClientPortalPublic() {
                             const price = Number(tier.price ?? 0);
                             const isChosen = chosen && Number(chosen.quantity) === quantity && Number(chosen.price) === price;
                             return (
-                              <button
+                              <Button
+                                variant="outline"
                                 type="button"
                                 key={`${po.id ?? i}-tier-${tierIndex}`}
                                 disabled={busy}
@@ -428,7 +419,7 @@ export default function ClientPortalPublic() {
                                   } : prev);
                                   load();
                                 }}
-                                className={`flex items-center justify-between gap-3 text-sm rounded-md border px-3 py-2 text-left transition ${
+                                className={`flex items-center justify-between gap-3 h-auto whitespace-normal text-sm rounded-md border px-3 py-2 text-left transition ${
                                   isChosen ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50"
                                 }`}
                               >
@@ -440,7 +431,7 @@ export default function ClientPortalPublic() {
                                   {tier.models ? ` · ${formatTierNumber(Number(tier.models))} modèles` : ""}
                                 </span>
                                 <span className="font-medium tabular-nums">{price.toFixed(2)} € HT</span>
-                              </button>
+                              </Button>
                             );
                           })}
                         </div>
@@ -483,15 +474,15 @@ export default function ClientPortalPublic() {
           const markSeen = () => { window.localStorage.setItem(key, lastAdmin.created_at); setSeenTick((n) => n + 1); };
           const isCorrection = lastAdmin.kind === "correction";
           return (
-            <section className={`rounded-xl border p-5 space-y-2 ${isCorrection ? "border-emerald-500/40 bg-emerald-500/5" : "border-primary/40 bg-primary/5"}`}>
+            <section className={`rounded-md border p-5 space-y-2 ${isCorrection ? "border-success/40 bg-success/5" : "border-primary/40 bg-primary/5"}`}>
               <div className="flex items-center gap-2 text-sm font-semibold">
-                {isCorrection && <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
+                {isCorrection && <CheckCircle2 className="h-4 w-4 text-success" />}
                 {isCorrection ? "Votre correction est prête" : "Nouveau message de l'atelier"}
               </div>
               <div className="text-sm whitespace-pre-wrap">{lastAdmin.body}</div>
               <div className="flex gap-3 text-xs">
                 <a href="#echanges" onClick={markSeen} className="underline">Voir les échanges</a>
-                <button onClick={markSeen} className="text-muted-foreground underline">J'ai lu</button>
+                <Button variant="ghost" size="sm" onClick={markSeen}>J’ai lu</Button>
               </div>
             </section>
           );
@@ -499,7 +490,7 @@ export default function ClientPortalPublic() {
 
         {/* Refus affiché */}
         {p.status === "refused" && (
-          <section className="rounded-xl border border-rose-500/40 bg-rose-500/5 p-5">
+          <section className="rounded-md border border-destructive/40 bg-destructive/5 p-5">
             <div className="text-sm font-medium">Demande refusée</div>
             {p.refusal_reason && <div className="text-sm text-muted-foreground mt-1">Motif : {p.refusal_reason}</div>}
           </section>
@@ -562,7 +553,7 @@ export default function ClientPortalPublic() {
                   : "Le téléchargement des livrables est débloqué après confirmation du paiement."}
             </p>
             {printOrder && (
-              <p className="text-sm text-amber-700 dark:text-amber-400">
+              <p className="text-sm text-warning">
                 Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
               </p>
             )}
@@ -600,7 +591,7 @@ export default function ClientPortalPublic() {
               </div>
             )}
             {declared && !p.admin_confirmed_paid_at && (
-              <div className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded p-2">
+              <div className="text-xs bg-warning/10 text-warning rounded p-2">
                 Merci ! Nous vérifions la réception du paiement.
               </div>
             )}
@@ -615,16 +606,16 @@ export default function ClientPortalPublic() {
           ) : (
             <div className="space-y-2">
               {messages.map((m: any) => (
-                <div key={m.id} className={`text-sm p-3 rounded-md ${m.author === "client" ? "bg-primary/10" : m.kind === "correction" ? "bg-emerald-500/10" : "bg-muted/40"}`}>
+                <div key={m.id} className={`text-sm p-3 rounded-md ${m.author === "client" ? "bg-primary/10" : m.kind === "correction" ? "bg-success/10" : "bg-muted/40"}`}>
                   <div className="mb-0.5 flex items-center gap-2 text-[10px] uppercase text-muted-foreground">
                     <span>{m.author === "client" ? "Vous" : "Studio"} · {new Date(m.created_at).toLocaleString("fr-FR")}</span>
                     {m.kind === "correction" && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-700 dark:text-emerald-400">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-success">
                         <CheckCircle2 className="h-2.5 w-2.5" /> Corrigé
                       </span>
                     )}
                     {m.author === "client" && m.resolved && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-700 dark:text-emerald-400">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-success">
                         <CheckCircle2 className="h-2.5 w-2.5" /> Prise en compte
                       </span>
                     )}
@@ -643,48 +634,6 @@ export default function ClientPortalPublic() {
         </section>
       </div>
 
-      <Dialog open={!!signFile} onOpenChange={(o) => !o && setSignFile(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Signer le Bon à Tirer</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-sm">
-            <div className="text-xs text-muted-foreground truncate">Fichier : <span className="font-medium text-foreground">{signFile?.name}</span></div>
-            <div className="space-y-2.5">
-              {BAT_CHECKS.map((c, i) => (
-                <label key={i} className="flex items-start gap-2.5 cursor-pointer">
-                  <Checkbox checked={checks[i]} onCheckedChange={(v) => setChecks(checks.map((x, j) => (j === i ? !!v : x)))} className="mt-0.5" />
-                  <span>{c}</span>
-                </label>
-              ))}
-            </div>
-            <div className="space-y-1.5">
-              <div className="text-xs font-medium">Nom et prénom (signature) *</div>
-              <Input value={signer} onChange={(e) => setSigner(e.target.value)} maxLength={100} placeholder="Jean Dupont" />
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Votre signature vaut « Bon pour impression ». La date, l'heure et le fichier validé sont enregistrés dans un certificat.
-              Toute erreur non signalée avant validation ne pourra engager la responsabilité du studio.
-            </p>
-            <Button
-              className="w-full"
-              disabled={busy || !checks.every(Boolean) || !signer.trim()}
-              onClick={async () => {
-                if (!signFile) return;
-                await act("approve_file", {
-                  file: signFile.name, note: obs[signFile.key]?.trim() || null,
-                  signed_by: signer.trim(), checks: checks.filter(Boolean).length, user_agent: navigator.userAgent,
-                });
-                setSignFile(null);
-                toast.success("BAT signé — certificat généré");
-              }}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-1" /> Bon pour impression — Signer
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={!!certView} onOpenChange={(o) => !o && setCertView(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -701,7 +650,7 @@ export default function ClientPortalPublic() {
                 {certView.note && <Info label="Observation" value={certView.note} />}
               </div>
               <ul className="text-xs text-muted-foreground space-y-1">
-                {BAT_CHECKS.map((c, i) => <li key={i}>✓ {c}</li>)}
+                {CLIENT_BAT_CHECKS.map((c, i) => <li key={i}>✓ {c}</li>)}
               </ul>
               <Button variant="outline" className="w-full" onClick={() => window.print()}>Imprimer / PDF</Button>
             </div>
@@ -755,7 +704,7 @@ function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="text-sm font-medium">{value}</div>
+      <div className="break-words text-sm font-medium">{value}</div>
     </div>
   );
 }
