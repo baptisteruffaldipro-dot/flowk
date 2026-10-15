@@ -381,7 +381,7 @@ function RequestDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editing ? "Demande client" : "Nouvelle demande client"}</DialogTitle>
+          <DialogTitle>{editing ? "Devis" : "Nouveau devis"}</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3">

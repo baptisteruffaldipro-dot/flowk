@@ -23,7 +23,7 @@ export const fmtDate = (d?: string | null) =>
 export const STATUS_LABEL: Record<string, string> = {
   a_faire: "À faire",
   en_attente: "En attente",
-  aujourdhui: "Aujourd'hui",
+  aujourdhui: "En production",
   bat: "BAT",
   envoye: "Traité / En validation",
   impression: "Impression",
