@@ -169,13 +169,18 @@ export default function ClientPortalPublic() {
   const allApproved = files.length > 0 && files.every((f: any) => reviews.some((r: any) => r.file === f.name && r.status === "approved"));
   const delivered = p.status === "delivered" || (linkedPrintOrders.length > 0 && linkedPrintOrders.every((o: any) => ["livre", "livre_paye"].includes(o.status)));
   const printing = linkedPrintOrders.some((o: any) => ["en_impression", "livre", "livre_paye"].includes(o.status)) || (linkedPrintOrders.length === 0 && entity.status === "impression");
-  const progressStep = delivered ? 3 : printing ? 2 : files.length > 0 ? 1 : 0;
-  const progressDetail = delivered
+  const impression = linkedPrintOrders.length > 0 || entity.status === "impression";
+  const downloadReady = !impression && allApproved && !!deliv?.unlocked;
+  const progressCompleted = impression ? delivered : downloadReady;
+  const progressStep = delivered || printing || downloadReady ? 3 : allApproved || p.client_validated_at ? 2 : files.length > 0 ? 1 : 0;
+  const progressDetail = downloadReady
+    ? "Vos fichiers sont disponibles au téléchargement."
+    : delivered
     ? "La livraison de votre commande est confirmée."
     : printing
       ? "Votre commande est en production à l’atelier."
       : allApproved
-        ? "BAT validé — en attente du lancement de l’impression."
+        ? impression ? "BAT validé — récapitulatif et règlement de la prestation et/ou de l’impression." : "BAT validé — récapitulatif et règlement de la prestation avant mise à disposition des fichiers."
         : files.length > 0
           ? "Votre accord est attendu avant de poursuivre."
           : "L’atelier prépare votre maquette.";
@@ -198,7 +203,8 @@ export default function ClientPortalPublic() {
         </div>
       </div>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <ClientOrderProgress step={progressStep} events={[]} deadline={deliveryDeadline} completed={delivered} detail={progressDetail} />
+        <ClientOrderProgress step={progressStep} events={[]} deadline={deliveryDeadline} completed={progressCompleted} detail={progressDetail} impression={impression} />
+        {allApproved && !progressCompleted && !printing && <div className="pb-6"><Button variant="outline" asChild><a href="#reglement"><CreditCard className="mr-2 h-4 w-4" />Récapitulatif & règlement</a></Button></div>}
       </div>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {files.length > 0 && selectedFile ? (
@@ -236,7 +242,7 @@ export default function ClientPortalPublic() {
           </section>
         ) : <header className="space-y-2"><h1 className="text-3xl font-semibold tracking-normal">{title}</h1>{client?.name && <p className="text-sm text-muted-foreground">Pour {client.name}</p>}<p className="text-sm text-muted-foreground">Votre BAT est en cours de préparation.</p></header>}
         {canValidate && files.length === 0 && <Button disabled={busy} onClick={() => act("validate")}><CheckCircle2 className="mr-2 h-4 w-4" />Valider la commande</Button>}
-        <ClientOrderHistory step={progressStep} events={history} deadline={deliveryDeadline} completed={delivered} detail={progressDetail} />
+        <ClientOrderHistory step={progressStep} events={history} deadline={deliveryDeadline} completed={progressCompleted} detail={progressDetail} impression={impression} />
 
         {/* Brief */}
         {(entity.notes || entity.description) && (
@@ -515,7 +521,7 @@ export default function ClientPortalPublic() {
 
         {/* Règlement */}
         {(termsLabel || dueAmount != null || printOrder || methods.length > 0 || invoiceDoc?.url || invoiceDoc?.has_file) && (
-          <section className="border-b border-border py-6 space-y-3">
+          <section id="reglement" className="scroll-mt-6 border-b border-border py-6 space-y-3">
             <h2 className="text-sm font-semibold">Règlement</h2>
             {(termsLabel || dueAmount != null) && (
               <div className="space-y-2">
