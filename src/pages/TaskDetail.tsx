@@ -307,12 +307,12 @@ export default function TaskDetail() {
     : (task.prestation ? [task.prestation] : []);
 
   return (
-    <div className="p-4 md:p-8 max-w-[1200px] mx-auto">
+    <div className="p-4 md:p-8 w-full max-w-[1600px] mx-auto min-w-0">
       <Link to="/taches" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 mb-4">
         <ArrowLeft className="h-3 w-3" /> Tâches
       </Link>
       <PageHeader
-        title="Tâche"
+        title={task.title || "Sans titre"}
         description={`${task.clients?.name ?? "Sans client"} • ${PRESTATION_LABEL[task.prestation] ?? ""}`}
         actions={
           <div className="flex items-center gap-2">
@@ -327,8 +327,8 @@ export default function TaskDetail() {
             )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
-                  <Trash2 className="h-4 w-4" /> Supprimer
+                <Button variant="ghost" size="icon" title="Supprimer la tâche" aria-label="Supprimer la tâche" className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -350,7 +350,52 @@ export default function TaskDetail() {
         }
       />
 
-      <Card className="p-4 mb-4 space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5 border-b pb-5">
+        <div className="min-w-0">
+          <div className="text-xs text-muted-foreground">Statut</div>
+          <Select value={task.status} onValueChange={(v) => updateStatusWithAutoBalance(v)}>
+            <SelectTrigger className="mt-1.5 w-full min-w-0"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs text-muted-foreground">Priorité</div>
+          <Select value={task.priority ?? "secondaire"} onValueChange={(v) => updateField({ priority: v })}>
+            <SelectTrigger className="mt-1.5 w-full min-w-0"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(PRIORITY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="min-w-0">
+          <div className="text-xs text-muted-foreground mb-2">Prestations</div>
+          <PrestationPicker
+            value={prestations}
+            onChange={(next) => {
+              // La colonne legacy `prestation` est un ENUM Postgres ; on n'y écrit
+              // que des valeurs connues (sinon on garde l'ancienne ou on retombe sur "autre").
+              const known = Object.keys(PRESTATION_LABEL);
+              const firstKnown = next.find((k) => known.includes(k));
+              updateField({
+                prestations: next,
+                prestation: firstKnown ?? (known.includes(task.prestation) ? task.prestation : "autre"),
+              });
+            }}
+          />
+        </div>
+        {!["envoye", "a_facturer", "facture_envoyee", "facturee", "payee", "archive"].includes(task.status) && (
+          <div className="min-w-0">
+            <div className="text-xs text-muted-foreground">Deadline</div>
+            <Input type="date" value={task.deadline ?? ""} onChange={(e) => updateField({ deadline: e.target.value || null })} className="mt-1.5 w-full min-w-0" />
+          </div>
+        )}
+      </div>
+
+      <details className="group mb-5 border-b pb-4">
+        <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">Modifier le titre, le client ou le groupe</summary>
+        <div className="mt-4 space-y-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Titre</Label>
           <Input
@@ -383,7 +428,7 @@ export default function TaskDetail() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Projet</Label>
+            <Label className="text-xs">Groupe / projet</Label>
             <Select
               value={task.project_id ?? ""}
               onValueChange={(v) => updateField({ project_id: v })}
@@ -396,52 +441,20 @@ export default function TaskDetail() {
             </Select>
           </div>
         </div>
-      </Card>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-        <Card className="p-4 min-w-0">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Statut</div>
-          <Select value={task.status} onValueChange={(v) => updateStatusWithAutoBalance(v)}>
-            <SelectTrigger className="mt-2 w-full min-w-0"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(STATUS_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </Card>
-        <Card className="p-4 min-w-0">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Priorité</div>
-          <Select value={task.priority ?? "secondaire"} onValueChange={(v) => updateField({ priority: v })}>
-            <SelectTrigger className="mt-2 w-full min-w-0"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(PRIORITY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </Card>
-        <Card className="p-4 min-w-0">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Prestations</div>
-          <PrestationPicker
-            value={prestations}
-            onChange={(next) => {
-              // La colonne legacy `prestation` est un ENUM Postgres ; on n'y écrit
-              // que des valeurs connues (sinon on garde l'ancienne ou on retombe sur "autre").
-              const known = Object.keys(PRESTATION_LABEL);
-              const firstKnown = next.find((k) => known.includes(k));
-              updateField({
-                prestations: next,
-                prestation: firstKnown ?? (known.includes(task.prestation) ? task.prestation : "autre"),
-              });
-            }}
-          />
-        </Card>
-        {!["envoye", "a_facturer", "facture_envoyee", "facturee", "payee", "archive"].includes(task.status) && (
-          <Card className="p-4 min-w-0">
-            <div className="text-xs text-muted-foreground uppercase tracking-wider">Deadline</div>
-            <Input type="date" value={task.deadline ?? ""} onChange={(e) => updateField({ deadline: e.target.value || null })} className="mt-2 w-full min-w-0" />
-          </Card>
-        )}
       </div>
+      </details>
 
-      <Card className="p-4 mb-4">
+      <PortalPanel
+        entityType="task"
+        entityId={task.id}
+        clientId={task.client_id ?? null}
+        clientEmail={task.clients?.email ?? null}
+        clientName={task.clients?.name ?? null}
+        notifyTemplate="files-delivered"
+        notifyContext={{ description: task.title }}
+        billingRevision={JSON.stringify([task.billing_type, task.hourly_rate, task.flat_amount, task.total_minutes, task.estimated_minutes, task.client_revisions_count, task.free_revisions, task.extra_revision_rate])}
+        taskWorkspace={{
+          work: <>      <section className="border-b pb-5 mb-5">
         <div className="space-y-1.5">
           <Label className="text-xs">Brief / questionnaire rattaché</Label>
           <div className="flex items-center gap-2">
@@ -470,22 +483,22 @@ export default function TaskDetail() {
             )}
           </div>
         </div>
-      </Card>
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <Card className="p-4 sm:p-5 min-w-0">
+        <section className="min-w-0">
           <h2 className="text-sm font-semibold mb-3">Notes</h2>
           <Textarea
             value={task.notes ?? ""}
             onChange={(e) => setTask({ ...task, notes: e.target.value })}
             onBlur={() => updateField({ notes: task.notes })}
-            rows={8}
+            rows={6}
             placeholder="Notes, brief, références…"
           />
           <NoteAttachments task={task} onChange={load} />
-        </Card>
+        </section>
 
-        <Card className="p-4 sm:p-5 min-w-0">
+        <section className="min-w-0">
           <h2 className="text-sm font-semibold mb-3">Sous-tâches</h2>
           <SubtaskList
             subtasks={subtasks}
@@ -504,14 +517,33 @@ export default function TaskDetail() {
             />
             <Button size="sm" variant="outline" onClick={addSubtask}><Plus className="h-4 w-4" /></Button>
           </div>
-        </Card>
+        </section>
       </div>
 
 
 
-      <Card className="p-4 sm:p-5 mb-4 overflow-hidden">
+      <div className="mb-4">
+        <IdeasBoard taskId={task.id} clientId={task.client_id ?? null} />
+      </div>
+
+      {entries.length > 0 && (
+        <details className="border-t pt-4 mt-6">
+          <summary className="cursor-pointer text-sm font-medium mb-3">Historique du timer</summary>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            {entries.slice(0, 10).map((e) => (
+              <div key={e.id} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                <span>{fmtDate(e.started_at)} • {new Date(e.started_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
+                <span>{e.duration_minutes ? fmtMinutes(e.duration_minutes) : <Badge variant="outline" className="text-[10px]">en cours</Badge>}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+</>,
+          billing: <>      <section className="border-b pb-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold">Facturation</h2>
+          <h2 className="text-sm font-semibold">Chiffrage de la prestation</h2>
         </div>
 
         {/* Type de facturation + champs conditionnels */}
@@ -544,7 +576,7 @@ export default function TaskDetail() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Taux horaire (€)</Label>
+                <Label className="text-xs">Taux horaire (€ HT)</Label>
                 <Input
                   type="number" step="0.01"
                   value={task.hourly_rate ?? ""}
@@ -555,7 +587,7 @@ export default function TaskDetail() {
             </>
           ) : (
             <div className="space-y-1.5">
-              <Label className="text-xs">Forfait (€)</Label>
+              <Label className="text-xs">Forfait (€ HT)</Label>
               <Input
                 type="number" step="0.01"
                 value={task.flat_amount ?? ""}
@@ -584,7 +616,7 @@ export default function TaskDetail() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Tarif retour suppl. (€)</Label>
+            <Label className="text-xs">Tarif retour suppl. (€ HT)</Label>
             <Input
               type="number" step="0.01"
               value={task.extra_revision_rate ?? ""}
@@ -604,7 +636,7 @@ export default function TaskDetail() {
               <BillingRow label={`Retours suppl. (${billing.extraRevisions})`} value={fmtMoney(billing.revisionsBilled)} muted />
             )}
             <div className="border-t pt-1.5 mt-1.5 flex items-center justify-between font-semibold">
-              <span>Total</span><span>{fmtMoney(billing.total)}</span>
+              <span>Total prestation HT</span><span>{fmtMoney(billing.total)}</span>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Acompte 50% {task.acompte_invoiced && "(facturé)"}</span>
@@ -616,37 +648,11 @@ export default function TaskDetail() {
             </div>
           </div>
         )}
-      </Card>
+      </section>
 
-      <div className="mb-4">
-        <PortalPanel
-          entityType="task"
-          entityId={task.id}
-          clientId={task.client_id ?? null}
-          clientEmail={(task as any).clients?.email ?? null}
-          clientName={(task as any).clients?.name ?? null}
-          notifyTemplate="files-delivered"
-          notifyContext={{ description: task.title }}
-        />
-      </div>
-
-      <div className="mb-4">
-        <IdeasBoard taskId={task.id} clientId={task.client_id ?? null} />
-      </div>
-
-      {entries.length > 0 && (
-        <Card className="p-5 mt-4">
-          <h2 className="text-sm font-semibold mb-3">Historique du timer</h2>
-          <div className="space-y-1 text-xs text-muted-foreground">
-            {entries.slice(0, 10).map((e) => (
-              <div key={e.id} className="flex items-center justify-between py-1.5 border-b last:border-0">
-                <span>{fmtDate(e.started_at)} • {new Date(e.started_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
-                <span>{e.duration_minutes ? fmtMinutes(e.duration_minutes) : <Badge variant="outline" className="text-[10px]">en cours</Badge>}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
+</>,
+        }}
+      />
 
       <Dialog open={estimDialog} onOpenChange={setEstimDialog}>
         <DialogContent>
