@@ -3142,6 +3142,7 @@ export type Database = {
           created_at: string
           done: boolean
           id: string
+          parent_id: string | null
           position: number
           task_id: string
           title: string
@@ -3150,6 +3151,7 @@ export type Database = {
           created_at?: string
           done?: boolean
           id?: string
+          parent_id?: string | null
           position?: number
           task_id: string
           title: string
@@ -3158,6 +3160,7 @@ export type Database = {
           created_at?: string
           done?: boolean
           id?: string
+          parent_id?: string | null
           position?: number
           task_id?: string
           title?: string
