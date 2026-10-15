@@ -36,6 +36,13 @@
       "when": 1792051691260,
       "tag": "0004_portal_message_kind_correction",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792052390359,
+      "tag": "0005_message_resolved_flag",
+      "breakpoints": true
     }
   ]
 }

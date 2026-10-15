@@ -655,6 +655,7 @@ export type Database = {
           id: string
           kind: string
           portal_id: string
+          resolved: boolean
         }
         Insert: {
           author: string
@@ -663,6 +664,7 @@ export type Database = {
           id?: string
           kind?: string
           portal_id: string
+          resolved?: boolean
         }
         Update: {
           author?: string
@@ -671,6 +673,7 @@ export type Database = {
           id?: string
           kind?: string
           portal_id?: string
+          resolved?: boolean
         }
         Relationships: [
           {
