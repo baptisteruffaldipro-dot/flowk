@@ -386,9 +386,10 @@ export default function PortalPanel({
 
   const sendNotice = async () => {
     if (!effEmail) return toast.error("Pas d'email client");
-    if (!isUnlocked) return toast.error("Livraison verrouillée — débloquez d'abord");
+    if (deliverables.length === 0) return toast.error("Ajoutez d'abord un fichier ou un lien");
     setSending(true);
     try {
+      if (!portal.is_published) await publish(true);
       const { data, error } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: notifyTemplate ?? "files-delivered",
@@ -694,7 +695,7 @@ export default function PortalPanel({
             <Upload className="h-3.5 w-3.5 mr-1.5" /> {uploading ? "Upload…" : "Uploader un fichier"}
           </Button>
           {notifyTemplate && effEmail && (
-            <Button size="sm" variant="outline" onClick={sendNotice} disabled={sending || !isUnlocked}>
+            <Button size="sm" variant="outline" onClick={sendNotice} disabled={sending || deliverables.length === 0}>
               <Send className="h-3.5 w-3.5 mr-1.5" />
               {sending ? "Envoi…" : "Notifier le client"}
             </Button>
