@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, XCircle, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { CheckCircle2, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 
@@ -39,8 +39,6 @@ export default function ClientPortalPublic() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState("");
-  const [refuseReason, setRefuseReason] = useState("");
-  const [showRefuse, setShowRefuse] = useState(false);
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
   const [obs, setObs] = useState<Record<string, string>>({});
@@ -578,32 +576,19 @@ export default function ClientPortalPublic() {
               <p className="text-[11px] text-muted-foreground">
                 En validant, vous approuvez le(s) fichier(s) ci-dessus et autorisez la production et/ou la diffusion en l'état.
               </p>
-              {showRefuse ? (
-                <div className="space-y-2">
-                  <Textarea placeholder="Motif (optionnel)" value={refuseReason} onChange={(e) => setRefuseReason(e.target.value)} rows={2} />
-                  <div className="flex gap-2">
-                    <Button variant="destructive" onClick={() => act("refuse", { reason: refuseReason })} disabled={busy}>Confirmer le refus</Button>
-                    <Button variant="ghost" onClick={() => setShowRefuse(false)}>Annuler</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex gap-2 flex-wrap">
-                  <Button
-                    onClick={async () => {
-                      const note = Object.values(obs).filter((v) => v?.trim()).join("\n");
-                      if (note) await act("add_message", { body: `Observation du client :\n${note}` });
-                      await act("validate");
-                      setObs({});
-                    }}
-                    disabled={busy}
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-1" /> Valider (Bon à tirer)
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowRefuse(true)} disabled={busy}>
-                    <XCircle className="h-4 w-4 mr-1" /> Refuser
-                  </Button>
-                </div>
-              )}
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  onClick={async () => {
+                    const note = Object.values(obs).filter((v) => v?.trim()).join("\n");
+                    if (note) await act("add_message", { body: `Observation du client :\n${note}` });
+                    await act("validate");
+                    setObs({});
+                  }}
+                  disabled={busy}
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-1" /> Valider (Bon à tirer)
+                </Button>
+              </div>
             </div>
           )}
         </section>
