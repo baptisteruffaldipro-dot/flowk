@@ -600,10 +600,7 @@ export default function PortalPanel({
   const reviews = ((portal as any).deliverable_reviews ?? []) as { file: string; status: string }[];
   const approvedFiles = deliverables.filter((file) => reviews.some((review) => review.file === file.name && review.status === "approved")).length;
 
-  if (taskWorkspace) return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
-      <div className="border-b mb-6 overflow-x-auto">
-        <TabsList aria-label="Sections de   const portalHeader = (<>
+  const portalHeader = (<>
 <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -634,8 +631,6 @@ export default function PortalPanel({
           <p className="text-sm whitespace-pre-wrap">{portal.refusal_reason}</p>
         </div>
       )}
-
-</div>
   </>);
   const notesSection = (
 <section className="space-y-4 min-w-0">
