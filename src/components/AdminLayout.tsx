@@ -22,7 +22,7 @@ const groups: NavGroup[] = [
     { to: "/demandes", label: "Demandes clients", badgeKey: "demandes" },
     { to: "/leads", label: "Leads", badgeKey: "leads" },
   ]},
-  { label: "Ventes", icon: ShoppingCart, items: [
+  { label: "Gestion", icon: ShoppingCart, items: [
     { to: "/clients", label: "Clients" },
     { to: "/taches", label: "Tâches" },
     { to: "/impressions", label: "Impressions" },
