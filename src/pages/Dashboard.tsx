@@ -70,8 +70,8 @@ export default function Dashboard() {
         questionnaires: questionnaires.count ?? 0,
         strategies: strategies.count ?? 0,
         logoPres: logoPres.count ?? 0,
-        cashBalance: (cash.data as any)?.balance ?? null,
-        debtsClients: debtRows.length ? debtRows.reduce((s: number, x: any) => s + (Number(x.amount_due) || 0), 0) : null,
+        cashBalance: (cash.data as any)?.amount ?? null,
+        debtsClients: debtRows.length ? debtRows.reduce((s: number, x: any) => s + (Number(x.amount_ttc) || 0), 0) : null,
       });
     })();
   }, []);
