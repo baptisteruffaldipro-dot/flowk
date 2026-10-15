@@ -27,9 +27,10 @@ interface Props {
   filePath: string; // path in 'bat' bucket
   canAnnotate: boolean;
   canResolve: boolean; // admin can resolve
+  compact?: boolean; // reduced height (e.g. BAT already validated)
 }
 
-export default function BatViewer({ printOrderId, taskId, batId, filePath, canAnnotate, canResolve }: Props) {
+export default function BatViewer({ printOrderId, taskId, batId, filePath, canAnnotate, canResolve, compact }: Props) {
   const { user } = useAuth();
   const [url, setUrl] = useState<string | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
@@ -114,10 +115,10 @@ export default function BatViewer({ printOrderId, taskId, batId, filePath, canAn
         {isImage ? (
           <div
             ref={imgRef}
-            className={`relative ${canAnnotate ? "cursor-crosshair" : ""}`}
+            className={`relative ${canAnnotate ? "cursor-crosshair" : ""} ${compact ? "w-fit mx-auto max-w-full" : ""}`}
             onClick={handleClick}
           >
-            <img src={url} alt="BAT" className="w-full h-auto block select-none" draggable={false} />
+            <img src={url} alt="BAT" className={`block select-none ${compact ? "max-h-[420px] max-w-full w-auto h-auto mx-auto" : "w-full h-auto"}`} draggable={false} />
             {annotations.map((a, i) => (
               <button
                 key={a.id}
@@ -138,7 +139,7 @@ export default function BatViewer({ printOrderId, taskId, batId, filePath, canAn
             )}
           </div>
         ) : isPdf ? (
-          <iframe src={url} className="w-full h-[700px]" title="BAT PDF" />
+          <iframe src={url} className={`w-full ${compact ? "h-[420px]" : "h-[700px]"}`} title="BAT PDF" />
         ) : (
           <div className="p-12 text-center">
             <a href={url} target="_blank" rel="noreferrer" className="text-primary underline text-sm">
