@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, Loader2, Sparkles, Trash2, Search } from "lucide-react";
+import { Plus, Upload, Loader2, Sparkles, Trash2, Search, Copy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -87,6 +87,30 @@ export default function PrintOrders() {
     if (error) return toast.error(error.message);
     toast.success("Commande(s) supprimée(s)");
     setSelected(new Set());
+    load();
+  };
+
+  const duplicateOrder = async (o: any) => {
+    const { error } = await supabase.from("print_orders").insert({
+      description: o.description,
+      client_id: o.client_id,
+      amount: o.amount,
+      status: "a_commander",
+      payment_status: "non_regle",
+      reference: o.reference,
+      quantity: o.quantity,
+      format: o.format,
+      grammage: o.grammage,
+      support: o.support,
+      colors: o.colors,
+      finitions: o.finitions,
+      observations: o.observations,
+      estimated_delivery_date: null,
+      products: o.products ?? [],
+      price_tiers: o.price_tiers ?? [],
+    } as any);
+    if (error) return toast.error(error.message);
+    toast.success("Commande dupliquée");
     load();
   };
 
