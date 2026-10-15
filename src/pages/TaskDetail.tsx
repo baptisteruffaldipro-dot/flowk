@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
-import BusinessUnitCard from "@/components/finance/BusinessUnitCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +54,7 @@ export default function TaskDetail() {
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newClientCompany, setNewClientCompany] = useState("");
   const [creatingClient, setCreatingClient] = useState(false);
+  const [billingRevision, setBillingRevision] = useState(0);
 
   const load = async () => {
     if (!id) return;
@@ -161,6 +161,10 @@ export default function TaskDetail() {
   const updateField = async (patch: any) => {
     const { error } = await supabase.from("tasks").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
+    const billingFields = ["billing_type", "hourly_rate", "flat_amount", "total_minutes", "estimated_minutes", "client_revisions_count", "free_revisions", "extra_revision_rate"];
+    if (Object.keys(patch).some((field) => billingFields.includes(field))) {
+      setBillingRevision((revision) => revision + 1);
+    }
     load();
   };
 
@@ -452,7 +456,7 @@ export default function TaskDetail() {
         clientName={task.clients?.name ?? null}
         notifyTemplate="files-delivered"
         notifyContext={{ description: task.title }}
-        billingRevision={JSON.stringify([task.billing_type, task.hourly_rate, task.flat_amount, task.total_minutes, task.estimated_minutes, task.client_revisions_count, task.free_revisions, task.extra_revision_rate])}
+        billingRevision={String(billingRevision)}
         taskWorkspace={{
           work: <>      <section className="border-b pb-5 mb-5">
         <div className="space-y-1.5">

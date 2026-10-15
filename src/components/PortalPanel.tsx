@@ -1064,8 +1064,8 @@ export default function PortalPanel({
           </Button>
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Envoyer le lien par email</Label>
+      <details className="space-y-2">
+        <summary className="cursor-pointer text-xs font-medium">Envoyer le lien par email</summary>
         <div className="flex flex-wrap gap-2">
           <Input
             type="email"
@@ -1081,7 +1081,7 @@ export default function PortalPanel({
         <p className="text-[11px] text-muted-foreground">
           {effEmail ? `Par défaut : ${effEmail}` : "Aucun email client enregistré — saisis une adresse."}
         </p>
-      </div>
+      </details>
       </section>
   );
 
