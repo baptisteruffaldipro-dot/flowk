@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { taskCategory } from "@/lib/agenda";
 import { CheckSquare, Printer, Mail, StickyNote, ArrowUpRight } from "lucide-react";
 
 type Ball = "moi" | "client" | "imprimeur";
