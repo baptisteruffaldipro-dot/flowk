@@ -25,11 +25,12 @@ interface Props {
   onDelete?: (id: string) => void;
   onResolve?: (id: string) => void;
   protect?: boolean;
+  viewportClassName?: string;
 }
 
 const MIN = 50, MAX = 400;
 
-export default function DocumentViewer({ src, isImage, alt, annotations, canAnnotate, onAdd, onDelete, onResolve, protect }: Props) {
+export default function DocumentViewer({ src, isImage, alt, annotations, canAnnotate, onAdd, onDelete, onResolve, protect, viewportClassName = "h-[75vh]" }: Props) {
   const [zoom, setZoom] = useState(100);
   const [mode, setMode] = useState<"pan" | "note">("pan");
   const [pending, setPending] = useState<{ page: number; x: number; y: number } | null>(null);
@@ -180,7 +181,7 @@ export default function DocumentViewer({ src, isImage, alt, annotations, canAnno
 
       <div
         ref={scrollRef}
-        className={`relative w-full h-[75vh] rounded-md overflow-auto bg-muted select-none ${cursor}`}
+        className={`relative w-full ${viewportClassName} rounded-md overflow-auto bg-muted select-none ${cursor}`}
         style={{ touchAction: mode === "pan" ? "pan-x pan-y pinch-zoom" : "manipulation" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

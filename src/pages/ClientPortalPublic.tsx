@@ -1,3 +1,5 @@
+import ClientBatApproval, { CLIENT_BAT_CHECKS } from "@/components/ClientBatApproval";
+import ClientOrderProgress from "@/components/ClientOrderProgress";
 import DocumentViewer from "@/components/DocumentViewer";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -7,19 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CheckCircle2, Copy, Lock, Send, ExternalLink, Download, FileText, Printer, Eye, CreditCard, Landmark, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { CheckCircle2, Copy, Send, Download, FileText, Printer, CreditCard, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 
-import { Checkbox } from "@/components/ui/checkbox";
+
 
 type PriceTier = { quantity?: number | null; models?: number | null; price?: number | null };
-
-const BAT_CHECKS = [
-  "Textes et orthographe vérifiés",
-  "Couleurs, visuels et mise en page conformes (rendu écran indicatif)",
-  "Format, quantités et indications techniques validés",
-];
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "En préparation",
@@ -41,12 +37,7 @@ export default function ClientPortalPublic() {
   const [reply, setReply] = useState("");
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
-  const [obs, setObs] = useState<Record<string, string>>({});
-  const [zoom, setZoom] = useState<Record<string, number>>({});
   const [ribOpen, setRibOpen] = useState(false);
-  const [signFile, setSignFile] = useState<{ name: string; key: string } | null>(null);
-  const [checks, setChecks] = useState([false, false, false]);
-  const [signer, setSigner] = useState("");
   const [certView, setCertView] = useState<any>(null);
 
   const [seenTick, setSeenTick] = useState(0);
@@ -70,8 +61,9 @@ export default function ClientPortalPublic() {
     setBusy(true);
     const { error } = await supabase.rpc("portal_action_by_token" as any, { _token: token, _action: action, _payload: payload });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return false; }
     await load();
+    return true;
   };
 
   if (err) return <div className="min-h-screen flex items-center justify-center text-muted-foreground p-8 text-center">{err}</div>;
@@ -170,36 +162,76 @@ export default function ClientPortalPublic() {
       ? po.price_tiers.filter((tier: PriceTier) => tier.quantity != null && tier.price != null)
       : [];
 
-  // Montant effectif d'une commande : le tarif choisi par le client s'il existe,
-  // sinon le montant saisi côté admin.
+  const files = deliv?.files ?? [];
+  const selectedFile = files.find((f: any) => String(f.url ?? f.name) === openFile) ?? files[0];
+  const selectedKey = selectedFile ? String(selectedFile.url ?? selectedFile.name) : "";
+  const selectedReview = reviews.find((r: any) => r.file === selectedFile?.name && r.status === "approved");
+  const allApproved = files.length > 0 && files.every((f: any) => reviews.some((r: any) => r.file === f.name && r.status === "approved"));
+  const delivered = p.status === "delivered" || (linkedPrintOrders.length > 0 && linkedPrintOrders.every((o: any) => ["livre", "livre_paye"].includes(o.status)));
+  const printing = linkedPrintOrders.some((o: any) => ["en_impression", "livre", "livre_paye"].includes(o.status));
+  const progressStep = delivered ? 3 : printing ? 2 : files.length > 0 ? 1 : 0;
+  const history = [
+    ...reviews.filter((r: any) => r.status === "approved").map((r: any) => ({ label: `BAT validé : ${r.file}`, at: r.at, detail: r.signed_by ? `Signé par ${r.signed_by}` : undefined })),
+    ...(p.client_validated_at ? [{ label: "Validation de la commande", at: p.client_validated_at }] : []),
+    ...(p.created_at ? [{ label: "Commande reçue", at: p.created_at }] : []),
+  ].sort((a, b) => String(b.at ?? "").localeCompare(String(a.at ?? "")));
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-6">
-        {/* Header */}
-        <header className="space-y-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
-              {isTask ? "Tâche" : "Projet"}
-            </span>
-            <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-secondary">
-              {STATUS_LABEL[p.status] ?? p.status}
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{title}</h1>
-          {client?.name && <div className="text-sm text-muted-foreground">Pour {client.name}</div>}
-        </header>
+      <div className="border-b border-border bg-card">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          <span className="font-semibold">Suivi de votre commande</span>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="max-w-64 truncate">{title}</span><Badge variant="outline">{STATUS_LABEL[p.status] ?? p.status}</Badge></div>
+        </div>
+      </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        {files.length > 0 && selectedFile ? (
+          <section aria-label="Votre BAT" className="grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-10">
+            <div className="min-w-0 space-y-4">
+              {files.length > 1 && <div className="flex flex-wrap gap-2">{files.map((f: any, i: number) => <Button key={f.name ?? i} size="sm" variant={selectedFile === f ? "default" : "outline"} onClick={() => setOpenFile(String(f.url ?? f.name))}>BAT {i + 1}{reviews.some((r: any) => r.file === f.name && r.status === "approved") && <CheckCircle2 className="ml-2 h-3 w-3" />}</Button>)}</div>}
+              {(selectedFile.preview_url ?? selectedFile.url) ? <DocumentViewer
+                key={selectedKey}
+                viewportClassName="h-[min(65vh,760px)]"
+                src={selectedFile.preview_url ?? selectedFile.url}
+                isImage={/\.(png|jpe?g|webp|gif|avif|svg)(\?|#|$)/i.test(String(selectedFile.name ?? selectedFile.url))}
+                alt={selectedFile.name}
+                protect={!deliv?.unlocked}
+                canAnnotate={!selectedReview}
+                annotations={annots.filter(a => a.file_name === selectedFile.name)}
+                onAdd={async a => {
+                  const { error } = await supabase.rpc("portal_add_annotation_by_token" as any, { _token: token, _file: selectedFile.name, _page: a.page, _x: a.x, _y: a.y, _comment: a.comment });
+                  if (error) return void toast.error(error.message);
+                  toast.success("Annotation envoyée à l’atelier"); loadAnnots();
+                }}
+                onDelete={async id => { await supabase.rpc("portal_delete_annotation_by_token" as any, { _token: token, _id: id }); loadAnnots(); }}
+              /> : <div className="flex h-96 items-center justify-center bg-muted text-sm text-muted-foreground">Aperçu indisponible pour ce fichier.</div>}
+              <div className="flex flex-wrap items-center justify-between gap-3"><div className="min-w-0"><p className="break-all text-sm font-semibold">{selectedFile.name}</p><p className="mt-1 text-xs text-muted-foreground">{deliv?.unlocked ? "Téléchargement disponible" : "Téléchargement débloqué après règlement"}</p></div>{deliv?.unlocked && <Button variant="outline" size="sm" asChild><a href={selectedFile.url} target="_blank" rel="noreferrer"><Download className="mr-2 h-4 w-4" />Télécharger</a></Button>}</div>
+            </div>
+            <div className="min-w-0 space-y-6">
+              <header className="space-y-2">{client?.name && <p className="text-sm text-muted-foreground">Bonjour <strong className="text-foreground">{client.name}</strong>,</p>}<h1 className="text-3xl font-semibold leading-tight tracking-normal">{selectedReview ? "Merci, c’est validé" : "Votre BAT est prêt à être validé"}</h1><p className="text-sm text-muted-foreground break-words">{title}</p></header>
+              <ClientBatApproval key={selectedKey} busy={busy} approved={!!selectedReview} signedBy={selectedReview?.signed_by} signedAt={selectedReview?.at}
+                onApprove={async name => { const ok = await act("approve_file", { file: selectedFile.name, signed_by: name, checks: 3, user_agent: navigator.userAgent }); if (ok) toast.success("BAT signé — certificat généré"); return ok; }}
+                onCorrection={async note => { const ok = await act("request_changes", { file: selectedFile.name, note }); if (ok) toast.success("Demande de correction envoyée à l’atelier"); return ok; }}
+                onCertificate={selectedReview ? () => setCertView(selectedReview) : undefined}
+                downloadUrl={deliv?.unlocked && selectedReview ? selectedFile.url : undefined}
+              />
+              {allApproved && canValidate && <Button variant="outline" className="w-full" disabled={busy} onClick={() => act("validate")}><CheckCircle2 className="mr-2 h-4 w-4" />Confirmer l’ensemble de la commande</Button>}
+            </div>
+          </section>
+        ) : <header className="space-y-2"><h1 className="text-3xl font-semibold tracking-normal">{title}</h1>{client?.name && <p className="text-sm text-muted-foreground">Pour {client.name}</p>}<p className="text-sm text-muted-foreground">Votre BAT est en cours de préparation.</p></header>}
+        {canValidate && files.length === 0 && <Button disabled={busy} onClick={() => act("validate")}><CheckCircle2 className="mr-2 h-4 w-4" />Valider la commande</Button>}
+        <ClientOrderProgress step={progressStep} events={history} deadline={printOrder?.estimated_delivery_date} />
 
         {/* Brief */}
         {(entity.notes || entity.description) && (
-          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-2">
+          <section className="border-b border-border py-6 space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief</h2>
             <p className="text-sm whitespace-pre-wrap">{entity.notes || entity.description}</p>
           </section>
         )}
 
         {/* Récap */}
-        <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+        <section className="border-b border-border py-6 space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Récapitulatif</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
             {isTask && entity.billing_type && (
@@ -256,7 +288,7 @@ export default function ClientPortalPublic() {
               <div className="text-[10px] uppercase text-muted-foreground">Étapes</div>
               {subtasks.map((s: any) => (
                 <div key={s.id} className="flex items-center gap-2 text-sm">
-                  <span className={`h-2 w-2 rounded-full ${s.done ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                  <span className={`h-2 w-2 rounded-full ${s.done ? "bg-success" : "bg-muted-foreground/40"}`} />
                   <span className={s.done ? "line-through text-muted-foreground" : ""}>{s.title}</span>
                 </div>
               ))}
@@ -266,7 +298,7 @@ export default function ClientPortalPublic() {
 
         {/* Commande d'impression liée */}
         {!isTask && projectTasks.length > 0 && (
-          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+          <section className="border-b border-border py-6 space-y-3">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Prestations du projet
             </h2>
@@ -313,7 +345,7 @@ export default function ClientPortalPublic() {
         )}
 
         {linkedPrintOrders.length > 0 && (
-          <section className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+          <section className="border-b border-border py-6 space-y-4">
             <div className="flex items-center gap-2">
               <Printer className="h-4 w-4 text-muted-foreground" />
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -362,7 +394,8 @@ export default function ClientPortalPublic() {
                             const price = Number(tier.price ?? 0);
                             const isChosen = chosen && Number(chosen.quantity) === quantity && Number(chosen.price) === price;
                             return (
-                              <button
+                              <Button
+                                variant="outline"
                                 type="button"
                                 key={`${po.id ?? i}-tier-${tierIndex}`}
                                 disabled={busy}
@@ -387,7 +420,7 @@ export default function ClientPortalPublic() {
                                   } : prev);
                                   load();
                                 }}
-                                className={`flex items-center justify-between gap-3 text-sm rounded-md border px-3 py-2 text-left transition ${
+                                className={`flex items-center justify-between gap-3 h-auto whitespace-normal text-sm rounded-md border px-3 py-2 text-left transition ${
                                   isChosen ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50"
                                 }`}
                               >
@@ -399,7 +432,7 @@ export default function ClientPortalPublic() {
                                   {tier.models ? ` · ${formatTierNumber(Number(tier.models))} modèles` : ""}
                                 </span>
                                 <span className="font-medium tabular-nums">{price.toFixed(2)} € HT</span>
-                              </button>
+                              </Button>
                             );
                           })}
                         </div>
@@ -432,156 +465,6 @@ export default function ClientPortalPublic() {
           </section>
         )}
 
-        {/* Livrables */}
-        <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Livrables</h2>
-            {deliv?.unlocked ? (
-              <Badge className="bg-emerald-500 hover:bg-emerald-500 text-[10px]">Déverrouillés</Badge>
-            ) : (
-              <Badge variant="outline" className="text-[10px] gap-1"><Lock className="h-3 w-3" /> Verrouillés</Badge>
-            )}
-          </div>
-          {(!deliv || deliv.files.length === 0) ? (
-            <div className="text-xs text-muted-foreground">Aucun livrable pour le moment.</div>
-          ) : (
-            <div className="space-y-2">
-              {deliv.files.map((f: any, i: number) => {
-                const key = String(f.url ?? i);
-                const open = openFile === key;
-                return (
-                  <div key={i} className="rounded-md border border-border">
-                    <div className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-                      <span className="truncate flex items-center gap-2">
-                        {!deliv.unlocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-                        {f.name}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {(() => {
-                          const rv = reviews.find((r: any) => r.file === f.name);
-                          if (rv?.status === "approved") {
-                            return (
-                              <button type="button" onClick={() => setCertView(rv)} title="Voir le certificat">
-                                <Badge className="bg-emerald-500 hover:bg-emerald-600 text-[10px] gap-1"><CheckCircle2 className="h-3 w-3" /> BAT signé · certificat</Badge>
-                              </button>
-                            );
-                          }
-                          return (
-                            <Button
-                              size="sm"
-                              disabled={busy}
-                              onClick={() => { setChecks([false, false, false]); setSignFile({ name: f.name, key }); }}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Valider BAT
-                            </Button>
-                          );
-                        })()}
-                        <Button size="sm" variant="outline" onClick={() => setOpenFile(open ? null : key)}>
-                          <Eye className="h-3.5 w-3.5 mr-1" /> {open ? "Fermer" : "Visionner"}
-                        </Button>
-                        {deliv.unlocked && (
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={f.url} target="_blank" rel="noreferrer"><Download className="h-3.5 w-3.5" /></a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    {open && (
-                      <div className="border-t border-border p-3 space-y-3">
-                        {(() => {
-                          const src = f.preview_url ?? f.url;
-                          const isImg = /\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i.test(String(f.name ?? src ?? ""));
-                          if (!src) return <div className="p-6 text-center text-xs text-muted-foreground">Aperçu indisponible pour ce fichier.</div>;
-                          return (
-                            <DocumentViewer
-                              src={src}
-                              isImage={isImg}
-                              alt={f.name}
-                              protect={!deliv.unlocked}
-                              canAnnotate
-                              annotations={annots.filter((a) => a.file_name === f.name)}
-                              onAdd={async (a) => {
-                                const { error } = await supabase.rpc("portal_add_annotation_by_token" as any, {
-                                  _token: token, _file: f.name, _page: a.page, _x: a.x, _y: a.y, _comment: a.comment,
-                                });
-                                if (error) return void toast.error(error.message);
-                                toast.success("Annotation envoyée à l'atelier");
-                                loadAnnots();
-                              }}
-                              onDelete={async (id) => {
-                                await supabase.rpc("portal_delete_annotation_by_token" as any, { _token: token, _id: id });
-                                loadAnnots();
-                              }}
-                            />
-                          );
-                        })()}
-                        <div className="space-y-2">
-                          <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] leading-relaxed text-muted-foreground space-y-1">
-                            <p className="font-semibold text-foreground">Mentions BAT (Bon À Tirer)</p>
-                            <p>
-                              La validation de ce fichier vaut <strong>Bon À Tirer</strong> : elle autorise la production
-                              et/ou la diffusion en l'état.
-                            </p>
-                            <p>
-                              Il vous appartient de vérifier <strong>l'orthographe, la grammaire, les textes, dates,
-                              horaires, coordonnées et mentions légales</strong>. Toute erreur non signalée avant
-                              validation reste sous votre responsabilité.
-                            </p>
-                            <p>
-                              Les couleurs affichées à l'écran sont indicatives et peuvent différer légèrement du rendu
-                              imprimé (profils colorimétriques, papier, finition).
-                            </p>
-                            <p>
-                              Après validation, toute modification pourra faire l'objet d'une facturation
-                              complémentaire et d'un nouveau délai.
-                            </p>
-                          </div>
-                          <Textarea
-                            rows={2}
-                            placeholder="Observation (optionnel)"
-                            value={obs[key] ?? ""}
-                            onChange={(e) => setObs({ ...obs, [key]: e.target.value })}
-                          />
-                          <p className="text-[11px] text-muted-foreground">
-                            Votre observation sera transmise avec votre validation ou votre demande de modification (boutons en bas de ce bloc).
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              {!deliv.unlocked && (
-                <p className="text-[11px] text-muted-foreground pt-1">
-                  Le téléchargement est désactivé pour le moment — il sera débloqué après paiement du solde dû.
-                </p>
-              )}
-            </div>
-          )}
-
-          {canValidate && (
-            <div className="rounded-md border border-primary/30 bg-primary/5 p-4 space-y-2">
-              <p className="text-sm font-semibold">Validation du livrable (Bon à tirer)</p>
-              <p className="text-[11px] text-muted-foreground">
-                En validant, vous approuvez le(s) fichier(s) ci-dessus et autorisez la production et/ou la diffusion en l'état.
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  onClick={async () => {
-                    const note = Object.values(obs).filter((v) => v?.trim()).join("\n");
-                    if (note) await act("add_message", { body: `Observation du client :\n${note}` });
-                    await act("validate");
-                    setObs({});
-                  }}
-                  disabled={busy}
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-1" /> Valider (Bon à tirer)
-                </Button>
-              </div>
-            </div>
-          )}
-        </section>
-
         {(() => {
           const lastAdmin = [...messages].reverse().find((m: any) => m.author === "admin");
           if (!lastAdmin) return null;
@@ -592,15 +475,15 @@ export default function ClientPortalPublic() {
           const markSeen = () => { window.localStorage.setItem(key, lastAdmin.created_at); setSeenTick((n) => n + 1); };
           const isCorrection = lastAdmin.kind === "correction";
           return (
-            <section className={`rounded-xl border p-5 space-y-2 ${isCorrection ? "border-emerald-500/40 bg-emerald-500/5" : "border-primary/40 bg-primary/5"}`}>
+            <section className={`rounded-md border p-5 space-y-2 ${isCorrection ? "border-success/40 bg-success/5" : "border-primary/40 bg-primary/5"}`}>
               <div className="flex items-center gap-2 text-sm font-semibold">
-                {isCorrection && <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
+                {isCorrection && <CheckCircle2 className="h-4 w-4 text-success" />}
                 {isCorrection ? "Votre correction est prête" : "Nouveau message de l'atelier"}
               </div>
               <div className="text-sm whitespace-pre-wrap">{lastAdmin.body}</div>
               <div className="flex gap-3 text-xs">
                 <a href="#echanges" onClick={markSeen} className="underline">Voir les échanges</a>
-                <button onClick={markSeen} className="text-muted-foreground underline">J'ai lu</button>
+                <Button variant="ghost" size="sm" onClick={markSeen}>J’ai lu</Button>
               </div>
             </section>
           );
@@ -608,7 +491,7 @@ export default function ClientPortalPublic() {
 
         {/* Refus affiché */}
         {p.status === "refused" && (
-          <section className="rounded-xl border border-rose-500/40 bg-rose-500/5 p-5">
+          <section className="rounded-md border border-destructive/40 bg-destructive/5 p-5">
             <div className="text-sm font-medium">Demande refusée</div>
             {p.refusal_reason && <div className="text-sm text-muted-foreground mt-1">Motif : {p.refusal_reason}</div>}
           </section>
@@ -616,7 +499,7 @@ export default function ClientPortalPublic() {
 
         {/* Règlement */}
         {(termsLabel || dueAmount != null || printOrder || methods.length > 0 || invoiceDoc?.url || invoiceDoc?.has_file) && (
-          <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
+          <section className="border-b border-border py-6 space-y-3">
             <h2 className="text-sm font-semibold">Règlement</h2>
             {(termsLabel || dueAmount != null) && (
               <div className="space-y-2">
@@ -671,7 +554,7 @@ export default function ClientPortalPublic() {
                   : "Le téléchargement des livrables est débloqué après confirmation du paiement."}
             </p>
             {printOrder && (
-              <p className="text-sm text-amber-700 dark:text-amber-400">
+              <p className="text-sm text-warning">
                 Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
               </p>
             )}
@@ -709,7 +592,7 @@ export default function ClientPortalPublic() {
               </div>
             )}
             {declared && !p.admin_confirmed_paid_at && (
-              <div className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded p-2">
+              <div className="text-xs bg-warning/10 text-warning rounded p-2">
                 Merci ! Nous vérifions la réception du paiement.
               </div>
             )}
@@ -717,23 +600,23 @@ export default function ClientPortalPublic() {
         )}
 
         {/* Messages */}
-        <section id="echanges" className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
+        <section id="echanges" className="border-b border-border py-6 space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Échanges</h2>
           {messages.length === 0 ? (
             <div className="text-xs text-muted-foreground">Aucun message pour le moment.</div>
           ) : (
             <div className="space-y-2">
               {messages.map((m: any) => (
-                <div key={m.id} className={`text-sm p-3 rounded-md ${m.author === "client" ? "bg-primary/10" : m.kind === "correction" ? "bg-emerald-500/10" : "bg-muted/40"}`}>
+                <div key={m.id} className={`text-sm p-3 rounded-md ${m.author === "client" ? "bg-primary/10" : m.kind === "correction" ? "bg-success/10" : "bg-muted/40"}`}>
                   <div className="mb-0.5 flex items-center gap-2 text-[10px] uppercase text-muted-foreground">
                     <span>{m.author === "client" ? "Vous" : "Studio"} · {new Date(m.created_at).toLocaleString("fr-FR")}</span>
                     {m.kind === "correction" && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-700 dark:text-emerald-400">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-success">
                         <CheckCircle2 className="h-2.5 w-2.5" /> Corrigé
                       </span>
                     )}
                     {m.author === "client" && m.resolved && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-700 dark:text-emerald-400">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-success">
                         <CheckCircle2 className="h-2.5 w-2.5" /> Prise en compte
                       </span>
                     )}
@@ -752,48 +635,6 @@ export default function ClientPortalPublic() {
         </section>
       </div>
 
-      <Dialog open={!!signFile} onOpenChange={(o) => !o && setSignFile(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Signer le Bon à Tirer</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-sm">
-            <div className="text-xs text-muted-foreground truncate">Fichier : <span className="font-medium text-foreground">{signFile?.name}</span></div>
-            <div className="space-y-2.5">
-              {BAT_CHECKS.map((c, i) => (
-                <label key={i} className="flex items-start gap-2.5 cursor-pointer">
-                  <Checkbox checked={checks[i]} onCheckedChange={(v) => setChecks(checks.map((x, j) => (j === i ? !!v : x)))} className="mt-0.5" />
-                  <span>{c}</span>
-                </label>
-              ))}
-            </div>
-            <div className="space-y-1.5">
-              <div className="text-xs font-medium">Nom et prénom (signature) *</div>
-              <Input value={signer} onChange={(e) => setSigner(e.target.value)} maxLength={100} placeholder="Jean Dupont" />
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Votre signature vaut « Bon pour impression ». La date, l'heure et le fichier validé sont enregistrés dans un certificat.
-              Toute erreur non signalée avant validation ne pourra engager la responsabilité du studio.
-            </p>
-            <Button
-              className="w-full"
-              disabled={busy || !checks.every(Boolean) || !signer.trim()}
-              onClick={async () => {
-                if (!signFile) return;
-                await act("approve_file", {
-                  file: signFile.name, note: obs[signFile.key]?.trim() || null,
-                  signed_by: signer.trim(), checks: checks.filter(Boolean).length, user_agent: navigator.userAgent,
-                });
-                setSignFile(null);
-                toast.success("BAT signé — certificat généré");
-              }}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-1" /> Bon pour impression — Signer
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={!!certView} onOpenChange={(o) => !o && setCertView(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -810,7 +651,7 @@ export default function ClientPortalPublic() {
                 {certView.note && <Info label="Observation" value={certView.note} />}
               </div>
               <ul className="text-xs text-muted-foreground space-y-1">
-                {BAT_CHECKS.map((c, i) => <li key={i}>✓ {c}</li>)}
+                {CLIENT_BAT_CHECKS.map((c, i) => <li key={i}>✓ {c}</li>)}
               </ul>
               <Button variant="outline" className="w-full" onClick={() => window.print()}>Imprimer / PDF</Button>
             </div>
@@ -864,7 +705,7 @@ function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="text-sm font-medium">{value}</div>
+      <div className="break-words text-sm font-medium">{value}</div>
     </div>
   );
 }
