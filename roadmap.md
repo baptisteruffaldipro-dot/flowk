@@ -6,3 +6,4 @@
 - [x] Réorganiser la fiche tâche : en-tête compact et quatre onglets sans perte de fonctions
 - [x] Garder le lien client et un résumé visibles, replier les réglages occasionnels
 - [x] Vérifier les quatre onglets et la conservation des échanges, fichiers et montants
+- [x] Lien client : retirer l'affichage de l'URL, garder Copier / Ouvrir / Envoyer (email en pop-up)
