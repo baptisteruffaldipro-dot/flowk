@@ -60,76 +60,86 @@ export default function Dashboard() {
   };
   useEffect(() => { load(); }, []);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const closed = ["envoye", "a_facturer", "facture_envoyee", "facturee", "payee", "archive"];
+  const todayTasks = tasks.filter((t) => t.status === "aujourdhui" || t.deadline === today);
+  const overdue = tasks.filter((t) => !!t.deadline && t.deadline < today && !closed.includes(t.status) && !todayTasks.includes(t));
+  const queue = [...overdue, ...todayTasks];
+  const [focus, ...rest] = queue;
+  const toOrder = orders.filter((o) => o.status === "a_commander");
+  const nextAppt = appointments[0];
+  const hour = new Date().getHours();
+  const hello = hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
+  const dateLabel = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+
   return (
-    <div className="p-4 md:p-8 w-full">
-      <PageHeader title="Dashboard" description="Vue d'ensemble de ton activité" />
-
-      <div className="mb-6">
-        <QuickCreate onCreated={load} />
+    <div className="p-4 md:p-10 w-full max-w-3xl mx-auto">
+      <div className="mb-8">
+        <p className="text-sm text-muted-foreground capitalize">{dateLabel}</p>
+        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mt-1">{hello} 👋</h1>
+        <p className="text-muted-foreground mt-2">
+          {queue.length === 0 ? "Rien d'urgent. Profite-en pour avancer tranquillement." : `${queue.length} chose${queue.length > 1 ? "s" : ""} au programme aujourd'hui.`}
+        </p>
       </div>
 
+      {focus ? (
+        <Link to={`/taches/${focus.id}`} className="group block rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 md:p-8 mb-6 hover:border-primary/60 transition">
+          <div className="text-xs font-medium uppercase tracking-wider text-primary mb-2">
+            {overdue.includes(focus) ? "En retard — à faire en premier" : "On commence par"}
+          </div>
+          <div className="text-2xl md:text-3xl font-semibold tracking-tight">{focus.title}</div>
+          <div className="text-muted-foreground mt-1">{focus.clients?.name ?? "Sans client"}</div>
+          <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary">
+            Ouvrir la tâche <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+          </div>
+        </Link>
+      ) : (
+        <Card className="p-8 mb-6 text-center text-muted-foreground">🎉 Aucune tâche prévue aujourd'hui</Card>
+      )}
 
-      <TodayBoard tasks={tasks} printOrders={orders} />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Column title="Nouveaux leads" href="/leads" empty="Aucun nouveau lead">
-          {leads.map((lead) => {
-            const dateStr = new Date(lead.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
-            return (
-              <Link key={lead.id} to={`/leads`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="text-sm font-medium leading-snug truncate inline-flex items-center gap-1.5">
-                    <UserPlus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    {lead.name || lead.email || lead.phone || "Nouveau lead"}
-                  </div>
-                  <Badge variant="outline" className="shrink-0 text-[10px] border-sky-500/40 bg-sky-500/10 text-sky-600 dark:text-sky-400">Nouveau</Badge>
+      {rest.length > 0 && (
+        <div className="mb-8">
+          <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2 px-1">Ensuite</div>
+          <div className="divide-y rounded-xl border bg-card">
+            {rest.slice(0, 5).map((t) => (
+              <Link key={t.id} to={`/taches/${t.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-secondary/50 transition">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{t.title}</div>
+                  <div className="text-xs text-muted-foreground truncate">{t.clients?.name ?? "—"}</div>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1 truncate">
-                  {lead.company ? `${lead.company} · ` : ""}{lead.source ?? "—"} · {dateStr}
-                </div>
+                {overdue.includes(t) && <span className="text-xs text-destructive shrink-0">En retard</span>}
               </Link>
-            );
-          })}
-        </Column>
-
-
-        <Column title="Impressions en cours" href="/impressions" empty="Aucune commande en cours">
-          {orders.slice(0, 8).map((o) => (
-            <Link key={o.id} to={`/impressions/${o.id}`} className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
-              <div className="flex items-start justify-between gap-2">
-                <div className="text-sm font-medium leading-snug truncate">{o.description}</div>
-                <Badge variant="outline" className={`shrink-0 text-[10px] ${printStatusBadgeClass(o.status)}`}>{PRINT_STATUS_LABEL[o.status]}</Badge>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1 truncate">{o.clients?.name ?? "—"}</div>
+            ))}
+          </div>
+          {rest.length > 5 && (
+            <Link to="/taches" className="mt-2 inline-flex items-center gap-1 px-1 text-xs text-muted-foreground hover:text-foreground">
+              + {rest.length - 5} autre{rest.length - 5 > 1 ? "s" : ""} <ArrowRight className="h-3 w-3" />
             </Link>
-          ))}
-        </Column>
+          )}
+        </div>
+      )}
 
-        <Column title="Prochains rendez-vous" href="/rdv" empty="Aucun rendez-vous à venir">
-          {appointments.map((a) => {
-            const Icon = APPT_TYPE_ICON[a.type] ?? CalendarDays;
-            const dt = new Date(a.start_at);
-            const dateStr = dt.toLocaleDateString("fr-FR", { weekday: "short", day: "2-digit", month: "short" });
-            const timeStr = dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-            const soon = isApptSoon(dt);
-            return (
-              <Link key={a.id} to="/rdv" className="block p-3 rounded-md hover:bg-secondary/60 transition border border-transparent hover:border-border">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="text-sm font-medium leading-snug truncate">{a.title}</div>
-                  <Badge variant="outline" className={`shrink-0 text-[10px] inline-flex items-center gap-1 ${soon ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400" : ""}`}>
-                    <Icon className="h-2.5 w-2.5" /> {timeStr}
-                  </Badge>
-                </div>
-                <div className={`text-xs mt-1 truncate ${soon ? "text-red-600 dark:text-red-400 font-medium" : "text-muted-foreground"}`}>
-                  {dateStr} · {a.clients?.name ?? "—"}
-                </div>
-              </Link>
-            );
-          })}
-        </Column>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <MiniLink href="/impressions" icon={Printer} label="À commander" value={toOrder.length} alert={toOrder.length > 0} />
+        <MiniLink href="/leads" icon={UserPlus} label="Nouveaux leads" value={leads.length} alert={leads.length > 0} />
+        <MiniLink href="/rdv" icon={CalendarDays} label="Prochain RDV"
+          value={nextAppt ? new Date(nextAppt.start_at).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" }) + " " + new Date(nextAppt.start_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) : "—"}
+          sub={nextAppt?.title} />
       </div>
-
     </div>
+  );
+}
+
+function MiniLink({ href, icon: Icon, label, value, sub, alert }: { href: string; icon: any; label: string; value: string | number; sub?: string; alert?: boolean }) {
+  return (
+    <Link to={href} className="rounded-xl border bg-card p-4 hover:bg-secondary/50 transition">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" /> {label}
+        {alert && <span className="ml-auto h-2 w-2 rounded-full bg-destructive" />}
+      </div>
+      <div className="text-xl font-semibold mt-1.5 tabular-nums">{value}</div>
+      {sub && <div className="text-xs text-muted-foreground truncate">{sub}</div>}
+    </Link>
   );
 }
 
