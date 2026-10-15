@@ -103,7 +103,7 @@ export default function PortalPanel({
 }) {
   const [activeTab, setActiveTab] = useState("work");
   const [portal, setPortal] = useState<Portal | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
@@ -143,7 +143,6 @@ export default function PortalPanel({
   const SIGNED_URL_TTL = 60 * 60 * 24 * 365; // 1 an
 
   const load = async () => {
-    setLoading(true);
     const { data } = await supabase
       .from("client_portals" as any)
       .select("*")
@@ -241,13 +240,13 @@ export default function PortalPanel({
     const { data: ps } = await supabase.from("payment_settings" as any).select("iban,bic,account_holder,bank_name,transfer_note").eq("id", 1).maybeSingle();
     setPaymentSettings(ps as any);
 
-    setLoading(false);
+    setReady(true);
   };
 
   useEffect(() => { load(); }, [entityType, entityId, clientId, billingRevision]);
 
 
-  if (!portal) {
+  if (!portal || !ready) {
     return <Card className="p-5 text-sm text-muted-foreground">Chargement du portail client…</Card>;
   }
 
