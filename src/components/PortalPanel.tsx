@@ -1,3 +1,4 @@
+import PortalAnnotationsAdmin from "@/components/PortalAnnotationsAdmin";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
