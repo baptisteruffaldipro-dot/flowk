@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { taskCategory } from "@/lib/agenda";
 import { CheckSquare, Printer, Mail, StickyNote, ArrowUpRight } from "lucide-react";
 
 type Ball = "moi" | "client" | "imprimeur";
-type Row = { id: string; title: string; client: string | null; status: string; deadline: string | null; updated_at: string; ball: Ball; where: string };
+type Row = { id: string; title: string; client: string | null; status: string; deadline: string | null; updated_at: string; ball: Ball; where: string; category: string };
 
 const STATUS_LABEL: Record<string, string> = {
   a_faire: "À faire", en_cours: "En cours", aujourdhui: "Aujourd'hui", fait: "Fait",
@@ -25,7 +26,7 @@ export default function Dashboard() {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
       const [tasks, prints, leads, requests, cash, debts, appts, events] = await Promise.all([
-        supabase.from("tasks").select("id,title,status,deadline,updated_at,scheduled_date,clients(name)").not("status", "in", "(envoye,archive)").order("updated_at", { ascending: false }).limit(200),
+        supabase.from("tasks").select("id,title,status,deadline,updated_at,scheduled_date,prestation,prestations,clients(name)").not("status", "in", "(envoye,archive)").order("updated_at", { ascending: false }).limit(200),
         supabase.from("print_orders").select("status").eq("status", "a_commander" as any),
         supabase.from("leads").select("id", { count: "exact", head: true }).is("read_at", null),
         supabase.from("client_requests").select("id", { count: "exact", head: true }).eq("status", "nouveau" as any),
@@ -38,8 +39,8 @@ export default function Dashboard() {
         const ball: Ball = t.status === "bat" ? "client" : t.status === "impression" ? "imprimeur" : "moi";
         let where = STATUS_LABEL[t.status] ?? t.status;
         if (ball !== "moi") where += ` · depuis ${daysSince(t.updated_at)} j`;
-        return { id: t.id, title: t.title, client: t.clients?.name ?? null, status: t.status, deadline: t.deadline, updated_at: t.updated_at, ball, where };
-      });
+        return { id: t.id, title: t.title, client: t.clients?.name ?? null, status: t.status, deadline: t.deadline, updated_at: t.updated_at, ball, where, category: taskCategory(t) };
+      }).filter((t) => t.status === "aujourdhui" || t.category === "creation");
       const late = list.filter((t) => t.deadline && t.deadline < today).length;
       const todayCount = list.filter((t) => t.status === "aujourdhui").length;
       // Prioritise: late, today, then waiting on someone
