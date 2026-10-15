@@ -626,7 +626,7 @@ export default function ClientPortalPublic() {
         )}
 
         {/* Messages */}
-        <section id="echanges" className="border-b border-border py-6 space-y-3">
+        <section id="echanges" className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Échanges</h2>
           {messages.length === 0 ? (
             <div className="text-xs text-muted-foreground">Aucun message pour le moment.</div>
