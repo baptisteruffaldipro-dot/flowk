@@ -917,8 +917,6 @@ export default function Tasks() {
     if (t && !t.bat_id) setBatForTask(t);
   };
 
-
-
   const onDragEnd = async (e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
