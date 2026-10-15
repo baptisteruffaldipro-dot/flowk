@@ -113,7 +113,7 @@ export default function Dashboard() {
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">{hello} Baptiste</h1>
         <p className="text-muted-foreground mt-1 first-letter:uppercase">
-          {dateLabel} · semaine {week} · {k.today} tâche{k.today > 1 ? "s" : ""} aujourd'hui{k.late ? `, ${k.late} en retard` : ", aucun retard"}
+          {dateLabel} · semaine {week} · {k.today} tâche{k.today > 1 ? "s" : ""} en production{k.late ? `, ${k.late} en retard` : ", aucun retard"}
         </p>
       </div>
 

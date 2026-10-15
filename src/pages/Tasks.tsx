@@ -1498,7 +1498,7 @@ export default function Tasks() {
         </Button>
         {focusMode && (
           <span className="text-xs text-muted-foreground">
-            Seule la colonne « Aujourd'hui » est affichée. Glisse 1 à 3 tâches dedans pour la journée.
+            Seule la colonne « En production » est affichée. Glisse 1 à 3 tâches dedans pour la journée.
           </span>
         )}
         <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
