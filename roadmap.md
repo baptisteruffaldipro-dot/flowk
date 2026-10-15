@@ -8,3 +8,6 @@
 - [x] Vérifier les quatre onglets et la conservation des échanges, fichiers et montants
 - [x] Lien client : retirer l'affichage de l'URL, garder Copier / Ouvrir / Envoyer (email en pop-up)
 - [x] Retirer le bouton « Corrigé » des BAT signés (conservé sur les observations clients)
+- [x] Déplacer « Rendez-vous » dans la rubrique Gestion du menu
+- [x] Passer la fiche Finance en « En construction » (données et écrans existants conservés)
+- [ ] Point Finance à faire ensemble : pôles, labels, TVA, trésorerie, dettes clients

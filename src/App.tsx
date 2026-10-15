@@ -47,7 +47,7 @@ import ClientPrintOrderPortal from "./pages/ClientPrintOrderPortal";
 import ClientBatPortal from "./pages/ClientBatPortal";
 import ClientBatPublic from "./pages/ClientBatPublic";
 import NotFound from "./pages/NotFound";
-import FinanceDashboard from "./pages/finance/FinanceDashboard";
+import FinanceConstruction from "./pages/finance/FinanceConstruction";
 import FinanceImport from "./pages/finance/FinanceImport";
 import FinanceTransactions from "./pages/finance/FinanceTransactions";
 import FinanceCash from "./pages/finance/FinanceCash";
@@ -112,7 +112,7 @@ const App = () => (
               <Route path="/social/:clientId" element={<SocialMediaClient />} />
               <Route path="/parametres/paiement" element={<PaymentSettings />} />
               <Route path="/portails/:id" element={<PortalRedirect />} />
-              <Route path="/finance" element={<FinanceDashboard />} />
+              <Route path="/finance" element={<FinanceConstruction />} />
               <Route path="/finance/import" element={<FinanceImport />} />
               <Route path="/finance/transactions" element={<FinanceTransactions />} />
               <Route path="/finance/tresorerie" element={<FinanceCash />} />

@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type NavItem = { to: string; label: string; end?: boolean; badgeKey?: "leads" | "demandes" };
+type NavItem = { to: string; label: string; end?: boolean; badgeKey?: "leads" | "demandes"; tag?: string };
 type NavGroup = { label: string; icon: any; items: NavItem[] };
 const groups: NavGroup[] = [
   { label: "Aujourd'hui", icon: Home, items: [
@@ -26,6 +26,7 @@ const groups: NavGroup[] = [
     { to: "/clients", label: "Clients" },
     { to: "/taches", label: "Tâches" },
     { to: "/impressions", label: "Impressions" },
+    { to: "/rdv", label: "Rendez-vous" },
   ]},
   { label: "Création", icon: Palette, items: [
     { to: "/questionnaires", label: "Questionnaires" },
@@ -34,8 +35,7 @@ const groups: NavGroup[] = [
     { to: "/notes", label: "Idées / Notes" },
   ]},
   { label: "Pilotage", icon: TrendingUp, items: [
-    { to: "/finance", label: "Finance" },
-    { to: "/rdv", label: "Rendez-vous" },
+    { to: "/finance", label: "Finance", tag: "chantier" },
   ]},
   { label: "Réglages", icon: Settings2, items: [
     { to: "/parametres/paiement", label: "Paiement (RIB)" },
@@ -189,6 +189,9 @@ export default function AdminLayout() {
                       )}
                       {item.badgeKey === "demandes" && unreadDemandes > 0 && (
                         <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-[10px] font-semibold">{unreadDemandes}</span>
+                      )}
+                      {item.tag && (
+                        <span className="rounded-full border border-sidebar-border px-1.5 py-0.5 text-[9px] uppercase tracking-wide opacity-70">{item.tag}</span>
                       )}
                     </NavLink>
                   ))}
