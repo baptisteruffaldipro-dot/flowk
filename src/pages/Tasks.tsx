@@ -42,7 +42,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 
-const STATUSES = ["a_faire", "aujourdhui", "envoye", "bat", "impression", "a_facturer", "archive"] as const;
+const STATUSES = ["a_faire", "aujourdhui", "impression", "envoye", "bat", "a_facturer", "archive"] as const;
 type Status = typeof STATUSES[number];
 
 const SOCIAL_STATUS_TO_KANBAN: Record<string, Status> = {
