@@ -1,5 +1,8 @@
 import PortalAnnotationsAdmin from "@/components/PortalAnnotationsAdmin";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ClipboardList, Printer, FolderOpen, ChevronDown } from "lucide-react";
+import { fmtMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,13 +71,13 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_TONE: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
-  awaiting_validation: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  validated: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  refused: "bg-rose-500/15 text-rose-600 dark:text-rose-400",
-  payment_pending: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
-  payment_link_requested: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
-  paid: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  delivered: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  awaiting_validation: "bg-warning/15 text-warning",
+  validated: "bg-success/15 text-success",
+  refused: "bg-destructive/15 text-destructive",
+  payment_pending: "bg-info/15 text-info",
+  payment_link_requested: "bg-info/15 text-info",
+  paid: "bg-success/15 text-success",
+  delivered: "bg-success/15 text-success",
 };
 
 export default function PortalPanel({
@@ -85,17 +88,22 @@ export default function PortalPanel({
   clientName,
   notifyTemplate,
   notifyContext,
+  taskWorkspace,
+  billingRevision,
 }: {
   entityType: EntityType;
   entityId: string;
+  taskWorkspace?: { work: ReactNode; billing: ReactNode };
+  billingRevision?: string;
   clientId?: string | null;
   clientEmail?: string | null;
   clientName?: string | null;
   notifyTemplate?: "files-delivered" | "logo-ready";
   notifyContext?: { description?: string; portalUrl?: string };
 }) {
+  const [activeTab, setActiveTab] = useState("work");
   const [portal, setPortal] = useState<Portal | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
@@ -135,7 +143,6 @@ export default function PortalPanel({
   const SIGNED_URL_TTL = 60 * 60 * 24 * 365; // 1 an
 
   const load = async () => {
-    setLoading(true);
     const { data } = await supabase
       .from("client_portals" as any)
       .select("*")
@@ -233,13 +240,13 @@ export default function PortalPanel({
     const { data: ps } = await supabase.from("payment_settings" as any).select("iban,bic,account_holder,bank_name,transfer_note").eq("id", 1).maybeSingle();
     setPaymentSettings(ps as any);
 
-    setLoading(false);
+    setReady(true);
   };
 
-  useEffect(() => { load(); }, [entityType, entityId]);
+  useEffect(() => { load(); }, [entityType, entityId, clientId, billingRevision]);
 
 
-  if (loading || !portal) {
+  if (!portal || !ready) {
     return <Card className="p-5 text-sm text-muted-foreground">Chargement du portail client…</Card>;
   }
 
@@ -588,88 +595,71 @@ export default function PortalPanel({
     !portal.delivery_locked &&
     (portal.delivery_override || portal.status === "delivered" || paidOk);
 
-  return (
-    <Card className="p-5 space-y-4">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+  const clientObservations = messages.filter((message) => message.author === "client" && !message.resolved && (!message.kind || message.kind === "message")).length;
+  const reviews = ((portal as any).deliverable_reviews ?? []) as { file: string; status: string }[];
+  const approvedFiles = deliverables.filter((file) => reviews.some((review) => review.file === file.name && review.status === "approved")).length;
+
+  const portalHeader = (<>
+<div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-sm font-semibold">Livraison &amp; portail client</h2>
-            <Badge className={`text-[10px] ${STATUS_TONE[portal.status] ?? ""}`} variant="outline">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h2 className="text-sm font-semibold">Espace client</h2>
+            <Badge className={`text-[11px] ${STATUS_TONE[portal.status] ?? ""}`} variant="outline">
               {STATUS_LABEL[portal.status] ?? portal.status}
             </Badge>
             {isUnlocked ? (
-              <Badge variant="outline" className="text-[10px] gap-1"><Unlock className="h-3 w-3" /> Livraison déverrouillée</Badge>
+              <Badge variant="outline" className="text-[11px] gap-1"><Unlock className="h-3 w-3" /> Livraison déverrouillée</Badge>
             ) : (
-              <Badge variant="outline" className="text-[10px] gap-1"><Lock className="h-3 w-3" /> Livraison verrouillée</Badge>
+              <Badge variant="outline" className="text-[11px] gap-1"><Lock className="h-3 w-3" /> Livraison verrouillée</Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">Lien partageable — validation, paiement et téléchargement des livrables.</p>
+
         </div>
         <div className="flex items-center gap-2">
-          <Switch checked={portal.is_published} onCheckedChange={publish} />
+          <Switch aria-label="Publier le portail client" checked={portal.is_published} onCheckedChange={publish} />
           <span className="text-xs text-muted-foreground">{portal.is_published ? "Publié" : "Non publié"}</span>
         </div>
       </div>
-
-      {portal.status === "refused" && portal.refusal_reason && (
-        <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 space-y-1">
-          <div className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+  </>);
+  const legacyObservation = (<>
+{portal.status === "refused" && portal.refusal_reason && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 space-y-1">
+          <div className="text-xs font-semibold text-destructive">
             Motif du refus client{portal.client_refused_at ? ` — ${new Date(portal.client_refused_at).toLocaleString("fr-FR")}` : ""}
           </div>
           <p className="text-sm whitespace-pre-wrap">{portal.refusal_reason}</p>
         </div>
       )}
-
-      <section className="rounded-lg border border-border/70 p-4 space-y-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">1 · Lien client</div>
-      {/* Lien */}
+  </>);
+  const notesSection = (
+<section className="space-y-4 min-w-0">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes internes</div>
       <div className="space-y-1.5">
-        <Label className="text-xs">Lien à envoyer au client</Label>
-        <div className="flex gap-2">
-          <Input readOnly value={publicUrl} className="font-mono text-xs" />
-          <Button size="sm" variant="outline" onClick={copy}><Copy className="h-3.5 w-3.5 mr-1" /> Copier</Button>
-          <Button size="sm" variant="outline" asChild>
-            <a href={publicUrl} target="_blank" rel="noreferrer"><LinkIcon className="h-3.5 w-3.5 mr-1" /> Ouvrir</a>
-          </Button>
-          <Button size="sm" variant="ghost" onClick={regenerateToken} title="Régénérer un lien (invalide l'ancien)">
-            <RefreshCcw className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Envoyer le lien par email</Label>
-        <div className="flex gap-2">
-          <Input
-            type="email"
-            value={linkEmail}
-            onChange={(e) => setLinkEmail(e.target.value)}
-            placeholder={effEmail || "email@client.fr"}
-            className="text-xs"
-          />
-          <Button size="sm" onClick={sendLinkByEmail} disabled={sendingLink}>
-            <Send className="h-3.5 w-3.5 mr-1" /> {sendingLink ? "Envoi…" : "Envoyer"}
-          </Button>
-        </div>
-        <p className="text-[11px] text-muted-foreground">
-          {effEmail ? `Par défaut : ${effEmail}` : "Aucun email client enregistré — saisis une adresse."}
-        </p>
+        <Label className="text-xs">Notes admin (non visibles par le client)</Label>
+        <Textarea
+          rows={2}
+          value={portal.admin_notes ?? ""}
+          onChange={(e) => setPortal({ ...portal, admin_notes: e.target.value })}
+          onBlur={() => update({ admin_notes: portal.admin_notes } as any)}
+        />
       </div>
       </section>
-
-      <section className="rounded-lg border border-border/70 p-4 space-y-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">2 · Livrables</div>
+  );
+  const filesSection = (
+<section className="space-y-4 min-w-0">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Livrables</div>
         {deliverables.length === 0 && (
           <div className="text-xs text-muted-foreground">Aucun fichier. Uploade un fichier ou ajoute une URL (WeTransfer, Drive…).</div>
         )}
         <div className="space-y-1">
           {deliverables.map((d, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm rounded border border-border px-2 py-1.5">
-              <span className="flex-1 truncate">{d.name}</span>
+            <div key={i} className="flex flex-wrap items-center gap-2 text-sm rounded-md border border-border p-3">
+              <span className="min-w-0 basis-full font-medium break-all sm:basis-auto sm:flex-1">{d.name}</span>
               {(() => {
                 const rv = (((portal as any).deliverable_reviews ?? []) as any[]).find((r) => r.file === d.name);
                 if (rv?.status === "approved") return (
                   <Badge
-                    className="text-[10px] bg-emerald-500 hover:bg-emerald-500"
+                    className="text-[10px] bg-success text-success-foreground hover:bg-success"
                     title={rv.certificate_id ? `Certificat ${rv.certificate_id} — signé par ${rv.signed_by} le ${new Date(rv.at).toLocaleString("fr-FR")}` : undefined}
                   >
                     BAT validé{rv.signed_by ? ` · ${rv.signed_by} · ${new Date(rv.at).toLocaleDateString("fr-FR")}` : ""}
@@ -678,7 +668,7 @@ export default function PortalPanel({
                 if (rv?.status === "changes_requested") return <Badge variant="destructive" className="text-[10px]">Modif. demandée</Badge>;
                 return <Badge variant="outline" className="text-[10px]">BAT en attente</Badge>;
               })()}
-              <a href={d.url} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground underline truncate max-w-[40%]">{d.url}</a>
+              <a href={d.url} target="_blank" rel="noreferrer" title={d.url} className="text-xs text-muted-foreground underline max-w-full truncate">Ouvrir le fichier</a>
               <Button size="icon" variant="ghost" onClick={() => saveDeliverables(deliverables.filter((_, j) => j !== i))}>
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
@@ -690,7 +680,7 @@ export default function PortalPanel({
           <Input placeholder="URL" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} />
           <Button size="sm" variant="outline" onClick={addDeliverable}><Plus className="h-4 w-4 mr-1" /> Ajouter</Button>
         </div>
-        <div className="flex items-center gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           <input ref={fileInput} type="file" multiple className="hidden" onChange={(e) => uploadFiles(e.target.files)} />
           <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()} disabled={uploading}>
             <Upload className="h-3.5 w-3.5 mr-1.5" /> {uploading ? "Upload…" : "Uploader un fichier"}
@@ -703,9 +693,70 @@ export default function PortalPanel({
           )}
         </div>
       </section>
-
-      <section className="rounded-lg border border-border/70 p-4 space-y-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">3 · Facture &amp; commande d'impression</div>
+  );
+  const accessSection = (
+<section className="space-y-4 min-w-0">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Accès au téléchargement</div>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Règle de déblocage des livrables</Label>
+          <Select value={portal.delivery_unlock_rule} onValueChange={(v) => update({ delivery_unlock_rule: v as any })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="total">Solde total payé</SelectItem>
+              <SelectItem value="acompte">Acompte payé</SelectItem>
+              <SelectItem value="libre">Libre (aucun verrou)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Statut de règlement</Label>
+          <Select
+            value={payState}
+            onValueChange={(v) =>
+              update({
+                payment_state: v,
+                ...(v === "paid"
+                  ? { admin_confirmed_paid_at: new Date().toISOString(), status: "paid" }
+                  : { admin_confirmed_paid_at: null }),
+              } as any)
+            }
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unpaid">Acompte non réglé</SelectItem>
+              <SelectItem value="deposit_paid">Acompte réglé</SelectItem>
+              <SelectItem value="balance_unpaid">Solde non réglé</SelectItem>
+              <SelectItem value="paid">Solde réglé</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            {paidOk
+              ? "Règlement suffisant : téléchargement autorisé selon la règle choisie."
+              : "Règlement insuffisant : aperçu seul, téléchargement bloqué."}
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Override manuel</Label>
+          <div className="flex items-center gap-2">
+            <Switch checked={portal.delivery_override} onCheckedChange={toggleOverride} />
+            <span className="text-xs text-muted-foreground">
+              Autoriser le téléchargement même sans paiement
+            </span>
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <Switch checked={!!portal.delivery_locked} onCheckedChange={toggleLocked} />
+            <span className="text-xs text-muted-foreground">
+              Bloquer le téléchargement (prioritaire sur tout le reste)
+            </span>
+          </div>
+        </div>
+      </div>
+      </section>
+  );
+  const paymentSection = (
+<section className="space-y-4 min-w-0">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Facture &amp; commande d'impression</div>
       {/* Facture */}
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
@@ -886,7 +937,7 @@ export default function PortalPanel({
                     <span>
                       {(o.reference ? `${o.reference} — ` : "") + (o.description ?? "Commande")}
                       {o.amount != null && (
-                        <span className="text-muted-foreground"> · {Number(o.amount).toFixed(2)} €</span>
+                        <span className="text-muted-foreground"> · {Number(o.amount).toFixed(2)} € HT</span>
                       )}
                     </span>
                   </label>
@@ -907,78 +958,18 @@ export default function PortalPanel({
           </Button>
         </div>
       </section>
-
-      <section className="rounded-lg border border-border/70 p-4 space-y-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">4 · Accès au téléchargement</div>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Règle de déblocage des livrables</Label>
-          <Select value={portal.delivery_unlock_rule} onValueChange={(v) => update({ delivery_unlock_rule: v as any })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="total">Solde total payé</SelectItem>
-              <SelectItem value="acompte">Acompte payé</SelectItem>
-              <SelectItem value="libre">Libre (aucun verrou)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Statut de règlement</Label>
-          <Select
-            value={payState}
-            onValueChange={(v) =>
-              update({
-                payment_state: v,
-                ...(v === "paid"
-                  ? { admin_confirmed_paid_at: new Date().toISOString(), status: "paid" }
-                  : { admin_confirmed_paid_at: null }),
-              } as any)
-            }
-          >
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unpaid">Acompte non réglé</SelectItem>
-              <SelectItem value="deposit_paid">Acompte réglé</SelectItem>
-              <SelectItem value="balance_unpaid">Solde non réglé</SelectItem>
-              <SelectItem value="paid">Solde réglé</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-[11px] text-muted-foreground">
-            {paidOk
-              ? "Règlement suffisant : téléchargement autorisé selon la règle choisie."
-              : "Règlement insuffisant : aperçu seul, téléchargement bloqué."}
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Override manuel</Label>
-          <div className="flex items-center gap-2">
-            <Switch checked={portal.delivery_override} onCheckedChange={toggleOverride} />
-            <span className="text-xs text-muted-foreground">
-              Autoriser le téléchargement même sans paiement
-            </span>
-          </div>
-          <div className="flex items-center gap-2 pt-2">
-            <Switch checked={!!portal.delivery_locked} onCheckedChange={toggleLocked} />
-            <span className="text-xs text-muted-foreground">
-              Bloquer le téléchargement (prioritaire sur tout le reste)
-            </span>
-          </div>
-        </div>
-      </div>
-      </section>
-
-      {portal?.id && <PortalAnnotationsAdmin portalId={portal.id} />}
-
-      <section className="rounded-lg border border-border/70 p-4 space-y-3">
+  );
+  const messagesSection = (
+<section className="space-y-4 min-w-0">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <MessageSquare className="h-3.5 w-3.5" />
-          5 · Échanges
+          Échanges
           {messages.length > 0 && <Badge variant="secondary" className="ml-auto text-[10px]">{messages.length}</Badge>}
         </div>
         {messages.length === 0 ? (
           <p className="text-xs text-muted-foreground">Aucun message pour le moment.</p>
         ) : (
-          <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+          <div className="max-h-[32rem] space-y-3 overflow-y-auto pr-1">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -986,39 +977,40 @@ export default function PortalPanel({
                   message.author === "client"
                     ? "bg-primary/10"
                     : message.kind === "correction"
-                      ? "bg-emerald-500/10"
+                      ? "bg-success/10"
                       : "bg-muted/50"
                 }`}
               >
-                <div className="mb-1 flex items-center gap-2 text-[10px] uppercase text-muted-foreground">
+                <div className="mb-1 flex flex-wrap items-center gap-2 text-[10px] uppercase text-muted-foreground">
                   <span>
                     {message.author === "client" ? "Client" : "Studio"} ·{" "}
                     {new Date(message.created_at).toLocaleString("fr-FR")}
                   </span>
                   {message.kind === "correction" && (
-                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[9px] uppercase">
+                    <Badge className="bg-success/15 text-success text-[9px] uppercase">
                       Corrigé
                     </Badge>
                   )}
                   {message.author === "client" && message.resolved && (
-                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[9px] uppercase">
+                    <Badge className="bg-success/15 text-success text-[9px] uppercase">
                       <CheckCircle2 className="mr-1 h-2.5 w-2.5" />
                       Corrigé
                     </Badge>
                   )}
                   {message.author === "client" && !message.resolved && (
-                    <button
+                    <Button
+                      variant="outline" size="sm"
                       onClick={() => sendCorrectionFor(message)}
                       disabled={sendingCorrection}
                       title="Prévenir le client que cette observation a été traitée"
-                      className="ml-auto inline-flex items-center gap-1 rounded-full border border-emerald-500/40 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400"
+                      className="ml-auto inline-flex items-center gap-1 h-7 border border-success/40 px-2 py-0.5 text-[9px] font-semibold uppercase text-success hover:bg-success/10 disabled:opacity-50"
                     >
                       <CheckCircle2 className="h-2.5 w-2.5" />
                       {sendingCorrection ? "Envoi…" : "Corrigé"}
-                    </button>
+                    </Button>
                   )}
                 </div>
-                <div className="whitespace-pre-wrap">{message.body}</div>
+                <div className="whitespace-pre-wrap break-words">{message.body}</div>
               </div>
             ))}
           </div>
@@ -1042,7 +1034,7 @@ export default function PortalPanel({
             <Button
               size="sm"
               variant="outline"
-              className="border-emerald-500/40 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
+              className="border-success/40 text-success hover:bg-success/10"
               onClick={sendCorrection}
               disabled={sendingCorrection}
               title="Prévenir le client que la modification demandée a été faite"
@@ -1053,20 +1045,118 @@ export default function PortalPanel({
           </div>
         </div>
       </section>
-
-      <section className="rounded-lg border border-border/70 p-4 space-y-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">6 · Notes internes</div>
+  );
+  const linkSection = (
+<section className="space-y-4 min-w-0">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lien client</div>
+      {/* Lien */}
       <div className="space-y-1.5">
-        <Label className="text-xs">Notes admin (non visibles par le client)</Label>
-        <Textarea
-          rows={2}
-          value={portal.admin_notes ?? ""}
-          onChange={(e) => setPortal({ ...portal, admin_notes: e.target.value })}
-          onBlur={() => update({ admin_notes: portal.admin_notes } as any)}
-        />
+        <Label className="text-xs">Lien à envoyer au client</Label>
+        <div className="flex flex-wrap gap-2">
+          <Input readOnly value={publicUrl} className="font-mono text-xs min-w-0 basis-full" />
+          <Button size="sm" variant="outline" onClick={copy}><Copy className="h-3.5 w-3.5 mr-1" /> Copier</Button>
+          <Button size="sm" variant="outline" asChild>
+            <a href={publicUrl} target="_blank" rel="noreferrer"><LinkIcon className="h-3.5 w-3.5 mr-1" /> Ouvrir</a>
+          </Button>
+          <Button size="sm" variant="ghost" onClick={regenerateToken} title="Régénérer un lien (invalide l'ancien)">
+            <RefreshCcw className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
+      <details className="space-y-2">
+        <summary className="cursor-pointer text-xs font-medium">Envoyer le lien par email</summary>
+        <div className="flex flex-wrap gap-2">
+          <Input
+            type="email"
+            value={linkEmail}
+            onChange={(e) => setLinkEmail(e.target.value)}
+            placeholder={effEmail || "email@client.fr"}
+            className="text-xs"
+          />
+          <Button size="sm" onClick={sendLinkByEmail} disabled={sendingLink}>
+            <Send className="h-3.5 w-3.5 mr-1" /> {sendingLink ? "Envoi…" : "Envoyer"}
+          </Button>
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          {effEmail ? `Par défaut : ${effEmail}` : "Aucun email client enregistré — saisis une adresse."}
+        </p>
+      </details>
       </section>
+  );
 
+  if (taskWorkspace) return (
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
+      <div className="border-b mb-6 overflow-x-auto">
+        <TabsList aria-label="Sections de la tâche" className="h-auto w-max min-w-full justify-start gap-1 rounded-none bg-transparent p-0">
+          {[
+            { value: "work", label: "Travail", icon: ClipboardList },
+            { value: "files", label: "Fichiers & BAT", icon: FolderOpen, count: deliverables.length },
+            { value: "payment", label: "Impression & règlement", icon: Printer },
+            { value: "messages", label: "Échanges", icon: MessageSquare, count: clientObservations },
+          ].map(({ value, label, icon: Icon, count }) => (
+            <TabsTrigger key={value} value={value} className="gap-2 rounded-none border-b-2 border-transparent px-3 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+              <Icon className="h-4 w-4 shrink-0" />{label}
+              {Boolean(count) && <Badge variant={value === "messages" ? "destructive" : "secondary"} className="px-1.5 py-0 text-[10px]" title={value === "messages" ? "Observations à traiter" : "Fichiers"}>{count}</Badge>}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
+      <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0">
+          <TabsContent value="work" forceMount className="mt-0 data-[state=inactive]:hidden">
+            {taskWorkspace.work}
+            <details className="mt-5 border-t pt-4"><summary className="cursor-pointer text-sm font-medium">Notes internes de l’espace client</summary><div className="pt-4">      {notesSection}</div></details>
+          </TabsContent>
+          <TabsContent value="files" forceMount className="mt-0 space-y-6 data-[state=inactive]:hidden">
+                  {filesSection}
+            <PortalAnnotationsAdmin portalId={portal.id} />
+            <details className="border-t pt-4"><summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><Lock className="h-4 w-4" />Réglages de téléchargement<ChevronDown className="ml-auto h-4 w-4" /></summary><div className="pt-5">      {accessSection}</div></details>
+          </TabsContent>
+          <TabsContent value="payment" forceMount className="mt-0 data-[state=inactive]:hidden">
+            {taskWorkspace.billing}
+                  {paymentSection}
+          </TabsContent>
+          <TabsContent value="messages" forceMount className="mt-0 space-y-5 data-[state=inactive]:hidden">
+            {legacyObservation}
+                  {messagesSection}
+          </TabsContent>
+        </div>
+        <aside className="min-w-0 border-t pt-5 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
+          <div className="space-y-6 xl:sticky xl:top-6">
+            <div className="space-y-4">{portalHeader}{linkSection}</div>
+            <div className="border-t pt-5"><section className="space-y-3">
+              <h2 className="text-xs font-semibold text-muted-foreground">EN UN COUP D’ŒIL</h2>
+              <dl className="space-y-3 text-sm">
+                <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Fichiers BAT validés</dt><dd className="font-medium">{approvedFiles} / {deliverables.length}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Impressions liées</dt><dd className="font-medium">{selectedPrintOrders.length}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Observations à traiter</dt><dd className={clientObservations ? "font-medium text-destructive" : "font-medium"}>{clientObservations}</dd></div>
+              </dl>
+              <div className="border-t pt-3 space-y-1 text-xs">
+                <div className="flex justify-between gap-2 text-muted-foreground"><span>Prestation HT</span><span>{fmtMoney(computedPresta)}</span></div>
+                <div className="flex justify-between gap-2 text-muted-foreground"><span>Impressions HT</span><span>{fmtMoney(computedPrint)}</span></div>
+                <div className="flex justify-between gap-2 pt-1 text-muted-foreground"><span>TVA 20 %</span><span>{fmtMoney(Number(portal.amount_due_ttc || 0) * 0.2)}</span></div>
+                <div className="pt-3 text-muted-foreground">Total TTC</div>
+                <div className="text-2xl font-semibold tabular-nums">{fmtMoney(Number(portal.amount_due_ttc || 0) * 1.2)}</div>
+                <div className="text-xs text-muted-foreground">{payState === "paid" ? "Solde réglé" : payState === "deposit_paid" ? "Acompte réglé" : payState === "balance_unpaid" ? "Solde non réglé" : "Non réglé"}</div>
+              </div>
+            </section></div>
+          </div>
+        </aside>
+      </div>
+    </Tabs>
+  );
+
+  return (
+    <Card className="p-5 space-y-4">
+      {portalHeader}
+      {legacyObservation}
+      {linkSection}
+      {filesSection}
+      {paymentSection}
+      {accessSection}
+      <PortalAnnotationsAdmin portalId={portal.id} />
+      {messagesSection}
+      {notesSection}
     </Card>
   );
 }
