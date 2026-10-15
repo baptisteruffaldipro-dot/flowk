@@ -2,10 +2,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, MapPin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import DocumentViewer from "@/components/DocumentViewer";
+import { CheckCircle2, Eye, MapPin } from "lucide-react";
 
-export default function PortalAnnotationsAdmin({ portalId }: { portalId: string }) {
+type FileRef = { name: string; url: string };
+
+export default function PortalAnnotationsAdmin({ portalId, files = [] }: { portalId: string; files?: FileRef[] }) {
   const [items, setItems] = useState<any[]>([]);
+  const [viewFile, setViewFile] = useState<string | null>(null);
   const load = async () => {
     const { data } = await supabase.from("portal_annotations" as any).select("*").eq("portal_id", portalId).order("created_at");
     setItems((data as any[]) ?? []);
@@ -14,6 +19,9 @@ export default function PortalAnnotationsAdmin({ portalId }: { portalId: string 
   if (!items.length) return null;
   const byFile = items.reduce((m: Record<string, any[]>, a) => ((m[a.file_name] ||= []).push(a), m), {});
   const open = items.filter((a) => !a.resolved).length;
+  const fileUrl = (name: string) => files.find((f) => f.name === name)?.url ?? null;
+  const viewAnnotations = viewFile ? (byFile[viewFile] ?? []) : [];
+  const viewSrc = viewFile ? fileUrl(viewFile) : null;
   return (
     <section className="rounded-lg border border-border/70 p-4 space-y-3">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -22,7 +30,14 @@ export default function PortalAnnotationsAdmin({ portalId }: { portalId: string 
       </div>
       {(Object.entries(byFile) as [string, any[]][]).map(([file, list]) => (
         <div key={file} className="space-y-1.5">
-          <div className="text-xs font-medium">{file}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-xs font-medium">{file}</div>
+            {fileUrl(file) && (
+              <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setViewFile(file)}>
+                <Eye className="h-3 w-3 mr-1" /> Voir sur le visuel
+              </Button>
+            )}
+          </div>
           {list.map((a, i) => (
             <div key={a.id} className="flex items-start gap-2 rounded-md border border-border p-2 text-xs">
               <span className={`shrink-0 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${a.resolved ? "bg-accent text-accent-foreground" : "bg-destructive text-destructive-foreground"}`}>{i + 1}</span>
@@ -44,6 +59,26 @@ export default function PortalAnnotationsAdmin({ portalId }: { portalId: string 
           ))}
         </div>
       ))}
+
+      <Dialog open={!!viewFile} onOpenChange={(o) => { if (!o) setViewFile(null); }}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm">{viewFile}</DialogTitle>
+          </DialogHeader>
+          {viewSrc ? (
+            <DocumentViewer
+              src={viewSrc}
+              isImage={/\.(png|jpe?g|webp|gif|avif|svg)(\?|#|$)/i.test(String(viewFile))}
+              alt={viewFile ?? ""}
+              annotations={viewAnnotations}
+              canAnnotate={false}
+              viewportClassName="h-[70vh]"
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">Fichier introuvable dans les livrables du portail.</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

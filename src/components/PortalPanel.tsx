@@ -1141,7 +1141,7 @@ export default function PortalPanel({
           </TabsContent>
           <TabsContent value="files" forceMount className="mt-0 space-y-6 data-[state=inactive]:hidden">
                   {filesSection}
-            <PortalAnnotationsAdmin portalId={portal.id} />
+            <PortalAnnotationsAdmin portalId={portal.id} files={deliverables} />
             <details className="border-t pt-4"><summary className="flex cursor-pointer items-center gap-2 text-sm font-medium"><Lock className="h-4 w-4" />Réglages de téléchargement<ChevronDown className="ml-auto h-4 w-4" /></summary><div className="pt-5">      {accessSection}</div></details>
           </TabsContent>
           <TabsContent value="payment" forceMount className="mt-0 data-[state=inactive]:hidden">
@@ -1186,7 +1186,7 @@ export default function PortalPanel({
       {filesSection}
       {paymentSection}
       {accessSection}
-      <PortalAnnotationsAdmin portalId={portal.id} />
+      <PortalAnnotationsAdmin portalId={portal.id} files={deliverables} />
       {messagesSection}
       {notesSection}
     </Card>
