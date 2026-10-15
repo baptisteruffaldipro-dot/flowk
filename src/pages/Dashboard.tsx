@@ -38,8 +38,8 @@ export default function Dashboard() {
         const ball: Ball = t.status === "bat" ? "client" : t.status === "impression" ? "imprimeur" : "moi";
         let where = STATUS_LABEL[t.status] ?? t.status;
         if (ball !== "moi") where += ` · depuis ${daysSince(t.updated_at)} j`;
-        return { id: t.id, title: t.title, client: t.clients?.name ?? null, status: t.status, deadline: t.deadline, updated_at: t.updated_at, ball, where };
-      });
+        return { id: t.id, title: t.title, client: t.clients?.name ?? null, status: t.status, deadline: t.deadline, updated_at: t.updated_at, ball, where, category: taskCategory(t) };
+      }).filter((t) => t.status === "aujourdhui" || t.category === "creation");
       const late = list.filter((t) => t.deadline && t.deadline < today).length;
       const todayCount = list.filter((t) => t.status === "aujourdhui").length;
       // Prioritise: late, today, then waiting on someone
