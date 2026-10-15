@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Copy, Link as LinkIcon, Plus, Trash2, Lock, Unlock, RefreshCcw, Upload, FileText, ExternalLink, Send, MessageSquare } from "lucide-react";
+import { Copy, Link as LinkIcon, Plus, Trash2, Lock, Unlock, RefreshCcw, Upload, FileText, ExternalLink, Send, MessageSquare, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { getPublicAppUrl } from "@/lib/publicUrl";
 import { computeTaskBilling } from "@/lib/billing";
@@ -50,6 +50,7 @@ type PortalMessage = {
   author: string;
   body: string;
   created_at: string;
+  kind?: string;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -120,6 +121,7 @@ export default function PortalPanel({
   const [messageReply, setMessageReply] = useState("");
   const [notifyClient, setNotifyClient] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [sendingCorrection, setSendingCorrection] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const invoiceInput = useRef<HTMLInputElement>(null);
 
@@ -154,7 +156,7 @@ export default function PortalPanel({
     if (row?.id) {
       const { data: portalMessages } = await supabase
         .from("client_portal_messages")
-        .select("id,author,body,created_at")
+        .select("id,author,body,created_at,kind")
         .eq("portal_id", row.id)
         .order("created_at", { ascending: true });
       setMessages((portalMessages as PortalMessage[] | null) ?? []);
@@ -501,6 +503,48 @@ export default function PortalPanel({
       toast.error(error?.message ?? "Impossible d’envoyer le message");
     } finally {
       setSendingMessage(false);
+    }
+  };
+
+  const sendCorrection = async () => {
+    if (!portal?.id) return;
+    const body =
+      messageReply.trim() ||
+      "La modification demandée a été effectuée. Vous la trouverez dans votre espace client.";
+    setSendingCorrection(true);
+    try {
+      const { data, error } = await supabase
+        .from("client_portal_messages")
+        .insert({ portal_id: portal.id, author: "admin", body, kind: "correction" })
+        .select("id,author,body,created_at,kind")
+        .single();
+      if (error) throw error;
+      setMessages((current) => [...current, data as PortalMessage]);
+      setMessageReply("");
+      if (notifyClient && effEmail) {
+        if (!portal.is_published) await publish(true);
+        const { data: r, error: e2 } = await supabase.functions.invoke("send-app-email", {
+          body: {
+            templateName: "portal-corrected",
+            recipientEmail: effEmail,
+            idempotencyKey: `portal-corrected-${(data as any).id}`,
+            templateData: {
+              name: effName ?? "",
+              portalUrl: publicUrl,
+              message: body,
+              title: notifyContext?.description ?? "",
+            },
+          },
+        });
+        if (e2 || (r as any)?.error) toast.error("Correction enregistrée, mais l'email n'a pas pu partir");
+        else toast.success("Correction envoyée et client prévenu par email");
+      } else {
+        toast.success("Correction envoyée au client");
+      }
+    } catch (error: any) {
+      toast.error(error?.message ?? "Impossible d’envoyer la correction");
+    } finally {
+      setSendingCorrection(false);
     }
   };
 
@@ -910,10 +954,24 @@ export default function PortalPanel({
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`rounded-md p-3 text-sm ${message.author === "client" ? "bg-primary/10" : "bg-muted/50"}`}
+                className={`rounded-md p-3 text-sm ${
+                  message.author === "client"
+                    ? "bg-primary/10"
+                    : message.kind === "correction"
+                      ? "bg-emerald-500/10"
+                      : "bg-muted/50"
+                }`}
               >
-                <div className="mb-1 text-[10px] uppercase text-muted-foreground">
-                  {message.author === "client" ? "Client" : "Studio"} · {new Date(message.created_at).toLocaleString("fr-FR")}
+                <div className="mb-1 flex items-center gap-2 text-[10px] uppercase text-muted-foreground">
+                  <span>
+                    {message.author === "client" ? "Client" : "Studio"} ·{" "}
+                    {new Date(message.created_at).toLocaleString("fr-FR")}
+                  </span>
+                  {message.kind === "correction" && (
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[9px] uppercase">
+                      Corrigé
+                    </Badge>
+                  )}
                 </div>
                 <div className="whitespace-pre-wrap">{message.body}</div>
               </div>
@@ -931,10 +989,23 @@ export default function PortalPanel({
             <input type="checkbox" checked={notifyClient} onChange={(e) => setNotifyClient(e.target.checked)} />
             Prévenir le client par email{effEmail ? ` (${effEmail})` : " — aucun email enregistré"}
           </label>
-          <Button size="sm" onClick={sendMessage} disabled={!messageReply.trim() || sendingMessage}>
-            <Send className="mr-1.5 h-3.5 w-3.5" />
-            {sendingMessage ? "Envoi…" : "Envoyer"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={sendMessage} disabled={!messageReply.trim() || sendingMessage}>
+              <Send className="mr-1.5 h-3.5 w-3.5" />
+              {sendingMessage ? "Envoi…" : "Envoyer"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-emerald-500/40 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
+              onClick={sendCorrection}
+              disabled={sendingCorrection}
+              title="Prévenir le client que la modification demandée a été faite"
+            >
+              <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+              {sendingCorrection ? "Envoi…" : "Corrigé"}
+            </Button>
+          </div>
         </div>
       </section>
 

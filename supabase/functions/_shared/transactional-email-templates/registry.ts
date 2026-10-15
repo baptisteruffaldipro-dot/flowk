@@ -16,6 +16,7 @@ import { template as logoReady } from './logo-ready.tsx'
 import { template as clientRequestLink } from './client-request-link.tsx'
 import { template as paymentReminder } from './payment-reminder.tsx'
 import { template as portalMessage } from './portal-message.tsx'
+import { template as portalCorrected } from './portal-corrected.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'bat-ready': batReady,
@@ -25,4 +26,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'client-request-link': clientRequestLink,
   'payment-reminder': paymentReminder,
   'portal-message': portalMessage,
+  'portal-corrected': portalCorrected,
 }

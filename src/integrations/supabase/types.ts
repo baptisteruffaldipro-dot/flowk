@@ -653,6 +653,7 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          kind: string
           portal_id: string
         }
         Insert: {
@@ -660,6 +661,7 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          kind?: string
           portal_id: string
         }
         Update: {
@@ -667,6 +669,7 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          kind?: string
           portal_id?: string
         }
         Relationships: [

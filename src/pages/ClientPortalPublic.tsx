@@ -602,9 +602,13 @@ export default function ClientPortalPublic() {
           const seen = typeof window !== "undefined" ? window.localStorage.getItem(key) : null;
           if (seen && seen >= lastAdmin.created_at) return null;
           const markSeen = () => { window.localStorage.setItem(key, lastAdmin.created_at); setSeenTick((n) => n + 1); };
+          const isCorrection = lastAdmin.kind === "correction";
           return (
-            <section className="rounded-xl border border-primary/40 bg-primary/5 p-5 space-y-2">
-              <div className="text-sm font-semibold">Nouveau message de l'atelier</div>
+            <section className={`rounded-xl border p-5 space-y-2 ${isCorrection ? "border-emerald-500/40 bg-emerald-500/5" : "border-primary/40 bg-primary/5"}`}>
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                {isCorrection && <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
+                {isCorrection ? "Votre correction est prête" : "Nouveau message de l'atelier"}
+              </div>
               <div className="text-sm whitespace-pre-wrap">{lastAdmin.body}</div>
               <div className="flex gap-3 text-xs">
                 <a href="#echanges" onClick={markSeen} className="underline">Voir les échanges</a>
@@ -732,9 +736,14 @@ export default function ClientPortalPublic() {
           ) : (
             <div className="space-y-2">
               {messages.map((m: any) => (
-                <div key={m.id} className={`text-sm p-3 rounded-md ${m.author === "client" ? "bg-primary/10" : "bg-muted/40"}`}>
-                  <div className="text-[10px] uppercase text-muted-foreground mb-0.5">
-                    {m.author === "client" ? "Vous" : "Studio"} · {new Date(m.created_at).toLocaleString("fr-FR")}
+                <div key={m.id} className={`text-sm p-3 rounded-md ${m.author === "client" ? "bg-primary/10" : m.kind === "correction" ? "bg-emerald-500/10" : "bg-muted/40"}`}>
+                  <div className="mb-0.5 flex items-center gap-2 text-[10px] uppercase text-muted-foreground">
+                    <span>{m.author === "client" ? "Vous" : "Studio"} · {new Date(m.created_at).toLocaleString("fr-FR")}</span>
+                    {m.kind === "correction" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="h-2.5 w-2.5" /> Corrigé
+                      </span>
+                    )}
                   </div>
                   <div className="whitespace-pre-wrap">{m.body}</div>
                 </div>
