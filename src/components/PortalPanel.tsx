@@ -966,6 +966,8 @@ export default function PortalPanel({
       </div>
       </section>
 
+      {portal?.id && <PortalAnnotationsAdmin portalId={portal.id} />}
+
       <section className="rounded-lg border border-border/70 p-4 space-y-3">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <MessageSquare className="h-3.5 w-3.5" />
