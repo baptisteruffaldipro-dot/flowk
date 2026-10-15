@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Copy, Link as LinkIcon, Plus, Trash2, Lock, Unlock, RefreshCcw, Upload, FileText, ExternalLink, Send, MessageSquare, CheckCircle2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { getPublicAppUrl } from "@/lib/publicUrl";
 import { computeTaskBilling } from "@/lib/billing";
@@ -113,6 +114,7 @@ export default function PortalPanel({
   const [sendingLink, setSendingLink] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [linkEmail, setLinkEmail] = useState("");
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [fetchedClient, setFetchedClient] = useState<{ email?: string | null; name?: string | null } | null>(null);
   const [invoiceUrl, setInvoiceUrl] = useState<string>("");
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
@@ -1047,41 +1049,52 @@ export default function PortalPanel({
       </section>
   );
   const linkSection = (
-<section className="space-y-4 min-w-0">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lien client</div>
-      {/* Lien */}
-      <div className="space-y-1.5">
-        <Label className="text-xs">Lien à envoyer au client</Label>
-        <div className="flex flex-wrap gap-2">
-          <Input readOnly value={publicUrl} className="font-mono text-xs min-w-0 basis-full" />
-          <Button size="sm" variant="outline" onClick={copy}><Copy className="h-3.5 w-3.5 mr-1" /> Copier</Button>
-          <Button size="sm" variant="outline" asChild>
-            <a href={publicUrl} target="_blank" rel="noreferrer"><LinkIcon className="h-3.5 w-3.5 mr-1" /> Ouvrir</a>
-          </Button>
-          <Button size="sm" variant="ghost" onClick={regenerateToken} title="Régénérer un lien (invalide l'ancien)">
-            <RefreshCcw className="h-3.5 w-3.5" />
-          </Button>
-        </div>
+    <section className="space-y-3 min-w-0">
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lien client</div>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={copy}><Copy className="h-3.5 w-3.5 mr-1" /> Copier</Button>
+        <Button size="sm" variant="outline" asChild>
+          <a href={publicUrl} target="_blank" rel="noreferrer"><LinkIcon className="h-3.5 w-3.5 mr-1" /> Ouvrir</a>
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setLinkDialogOpen(true)}>
+          <Send className="h-3.5 w-3.5 mr-1" /> Envoyer
+        </Button>
+        <Button size="sm" variant="ghost" onClick={regenerateToken} title="Régénérer un lien (invalide l'ancien)">
+          <RefreshCcw className="h-3.5 w-3.5" />
+        </Button>
       </div>
-      <details className="space-y-2">
-        <summary className="cursor-pointer text-xs font-medium">Envoyer le lien par email</summary>
-        <div className="flex flex-wrap gap-2">
-          <Input
-            type="email"
-            value={linkEmail}
-            onChange={(e) => setLinkEmail(e.target.value)}
-            placeholder={effEmail || "email@client.fr"}
-            className="text-xs"
-          />
-          <Button size="sm" onClick={sendLinkByEmail} disabled={sendingLink}>
-            <Send className="h-3.5 w-3.5 mr-1" /> {sendingLink ? "Envoi…" : "Envoyer"}
-          </Button>
-        </div>
-        <p className="text-[11px] text-muted-foreground">
-          {effEmail ? `Par défaut : ${effEmail}` : "Aucun email client enregistré — saisis une adresse."}
-        </p>
-      </details>
-      </section>
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Envoyer le lien par email</DialogTitle>
+            <DialogDescription>Le client reçoit le lien de son espace avec ses documents.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label className="text-xs" htmlFor="portal-link-email">Email du client</Label>
+            <Input
+              id="portal-link-email"
+              type="email"
+              value={linkEmail}
+              onChange={(e) => setLinkEmail(e.target.value)}
+              placeholder={effEmail || "email@client.fr"}
+              className="text-sm"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              {effEmail ? `Par défaut : ${effEmail}` : "Aucun email client enregistré — saisis une adresse."}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setLinkDialogOpen(false)}>Annuler</Button>
+            <Button
+              onClick={async () => { if (await sendLinkByEmail()) setLinkDialogOpen(false); }}
+              disabled={sendingLink}
+            >
+              <Send className="h-3.5 w-3.5 mr-1" /> {sendingLink ? "Envoi…" : "Envoyer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 
   if (taskWorkspace) return (
