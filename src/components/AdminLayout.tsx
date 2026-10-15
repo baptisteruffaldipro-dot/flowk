@@ -1,8 +1,10 @@
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2, TrendingUp, MailQuestion, Landmark, Wallet, Lightbulb, CalendarRange } from "lucide-react";
+import { Home, ShoppingCart, Settings2, ChevronDown, Search, Plus, LayoutDashboard, Users, FolderKanban, ListChecks, Printer, Receipt, LogOut, Sparkles, Inbox, FileCheck2, CalendarDays, ClipboardList, Send, Menu, Sparkle, UserPlus, Palette, Share2, TrendingUp, MailQuestion, Landmark, Wallet, Lightbulb, CalendarRange } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { QuickCreateMenu } from "@/components/QuickCreateMenu";
 import { cn } from "@/lib/utils";
 import QuickCapture from "@/components/QuickCapture";
 import GlobalTimer from "@/components/GlobalTimer";
@@ -11,21 +13,33 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type NavItem = { to: string; icon: any; label: string; end?: boolean; badgeKey?: "leads" | "demandes" };
-const nav: NavItem[] = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard", end: true },
-  { to: "/demandes", icon: MailQuestion, label: "Demandes clients", badgeKey: "demandes" },
-  { to: "/leads", icon: UserPlus, label: "Leads", badgeKey: "leads" },
-  { to: "/clients", icon: Users, label: "Clients" },
-  { to: "/taches", icon: ListChecks, label: "Tâches" },
-  { to: "/agenda", icon: CalendarRange, label: "Agenda" },
-  { to: "/notes", icon: Lightbulb, label: "Idées / Notes" },
-  { to: "/rdv", icon: CalendarDays, label: "Rendez-vous" },
-  { to: "/questionnaires", icon: ClipboardList, label: "Questionnaires" },
-  { to: "/strategies", icon: Sparkle, label: "Stratégies de marque" },
-  { to: "/logos", icon: Palette, label: "Présentations logo" },
-  { to: "/impressions", icon: Printer, label: "Impressions" },
-  { to: "/parametres/paiement", icon: Landmark, label: "Paiement (RIB)" },
+type NavItem = { to: string; label: string; end?: boolean; badgeKey?: "leads" | "demandes" };
+type NavGroup = { label: string; icon: any; items: NavItem[] };
+const groups: NavGroup[] = [
+  { label: "Aujourd'hui", icon: Home, items: [
+    { to: "/", label: "Accueil", end: true },
+    { to: "/agenda", label: "Agenda" },
+    { to: "/demandes", label: "Demandes clients", badgeKey: "demandes" },
+    { to: "/leads", label: "Leads", badgeKey: "leads" },
+  ]},
+  { label: "Ventes", icon: ShoppingCart, items: [
+    { to: "/clients", label: "Clients" },
+    { to: "/taches", label: "Tâches" },
+    { to: "/impressions", label: "Impressions" },
+  ]},
+  { label: "Création", icon: Palette, items: [
+    { to: "/questionnaires", label: "Questionnaires" },
+    { to: "/strategies", label: "Stratégies de marque" },
+    { to: "/logos", label: "Présentations logo" },
+    { to: "/notes", label: "Idées / Notes" },
+  ]},
+  { label: "Pilotage", icon: TrendingUp, items: [
+    { to: "/finance", label: "Finance" },
+    { to: "/rdv", label: "Rendez-vous" },
+  ]},
+  { label: "Réglages", icon: Settings2, items: [
+    { to: "/parametres/paiement", label: "Paiement (RIB)" },
+  ]},
 ];
 
 export default function AdminLayout() {
@@ -36,6 +50,11 @@ export default function AdminLayout() {
   const [unreadLeads, setUnreadLeads] = useState(0);
   const [unreadDemandes, setUnreadDemandes] = useState(0);
   const location = useLocation();
+  const [newOpen, setNewOpen] = useState(false);
+  const [closed, setClosed] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem("nav-closed") || "{}"); } catch { return {}; }
+  });
+  const toggleGroup = (g: string) => setClosed((c) => { const n = { ...c, [g]: !c[g] }; localStorage.setItem("nav-closed", JSON.stringify(n)); return n; });
 
   useEffect(() => {
     const loadCount = async () => {
@@ -115,70 +134,88 @@ export default function AdminLayout() {
   };
 
   const SidebarContent = (
-    <>
-      <div className="px-5 py-6">
-        <div className="text-base font-semibold tracking-tight">Studio</div>
-        <div className="text-xs text-muted-foreground mt-0.5">Gestion projets</div>
+    <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
+      <div className="px-5 pt-5 pb-4 flex items-center gap-2">
+        <div className="h-7 w-7 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground grid place-items-center text-sm font-bold">S</div>
+        <div className="text-base font-semibold tracking-tight text-sidebar-accent-foreground">Studio</div>
       </div>
-      <div className="px-3 mb-2">
-        <Button onClick={() => { setCaptureOpen(true); setMobileNavOpen(false); }} size="sm" className="w-full justify-start gap-2">
-          <Sparkles className="h-4 w-4" /> Capture rapide
-          <span className="ml-auto text-[10px] opacity-70 hidden md:inline">⌘K</span>
-        </Button>
+      <div className="px-3 space-y-2">
+        <button
+          onClick={() => { setCaptureOpen(true); setMobileNavOpen(false); }}
+          className="w-full flex items-center gap-2 h-10 px-3 rounded-full bg-card text-muted-foreground text-sm"
+        >
+          <Search className="h-4 w-4" /> <span className="truncate">Rechercher ou capturer…</span>
+          <span className="ml-auto text-[10px] border rounded px-1 hidden md:inline">⌘K</span>
+        </button>
+        <Popover open={newOpen} onOpenChange={setNewOpen}>
+          <PopoverTrigger asChild>
+            <button className="w-full flex items-center gap-2 h-10 px-4 rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold hover:opacity-90">
+              <Plus className="h-4 w-4" /> Nouveau <ChevronDown className="h-4 w-4 ml-auto" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-64 p-2">
+            <QuickCreateMenu variant="list" onCreated={() => { setNewOpen(false); setMobileNavOpen(false); }} />
+          </PopoverContent>
+        </Popover>
+        <div className="[&_button]:text-sidebar-foreground [&_button:hover]:bg-sidebar-accent"><NotificationsBell /></div>
       </div>
-      <div className="px-3 mb-2">
-        <NotificationsBell />
-      </div>
-      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-        {nav.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            onClick={() => setMobileNavOpen(false)}
-            className={({ isActive }) =>
-              cn(
-                "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
-                isActive
-                  ? "bg-secondary text-foreground font-medium"
-                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-              )
-            }
-          >
-            <item.icon className="h-4 w-4" />
-            <span className="flex-1">{item.label}</span>
-            {item.badgeKey === "leads" && unreadLeads > 0 && (
-              <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-sky-500 text-white text-[10px] font-semibold">
-                {unreadLeads}
-              </span>
-            )}
-            {item.badgeKey === "demandes" && unreadDemandes > 0 && (
-              <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-semibold">
-                {unreadDemandes}
-              </span>
-            )}
-          </NavLink>
-        ))}
+      <div className="h-px bg-sidebar-border my-3" />
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto pb-4">
+        {groups.map((g) => {
+          const isOpen = !closed[g.label];
+          return (
+            <div key={g.label}>
+              <button onClick={() => toggleGroup(g.label)} className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md text-sm font-medium text-sidebar-accent-foreground hover:bg-sidebar-accent">
+                <g.icon className="h-4 w-4" />
+                <span className="flex-1 text-left">{g.label}</span>
+                <ChevronDown className={cn("h-4 w-4 opacity-60 transition-transform", !isOpen && "-rotate-90")} />
+              </button>
+              {isOpen && (
+                <div className="ml-4 pl-2 border-l border-sidebar-border space-y-0.5 py-1">
+                  {g.items.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      onClick={() => setMobileNavOpen(false)}
+                      className={({ isActive }) => cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-colors",
+                        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "hover:text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {item.badgeKey === "leads" && unreadLeads > 0 && (
+                        <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-[10px] font-semibold">{unreadLeads}</span>
+                      )}
+                      {item.badgeKey === "demandes" && unreadDemandes > 0 && (
+                        <span className="min-w-5 h-5 px-1.5 grid place-items-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-[10px] font-semibold">{unreadDemandes}</span>
+                      )}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
-      <div className="p-3 border-t border-border">
-        <div className="px-3 py-2 text-xs text-muted-foreground truncate">{user?.email}</div>
-        <Button variant="ghost" size="sm" onClick={handleSignOut} className="w-full justify-start gap-2">
-          <LogOut className="h-4 w-4" /> Déconnexion
-        </Button>
+      <div className="p-3 border-t border-sidebar-border flex items-center gap-2.5">
+        <div className="h-8 w-8 rounded-full bg-sidebar-primary text-sidebar-primary-foreground grid place-items-center text-xs font-bold uppercase">{user?.email?.[0] ?? "B"}</div>
+        <div className="min-w-0 flex-1 text-xs truncate">{user?.email}</div>
+        <button onClick={handleSignOut} aria-label="Déconnexion" className="p-1.5 rounded hover:bg-sidebar-accent"><LogOut className="h-4 w-4" /></button>
       </div>
-    </>
+    </div>
   );
 
   return (
     <div className="min-h-screen flex w-full bg-background">
       {/* Sidebar desktop */}
-      <aside className="hidden md:flex w-60 border-r border-border bg-card flex-col shrink-0">
+      <aside className="hidden md:flex w-64 flex-col shrink-0 sticky top-0 h-screen">
         {SidebarContent}
       </aside>
 
       {/* Sidebar mobile (sheet) */}
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <SheetContent side="left" className="p-0 w-64 flex flex-col bg-card">
+        <SheetContent side="left" className="p-0 w-72 flex flex-col bg-sidebar border-sidebar-border">
           {SidebarContent}
         </SheetContent>
       </Sheet>
