@@ -917,13 +917,6 @@ export default function Tasks() {
     if (t && !t.bat_id) setBatForTask(t);
   };
 
-
-  const triggerPrintIfNeeded = (taskId: string, newStatus: Status) => {
-    if (newStatus !== "impression") return;
-    const t = tasks.find((x) => x.id === taskId);
-    if (t) setPrintForTask(t);
-  };
-
   const onDragEnd = async (e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
@@ -1046,7 +1039,6 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -1063,7 +1055,6 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -1101,7 +1092,6 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -1162,7 +1152,6 @@ export default function Tasks() {
         setDividers(prev.dividers);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerPrintIfNeeded(task.id, newStatus);
       }
       return;
     }
@@ -1185,7 +1174,6 @@ export default function Tasks() {
         setTasks(prev);
       } else {
         triggerBatIfNeeded(task.id, newStatus);
-        triggerPrintIfNeeded(task.id, newStatus);
       }
     }
   };
