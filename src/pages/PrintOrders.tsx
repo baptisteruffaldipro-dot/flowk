@@ -486,13 +486,22 @@ export default function PrintOrders() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-2 flex items-center gap-1">
                   <Select value={o.payment_status ?? "non_regle"} onValueChange={(v) => updateOrderPayment(o.id, v)}>
                     <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(PRINT_PAYMENT_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    title="Dupliquer la commande"
+                    onClick={() => duplicateOrder(o)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))}
