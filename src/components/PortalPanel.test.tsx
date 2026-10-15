@@ -24,14 +24,14 @@ vi.mock("@/integrations/supabase/client", () => ({
 describe("Task portal workspace", () => {
   it("keeps the four sections and preserves an unsent reply across tabs", async () => {
     render(<PortalPanel entityType="task" entityId="task" taskWorkspace={{ work: <p>Brief de la tâche</p>, billing: <p>Chiffrage de la tâche</p> }} />);
-    await screen.findByRole("tab", { name: "Travail" });
+    await screen.findByRole("tab", { name: "Tâches & notes" });
     expect(screen.getAllByRole("tab")).toHaveLength(4);
     expect(screen.getByText("Brief de la tâche")).toBeVisible();
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Échanges" }), { button: 0, ctrlKey: false });
     const reply = screen.getByPlaceholderText("Répondre au client…");
     await waitFor(() => expect(reply).toBeVisible());
     fireEvent.change(reply, { target: { value: "Correction en cours" } });
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "Travail" }), { button: 0, ctrlKey: false });
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Tâches & notes" }), { button: 0, ctrlKey: false });
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Échanges" }), { button: 0, ctrlKey: false });
     expect(reply).toHaveValue("Correction en cours");
     expect(screen.getByRole("link", { name: "Ouvrir" })).toHaveAttribute("href", "https://example.test/p/c/test");

@@ -1089,7 +1089,7 @@ export default function PortalPanel({
       <div className="border-b mb-6 overflow-x-auto">
         <TabsList aria-label="Sections de la tâche" className="h-auto w-max min-w-full justify-start gap-1 rounded-none bg-transparent p-0">
           {[
-            { value: "work", label: "Travail", icon: ClipboardList },
+            { value: "work", label: "Tâches & notes", icon: ClipboardList },
             { value: "files", label: "Fichiers & BAT", icon: FolderOpen, count: deliverables.length },
             { value: "payment", label: "Impression & règlement", icon: Printer },
             { value: "messages", label: "Échanges", icon: MessageSquare, count: clientObservations },
