@@ -273,9 +273,15 @@ export default function PortalPanel({
   };
 
   const togglePrintOrder = async (id: string, on: boolean) => {
-    const next = on
+    const base = on
       ? Array.from(new Set([...selectedPrintOrders, id]))
       : selectedPrintOrders.filter((x) => x !== id);
+    // Ignore les commandes supprimées encore référencées
+    const { data: existing } = base.length
+      ? await supabase.from("print_orders").select("id").in("id", base)
+      : { data: [] as { id: string }[] };
+    const alive = new Set((existing ?? []).map((r: any) => r.id));
+    const next = base.filter((x) => alive.has(x));
     await update({ print_order_ids: next, print_order_id: next[0] ?? null } as any);
     await load();
   };
