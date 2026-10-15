@@ -153,7 +153,7 @@ export default function Dashboard() {
                 <div className="text-muted-foreground truncate">{r.client ?? "—"}</div>
                 <div>{ballChip(r.ball)}</div>
                 <div className={cn("text-muted-foreground truncate", late && "text-destructive")}>
-                  {late ? `En retard · échéance ${new Date(r.deadline!).toLocaleDateString("fr-FR")}` : r.where}
+                  {late ? `En retard · ${new Date(r.deadline!).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}` : r.where}
                 </div>
                 <div className="md:text-right"><span className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs bg-card">Ouvrir <ArrowUpRight className="h-3 w-3" /></span></div>
               </Link>
