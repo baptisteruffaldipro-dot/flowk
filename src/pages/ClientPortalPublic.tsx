@@ -246,10 +246,16 @@ export default function ClientPortalPublic() {
         ) : <header className="space-y-2"><h1 className="text-3xl font-semibold tracking-normal">{title}</h1>{client?.name && <p className="text-sm text-muted-foreground">Pour {client.name}</p>}<p className="text-sm text-muted-foreground">Votre BAT est en cours de préparation.</p></header>}
         {canValidate && files.length === 0 && <Button disabled={busy} onClick={() => act("validate")}><CheckCircle2 className="mr-2 h-4 w-4" />Valider la commande</Button>}
         {/* Brief */}
-        {(entity.notes || entity.description) && (
-          <section className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief</h2>
-            <p className="text-sm whitespace-pre-wrap">{entity.notes || entity.description}</p>
+        {(entity.brief || entity.description || entity.notes) && (
+          <section className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-5">
+            {(entity.brief || entity.description) && <div className="space-y-2">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief</h2>
+              <p className="text-sm whitespace-pre-wrap">{entity.brief || entity.description}</p>
+            </div>}
+            {entity.notes && <div className="space-y-2">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes complémentaires</h2>
+              <p className="text-sm whitespace-pre-wrap">{entity.notes}</p>
+            </div>}
           </section>
         )}
 
