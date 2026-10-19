@@ -14,24 +14,21 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const daysSince = (d: string) => Math.max(0, Math.floor((Date.now() - new Date(d).getTime()) / 86400000));
-const eur = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 export default function Dashboard() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [filter, setFilter] = useState<"tout" | Ball>("tout");
-  const [k, setK] = useState({ today: 0, late: 0, printsToOrder: 0, leads: 0, requests: 0, cash: null as number | null, debts: 0, rdv: null as string | null });
+  const [k, setK] = useState({ today: 0, late: 0, printsToOrder: 0, leads: 0, requests: 0, rdv: null as string | null });
   const [activity, setActivity] = useState<{ id: string; kind: string; created_at: string }[]>([]);
 
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [tasks, prints, leads, requests, cash, debts, appts, events] = await Promise.all([
+      const [tasks, prints, leads, requests, appts, events] = await Promise.all([
         supabase.from("tasks").select("id,title,status,deadline,updated_at,scheduled_date,prestation,prestations,clients(name)").not("status", "in", "(envoye,archive)").order("updated_at", { ascending: false }).limit(200),
         supabase.from("print_orders").select("status").eq("status", "a_commander" as any),
         supabase.from("leads").select("id", { count: "exact", head: true }).is("read_at", null),
         supabase.from("client_requests").select("id", { count: "exact", head: true }).eq("status", "nouveau" as any),
-        supabase.from("bank_balances" as any).select("amount").order("as_of_date", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("finance_transactions").select("amount_ttc").eq("kind", "sale").is("paid_date", null),
         supabase.from("appointments").select("title,start_at").gte("start_at", new Date().toISOString()).neq("status", "annule").order("start_at").limit(1),
         supabase.from("client_portal_events").select("id,kind,created_at").order("created_at", { ascending: false }).limit(6),
       ]);
@@ -52,8 +49,6 @@ export default function Dashboard() {
         today: todayCount, late,
         printsToOrder: (prints.data as any[])?.length ?? 0,
         leads: leads.count ?? 0, requests: requests.count ?? 0,
-        cash: (cash.data as any)?.amount ?? null,
-        debts: ((debts.data as any[]) ?? []).reduce((s, x) => s + (Number(x.amount_ttc) || 0), 0),
         rdv: a ? new Date(a.start_at).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " · " + a.title : null,
       });
       setActivity((events.data as any[]) ?? []);
@@ -92,8 +87,6 @@ export default function Dashboard() {
     { to: "/leads", label: "Nouveaux leads", value: String(k.leads), alert: k.leads > 0 },
     { to: "/demandes", label: "Devis", value: String(k.requests), alert: k.requests > 0 },
     { to: "/rdv", label: "Prochain RDV", value: k.rdv ?? "—" },
-    { to: "/finance/tresorerie", label: "Trésorerie", value: k.cash != null ? eur(k.cash) : "—" },
-    { to: "/finance/transactions", label: "Dettes clients", value: eur(k.debts), alert: k.debts > 0 },
   ];
 
   const ballChip = (b: Ball) => (
