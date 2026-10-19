@@ -194,7 +194,7 @@ export default function ClientPortalPublic() {
     ...reviews.filter((r: any) => r.status === "approved").map((r: any) => ({ label: `BAT validé : ${r.file}`, at: r.at, detail: r.signed_by ? `Signé par ${r.signed_by}` : undefined })),
     ...linkedPrintOrders.filter((o: any) => o.bat_validated_at).map((o: any) => ({ label: `BAT de la commande ${o.reference ?? o.description ?? "d’impression"} validé`, at: o.bat_validated_at })),
     ...(p.client_validated_at ? [{ label: "Validation de la commande", at: p.client_validated_at }] : []),
-    ...(p.created_at ? [{ label: "Commande reçue", at: p.created_at }] : []),
+    ...(p.created_at ? [{ label: "Projet ouvert", at: p.created_at }] : []),
   ].sort((a, b) => String(b.at ?? "").localeCompare(String(a.at ?? "")));
 
   return (
