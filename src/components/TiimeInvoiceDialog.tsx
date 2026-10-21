@@ -45,7 +45,7 @@ export default function TiimeInvoiceDialog({ open, onOpenChange, clientId, title
         ids = [...set];
       }
       const { data: pos } = ids.length
-        ? await supabase.from("print_orders").select("id,description,reference,quantity,amount,tiime_invoice_id").in("id", ids)
+        ? await supabase.from("print_orders").select("id,description,reference,quantity,amount,format,support,grammage,colors,finitions,tiime_invoice_id").in("id", ids)
         : { data: [] as any[] };
       const next: InvoiceLine[] = [];
       if (task) next.push(prestationLine(task, prestationHT));
