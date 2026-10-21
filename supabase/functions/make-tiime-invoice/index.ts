@@ -120,8 +120,14 @@ Deno.serve(async (req) => {
     try { out = JSON.parse(text); } catch { /* Make sans réponse JSON */ }
     const id = out?.tiime_invoice_id ? String(out.tiime_invoice_id) : null;
     const number = out?.number ? String(out.number) : null;
+    if (!id) {
+      // Make n'a pas confirmé la création (scénario en erreur ou sans Webhook response) :
+      // on ne bloque pas les lignes, pour pouvoir relancer.
+      await mark({ tiime_invoice_status: null });
+      return json({ error: "Make n'a pas confirmé la création de la facture dans Tiime. Vérifie le scénario (client introuvable ?).", details: text }, 502);
+    }
     await mark({
-      tiime_invoice_id: id ?? "envoyée",
+      tiime_invoice_id: id,
       tiime_invoice_number: number,
       tiime_invoice_status: "draft",
       tiime_sent_at: new Date().toISOString(),
