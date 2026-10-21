@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useBusinessUnits } from "@/hooks/useBusinessUnits";
 import { monthlyHT, salesTotals, toSales, type SaleRow } from "@/lib/salesDashboard";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 const eur = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
 const MONTHS = ["Janv.", "Févr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
@@ -43,6 +44,15 @@ export default function SalesDashboard() {
     if (kind !== "all" && r.kind !== kind) return false;
     return true;
   }), [rows, year, month, unit, kind]);
+
+  const remove = async (r: SaleRow) => {
+    if (!confirm(`Retirer « ${r.label} » du CA ?\nLa ligne repassera « à facturer » dans Flowk. La facture dans Tiime n'est pas supprimée.`)) return;
+    const table = r.kind === "prestation" ? "tasks" : "print_orders";
+    const { error } = await supabase.from(table).update({ tiime_invoice_id: null, tiime_invoice_number: null, tiime_invoice_status: null, tiime_sent_at: null, tiime_amount_ht: null }).eq("id", r.id);
+    if (error) return toast.error(error.message);
+    setRows((rs) => rs.filter((x) => !(x.id === r.id && x.kind === r.kind)));
+    toast.success("Ligne retirée du CA");
+  };
 
   const totals = salesTotals(filtered);
   const months = monthlyHT(rows.filter((r) => (unit === "all" || (r.unitId ?? "none") === unit) && (kind === "all" || r.kind === kind)), year);
@@ -135,14 +145,14 @@ export default function SalesDashboard() {
                   <th className="px-5 py-2 font-normal">Date</th><th className="py-2 font-normal">Facture</th>
                   <th className="py-2 font-normal">Client</th><th className="py-2 font-normal">Libellé</th>
                   <th className="py-2 font-normal">Pôle</th><th className="py-2 font-normal text-right">HT</th>
-                  <th className="px-5 py-2 font-normal text-right">TTC</th>
+                  <th className="py-2 font-normal text-right">TTC</th><th className="px-5 py-2" />
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
                   <tr key={r.kind + r.id} className="border-b last:border-0">
                     <td className="px-5 py-2 whitespace-nowrap">{new Date(r.sentAt).toLocaleDateString("fr-FR")}</td>
-                    <td className="py-2">{r.invoiceNumber ?? "Brouillon"}</td>
+                    <td className="py-2">{r.invoiceNumber ?? <Badge variant="secondary">Envoyé</Badge>}</td>
                     <td className="py-2">{r.client}</td>
                     <td className="py-2">
                       <Badge variant="outline" className="mr-2">{r.kind === "prestation" ? "Presta" : "Impression"}</Badge>
@@ -150,7 +160,8 @@ export default function SalesDashboard() {
                     </td>
                     <td className="py-2 text-muted-foreground">{unitName(r.unitId)}</td>
                     <td className="py-2 text-right whitespace-nowrap">{eur(r.ht)}</td>
-                    <td className="px-5 py-2 text-right whitespace-nowrap font-medium">{eur(r.ht * 1.2)}</td>
+                    <td className="py-2 text-right whitespace-nowrap font-medium">{eur(r.ht * 1.2)}</td>
+                    <td className="px-5 py-2 text-right"><Button variant="ghost" size="icon" aria-label="Retirer la ligne" onClick={() => remove(r)}><Trash2 className="h-4 w-4" /></Button></td>
                   </tr>
                 ))}
               </tbody>
