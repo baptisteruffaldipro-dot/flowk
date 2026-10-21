@@ -87,12 +87,12 @@ export default function TiimeInvoiceDialog({ open, onOpenChange, clientId, title
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl min-w-0 overflow-hidden">
         <DialogHeader>
           <DialogTitle>Créer la facture Tiime</DialogTitle>
           <DialogDescription>Une seule facture, créée en brouillon dans Tiime. Tu la relis et l'envoies depuis Tiime.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           {lines.length === 0 && <p className="text-sm text-muted-foreground">Rien à facturer.</p>}
           {lines.map((l) => (
             <div key={l.key} className="flex items-center gap-3 rounded-md border p-3">
@@ -102,13 +102,13 @@ export default function TiimeInvoiceDialog({ open, onOpenChange, clientId, title
                 onCheckedChange={(v) => toggle(l.key, !!v)}
               />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium truncate">{l.description}</div>
+                <div className="text-sm font-medium whitespace-pre-line break-words">{l.description}</div>
                 <div className="text-xs text-muted-foreground">
                   {l.source === "task" ? "Prestation" : `Impression · ${l.quantity} ex.`}
                   {l.already_invoiced && " · déjà facturée"}
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1">
                 <Input
                   type="number" step="0.01" className="h-8 w-28 text-right"
                   value={l.line_amount_ht} disabled={l.already_invoiced}
