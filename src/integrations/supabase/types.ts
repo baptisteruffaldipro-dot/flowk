@@ -2382,6 +2382,7 @@ export type Database = {
           selected_tier: Json | null
           status: Database["public"]["Enums"]["print_status"]
           support: string | null
+          tiime_amount_ht: number | null
           tiime_invoice_id: string | null
           tiime_invoice_number: string | null
           tiime_invoice_status: string | null
@@ -2424,6 +2425,7 @@ export type Database = {
           selected_tier?: Json | null
           status?: Database["public"]["Enums"]["print_status"]
           support?: string | null
+          tiime_amount_ht?: number | null
           tiime_invoice_id?: string | null
           tiime_invoice_number?: string | null
           tiime_invoice_status?: string | null
@@ -2466,6 +2468,7 @@ export type Database = {
           selected_tier?: Json | null
           status?: Database["public"]["Enums"]["print_status"]
           support?: string | null
+          tiime_amount_ht?: number | null
           tiime_invoice_id?: string | null
           tiime_invoice_number?: string | null
           tiime_invoice_status?: string | null
@@ -3250,6 +3253,7 @@ export type Database = {
           scheduled_date: string | null
           scheduled_start: string | null
           status: Database["public"]["Enums"]["task_status"]
+          tiime_amount_ht: number | null
           tiime_invoice_id: string | null
           tiime_invoice_number: string | null
           tiime_invoice_status: string | null
@@ -3297,6 +3301,7 @@ export type Database = {
           scheduled_date?: string | null
           scheduled_start?: string | null
           status?: Database["public"]["Enums"]["task_status"]
+          tiime_amount_ht?: number | null
           tiime_invoice_id?: string | null
           tiime_invoice_number?: string | null
           tiime_invoice_status?: string | null
@@ -3344,6 +3349,7 @@ export type Database = {
           scheduled_date?: string | null
           scheduled_start?: string | null
           status?: Database["public"]["Enums"]["task_status"]
+          tiime_amount_ht?: number | null
           tiime_invoice_id?: string | null
           tiime_invoice_number?: string | null
           tiime_invoice_status?: string | null
