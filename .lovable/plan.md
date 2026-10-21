@@ -1,36 +1,31 @@
-# Création automatique de factures Tiime depuis Flowk
+# Création automatique de factures Tiime depuis Flowk (extension Chrome)
 
-## Constat
-- Tiime ne fournit pas d'API publique : elle est réservée aux éditeurs partenaires, sur demande.
-- La seule voie officielle sans partenariat est l'intégration Tiime sur Make.com, qui sait créer des factures.
-- Il existe un connecteur non officiel qui utilise l'API interne de Tiime. Je l'écarte : il peut casser sans prévenir, et il faudrait stocker ton mot de passe Tiime.
+## Principe
+Ton idée d'extension marche, et on peut la simplifier : pas besoin d'un serveur sur ton Mac. L'extension « Flowk ↔ Tiime » reste dans Chrome. Elle utilise ta session Tiime déjà ouverte pour créer la facture. Ta connexion Tiime ne sort jamais du navigateur : elle n'est ni envoyée à Flowk, ni enregistrée en ligne, ni lue par moi.
 
-## Fonctionnement proposé
 ```text
-Flowk (tâche / commande)  ->  bouton "Créer la facture Tiime"
-        -> envoi sécurisé vers un scénario Make
-        -> Make crée la facture brouillon dans Tiime
-        -> Make renvoie le n° de facture à Flowk  ->  affiché sur la tâche
+Flowk (tâche)  --"Créer la facture Tiime"-->  extension Chrome
+extension  --ta session Tiime ouverte-->  Tiime : facture en brouillon
+extension  --n° de facture-->  Flowk (affiché sur la tâche)
 ```
 
 ## Ce que tu verras
-1. Dans la fiche tâche (section facturation) et dans Impressions : un bouton « Créer la facture Tiime ».
-2. Les éléments envoyés : client (nom, email, adresse), lignes HT (prestation, quantité choisie, prix unitaire HT), taux de TVA et date.
-3. La facture arrive en **brouillon** dans Tiime. Tu la vérifies, puis tu l'envoies toi-même : rien ne part au client automatiquement.
-4. Une fois la facture créée, la tâche affiche « Facture Tiime créée » avec son numéro. Le bouton ne peut plus créer de doublon.
-5. Option, à confirmer plus tard : la facture se crée toute seule quand la tâche passe en « En facturation ».
+1. Dans Flowk, une page « Extension Tiime » : bouton de téléchargement et installation en 4 étapes.
+2. Dans la fiche tâche (facturation) et dans Impressions, un bouton « Créer la facture Tiime ». Il est grisé, avec une explication, si l'extension n'est pas installée ou si Tiime n'est pas ouvert.
+3. Ce qui est envoyé : le client (nom, email, adresse), les lignes en HT (prestation, quantité choisie, prix unitaire HT), la TVA et la date.
+4. La facture arrive en **brouillon** dans Tiime. Tu la relis et tu l'envoies toi-même.
+5. La tâche affiche ensuite « Facture Tiime n° … ». Le bouton ne peut plus créer de doublon.
 
-## Ce que tu devras faire (une seule fois)
-- Créer un compte Make et y connecter Tiime. Je te donne le modèle de scénario et les étapes, clic par clic.
-- Coller dans Flowk l'adresse du scénario Make (je te la demanderai de façon sécurisée).
-
-## Hors périmètre
-- Le module Finance n'est pas modifié : il reste figé.
-- Aucun test n'utilise un vrai client. Pour tester, on créera une facture sur un client fictif « Test ».
+## À savoir
+- Cette méthode passe par le fonctionnement interne du site Tiime, qui n'est pas officiel. Si Tiime change son site, il faudra mettre l'extension à jour. Solution de repli : l'intégration officielle Make.com.
+- Ça ne fonctionne que sur ton Chrome, avec Tiime ouvert dans un onglet.
+- Premier test sur un client fictif « Test » uniquement, en brouillon. Aucun vrai client.
+- Le module Finance n'est pas modifié.
 
 ## Détails techniques
-- Une function backend `tiime-create-invoice` envoie un payload JSON signé au webhook Make, stocké dans le secret `MAKE_TIIME_WEBHOOK_URL`, plus un secret partagé pour le retour.
-- Une function `tiime-invoice-callback` reçoit l'ID et le numéro de facture, après vérification du secret.
-- Migration : colonnes `tiime_invoice_id`, `tiime_invoice_number`, `tiime_invoice_status`, `tiime_sent_at` sur les tâches et commandes d'impression. Les règles d'accès (RLS) existantes s'appliquent.
-- Tests : construction du payload (lignes HT, TVA, quantité choisie) et blocage des doublons.
-- Plus tard, si Tiime accorde un accès API partenaire, le passage par Make pourra être remplacé par un appel direct, sans changer l'interface.
+- `extension/` (Manifest V3) : `host_permissions` sur `apps.tiime.fr` et `chronos-api.tiime-apps.com`. Un `webRequest` lit l'en-tête Authorization et le garde dans `chrome.storage.session` (mémoire uniquement). Le service worker appelle les endpoints internes : clients, puis facture brouillon.
+- `externally_connectable` limité aux domaines flowk.lovable.app et preview. Flowk utilise `chrome.runtime.sendMessage(extId, {type:"createInvoice", payload})` et l'extension répond `{id, number}`.
+- Les endpoints de facturation de Tiime ne sont pas documentés. Première étape de construction : les identifier avec ta session pendant une création manuelle, puis les figer dans l'extension.
+- Migration : colonnes `tiime_invoice_id`, `tiime_invoice_number`, `tiime_created_at` sur les tâches et commandes d'impression, sous les règles d'accès existantes.
+- Tests : construction des lignes HT/TVA et blocage des doublons.
+- ZIP servi depuis `public/` et téléchargé dans l'app via fetch+blob.
