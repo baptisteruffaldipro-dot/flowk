@@ -60,7 +60,7 @@ export default function SalesDashboard() {
   const unitName = (id: string | null) => units.find((u) => u.id === id)?.name ?? "Sans pôle";
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="p-4 md:p-8 space-y-6 pb-16">
       <PageHeader title="Ventes & CA" description="Uniquement les lignes facturées et envoyées à Tiime. Montants HT, TTC mis en avant." />
 
       <div className="flex flex-wrap items-center gap-2">
