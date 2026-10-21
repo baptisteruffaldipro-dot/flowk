@@ -25,7 +25,12 @@ export default function PdfCanvasViewer({ src, zoom, baseWidth, overlay, onPageC
     setPages(0);
     (async () => {
       try {
-        const doc = await pdfjsLib.getDocument({ url: src }).promise;
+        const doc = await pdfjsLib.getDocument({
+          url: src,
+          // Profils ICC + conversion qcms (wasm) : rendu CMJN fidèle à l'écran
+          iccUrl: "/pdfjs/iccs/",
+          wasmUrl: "/pdfjs/wasm/",
+        }).promise;
         if (cancelled) return;
         docRef.current = doc;
         setPages(doc.numPages);
