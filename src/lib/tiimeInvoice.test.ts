@@ -30,6 +30,8 @@ describe("facture Tiime prestation + impression", () => {
 
   it("ajoute les caractéristiques d'impression au libellé", () => {
     const l = printLine({ id: "p1", description: "Test tiime", quantity: 247, amount: 300, format: "A4", support: "pelliculage mat", grammage: "300gr", finitions: "Vernis 3D" });
-    expect(l.description).toBe("Test tiime\nFormat : A4 — Support : pelliculage mat — Grammage : 300gr — Finitions : Vernis 3D");
+    expect(l.description).toBe("Test tiime — 247 exemplaires — Format : A4 — Support : pelliculage mat — Grammage : 300gr — Finitions : Vernis 3D");
+    expect(l.quantity).toBe(1);
+    expect(l.unit_amount_ht).toBe(300);
   });
 });

@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
         client: { name: "Client Test", contact: "Client Test", email: "test@example.com", address: "1 rue Test, 17200 Royan", phone: null },
         lines: [
           { sequence: 1, category: "benefit", description: "Création graphique", quantity: 1, unit_amount_ht: 500, line_amount_ht: 500, vat_rate: 20 },
-          { sequence: 2, category: "sale", description: "Cartes de visite\nFormat : 85x55 mm — Support : Couché mat — Grammage : 350 g — Finitions : Pelliculage mat", quantity: 250, unit_amount_ht: 0.32, line_amount_ht: 80, vat_rate: 20 },
+          { sequence: 2, category: "sale", description: "Cartes de visite — Format : 85x55 mm — Support : Couché mat — Grammage : 350 g — Finitions : Pelliculage mat", quantity: 250, unit_amount_ht: 0.32, line_amount_ht: 80, vat_rate: 20 },
         ],
         totals: { ht: 580, vat: 116, ttc: 696 },
         refs: { task_ids: [], print_order_ids: [] },

@@ -68,9 +68,17 @@ export function printLine(po: PrintOrderLike, vatRate = 20): InvoiceLine {
     source: "print",
     source_id: po.id,
     category: "sale",
-    description: specs ? `${label}\n${specs}` : label,
-    quantity: qty,
-    unit_amount_ht: Math.round((total / qty) * 10000) / 10000,
+    // Tiime rejects unit prices with more than 2 decimals: when the per-unit
+    // price isn't exact, bill one lot and keep the real quantity in the label.
+    ...(() => {
+      const unit = r2(total / qty);
+      const exact = Math.abs(unit * qty - total) < 0.005;
+      const qtyLabel = exact ? "" : `${qty} exemplaires`;
+      const desc = [label, qtyLabel, specs].filter(Boolean).join(" — ");
+      return exact
+        ? { description: desc, quantity: qty, unit_amount_ht: unit }
+        : { description: desc, quantity: 1, unit_amount_ht: total };
+    })(),
     line_amount_ht: total,
     vat_rate: vatRate,
     already_invoiced: !!po.tiime_invoice_id,
