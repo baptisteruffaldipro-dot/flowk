@@ -87,7 +87,7 @@ export default function TiimeInvoiceDialog({ open, onOpenChange, clientId, title
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl min-w-0 overflow-hidden">
         <DialogHeader>
           <DialogTitle>Créer la facture Tiime</DialogTitle>
           <DialogDescription>Une seule facture, créée en brouillon dans Tiime. Tu la relis et l'envoies depuis Tiime.</DialogDescription>
