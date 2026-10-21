@@ -213,8 +213,10 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen flex w-full bg-background">
       {/* Sidebar desktop */}
-      <aside className="hidden md:flex w-64 flex-col shrink-0 sticky top-0 h-screen">
-        {SidebarContent}
+      <aside className="hidden md:flex w-72 shrink-0 sticky top-0 h-screen p-3">
+        <div className="flex flex-col w-full min-h-0 rounded-2xl border border-sidebar-border shadow-xl overflow-hidden">
+          {SidebarContent}
+        </div>
       </aside>
 
       {/* Sidebar mobile (sheet) */}
