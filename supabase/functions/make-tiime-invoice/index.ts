@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     try {
       res = await fetch(webhook, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-flowk-secret": shared },
+        headers: { "Content-Type": "application/json", "x-make-apikey": shared },
         body: JSON.stringify(payload),
       });
     } catch (e) {
