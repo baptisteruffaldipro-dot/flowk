@@ -5,7 +5,7 @@ export type InvoiceLine = {
   key: string;                 // "task:<id>" ou "print:<id>"
   source: "task" | "print";
   source_id: string;
-  category: "benefit" | "goods"; // Presta / Bien dans Tiime
+  category: "benefit" | "sale"; // Presta / Bien dans Tiime
   description: string;
   quantity: number;
   unit_amount_ht: number;
@@ -55,7 +55,7 @@ export function printLine(po: PrintOrderLike, vatRate = 20): InvoiceLine {
     key: `print:${po.id}`,
     source: "print",
     source_id: po.id,
-    category: "goods",
+    category: "sale",
     description: label,
     quantity: qty,
     unit_amount_ht: Math.round((total / qty) * 10000) / 10000,
