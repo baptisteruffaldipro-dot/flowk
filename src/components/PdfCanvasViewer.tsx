@@ -27,9 +27,11 @@ export default function PdfCanvasViewer({ src, zoom, baseWidth, overlay, onPageC
       try {
         const doc = await pdfjsLib.getDocument({
           url: src,
-          // Profils ICC + conversion qcms (wasm) : rendu CMJN fidèle à l'écran
+          // Rendu CMJN fidèle (profils ICC + conversion qcms) : sans useWorkerFetch,
+          // pdf.js désactive IccColorSpace et retombe sur une approximation qui grise les noirs.
           iccUrl: "/pdfjs/iccs/",
           wasmUrl: "/pdfjs/wasm/",
+          useWorkerFetch: true,
         }).promise;
         if (cancelled) return;
         docRef.current = doc;
