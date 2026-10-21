@@ -25,7 +25,14 @@ export default function PdfCanvasViewer({ src, zoom, baseWidth, overlay, onPageC
     setPages(0);
     (async () => {
       try {
-        const doc = await pdfjsLib.getDocument({ url: src }).promise;
+        const doc = await pdfjsLib.getDocument({
+          url: src,
+          // Rendu CMJN fidèle (profils ICC + conversion qcms) : sans useWorkerFetch,
+          // pdf.js désactive IccColorSpace et retombe sur une approximation qui grise les noirs.
+          iccUrl: "/pdfjs/iccs/",
+          wasmUrl: "/pdfjs/wasm/",
+          useWorkerFetch: true,
+        }).promise;
         if (cancelled) return;
         docRef.current = doc;
         setPages(doc.numPages);
