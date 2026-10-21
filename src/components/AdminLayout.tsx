@@ -35,6 +35,7 @@ const groups: NavGroup[] = [
     { to: "/notes", label: "Idées / Notes" },
   ]},
   { label: "Pilotage", icon: TrendingUp, items: [
+    { to: "/ventes", label: "Ventes & CA" },
     { to: "/finance", label: "Finance", tag: "chantier" },
   ]},
   { label: "Réglages", icon: Settings2, items: [

@@ -132,6 +132,15 @@ Deno.serve(async (req) => {
       tiime_invoice_status: "draft",
       tiime_sent_at: new Date().toISOString(),
     });
+    // Montant HT réellement facturé par ligne, pour le tableau de bord des ventes.
+    const sums = new Map<string, { table: string; id: string; ht: number }>();
+    for (const l of lines) {
+      const k = `${l.source}:${l.source_id}`;
+      const cur = sums.get(k) ?? { table: l.source === "task" ? "tasks" : "print_orders", id: l.source_id, ht: 0 };
+      cur.ht = r2(cur.ht + Number(l.line_amount_ht));
+      sums.set(k, cur);
+    }
+    await Promise.all([...sums.values()].map((s) => admin.from(s.table).update({ tiime_amount_ht: s.ht }).eq("id", s.id)));
     return json({ ok: true, tiime_invoice_id: id, number });
   } catch (e) {
     console.error("make-tiime-invoice error:", e);
