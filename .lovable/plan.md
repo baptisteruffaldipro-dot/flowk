@@ -10,7 +10,7 @@ Flowk (tâche / commande) -> "Créer la facture Tiime"
 ```
 
 ## Ce que tu verras
-1. Un bouton « Créer la facture Tiime » dans la fiche tâche (section facturation) et dans Impressions.
+1. Un bouton « Créer la facture Tiime » dans la fiche tâche (section facturation). Il crée **une seule facture** qui peut regrouper la prestation et les commandes d'impression liées à la tâche. Avant l'envoi, un aperçu affiche les lignes cochées (prestation, chaque impression) avec les totaux HT et TTC. Tu peux décocher une ligne déjà facturée. Une ligne facturée ne peut plus repartir sur une autre facture. Depuis Impressions, une commande sans tâche peut être facturée seule.
 2. Ce qui est envoyé : le client (nom, email, adresse), les lignes en HT (prestation, quantité choisie, prix unitaire HT), la TVA et la date.
 3. La facture arrive en **brouillon** dans Tiime. Tu la relis et tu l'envoies toi-même.
 4. La tâche affiche ensuite « Facture Tiime n° … ». Le bouton ne peut plus créer de doublon.
