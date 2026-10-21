@@ -27,4 +27,9 @@ describe("facture Tiime prestation + impression", () => {
     const out = sendableLines(lines, new Set(["task:t1", "print:p1"]));
     expect(out.map((l) => l.key)).toEqual(["print:p1"]);
   });
+
+  it("ajoute les caractéristiques d'impression au libellé", () => {
+    const l = printLine({ id: "p1", description: "Test tiime", quantity: 247, amount: 300, format: "A4", support: "pelliculage mat", grammage: "300gr", finitions: "Vernis 3D" });
+    expect(l.description).toBe("Test tiime\nFormat : A4 — Support : pelliculage mat — Grammage : 300gr — Finitions : Vernis 3D");
+  });
 });

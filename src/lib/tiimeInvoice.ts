@@ -20,6 +20,11 @@ export type PrintOrderLike = {
   reference?: string | null;
   quantity?: number | null;
   amount?: number | null;
+  format?: string | null;
+  support?: string | null;
+  grammage?: string | null;
+  colors?: string | null;
+  finitions?: string | null;
   tiime_invoice_id?: string | null;
 };
 
@@ -51,12 +56,19 @@ export function printLine(po: PrintOrderLike, vatRate = 20): InvoiceLine {
   const label = [po.description || "Impression", po.reference ? `(${po.reference})` : ""]
     .filter(Boolean)
     .join(" ");
+  const specs = [
+    po.format && `Format : ${po.format}`,
+    po.support && `Support : ${po.support}`,
+    po.grammage && `Grammage : ${po.grammage}`,
+    po.colors && `Couleurs : ${po.colors}`,
+    po.finitions && `Finitions : ${po.finitions}`,
+  ].filter(Boolean).join(" — ");
   return {
     key: `print:${po.id}`,
     source: "print",
     source_id: po.id,
     category: "sale",
-    description: label,
+    description: specs ? `${label}\n${specs}` : label,
     quantity: qty,
     unit_amount_ht: Math.round((total / qty) * 10000) / 10000,
     line_amount_ht: total,
