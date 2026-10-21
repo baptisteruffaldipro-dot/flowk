@@ -34,6 +34,24 @@ Deno.serve(async (req) => {
     if (!role) return json({ error: "Réservé aux admins" }, 403);
 
     const body = await req.json().catch(() => ({}));
+
+    // Exemple fictif pour que Make apprenne la structure (aucune écriture en base)
+    if (body?.action === "sample") {
+      const sample = {
+        emission_date: new Date().toISOString().slice(0, 10),
+        title: "Test — exemple Flowk",
+        client: { name: "Client Test", contact: "Client Test", email: "test@example.com", address: "1 rue Test, 17200 Royan", phone: null },
+        lines: [
+          { sequence: 1, category: "benefit", description: "Création graphique", quantity: 1, unit_amount_ht: 500, line_amount_ht: 500, vat_rate: 20 },
+          { sequence: 2, category: "goods", description: "Cartes de visite", quantity: 250, unit_amount_ht: 0.32, line_amount_ht: 80, vat_rate: 20 },
+        ],
+        totals: { ht: 580, vat: 116, ttc: 696 },
+        refs: { task_ids: [], print_order_ids: [] },
+        sample: true,
+      };
+      const r = await fetch(webhook, { method: "POST", headers: { "Content-Type": "application/json", "x-make-apikey": shared }, body: JSON.stringify(sample) });
+      return json({ ok: r.ok, status: r.status, details: await r.text() });
+    }
     const lines: Line[] = Array.isArray(body?.lines) ? body.lines : [];
     const clientId: string | undefined = body?.client_id;
     if (!clientId || lines.length === 0) return json({ error: "Client et au moins une ligne requis" }, 400);
