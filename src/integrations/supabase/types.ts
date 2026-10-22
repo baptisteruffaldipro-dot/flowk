@@ -2359,6 +2359,7 @@ export type Database = {
           colors: string | null
           created_at: string
           deliverables: Json
+          delivery_location: string | null
           delivery_override: boolean
           delivery_override_at: string | null
           delivery_override_by: string | null
@@ -2402,6 +2403,7 @@ export type Database = {
           colors?: string | null
           created_at?: string
           deliverables?: Json
+          delivery_location?: string | null
           delivery_override?: boolean
           delivery_override_at?: string | null
           delivery_override_by?: string | null
@@ -2445,6 +2447,7 @@ export type Database = {
           colors?: string | null
           created_at?: string
           deliverables?: Json
+          delivery_location?: string | null
           delivery_override?: boolean
           delivery_override_at?: string | null
           delivery_override_by?: string | null
