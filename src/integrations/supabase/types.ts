@@ -1910,6 +1910,7 @@ export type Database = {
         Row: {
           client_id: string | null
           client_name: string
+          client_selections: Json
           content: Json
           created_at: string
           created_by: string | null
@@ -1931,6 +1932,7 @@ export type Database = {
         Insert: {
           client_id?: string | null
           client_name: string
+          client_selections?: Json
           content?: Json
           created_at?: string
           created_by?: string | null
@@ -1952,6 +1954,7 @@ export type Database = {
         Update: {
           client_id?: string | null
           client_name?: string
+          client_selections?: Json
           content?: Json
           created_at?: string
           created_by?: string | null
@@ -3697,6 +3700,7 @@ export type Database = {
         Returns: {
           client_id: string | null
           client_name: string
+          client_selections: Json
           content: Json
           created_at: string
           created_by: string | null
@@ -3730,6 +3734,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      logo_moodboard_react_by_token: {
+        Args: { _image_url: string; _reaction: string; _token: string }
+        Returns: Json
+      }
       mark_portal_unread: { Args: { _portal_id: string }; Returns: undefined }
       portal_action_by_token: {
         Args: { _action: string; _payload?: Json; _token: string }
