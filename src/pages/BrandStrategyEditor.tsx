@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, Eye, Save, ArrowLeft, Copy, Check } from "lucide-react";
+import { Plus, Trash2, Eye, Save, ArrowLeft, Copy, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { getPublicAppUrl } from "@/lib/publicUrl";
 import BrandStrategyView from "@/components/brand-strategy/BrandStrategyView";
 import type { BrandStrategy } from "@/data/brand-strategies/types";
 import { emptyBrandStrategyContent } from "@/data/brand-strategies/empty";
@@ -89,6 +90,7 @@ export default function BrandStrategyEditor() {
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -143,6 +145,40 @@ export default function BrandStrategyEditor() {
     setCopied(true);
     toast.success("Lien copié");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const sendByEmail = async () => {
+    if (!row?.share_token) return;
+    if (!row.is_published) { toast.error("Active d'abord le lien public"); return; }
+    if (!row.client_id) { toast.error("Aucun client lié à cette stratégie"); return; }
+    const { data: client } = await supabase
+      .from("clients")
+      .select("name,email")
+      .eq("id", row.client_id)
+      .maybeSingle();
+    if (!client?.email) { toast.error("Le client n'a pas d'email enregistré"); return; }
+    setSending(true);
+    const presentationUrl = `${getPublicAppUrl()}/p/strategie/${row.share_token}`;
+    const { data, error } = await supabase.functions.invoke("send-app-email", {
+      body: {
+        templateName: "brand-strategy-ready",
+        recipientEmail: client.email,
+        idempotencyKey: `brand-strategy-ready-${row.id}-${Date.now()}`,
+        templateData: {
+          name: client.name ?? undefined,
+          projectName: row.project_name,
+          presentationUrl,
+        },
+      },
+    });
+    setSending(false);
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error ?? error?.message ?? "Échec de l'envoi");
+      return;
+    }
+    toast.success(`Email envoyé à ${client.email}`, {
+      description: "Une copie a été transmise à bonjour@atelier-rufo.fr",
+    });
   };
 
   const update = useCallback(<K extends keyof DBRow>(key: K, value: DBRow[K]) => {
