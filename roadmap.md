@@ -2,7 +2,7 @@
 
 - [x] Afficher le règlement reçu côté client après passage à « Solde réglé » et vérifier sur un essai temporaire
 - [x] Envoyer le lien de la stratégie de marque par email depuis l'éditeur, en plus du lien copiable
-- [ ] Publier pour rendre le bouton « Envoyer par email » visible sur le site en ligne
+- [x] Publier pour rendre le bouton « Envoyer par email » visible sur le site en ligne
 
 - [x] Saisir le lieu et la date de livraison dans la commande d’impression et les afficher côté client
 - [x] Vérifier l’enregistrement et la lecture côté client sans modifier de commande réelle
