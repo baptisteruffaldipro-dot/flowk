@@ -22,6 +22,8 @@ import PriceTiersEditor, { PriceTier } from "@/components/PriceTiersEditor";
 import DeliveryGateCard from "@/components/DeliveryGateCard";
 import ClientSelectField from "@/components/ClientSelectField";
 import BusinessUnitCard from "@/components/finance/BusinessUnitCard";
+import PrintDeliveryFields from "@/components/PrintDeliveryFields";
+import PrintDeliveryInfo from "@/components/PrintDeliveryInfo";
 
 export default function PrintOrderDetail() {
   const { id } = useParams();
@@ -62,6 +64,8 @@ export default function PrintOrderDetail() {
       finitions: data?.finitions ?? "",
       observations: data?.observations ?? "",
       amount: data?.amount ?? "",
+      estimated_delivery_date: data?.estimated_delivery_date ?? "",
+      delivery_location: data?.delivery_location ?? "",
     });
   };
 
@@ -141,11 +145,6 @@ export default function PrintOrderDetail() {
     load();
   };
 
-  const updateEstimatedDelivery = async (value: string) => {
-    await supabase.from("print_orders").update({ estimated_delivery_date: value || null }).eq("id", id);
-    load();
-  };
-
   const saveProducts = async () => {
     setSavingProducts(true);
     const { error } = await supabase.from("print_orders").update({ products: products as any }).eq("id", id);
@@ -177,6 +176,8 @@ export default function PrintOrderDetail() {
       finitions: form.finitions || null,
       observations: form.observations || null,
       amount: form.amount === "" || form.amount === null ? null : Number(form.amount),
+      estimated_delivery_date: form.estimated_delivery_date || null,
+      delivery_location: form.delivery_location?.trim() || null,
     };
     const { error } = await supabase.from("print_orders").update(payload).eq("id", id);
     setSavingForm(false);
@@ -403,15 +404,7 @@ export default function PrintOrderDetail() {
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Montant €</Label>
               <Input className="mt-1" type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
             </div>
-            <div className="md:col-span-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date de livraison estimée</Label>
-              <Input
-                type="date"
-                className="mt-1 max-w-xs"
-                value={order.estimated_delivery_date ?? ""}
-                onChange={(e) => updateEstimatedDelivery(e.target.value)}
-              />
-            </div>
+            <PrintDeliveryFields date={form.estimated_delivery_date} location={form.delivery_location} onDateChange={(value) => setForm({ ...form, estimated_delivery_date: value })} onLocationChange={(value) => setForm({ ...form, delivery_location: value })} />
           </div>
         ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -452,13 +445,7 @@ export default function PrintOrderDetail() {
             <div>{fmtMoney(order.amount ? Number(order.amount) : null)}</div>
           </div>
           <div className="col-span-2">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Date de livraison estimée</Label>
-            <Input
-              type="date"
-              className="mt-1 max-w-xs"
-              value={order.estimated_delivery_date ?? ""}
-              onChange={(e) => updateEstimatedDelivery(e.target.value)}
-            />
+            <PrintDeliveryInfo order={order} />
           </div>
         </div>
         )}

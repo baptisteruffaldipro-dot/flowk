@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, CheckCircle2, FileCheck2, Clock, Euro, Repeat, Truck, CalendarClock, ClipboardList, Sparkles, Package, AlertTriangle, Circle, Palette, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { PROJECT_TYPE_LABEL, fmtDate, fmtDateTime, STATUS_LABEL } from "@/lib/format";
+import PrintDeliveryInfo from "@/components/PrintDeliveryInfo";
 
 const BRIEF_FIELDS: { key: string; label: string; type: "text" | "textarea" }[] = [
   { key: "objectif", label: "Quel est l'objectif principal du projet ?", type: "textarea" },
@@ -37,7 +38,7 @@ export default function ClientProjectPortal() {
     const [p, t, po, b] = await Promise.all([
       supabase.from("projects").select("*").eq("id", id).maybeSingle(),
       supabase.from("tasks").select("id,title,status,deadline,total_minutes,flat_amount,hourly_rate,billing_type,client_revisions_count,free_revisions,delivered_at,position").eq("project_id", id).order("position", { ascending: true }),
-      supabase.from("print_orders").select("id,description,status,amount,estimated_delivery_date").eq("project_id", id),
+      supabase.from("print_orders").select("id,description,status,amount,estimated_delivery_date,delivery_location").eq("project_id", id),
       supabase.from("bats").select("id,title,status,validated_at").eq("project_id", id),
     ]);
     setProject(p.data);
@@ -245,6 +246,12 @@ export default function ClientProjectPortal() {
               </div>
             </div>
           </div>
+          {printOrders.filter((order) => order.estimated_delivery_date || order.delivery_location).map((order) => (
+            <div key={order.id} className="mt-4 space-y-2">
+              <Link to={`/portail/impression/${order.id}`} className="text-sm font-medium hover:underline">{order.description}</Link>
+              <PrintDeliveryInfo order={order} />
+            </div>
+          ))}
           {bats.length > 0 && (
             <div className="mt-4 pt-4 border-t border-border space-y-1">
               <div className="text-xs text-muted-foreground mb-2">BAT disponibles</div>

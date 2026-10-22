@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Saisir le lieu et la date de livraison dans la commande d’impression et les afficher côté client
+- [x] Vérifier l’enregistrement et la lecture côté client sans modifier de commande réelle
+
 - [x] Adapter les quatre étapes client au règlement, téléchargement ou impression sélectionnée
 - [x] Vérifier validation puis règlement et mise à disposition sans modifier de commande réelle
 

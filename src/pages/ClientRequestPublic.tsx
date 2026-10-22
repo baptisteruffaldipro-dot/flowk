@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, XCircle, Clock, FileText, Download, Send } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
+import PrintDeliveryInfo from "@/components/PrintDeliveryInfo";
 
 const PRESTATION_LABEL: Record<string, string> = {
   logo: "Logo", refonte: "Refonte", ajustements: "Ajustements",
@@ -285,11 +286,7 @@ export default function ClientRequestPublic() {
           <section className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Commande</h2>
             <div className="text-sm">{printOrder.description || "—"}</div>
-            {printOrder.estimated_delivery_date && (
-              <div className="text-xs text-muted-foreground">
-                Livraison estimée : {new Date(printOrder.estimated_delivery_date).toLocaleDateString("fr-FR")}
-              </div>
-            )}
+            <PrintDeliveryInfo order={printOrder} />
           </section>
         )}
 

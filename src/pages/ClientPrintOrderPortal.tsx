@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { PRINT_STATUS_LABEL, fmtDateTime } from "@/lib/format";
 import BatViewer from "@/components/BatViewer";
 import ClientDeliverySection from "@/components/ClientDeliverySection";
+import PrintDeliveryInfo from "@/components/PrintDeliveryInfo";
 
 export default function ClientPrintOrderPortal() {
   const { id } = useParams();
@@ -71,6 +72,8 @@ export default function ClientPrintOrderPortal() {
           {order.bat_validated_at && <Badge className="bg-emerald-500 hover:bg-emerald-500">BAT validé</Badge>}
           {order.bat_rejected_at && <Badge variant="destructive">Modifications demandées</Badge>}
         </div>
+
+        <div className="mb-6"><PrintDeliveryInfo order={order} /></div>
 
         {order.bat_file_path ? (
           <Card className="p-5 mb-6">
