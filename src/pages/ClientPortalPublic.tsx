@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { CheckCircle2, Copy, Send, Download, FileText, Printer, CreditCard, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
+import PrintDeliveryInfo from "@/components/PrintDeliveryInfo";
 
 
 
@@ -357,10 +358,8 @@ export default function ClientPortalPublic() {
                     {po.colors && <Info label="Couleurs" value={po.colors} />}
                     {po.finitions && <Info label="Finitions" value={po.finitions} />}
                     {poAmount(po) > 0 && <Info label="Montant" value={`${poAmount(po).toFixed(2)} € HT`} />}
-                    {po.estimated_delivery_date && (
-                      <Info label="Livraison estimée" value={new Date(po.estimated_delivery_date).toLocaleDateString("fr-FR")} />
-                    )}
                   </div>
+                  <PrintDeliveryInfo order={po} />
                   {po.observations && (
                     <p className="text-xs text-muted-foreground whitespace-pre-wrap">{po.observations}</p>
                   )}

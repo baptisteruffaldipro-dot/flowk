@@ -10,6 +10,7 @@ import { computeTaskBilling } from "@/lib/billing";
 import { Upload, Loader2, Sparkles } from "lucide-react";
 import PrintProductsEditor, { PrintProduct } from "@/components/PrintProductsEditor";
 import PriceTiersEditor, { PriceTier } from "@/components/PriceTiersEditor";
+import PrintDeliveryFields from "@/components/PrintDeliveryFields";
 
 // Parse un texte collé du type "25 ex. : 56 € HT" (une ligne par tarif)
 function parseTiersText(raw: string): PriceTier[] {
@@ -62,6 +63,7 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
     observations: "",
     amount: "",
     estimated_delivery_date: "",
+    delivery_location: "",
   });
 
   useEffect(() => {
@@ -80,6 +82,7 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
         observations: "",
         amount: amt > 0 ? String(amt) : "",
         estimated_delivery_date: "",
+        delivery_location: "",
       });
       setProducts([]);
       setTiers([]);
@@ -182,6 +185,7 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
         finitions: form.finitions.trim() || null,
         observations: form.observations.trim() || null,
         estimated_delivery_date: form.estimated_delivery_date || null,
+        delivery_location: form.delivery_location.trim() || null,
         products: products as any,
         price_tiers: tiers as any,
       }) as any).select().single();
@@ -284,10 +288,7 @@ export default function NewPrintOrderDialog({ task, open, onOpenChange, onCreate
             <Label className="text-xs">Montant (€ HT)</Label>
             <Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Livraison estimée</Label>
-            <Input type="date" value={form.estimated_delivery_date} onChange={(e) => setForm({ ...form, estimated_delivery_date: e.target.value })} />
-          </div>
+          <PrintDeliveryFields date={form.estimated_delivery_date} location={form.delivery_location} onDateChange={(value) => setForm({ ...form, estimated_delivery_date: value })} onLocationChange={(value) => setForm({ ...form, delivery_location: value })} />
           <div className="space-y-1.5 col-span-2">
             <Label className="text-xs">Observations</Label>
             <Textarea rows={2} value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} />
