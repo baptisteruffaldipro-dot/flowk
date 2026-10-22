@@ -252,9 +252,18 @@ export default function BrandStrategyEditor() {
             <Button size="sm" variant="outline" onClick={copyShareLink}>
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </Button>
+            <Button size="sm" onClick={sendByEmail} disabled={sending || !row.client_id}>
+              <Mail className="h-4 w-4 mr-1" /> {sending ? "Envoi…" : "Envoyer par email"}
+            </Button>
           </div>
         )}
       </Card>
+      {row.is_published && row.share_token && (
+        <p className="text-xs text-muted-foreground mt-2 px-1">
+          L'email envoyé au client indique que sa stratégie de marque est disponible
+          à la consultation, avec un bouton menant directement à ce lien.
+        </p>
+      )}
 
       <Tabs defaultValue="meta" className="mt-6">
         <TabsList className="flex flex-wrap h-auto">
