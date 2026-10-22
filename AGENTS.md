@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Public payment receipt presentation uses the existing payment_state and admin confirmation timestamp through portalPayment; it never infers receipt from downloads or production state.
+
 - PrintDeliveryFields and PrintDeliveryInfo share order-level estimated delivery dates and locations; public token payloads expose these admin-managed fields without changing production or payment state.
 
 - Public BAT screens share ClientBatApproval and ClientOrderProgress presentation components; each page retains its existing action handlers and only derives tracking from recorded order states, so redesigns do not change billing or imply unrecorded production events.
