@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Afficher le règlement reçu côté client après passage à « Solde réglé » et vérifier sur un essai temporaire
+- [x] Afficher le règlement reçu côté client après passage à « Solde réglé » et vérifier sur un essai temporaire
 
 - [x] Saisir le lieu et la date de livraison dans la commande d’impression et les afficher côté client
 - [x] Vérifier l’enregistrement et la lecture côté client sans modifier de commande réelle
