@@ -1,7 +1,7 @@
 # Sélection des références du moodboard par le client
 
 ## Ce que verra le client
-- Sur la présentation logo partagée, chaque image du moodboard porte un bouton cœur / coche « J'aime ».
+- Sur la présentation logo partagée, chaque image du moodboard porte deux boutons : « J'aime » et « J'aime pas ».
 - Un clic sélectionne ou désélectionne l'image (bordure et coche visibles).
 - Un compteur discret « X références sélectionnées » par univers.
 - La sélection est enregistrée automatiquement, sans compte, et retrouvée à la prochaine ouverture du lien.
