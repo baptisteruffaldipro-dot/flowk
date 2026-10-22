@@ -237,16 +237,51 @@ export default function LogoPresentationView({ presentation, reactions = {}, onR
                       ))}
                     </div>
                   )}
-                  {u.images.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {u.images.map((img, i) => (
-                        <figure key={i} className="space-y-2">
-                          <img src={img.url} alt={img.caption ?? `Référence ${i + 1}`} className="w-full aspect-square object-cover rounded" />
-                          {img.caption && <figcaption className="text-xs text-muted-foreground italic">{img.caption}</figcaption>}
-                        </figure>
-                      ))}
-                    </div>
-                  )}
+                  {u.images.length > 0 && (() => {
+                    const { likes, dislikes } = countReactions(reactions, u.images.map((im) => im.url));
+                    return (
+                      <>
+                        {(onReact || likes + dislikes > 0) && (
+                          <p className="text-xs text-muted-foreground mb-4 bs-sans">
+                            {onReact && likes + dislikes === 0
+                              ? "Indiquez les références qui vous plaisent ou non."
+                              : `${likes} j'aime · ${dislikes} j'aime pas`}
+                          </p>
+                        )}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          {u.images.map((img, i) => {
+                            const r = img.url ? reactions[img.url] : undefined;
+                            const ring = r === "like" ? "ring-2 ring-primary" : r === "dislike" ? "opacity-50" : "";
+                            const btn = (kind: MoodboardReaction, active: boolean) =>
+                              `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs transition-colors ${
+                                active ? "bg-foreground text-background border-foreground" : "border-border text-muted-foreground hover:text-foreground"
+                              }`;
+                            return (
+                              <figure key={i} className="space-y-2">
+                                <img src={img.url} alt={img.caption ?? `Référence ${i + 1}`} className={`w-full aspect-square object-cover rounded transition ${ring}`} />
+                                {img.caption && <figcaption className="text-xs text-muted-foreground italic">{img.caption}</figcaption>}
+                                {img.url && onReact ? (
+                                  <div className="flex gap-2">
+                                    <button type="button" aria-pressed={r === "like"} className={btn("like", r === "like")} onClick={() => onReact(img.url, "like")}>
+                                      <ThumbsUp className="h-3.5 w-3.5" /> J'aime
+                                    </button>
+                                    <button type="button" aria-pressed={r === "dislike"} className={btn("dislike", r === "dislike")} onClick={() => onReact(img.url, "dislike")}>
+                                      <ThumbsDown className="h-3.5 w-3.5" /> J'aime pas
+                                    </button>
+                                  </div>
+                                ) : r ? (
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    {r === "like" ? <ThumbsUp className="h-3.5 w-3.5" /> : <ThumbsDown className="h-3.5 w-3.5" />}
+                                    {r === "like" ? "Le client aime" : "Le client n'aime pas"}
+                                  </span>
+                                ) : null}
+                              </figure>
+                            );
+                          })}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </section>
                 <Divider />
               </div>
