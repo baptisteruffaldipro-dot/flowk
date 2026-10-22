@@ -1,7 +1,13 @@
 import type { LogoPresentation, LogoVariant } from "@/data/logo-presentations/types";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { countReactions, type MoodboardReaction, type MoodboardReactions } from "@/lib/moodboardReactions";
 
 interface Props {
   presentation: LogoPresentation;
+  /** Réactions du client sur les images du moodboard (clé = URL). */
+  reactions?: MoodboardReactions;
+  /** Si fourni, le client peut cliquer J'aime / J'aime pas. Sinon affichage seul. */
+  onReact?: (url: string, reaction: MoodboardReaction) => void;
 }
 
 // Render rich-text HTML if present, otherwise fall back to plain text with line breaks preserved.
@@ -85,7 +91,7 @@ const VariantBlock = ({ v, index }: { v: LogoVariant; index: string }) => {
   );
 };
 
-export default function LogoPresentationView({ presentation }: Props) {
+export default function LogoPresentationView({ presentation, reactions = {}, onReact }: Props) {
   const p = presentation;
   const stripHtml = (s: string) => s.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
   const visibleUniverses = p.moodboard.universes.filter(
