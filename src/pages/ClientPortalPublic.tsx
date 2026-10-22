@@ -14,6 +14,8 @@ import { CheckCircle2, Copy, Send, Download, FileText, Printer, CreditCard, Land
 import { toast } from "sonner";
 import { computeTaskBilling } from "@/lib/billing";
 import PrintDeliveryInfo from "@/components/PrintDeliveryInfo";
+import { isPortalPaymentReceived } from "@/lib/portalPayment";
+import { fmtDateTime } from "@/lib/format";
 
 
 
@@ -100,8 +102,9 @@ export default function ClientPortalPublic() {
         ? "Totalité à régler"
         : null;
   const declared = !!p.client_declared_paid_at;
+  const paymentReceived = isPortalPaymentReceived(p);
   const canPay =
-    !p.admin_confirmed_paid_at &&
+    !paymentReceived &&
     ["validated", "payment_pending", "payment_link_requested"].includes(p.status);
 
 
@@ -532,17 +535,26 @@ export default function ClientPortalPublic() {
         )}
 
         {/* Règlement */}
-        {(termsLabel || dueAmount != null || printOrder || methods.length > 0 || invoiceDoc?.url || invoiceDoc?.has_file) && (
+        {(paymentReceived || termsLabel || dueAmount != null || printOrder || methods.length > 0 || invoiceDoc?.url || invoiceDoc?.has_file) && (
           <section id="reglement" className="scroll-mt-6 rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-3">
             <h2 className="text-sm font-semibold">Règlement</h2>
+            {paymentReceived && (
+              <div role="status" className="flex items-start gap-2 rounded-lg border border-success/30 bg-success/10 p-3 text-success">
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold">Règlement reçu — solde réglé</p>
+                  {p.admin_confirmed_paid_at && <p className="mt-1 text-xs">Confirmé le {fmtDateTime(p.admin_confirmed_paid_at)}</p>}
+                </div>
+              </div>
+            )}
             {(termsLabel || dueAmount != null) && (
               <div className="space-y-2">
                 <p className="text-sm">
-                  {termsLabel ?? "Montant à régler"}
-                  {dueAmount != null && (
+                  {paymentReceived ? "Total réglé" : termsLabel ?? "Montant à régler"}
+                  {(paymentReceived || dueAmount != null) && (
                     <>
                       {" — "}
-                      <strong className="text-base text-foreground">{(dueAmount * 1.2).toFixed(2)} € TTC</strong>
+                      <strong className="text-base text-foreground">{((paymentReceived ? displayTotalHT : dueAmount) * 1.2).toFixed(2)} € TTC</strong>
                     </>
                   )}
                 </p>
@@ -572,7 +584,7 @@ export default function ClientPortalPublic() {
                     <span className="font-semibold tabular-nums">{(displayTotalHT * 1.2).toFixed(2)} €</span>
                   </div>
                 </div>
-                {p.payment_terms === "deposit_50" && amountDue != null && (
+                {!paymentReceived && p.payment_terms === "deposit_50" && amountDue != null && (
                   <p className="text-xs text-muted-foreground">
                     Acompte de 50 % demandé ({(dueAmount * 1.2).toFixed(2)} € TTC) sur un total de {(displayTotalHT * 1.2).toFixed(2)} € TTC.
                   </p>
@@ -580,14 +592,14 @@ export default function ClientPortalPublic() {
               </div>
             )}
 
-            <p className="text-xs text-muted-foreground">
+            {!paymentReceived && <p className="text-xs text-muted-foreground">
               {p.payment_terms === "deposit_50"
                 ? "Pour télécharger votre fichier, veuillez régler l'acompte de 50 % de la prestation en cours."
                 : p.payment_terms === "full"
                   ? "Pour télécharger votre fichier, veuillez régler la totalité de la prestation en cours."
                   : "Le téléchargement des livrables est débloqué après confirmation du paiement."}
-            </p>
-            {printOrder && (
+            </p>}
+            {!paymentReceived && printOrder && (
               <p className="text-sm text-warning">
                 Pour toute commande d’impression, merci de régler la facture afin de lancer la production.
               </p>
@@ -598,7 +610,7 @@ export default function ClientPortalPublic() {
                   <FileText className="h-3.5 w-3.5 mr-1" /> Télécharger la facture
                 </Button>
               )}
-              {methods.includes("link") &&
+              {!paymentReceived && methods.includes("link") &&
                 (p.payment_link_url ? (
                   <Button size="sm" asChild>
                     <a href={p.payment_link_url} target="_blank" rel="noreferrer">
@@ -610,7 +622,7 @@ export default function ClientPortalPublic() {
                     <CreditCard className="h-3.5 w-3.5 mr-1" /> Demander un lien de paiement
                   </Button>
                 ) : null)}
-              {methods.includes("transfer") && (
+              {!paymentReceived && methods.includes("transfer") && (
                 <Button size="sm" variant="outline" onClick={() => setRibOpen(true)}>
                   <Landmark className="h-3.5 w-3.5 mr-1" /> Payer par virement (RIB)
                 </Button>
@@ -625,7 +637,7 @@ export default function ClientPortalPublic() {
                 </Button>
               </div>
             )}
-            {declared && !p.admin_confirmed_paid_at && (
+            {declared && !paymentReceived && (
               <div className="text-xs bg-warning/10 text-warning rounded p-2">
                 Merci ! Nous vérifions la réception du paiement.
               </div>
