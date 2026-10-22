@@ -288,7 +288,7 @@ export default function LogoPresentationEditor() {
             <ArrowLeft className="h-4 w-4 mr-1" /> Retour à l'édition
           </Button>
         </div>
-        <LogoPresentationView presentation={buildPresentation(row)} />
+        <LogoPresentationView presentation={buildPresentation(row)} reactions={(row as any).client_selections || {}} />
       </div>
     );
   }

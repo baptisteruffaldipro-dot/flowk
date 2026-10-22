@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
 import type { LogoPresentation } from "@/data/logo-presentations/types";
+import { applyReaction, nextReaction, type MoodboardReaction, type MoodboardReactions } from "@/lib/moodboardReactions";
+import { toast } from "sonner";
 import { emptyLogoPresentationContent, emptyTrack, emptyUniverse } from "@/data/logo-presentations/empty";
 
 function migrateLogos(raw: any) {
@@ -40,6 +42,7 @@ export default function LogoPresentationPublic() {
   const { token } = useParams<{ token: string }>();
   const [presentation, setPresentation] = useState<LogoPresentation | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reactions, setReactions] = useState<MoodboardReactions>({});
 
   useEffect(() => {
     if (!token) return;
@@ -47,6 +50,7 @@ export default function LogoPresentationPublic() {
       if (err || !data) { setError("Présentation introuvable ou non publiée."); return; }
       const row: any = Array.isArray(data) ? data[0] : data;
       if (!row) { setError("Présentation introuvable ou non publiée."); return; }
+      setReactions(row.client_selections || {});
       const content = row.content || {};
       setPresentation({
         slug: row.id,
@@ -66,7 +70,15 @@ export default function LogoPresentationPublic() {
     });
   }, [token]);
 
+  const react = async (url: string, clicked: MoodboardReaction) => {
+    const prev = reactions;
+    const r = nextReaction(prev[url], clicked);
+    setReactions(applyReaction(prev, url, r));
+    const { error: err } = await supabase.rpc("logo_moodboard_react_by_token" as any, { _token: token, _image_url: url, _reaction: r });
+    if (err) { setReactions(prev); toast.error("Votre choix n'a pas pu être enregistré."); }
+  };
+
   if (error) return <div className="min-h-screen flex items-center justify-center text-muted-foreground p-8 text-center">{error}</div>;
   if (!presentation) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Chargement…</div>;
-  return <LogoPresentationView presentation={presentation} />;
+  return <LogoPresentationView presentation={presentation} reactions={reactions} onReact={react} />;
 }
