@@ -1183,6 +1183,17 @@ export default function PortalPanel({
                 <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Fichiers BAT validés</dt><dd className="font-medium">{approvedFiles} / {deliverables.length}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Impressions liées</dt><dd className="font-medium">{selectedPrintOrders.length}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Observations à traiter</dt><dd className={clientObservations ? "font-medium text-destructive" : "font-medium"}>{clientObservations}</dd></div>
+                {(() => {
+                  const h = summarizeHistory(portal.email_history);
+                  const last = h.list[0]?.sent_at;
+                  return (
+                    <>
+                      <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Envois au client</dt><dd className="font-medium">{h.sends}</dd></div>
+                      <div className="flex justify-between gap-2"><dt className="text-muted-foreground">Relances</dt><dd className="font-medium">{h.reminders}</dd></div>
+                      {last && <div className="flex justify-between gap-2 text-xs"><dt className="text-muted-foreground">Dernier envoi</dt><dd>{new Date(last).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</dd></div>}
+                    </>
+                  );
+                })()}
               </dl>
               <div className="border-t pt-3 space-y-1 text-xs">
                 <div className="flex justify-between gap-2 text-muted-foreground"><span>Prestation HT</span><span>{fmtMoney(computedPresta)}</span></div>
