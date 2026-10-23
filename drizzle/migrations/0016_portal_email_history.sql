@@ -1,0 +1,1 @@
+ALTER TABLE public.client_portals ADD COLUMN IF NOT EXISTS email_history jsonb NOT NULL DEFAULT '[]'::jsonb;
