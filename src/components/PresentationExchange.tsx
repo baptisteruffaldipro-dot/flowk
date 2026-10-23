@@ -113,7 +113,7 @@ export default function PresentationExchange({ kind, presentationId, token, clie
   if (token) return (
     <Dialog open={open} onOpenChange={value => { setOpen(value); if (value) void load(); }}>
       <DialogTrigger asChild><Button className="fixed bottom-6 right-4 sm:right-6 z-40 shadow-lg gap-2"><MessageCircle className="h-4 w-4" />Échanges{messages.length > 0 && <span>({messages.length})</span>}</Button></DialogTrigger>
-      <DialogContent className="max-w-xl max-h-[85dvh] overflow-y-auto">
+      <DialogContent aria-describedby={undefined} className="max-w-xl max-h-[85dvh] overflow-y-auto">
         <DialogHeader><DialogTitle>Échanges · {clientName || "Présentation"}</DialogTitle></DialogHeader>
         {content}
       </DialogContent>

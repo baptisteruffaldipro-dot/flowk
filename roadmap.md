@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Ajouter une boîte d’échanges studio/client aux stratégies et présentations logo avec réactions visibles
-- [ ] Vérifier messages, réponses et accès privés sur des présentations temporaires sans envoyer d’email
+- [x] Ajouter une boîte d’échanges studio/client aux stratégies et présentations logo avec réactions visibles
+- [x] Vérifier messages, réponses et accès privés sur des présentations temporaires sans envoyer d’email
 
 - [x] Afficher le règlement reçu côté client après passage à « Solde réglé » et vérifier sur un essai temporaire
 - [x] Envoyer le lien de la stratégie de marque par email depuis l'éditeur, en plus du lien copiable
