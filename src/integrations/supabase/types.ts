@@ -2349,6 +2349,48 @@ export type Database = {
           },
         ]
       }
+      presentation_messages: {
+        Row: {
+          author: string
+          body: string
+          brand_strategy_id: string | null
+          created_at: string
+          id: string
+          logo_presentation_id: string | null
+        }
+        Insert: {
+          author: string
+          body: string
+          brand_strategy_id?: string | null
+          created_at?: string
+          id?: string
+          logo_presentation_id?: string | null
+        }
+        Update: {
+          author?: string
+          body?: string
+          brand_strategy_id?: string | null
+          created_at?: string
+          id?: string
+          logo_presentation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presentation_messages_brand_strategy_id_fkey"
+            columns: ["brand_strategy_id"]
+            isOneToOne: false
+            referencedRelation: "brand_strategies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presentation_messages_logo_presentation_id_fkey"
+            columns: ["logo_presentation_id"]
+            isOneToOne: false
+            referencedRelation: "logo_presentations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       print_orders: {
         Row: {
           amount: number | null
@@ -3789,6 +3831,14 @@ export type Database = {
         Returns: undefined
       }
       portal_deliverables_by_token: { Args: { _token: string }; Returns: Json }
+      presentation_add_message_by_token: {
+        Args: { _body: string; _kind: string; _token: string }
+        Returns: Json
+      }
+      presentation_exchange_by_token: {
+        Args: { _kind: string; _token: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "client"

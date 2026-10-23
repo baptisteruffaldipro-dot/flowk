@@ -13,6 +13,7 @@ import { Plus, Trash2, Eye, Save, ArrowLeft, Copy, Check, Mail } from "lucide-re
 import { toast } from "sonner";
 import { getPublicAppUrl } from "@/lib/publicUrl";
 import BrandStrategyView from "@/components/brand-strategy/BrandStrategyView";
+import PresentationExchange from "@/components/PresentationExchange";
 import type { BrandStrategy } from "@/data/brand-strategies/types";
 import { emptyBrandStrategyContent } from "@/data/brand-strategies/empty";
 
@@ -264,6 +265,8 @@ export default function BrandStrategyEditor() {
           à la consultation, avec un bouton menant directement à ce lien.
         </p>
       )}
+
+      <PresentationExchange kind="brand_strategy" presentationId={row.id} clientName={row.client_name} />
 
       <Tabs defaultValue="meta" className="mt-6">
         <TabsList className="flex flex-wrap h-auto">

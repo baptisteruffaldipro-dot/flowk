@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Brand strategies and logo presentations share PresentationExchange backed by presentation_messages; admin-only RLS and published-token RPCs scope conversations, and only client messages generate studio notifications (no automatic email).
+
 - Public payment receipt presentation uses the existing payment_state and admin confirmation timestamp through portalPayment; it never infers receipt from downloads or production state.
 
 - PrintDeliveryFields and PrintDeliveryInfo share order-level estimated delivery dates and locations; public token payloads expose these admin-managed fields without changing production or payment state.

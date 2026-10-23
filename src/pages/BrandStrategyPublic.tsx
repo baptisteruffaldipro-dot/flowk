@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import BrandStrategyView from "@/components/brand-strategy/BrandStrategyView";
+import PresentationExchange from "@/components/PresentationExchange";
 import type { BrandStrategy } from "@/data/brand-strategies/types";
 import { emptyBrandStrategyContent } from "@/data/brand-strategies/empty";
 
@@ -44,5 +45,5 @@ export default function BrandStrategyPublic() {
   if (!strategy) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Chargement…</div>;
   }
-  return <BrandStrategyView strategy={strategy} />;
+  return <><BrandStrategyView strategy={strategy} /><PresentationExchange kind="brand_strategy" presentationId={strategy.slug} token={token} clientName={strategy.client} /></>;
 }
