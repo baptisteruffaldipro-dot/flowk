@@ -19,6 +19,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from "sonner";
 import { getPublicAppUrl } from "@/lib/publicUrl";
 import { computeTaskBilling } from "@/lib/billing";
+import { summarizeHistory, type EmailHistoryKind } from "@/lib/emailHistory";
+import { EmailHistoryList } from "@/components/EmailHistoryList";
 
 type EntityType = "task" | "project";
 
