@@ -391,7 +391,7 @@ export default function LogoPresentationView({ presentation, reactions = {}, onR
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {it.items.map((m, j) => (
                         <figure key={j} className="space-y-3">
-                          <img src={m.url} alt={m.title ?? `Mise en situation ${j + 1}`} className="w-full aspect-[4/3] object-cover rounded" />
+                          <img src={m.url} alt={m.title ?? `Mise en situation ${j + 1}`} className="w-full h-auto rounded" />
                           {(m.title || m.caption) && (
                             <figcaption className="space-y-1">
                               {m.title && <div className="text-lg italic font-light">{m.title}</div>}
