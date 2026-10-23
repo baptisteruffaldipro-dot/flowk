@@ -401,6 +401,16 @@ export default function PortalPanel({
     setInvoiceFilePath(null);
   };
 
+  const recordEmail = async (kind: EmailHistoryKind) => {
+    try {
+      const { data: fresh } = await supabase.from("client_portals").select("email_history").eq("id", portal.id).maybeSingle();
+      const prev = Array.isArray((fresh as any)?.email_history) ? (fresh as any).email_history : [];
+      const next = [...prev, { kind, sent_at: new Date().toISOString() }];
+      const { error } = await supabase.from("client_portals").update({ email_history: next } as any).eq("id", portal.id);
+      if (!error) setPortal((p: any) => ({ ...p, email_history: next }));
+    } catch { /* l'email est parti ; l'historique est secondaire */ }
+  };
+
   const sendNotice = async () => {
     if (!effEmail) return toast.error("Pas d'email client");
     if (deliverables.length === 0) return toast.error("Ajoutez d'abord un fichier ou un lien");
@@ -420,6 +430,7 @@ export default function PortalPanel({
         },
       });
       if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
+      await recordEmail("files");
       toast.success("Email envoyé au client");
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur d'envoi");
@@ -443,6 +454,7 @@ export default function PortalPanel({
         },
       });
       if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
+      await recordEmail("link");
       toast.success(`Lien envoyé à ${to}`);
       return true;
     } catch (e: any) {
@@ -480,6 +492,7 @@ export default function PortalPanel({
         },
       });
       if (error || (data as any)?.error) throw error ?? new Error((data as any)?.error);
+      await recordEmail("payment_reminder");
       toast.success("Relance paiement envoyée");
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur d'envoi");
@@ -938,7 +951,11 @@ export default function PortalPanel({
           <p className="text-[11px] text-muted-foreground">
             Rappelle au client des moyens de règlement disponibles (carte ou virement) et que toute commande d'impression doit être réglée avant son lancement.
           </p>
-
+          <div className="rounded-md border border-border/60 p-2.5">
+            {summarizeHistory(portal.email_history).list.length > 0
+              ? <EmailHistoryList history={portal.email_history} />
+              : <p className="text-[11px] text-muted-foreground">Aucun envoi ni relance enregistré.</p>}
+          </div>
         </div>
 
         <div className="space-y-1.5 pb-1">
