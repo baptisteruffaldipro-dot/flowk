@@ -19,6 +19,7 @@ import RichTextEditor from "@/components/logo-presentation/RichTextEditor";
 import type { LogoPresentation, LogoVariant, LogoTrack, MoodboardUniverse, ColorsTrack, TypographyTrack, InSituTrack } from "@/data/logo-presentations/types";
 import { emptyLogoPresentationContent, emptyTrack, emptyUniverse, emptyColorsTrack, emptyTypographyTrack, emptyInSituTrack } from "@/data/logo-presentations/empty";
 import DeliveryGateCard from "@/components/DeliveryGateCard";
+import PresentationExchange from "@/components/PresentationExchange";
 
 type DBRow = {
   id: string;
@@ -347,6 +348,8 @@ export default function LogoPresentationEditor() {
           consultation, avec un bouton menant directement à ce lien.
         </p>
       )}
+
+      <PresentationExchange kind="logo_presentation" presentationId={row.id} clientName={row.client_name} />
 
       <Tabs defaultValue="meta" className="mt-6">
         <TabsList className="flex flex-wrap h-auto">

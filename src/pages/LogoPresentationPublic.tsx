@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import LogoPresentationView from "@/components/logo-presentation/LogoPresentationView";
+import PresentationExchange from "@/components/PresentationExchange";
 import type { LogoPresentation } from "@/data/logo-presentations/types";
 import { applyReaction, nextReaction, type MoodboardReaction, type MoodboardReactions } from "@/lib/moodboardReactions";
 import { toast } from "sonner";
@@ -80,5 +81,5 @@ export default function LogoPresentationPublic() {
 
   if (error) return <div className="min-h-screen flex items-center justify-center text-muted-foreground p-8 text-center">{error}</div>;
   if (!presentation) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Chargement…</div>;
-  return <LogoPresentationView presentation={presentation} reactions={reactions} onReact={react} />;
+  return <><LogoPresentationView presentation={presentation} reactions={reactions} onReact={react} /><PresentationExchange kind="logo_presentation" presentationId={presentation.slug} token={token} clientName={presentation.client} /></>;
 }
