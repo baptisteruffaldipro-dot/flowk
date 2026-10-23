@@ -60,7 +60,11 @@ export default function PresentationExchange({ kind, presentationId, token, clie
     try {
       const result = token
         ? await supabase.rpc("presentation_add_message_by_token", { _kind: kind, _token: token, _body: text })
-        : await supabase.from("presentation_messages").insert({ [column]: presentationId, author: "studio", body: text });
+        : await supabase.from("presentation_messages").insert({
+            brand_strategy_id: kind === "brand_strategy" ? presentationId : null,
+            logo_presentation_id: kind === "logo_presentation" ? presentationId : null,
+            author: "studio", body: text,
+          });
       if (result.error) throw result.error;
       setBody("");
       await load();
