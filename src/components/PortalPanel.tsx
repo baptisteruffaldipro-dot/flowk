@@ -45,6 +45,7 @@ type Portal = {
   delivery_override: boolean;
   delivery_locked?: boolean;
   admin_notes: string | null;
+  email_history?: unknown;
   payment_methods: string[];
   payment_terms: "deposit_50" | "full" | "libre";
   amount_due_ttc: number | string | null;

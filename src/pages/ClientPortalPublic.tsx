@@ -16,6 +16,7 @@ import { computeTaskBilling } from "@/lib/billing";
 import PrintDeliveryInfo from "@/components/PrintDeliveryInfo";
 import { isPortalPaymentReceived } from "@/lib/portalPayment";
 import { fmtDateTime } from "@/lib/format";
+import { EmailHistoryList } from "@/components/EmailHistoryList";
 
 
 
@@ -538,6 +539,9 @@ export default function ClientPortalPublic() {
         {(paymentReceived || termsLabel || dueAmount != null || printOrder || methods.length > 0 || invoiceDoc?.url || invoiceDoc?.has_file) && (
           <section id="reglement" className="scroll-mt-6 rounded-2xl border border-border/60 bg-card p-5 shadow-sm sm:p-8 space-y-3">
             <h2 className="text-sm font-semibold">Règlement</h2>
+            <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+              <EmailHistoryList history={p.email_history} title="Emails reçus" />
+            </div>
             {paymentReceived && (
               <div role="status" className="flex items-start gap-2 rounded-lg border border-success/30 bg-success/10 p-3 text-success">
                 <CheckCircle2 className="h-5 w-5 shrink-0" />
