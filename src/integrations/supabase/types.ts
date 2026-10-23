@@ -701,6 +701,7 @@ export type Database = {
           delivery_locked: boolean
           delivery_override: boolean
           delivery_unlock_rule: Database["public"]["Enums"]["delivery_unlock_rule"]
+          email_history: Json
           entity_id: string
           entity_type: Database["public"]["Enums"]["client_portal_entity"]
           id: string
@@ -737,6 +738,7 @@ export type Database = {
           delivery_locked?: boolean
           delivery_override?: boolean
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
+          email_history?: Json
           entity_id: string
           entity_type: Database["public"]["Enums"]["client_portal_entity"]
           id?: string
@@ -773,6 +775,7 @@ export type Database = {
           delivery_locked?: boolean
           delivery_override?: boolean
           delivery_unlock_rule?: Database["public"]["Enums"]["delivery_unlock_rule"]
+          email_history?: Json
           entity_id?: string
           entity_type?: Database["public"]["Enums"]["client_portal_entity"]
           id?: string
