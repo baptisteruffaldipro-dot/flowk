@@ -1,37 +1,39 @@
-# Pont Realisaprint dans Flowk
+# Choisir les produits Realisaprint dans Flowk, puis commander une fois payé
 
-Trois briques, livrées dans cet ordre. Realisaprint n'a pas d'accès officiel pour les applications : Flowk se connecte à votre compte comme vous le feriez, avec vos identifiants rangés de façon sécurisée. Si Realisaprint change son site, la récupération peut s'arrêter et il faudra l'ajuster.
+## Le parcours
+```text
+Commande d'impression Flowk
+  1. Choisir un produit Realisaprint  ->  options pré-remplies
+  2. Compléter infos d'impression + tarifs (HT, TTC mis en avant)
+  3. Client valide le BAT et règle  (comme aujourd'hui)
+  4. Bouton « Lancer sur Realisaprint »  ->  vous passez la commande sur leur site
+  5. Vous notez le n° Realisaprint  ->  commande marquée « commandée »
+```
 
-## 1. Récupération automatique des commandes
-- Vous enregistrez une fois votre email et mot de passe Realisaprint (formulaire sécurisé, jamais visibles ensuite).
-- Chaque jour (et via un bouton « Synchroniser maintenant »), Flowk lit votre page « Mes commandes » : n°, date, état, montant, chaque ligne produit avec ses options, date de livraison prévue, transporteur.
-- Les nouvelles commandes arrivent dans une liste **« À rattacher »** sur la page Commandes d'impression. Vous choisissez le client (et la tâche ou le projet) puis validez : la commande Flowk est créée (référence = n° Realisaprint, montant en HT, TTC mis en avant).
-- Les commandes déjà rattachées se mettent à jour : date de livraison prévue et lien de suivi du colis. Le statut de production, le BAT et le règlement restent gérés par vous, rien n'est déduit automatiquement côté client.
-- Le fichier d'enregistrement que vous avez envoyé sert à construire et tester la lecture ; un import manuel par fichier reste disponible en secours.
+## 1. Liste des produits Realisaprint dans Flowk
+- Nouvelle page **Produits Realisaprint** (menu Impression) : chaque produit avec ses options habituelles (support/grammage, format, recto-verso, finitions, couleurs) et le lien vers sa page sur Realisaprint.
+- Pré-remplie avec les produits trouvés dans votre enregistrement : Carte de visite (350 g couché mat, 8,5 × 5,4 cm, pelliculage, vernis 3D, dorure…), Tapis de sol, Autocollant grand format, et les autres de vos 10 commandes.
+- Vous pouvez ajouter, modifier ou masquer un produit, et y garder vos tarifs habituels par quantité (prix d'achat et prix de vente HT).
 
-## 2. Catalogue de vos produits Realisaprint
-- Nouvelle page **Catalogue impression** : vos produits habituels (Carte de visite 350 g couché mat, Tapis de sol, Autocollant grand format…) avec support, format, finitions, couleurs et tarifs par quantité en HT.
-- Pré-rempli à partir des produits trouvés dans vos commandes ; vous ajustez les prix (prix de revient et prix de vente).
-- Dans une commande d'impression Flowk, bouton **« Depuis le catalogue »** : un clic remplit la ligne produit et les tarifs par quantité proposés au client.
-- Séparé du module Finance, qui n'est pas touché.
+## 2. Dans une commande d'impression
+- Bouton **« Produit Realisaprint »** à côté de « Ajouter un produit » : vous choisissez le produit, puis ses options dans des listes ; la ligne produit se remplit (description, format, support, grammage, finitions, couleurs).
+- Vous saisissez quantité et prix (ou piochez un tarif enregistré) ; les totaux HT/TTC restent calculés comme aujourd'hui, TTC mis en avant. Plusieurs produits Realisaprint possibles dans une même commande.
+- Rien ne change pour le client : il voit les mêmes infos, BAT et règlement qu'aujourd'hui.
 
-### Tarifs en direct
-- Dans le catalogue et dans une commande, bouton **« Prix Realisaprint du jour »** : Flowk interroge le calculateur de prix Realisaprint pour le produit, les options et les quantités choisies, et affiche le prix d'achat actuel (HT et TTC) à côté de votre prix de vente et de votre marge.
-- La liste des produits Realisaprint et leurs options (supports, formats, finitions) est relue depuis leur site pour rester à jour.
-- **Il me manque une info** : votre enregistrement ne contient que la page « Mes commandes », pas le calcul de prix. Avant de construire cette partie, refaites un enregistrement réseau en ouvrant une page produit (ex. Carte de visite), en changeant 2 ou 3 options et la quantité jusqu'à voir le prix bouger. Je m'appuierai dessus pour lire les tarifs.
-- Les prix sont relus à la demande (pas en continu) pour ne pas surcharger leur site ; le dernier prix lu et sa date restent affichés.
+## 3. Lancer la commande une fois payé
+- Quand le règlement est reçu, un encadré **« À commander chez Realisaprint »** apparaît sur la commande (et la commande ressort dans un filtre « Payé, à commander »).
+- Bouton **« Lancer sur Realisaprint »** : ouvre la page du produit sur leur site, avec à côté le récapitulatif à reproduire (options, quantité, adresse et date de livraison) et le fichier BAT validé à télécharger. Bouton « Copier le récapitulatif ».
+- Avant paiement, le bouton reste disponible mais avec un avertissement « Pas encore réglé ».
+- Après commande sur leur site, vous collez le n° Realisaprint : la commande passe en « En impression » et garde ce n° en référence. Le client ne voit l'étape que lorsque vous l'avez enregistrée.
 
-## 3. Commander depuis Flowk
-- Passer la commande toute seule chez Realisaprint (choix des options, envoi du fichier, paiement) n'est pas fiable sans accès officiel : un mauvais clic coûterait une vraie commande. Je ne l'automatise donc pas.
-- À la place : sur une commande Flowk, bouton **« Commander chez Realisaprint »** qui ouvre la bonne page produit et affiche à côté le récapitulatif à reproduire (options, quantité, fichier BAT à télécharger). Une fois commandée, la synchronisation du point 1 la retrouve et vous propose de la relier à cette commande Flowk.
-
-## Ce qui ne change pas
-Aucun email au client, rien vers Tiime, aucune étape de production inventée. Après ça, pensez à vous déconnecter/reconnecter sur Realisaprint : l'enregistrement envoyé contient votre session.
+## Ce qui n'est pas fait
+- Flowk ne passe pas la commande à votre place et ne lit pas les prix en direct sur Realisaprint (pas d'accès officiel ; une erreur coûterait une vraie commande). Ça pourra venir plus tard si besoin.
+- Aucun email au client, rien vers Tiime, Finance non touché.
+- Pensez à vous déconnecter/reconnecter sur Realisaprint : l'enregistrement envoyé contient votre session.
 
 ## Détails techniques
-- Secrets `REALISAPRINT_EMAIL` / `REALISAPRINT_PASSWORD` via le formulaire sécurisé.
-- Fonction `realisaprint-sync` : login par formulaire (cookie de session), GET `/site/dashboard/?page=orders`, parse HTML (deno-dom) partagé avec `src/lib/realisaprintImport.ts` (logique de découpe commande/ligne testée sur un extrait anonymisé du HAR : 10 commandes, #1854195 = 50,40 € TTC → 42,00 € HT, 3 lignes sur #1845908). Admin uniquement ; tâche planifiée quotidienne (pg_cron + pg_net).
-- Table `realisaprint_orders` (n° unique, date, état, total TTC, lignes jsonb, livraison, suivi, `print_order_id` nullable, synced_at) : RLS admin + GRANTs dans la même migration.
-- Table `print_catalog_items` (libellé, support, grammage, format, finitions, couleurs, `price_tiers` jsonb au format existant, coût HT, url Realisaprint, actif) : RLS admin + GRANTs. Réutilise `PriceTiersEditor`.
-- UI : onglet « À rattacher » + `RealisaprintImportDialog` dans `PrintOrders.tsx` ; page `PrintCatalog` ; sélecteur catalogue dans `NewPrintOrderDialog`/`PrintOrderDetail` ; bouton « Commander chez Realisaprint » dans `PrintOrderDetail`.
-- Régénération des types après migration, déploiement de la fonction, règle ajoutée dans AGENTS.md.
+- Table `realisaprint_products` (libellé, url, `options` jsonb `{groupe: [valeurs]}`, `price_tiers` jsonb au format `PriceTier` + coût HT, actif, ordre) : GRANTs + RLS admin dans la même migration ; seed des produits extraits du HAR via requête de données (pas dans la migration).
+- `print_orders` : colonnes ajoutées `realisaprint_order_number text`, `supplier_ordered_at timestamptz` (nullable). Lignes de `products` jsonb enrichies de `realisaprint_product_id` et `options`.
+- UI : page `RealisaprintProducts.tsx` (+ route/menu) réutilisant `PriceTiersEditor` ; `RealisaprintProductPicker` branché dans `PrintProductsEditor` / `NewPrintOrderDialog` / `PrintOrderDetail` ; carte `SupplierOrderCard` dans `PrintOrderDetail` (condition paiement via `payment_status` / état existant).
+- `src/lib/realisaprint.ts` : construction du récapitulatif ; tests : options appliquées sur la ligne, encadré visible seulement si réglé, enregistrement du n° → statut `en_impression`.
+- Types régénérés, règle ajoutée dans AGENTS.md.
