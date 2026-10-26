@@ -1,29 +1,31 @@
-# Importer les commandes Realisaprint dans « Commandes d'impression »
+# Pont Realisaprint dans Flowk
 
-## Ce que contient l'enregistrement
-La page « Mes commandes » Realisaprint y est complète : **10 commandes** (28/08 au 22/10/2026), avec pour chacune le numéro (#1854195…), la date, l'état (En cours / Terminée…), le montant TTC et chaque ligne produit (libellé, support/grammage, format, recto/verso, finitions, quantité). On y trouve aussi l'étape de chaque ligne (En impression, En expédition, Livrée), la date de livraison prévue et le transporteur. Tout ça se range directement dans les champs actuels d'une commande d'impression.
+Trois briques, livrées dans cet ordre. Realisaprint n'a pas d'accès officiel pour les applications : Flowk se connecte à votre compte comme vous le feriez, avec vos identifiants rangés de façon sécurisée. Si Realisaprint change son site, la récupération peut s'arrêter et il faudra l'ajuster.
 
-Ce qui manque : le client final. Realisaprint ne sait pas pour quel client vous commandez, donc il faudra le choisir pour chaque commande.
+## 1. Récupération automatique des commandes
+- Vous enregistrez une fois votre email et mot de passe Realisaprint (formulaire sécurisé, jamais visibles ensuite).
+- Chaque jour (et via un bouton « Synchroniser maintenant »), Flowk lit votre page « Mes commandes » : n°, date, état, montant, chaque ligne produit avec ses options, date de livraison prévue, transporteur.
+- Les nouvelles commandes arrivent dans une liste **« À rattacher »** sur la page Commandes d'impression. Vous choisissez le client (et la tâche ou le projet) puis validez : la commande Flowk est créée (référence = n° Realisaprint, montant en HT, TTC mis en avant).
+- Les commandes déjà rattachées se mettent à jour : date de livraison prévue et lien de suivi du colis. Le statut de production, le BAT et le règlement restent gérés par vous, rien n'est déduit automatiquement côté client.
+- Le fichier d'enregistrement que vous avez envoyé sert à construire et tester la lecture ; un import manuel par fichier reste disponible en secours.
 
-## Ce que vous aurez
-1. Sur la page Commandes d'impression, un bouton **« Importer depuis Realisaprint »**.
-2. Vous déposez le fichier enregistré depuis la page « Mes commandes » (ou la page enregistrée en HTML).
-3. Un aperçu affiche une ligne par commande : n°, date, produits, montant HT (le TTC est converti à 20 %, et les totaux HT/TTC restent affichés, TTC mis en avant), livraison prévue.
-4. Pour chaque commande, vous choisissez le **client** (obligatoire) et, si vous voulez, la tâche ou le projet. Vous pouvez décocher celles à ignorer.
-5. Les commandes déjà importées (même n° Realisaprint) sont repérées et grisées, pour éviter les doublons.
-6. « Importer » crée les commandes avec : référence = n° Realisaprint, une ligne produit par article, montant HT, date et lieu de livraison prévus, transporteur dans les observations.
+## 2. Catalogue de vos produits Realisaprint
+- Nouvelle page **Catalogue impression** : vos produits habituels (Carte de visite 350 g couché mat, Tapis de sol, Autocollant grand format…) avec support, format, finitions, couleurs et tarifs par quantité en HT.
+- Pré-rempli à partir des produits trouvés dans vos commandes ; vous ajustez les prix (prix de revient et prix de vente).
+- Dans une commande d'impression Flowk, bouton **« Depuis le catalogue »** : un clic remplit la ligne produit et les tarifs par quantité proposés au client.
+- Séparé du module Finance, qui n'est pas touché.
 
-## Ce qui ne bouge pas
-- Le statut de production, le BAT et le règlement ne sont **pas** déduits de Realisaprint : les nouvelles commandes partent dans l'état de départ, vous gardez la main (aucune étape inventée côté client).
-- Rien n'est envoyé au client, rien n'est créé dans Tiime.
-- Le fichier est lu dans votre navigateur et n'est **jamais conservé** : il contient votre connexion Realisaprint.
+## 3. Commander depuis Flowk
+- Passer la commande toute seule chez Realisaprint (choix des options, envoi du fichier, paiement) n'est pas fiable sans accès officiel : un mauvais clic coûterait une vraie commande. Je ne l'automatise donc pas.
+- À la place : sur une commande Flowk, bouton **« Commander chez Realisaprint »** qui ouvre la bonne page produit et affiche à côté le récapitulatif à reproduire (options, quantité, fichier BAT à télécharger). Une fois commandée, la synchronisation du point 1 la retrouve et vous propose de la relier à cette commande Flowk.
+
+## Ce qui ne change pas
+Aucun email au client, rien vers Tiime, aucune étape de production inventée. Après ça, pensez à vous déconnecter/reconnecter sur Realisaprint : l'enregistrement envoyé contient votre session.
 
 ## Détails techniques
-- `src/lib/realisaprintImport.ts` : extraction depuis HAR (entrée `dashboard/?page=orders`) ou HTML, via DOMParser ; découpe par commande (`date | #num | état | montant €`) puis par ligne (« Détails de la ligne », paires `clé : valeur`). Mapping : Support → support/grammage, Format/Hauteur/Largeur → format, Pelliculage/Vernis/Dorure/Coins/Face → finitions, Couleur d'impression → colors, Quantité → quantity, montant ligne inconnu (seul le total TTC est fourni) → total HT = TTC/1.2 sur la commande.
-- Doublons : recherche des `print_orders.reference` existants.
-- Insertion via le client existant (RLS admin) dans `print_orders`, `products` en JSON. Aucune migration.
-- `src/components/RealisaprintImportDialog.tsx` + bouton dans `PrintOrders.tsx`.
-- Test `realisaprintImport.test.ts` sur un extrait anonymisé : 10 commandes, n° 1854195 à 50,40 € TTC → 42,00 € HT, 3 lignes sur #1845908, livraison 03/11/2026.
-
-## Conseil
-Votre enregistrement contient vos cookies de connexion Realisaprint : déconnectez-vous puis reconnectez-vous sur leur site pour les invalider.
+- Secrets `REALISAPRINT_EMAIL` / `REALISAPRINT_PASSWORD` via le formulaire sécurisé.
+- Fonction `realisaprint-sync` : login par formulaire (cookie de session), GET `/site/dashboard/?page=orders`, parse HTML (deno-dom) partagé avec `src/lib/realisaprintImport.ts` (logique de découpe commande/ligne testée sur un extrait anonymisé du HAR : 10 commandes, #1854195 = 50,40 € TTC → 42,00 € HT, 3 lignes sur #1845908). Admin uniquement ; tâche planifiée quotidienne (pg_cron + pg_net).
+- Table `realisaprint_orders` (n° unique, date, état, total TTC, lignes jsonb, livraison, suivi, `print_order_id` nullable, synced_at) : RLS admin + GRANTs dans la même migration.
+- Table `print_catalog_items` (libellé, support, grammage, format, finitions, couleurs, `price_tiers` jsonb au format existant, coût HT, url Realisaprint, actif) : RLS admin + GRANTs. Réutilise `PriceTiersEditor`.
+- UI : onglet « À rattacher » + `RealisaprintImportDialog` dans `PrintOrders.tsx` ; page `PrintCatalog` ; sélecteur catalogue dans `NewPrintOrderDialog`/`PrintOrderDetail` ; bouton « Commander chez Realisaprint » dans `PrintOrderDetail`.
+- Régénération des types après migration, déploiement de la fonction, règle ajoutée dans AGENTS.md.
