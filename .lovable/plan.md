@@ -11,9 +11,11 @@ Commande d'impression Flowk
 ```
 
 ## 1. Liste des produits Realisaprint dans Flowk
-- Nouvelle page **Produits Realisaprint** (menu Impression) : chaque produit avec ses options habituelles (support/grammage, format, recto-verso, finitions, couleurs) et le lien vers sa page sur Realisaprint.
-- Pré-remplie avec les produits trouvés dans votre enregistrement : Carte de visite (350 g couché mat, 8,5 × 5,4 cm, pelliculage, vernis 3D, dorure…), Tapis de sol, Autocollant grand format, et les autres de vos 10 commandes.
-- Vous pouvez ajouter, modifier ou masquer un produit, et y garder vos tarifs habituels par quantité (prix d'achat et prix de vente HT).
+- Nouvelle page **Produits Realisaprint** (menu Impression) : chaque produit avec sa catégorie, ses options (support/grammage, format, recto-verso, finitions, couleurs) et le lien vers sa page sur Realisaprint.
+- **Catalogue complet importé** depuis leur site public (environ 300 produits et catégories), avec un bouton « Mettre à jour le catalogue » pour récupérer les nouveautés.
+- Options pré-remplies quand elles sont lisibles sur la page produit ; sinon reprises de vos commandes passées (Carte de visite 350 g couché mat, Tapis de sol, Autocollant grand format…) ou à compléter par vous.
+- Recherche et favoris pour retrouver vite vos produits habituels ; vous pouvez masquer ceux qui ne vous servent pas.
+- Vous y gardez vos tarifs habituels par quantité (prix d'achat et prix de vente HT). Les prix Realisaprint ne sont pas lus automatiquement.
 
 ## 2. Dans une commande d'impression
 - Bouton **« Produit Realisaprint »** à côté de « Ajouter un produit » : vous choisissez le produit, puis ses options dans des listes ; la ligne produit se remplit (description, format, support, grammage, finitions, couleurs).
