@@ -15,6 +15,12 @@ Trois briques, livrées dans cet ordre. Realisaprint n'a pas d'accès officiel p
 - Dans une commande d'impression Flowk, bouton **« Depuis le catalogue »** : un clic remplit la ligne produit et les tarifs par quantité proposés au client.
 - Séparé du module Finance, qui n'est pas touché.
 
+### Tarifs en direct
+- Dans le catalogue et dans une commande, bouton **« Prix Realisaprint du jour »** : Flowk interroge le calculateur de prix Realisaprint pour le produit, les options et les quantités choisies, et affiche le prix d'achat actuel (HT et TTC) à côté de votre prix de vente et de votre marge.
+- La liste des produits Realisaprint et leurs options (supports, formats, finitions) est relue depuis leur site pour rester à jour.
+- **Il me manque une info** : votre enregistrement ne contient que la page « Mes commandes », pas le calcul de prix. Avant de construire cette partie, refaites un enregistrement réseau en ouvrant une page produit (ex. Carte de visite), en changeant 2 ou 3 options et la quantité jusqu'à voir le prix bouger. Je m'appuierai dessus pour lire les tarifs.
+- Les prix sont relus à la demande (pas en continu) pour ne pas surcharger leur site ; le dernier prix lu et sa date restent affichés.
+
 ## 3. Commander depuis Flowk
 - Passer la commande toute seule chez Realisaprint (choix des options, envoi du fichier, paiement) n'est pas fiable sans accès officiel : un mauvais clic coûterait une vraie commande. Je ne l'automatise donc pas.
 - À la place : sur une commande Flowk, bouton **« Commander chez Realisaprint »** qui ouvre la bonne page produit et affiche à côté le récapitulatif à reproduire (options, quantité, fichier BAT à télécharger). Une fois commandée, la synchronisation du point 1 la retrouve et vous propose de la relier à cette commande Flowk.
