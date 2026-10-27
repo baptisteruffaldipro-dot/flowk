@@ -1,3 +1,4 @@
+import { batLabel } from "@/lib/batLabel";
 import ClientBatApproval, { CLIENT_BAT_CHECKS } from "@/components/ClientBatApproval";
 import { isFileApproved, reviewForFile } from "@/lib/deliverableReview";
 import ClientOrderProgress, { ClientOrderHistory } from "@/components/ClientOrderProgress";
@@ -218,7 +219,8 @@ export default function ClientPortalPublic() {
         {files.length > 0 && selectedFile ? (
           <section aria-label="Votre BAT" className="grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:gap-10">
             <div className="min-w-0 space-y-4">
-              {files.length > 1 && <div className="flex flex-wrap gap-2">{files.map((f: any, i: number) => <Button key={f.name ?? i} size="sm" variant={selectedFile === f ? "default" : "outline"} onClick={() => setOpenFile(String(f.url ?? f.name))}>BAT {i + 1}{isFileApproved(reviews, f) && <CheckCircle2 className="ml-2 h-3 w-3" />}</Button>)}</div>}
+              {selectedFile.label && <h2 className="text-lg font-semibold">{batLabel(files.indexOf(selectedFile), selectedFile.label)}</h2>}
+              {files.length > 1 && <div className="flex flex-wrap gap-2">{files.map((f: any, i: number) => <Button key={f.name ?? i} size="sm" variant={selectedFile === f ? "default" : "outline"} onClick={() => setOpenFile(String(f.url ?? f.name))}>{batLabel(i, f.label)}{isFileApproved(reviews, f) && <CheckCircle2 className="ml-2 h-3 w-3" />}</Button>)}</div>}
               {(selectedFile.preview_url ?? selectedFile.url) ? <DocumentViewer
                 key={selectedKey}
                 viewportClassName={allApproved ? "h-[min(38vh,420px)]" : "h-[min(65vh,760px)]"}

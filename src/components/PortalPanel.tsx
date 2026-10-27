@@ -53,7 +53,7 @@ type Portal = {
   print_order_ids?: string[] | null;
 };
 
-type Deliverable = { name: string; url: string; uploaded_at?: string };
+type Deliverable = { name: string; url: string; uploaded_at?: string; label?: string };
 type PortalMessage = {
   id: string;
   author: string;
@@ -692,7 +692,16 @@ export default function PortalPanel({
         <div className="space-y-1">
           {deliverables.map((d, i) => (
             <div key={i} className="flex flex-wrap items-center gap-2 text-sm rounded-md border border-border p-3">
-              <span className="min-w-0 basis-full font-medium break-all sm:basis-auto sm:flex-1">{d.name}</span>
+              <span className="shrink-0 text-xs font-semibold text-muted-foreground">BAT {i + 1}</span>
+              <Input
+                aria-label={`Nom du BAT ${i + 1}`}
+                placeholder="Nom du BAT (ex. Flyer)"
+                className="h-8 w-44"
+                value={d.label ?? ""}
+                onChange={(e) => setDeliverables(deliverables.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))}
+                onBlur={() => saveDeliverables(deliverables)}
+              />
+              <span className="min-w-0 basis-full text-xs text-muted-foreground break-all sm:basis-auto sm:flex-1">{d.name}</span>
               {(() => {
                 const rv = reviewForFile(((portal as any).deliverable_reviews ?? []) as any[], d);
                 if (rv?.status === "approved") return (
