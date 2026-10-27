@@ -1,41 +1,14 @@
-# Choisir les produits Realisaprint dans Flowk, puis commander une fois payé
+# Nommer chaque BAT (BAT 1 : Flyer, BAT 2 : Carte de visite…)
 
-## Le parcours
-```text
-Commande d'impression Flowk
-  1. Choisir un produit Realisaprint  ->  options pré-remplies
-  2. Compléter infos d'impression + tarifs (HT, TTC mis en avant)
-  3. Client valide le BAT et règle  (comme aujourd'hui)
-  4. Bouton « Lancer sur Realisaprint »  ->  vous passez la commande sur leur site
-  5. Vous notez le n° Realisaprint  ->  commande marquée « commandée »
-```
-
-## 1. Liste des produits Realisaprint dans Flowk
-- Nouvelle page **Produits Realisaprint** (menu Impression) : chaque produit avec sa catégorie, ses options (support/grammage, format, recto-verso, finitions, couleurs) et le lien vers sa page sur Realisaprint.
-- **Catalogue complet importé** depuis leur site public (environ 300 produits et catégories), avec un bouton « Mettre à jour le catalogue » pour récupérer les nouveautés.
-- Options pré-remplies quand elles sont lisibles sur la page produit ; sinon reprises de vos commandes passées (Carte de visite 350 g couché mat, Tapis de sol, Autocollant grand format…) ou à compléter par vous.
-- Recherche et favoris pour retrouver vite vos produits habituels ; vous pouvez masquer ceux qui ne vous servent pas.
-- Vous y gardez vos tarifs habituels par quantité (prix d'achat et prix de vente HT). Les prix Realisaprint ne sont pas lus automatiquement.
-
-## 2. Dans une commande d'impression
-- Bouton **« Produit Realisaprint »** à côté de « Ajouter un produit » : vous choisissez le produit, puis ses options dans des listes ; la ligne produit se remplit (description, format, support, grammage, finitions, couleurs).
-- Vous saisissez quantité et prix (ou piochez un tarif enregistré) ; les totaux HT/TTC restent calculés comme aujourd'hui, TTC mis en avant. Plusieurs produits Realisaprint possibles dans une même commande.
-- Rien ne change pour le client : il voit les mêmes infos, BAT et règlement qu'aujourd'hui.
-
-## 3. Lancer la commande une fois payé
-- Quand le règlement est reçu, un encadré **« À commander chez Realisaprint »** apparaît sur la commande (et la commande ressort dans un filtre « Payé, à commander »).
-- Bouton **« Lancer sur Realisaprint »** : ouvre la page du produit sur leur site, avec à côté le récapitulatif à reproduire (options, quantité, adresse et date de livraison) et le fichier BAT validé à télécharger. Bouton « Copier le récapitulatif ».
-- Avant paiement, le bouton reste disponible mais avec un avertissement « Pas encore réglé ».
-- Après commande sur leur site, vous collez le n° Realisaprint : la commande passe en « En impression » et garde ce n° en référence. Le client ne voit l'étape que lorsque vous l'avez enregistrée.
-
-## Ce qui n'est pas fait
-- Flowk ne passe pas la commande à votre place et ne lit pas les prix en direct sur Realisaprint (pas d'accès officiel ; une erreur coûterait une vraie commande). Ça pourra venir plus tard si besoin.
-- Aucun email au client, rien vers Tiime, Finance non touché.
-- Pensez à vous déconnecter/reconnecter sur Realisaprint : l'enregistrement envoyé contient votre session.
+## Ce que vous aurez
+- Dans l'onglet « Fichiers & BAT » de la tâche ou du projet, chaque fichier a un champ **Nom du BAT** (ex. « Flyer », « Carte de visite »), modifiable à tout moment. Enregistré quand vous quittez le champ.
+- Côté client, les boutons deviennent **« BAT 1 : Flyer »**, **« BAT 2 : Carte de visite »**… S'il n'y a pas de nom, ça reste « BAT 1 », « BAT 2 » comme aujourd'hui.
+- Le nom apparaît aussi au-dessus de l'aperçu du BAT sélectionné côté client.
+- Renommer ne touche pas aux validations déjà faites par le client (un BAT validé reste validé), ni au fichier lui-même.
 
 ## Détails techniques
-- Table `realisaprint_products` (libellé, url, `options` jsonb `{groupe: [valeurs]}`, `price_tiers` jsonb au format `PriceTier` + coût HT, actif, ordre) : GRANTs + RLS admin dans la même migration ; seed des produits extraits du HAR via requête de données (pas dans la migration).
-- `print_orders` : colonnes ajoutées `realisaprint_order_number text`, `supplier_ordered_at timestamptz` (nullable). Lignes de `products` jsonb enrichies de `realisaprint_product_id` et `options`.
-- UI : page `RealisaprintProducts.tsx` (+ route/menu) réutilisant `PriceTiersEditor` ; `RealisaprintProductPicker` branché dans `PrintProductsEditor` / `NewPrintOrderDialog` / `PrintOrderDetail` ; carte `SupplierOrderCard` dans `PrintOrderDetail` (condition paiement via `payment_status` / état existant).
-- `src/lib/realisaprint.ts` : construction du récapitulatif ; tests : options appliquées sur la ligne, encadré visible seulement si réglé, enregistrement du n° → statut `en_impression`.
-- Types régénérés, règle ajoutée dans AGENTS.md.
+- Ajout d'un champ optionnel `label` dans chaque élément de `deliverable_files` (tâches / projets) ; type `Deliverable` étendu. Pas de nouvelle colonne.
+- `PortalPanel` : input par ligne de livrable, `saveDeliverables` au blur. Le `name` (clé des validations `deliverable_reviews`) n'est pas modifié.
+- Migration : `portal_deliverables_by_token` renvoie aussi `'label', f->>'label'` (reste de la fonction identique).
+- `ClientPortalPublic` : libellé du bouton `BAT {i+1}{label ? " : " + label : ""}`, titre au-dessus de l'aperçu.
+- Petit test sur la fonction de libellé (avec et sans nom). Publication nécessaire pour le côté client.
