@@ -1913,6 +1913,7 @@ export type Database = {
         Row: {
           client_id: string | null
           client_name: string
+          client_selection_log: Json
           client_selections: Json
           content: Json
           created_at: string
@@ -1935,6 +1936,7 @@ export type Database = {
         Insert: {
           client_id?: string | null
           client_name: string
+          client_selection_log?: Json
           client_selections?: Json
           content?: Json
           created_at?: string
@@ -1957,6 +1959,7 @@ export type Database = {
         Update: {
           client_id?: string | null
           client_name?: string
+          client_selection_log?: Json
           client_selections?: Json
           content?: Json
           created_at?: string
@@ -3745,6 +3748,7 @@ export type Database = {
         Returns: {
           client_id: string | null
           client_name: string
+          client_selection_log: Json
           client_selections: Json
           content: Json
           created_at: string
