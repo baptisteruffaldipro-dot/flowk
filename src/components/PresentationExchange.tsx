@@ -15,6 +15,7 @@ type Props = { kind: Kind; presentationId: string; token?: string; clientName?: 
 export default function PresentationExchange({ kind, presentationId, token, clientName }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [reactions, setReactions] = useState<MoodboardReactions>({});
+  const [log, setLog] = useState<{ url: string; reaction: string; at: string }[]>([]);
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -35,9 +36,10 @@ export default function PresentationExchange({ kind, presentationId, token, clie
         if (err) throw err;
         setMessages(data ?? []);
         if (kind === "logo_presentation") {
-          const { data: logo, error: logoError } = await supabase.from("logo_presentations").select("client_selections").eq("id", presentationId).single();
+          const { data: logo, error: logoError } = await supabase.from("logo_presentations").select("client_selections,client_selection_log").eq("id", presentationId).single();
           if (logoError) throw logoError;
           setReactions((logo.client_selections ?? {}) as MoodboardReactions);
+          setLog(((logo.client_selection_log ?? []) as any[]).slice().reverse());
         }
       }
       setError(false);
@@ -87,6 +89,20 @@ export default function PresentationExchange({ kind, presentationId, token, clie
             ))}
           </div>
         </div>
+      )}
+      {!token && log.length > 0 && (
+        <details className="text-xs text-muted-foreground">
+          <summary className="cursor-pointer">Historique des choix moodboard ({log.length})</summary>
+          <ul className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+            {log.map((e, i) => (
+              <li key={i} className="flex items-center gap-2">
+                <img src={e.url} alt="" className="w-8 h-8 object-contain bg-muted rounded border" />
+                <span>{e.reaction === "like" ? "J’aime" : e.reaction === "dislike" ? "J’aime pas" : "Choix retiré"}</span>
+                <time dateTime={e.at}>{fmtDateTime(e.at)}</time>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
       <div role="log" aria-label="Messages de la présentation" aria-live="polite" className="max-h-80 overflow-y-auto space-y-3">
         {loading ? <p className="text-sm text-muted-foreground">Chargement…</p> : error ? (
