@@ -24,7 +24,7 @@ export default function ClientDetail() {
   const [inviting, setInviting] = useState(false);
   const [resending, setResending] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [editing, setEditing] = useState<null | "email" | "phone" | "address">(null);
+  const [editing, setEditing] = useState<null | "name" | "email" | "phone" | "address">(null);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -43,13 +43,17 @@ export default function ClientDetail() {
 
   if (!client) return <div className="p-8 text-sm text-muted-foreground">Chargement…</div>;
 
-  const startEdit = (field: "email" | "phone" | "address") => {
+  const startEdit = (field: "name" | "email" | "phone" | "address") => {
     setEditing(field);
     setDraft(client[field] ?? "");
   };
 
   const saveField = async () => {
     if (!editing) return;
+    if (editing === "name" && draft.trim() === "") {
+      toast.error("Le nom ne peut pas être vide");
+      return;
+    }
     setSaving(true);
     const value = draft.trim() === "" ? null : draft.trim();
     const payload: any = { [editing]: value };
@@ -182,6 +186,9 @@ export default function ClientDetail() {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <EditableCard label="Nom" value={client.name}
+          editing={editing === "name"} draft={draft} setDraft={setDraft} saving={saving}
+          onStart={() => startEdit("name")} onSave={saveField} onCancel={() => setEditing(null)} />
         <EditableCard label="Email" field="email" value={displayEmail(client.email)}
           editing={editing === "email"} draft={draft} setDraft={setDraft} saving={saving}
           onStart={() => startEdit("email")} onSave={saveField} onCancel={() => setEditing(null)} type="email" />
