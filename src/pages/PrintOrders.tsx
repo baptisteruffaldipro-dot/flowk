@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { buildPrintPresets } from "@/lib/printPresets";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export default function PrintOrders() {
   const [products, setProducts] = useState<PrintProduct[]>([]);
   const [tiers, setTiers] = useState<PriceTier[]>([]);
   const [tiersText, setTiersText] = useState("");
+  const presets = useMemo(() => buildPrintPresets(orders), [orders]);
 
   const load = async () => {
     const [o, c, inv] = await Promise.all([
@@ -299,6 +301,34 @@ export default function PrintOrders() {
                 />
                 <p className="text-xs text-muted-foreground">L'IA analyse ta note et remplit automatiquement les champs ci-dessous.</p>
               </div>
+              {presets.length > 0 && (
+                <div className="space-y-1.5 rounded-md border p-3">
+                  <Label className="text-xs">Produit habituel (d'après l'historique)</Label>
+                  <Select value="" onValueChange={(k) => {
+                    const p = presets.find((x) => x.key === k);
+                    if (!p) return;
+                    setForm((prev: any) => ({
+                      ...prev,
+                      description: p.description, format: p.format, grammage: p.grammage, support: p.support,
+                      colors: p.colors, finitions: p.finitions,
+                      quantity: p.quantity != null ? String(p.quantity) : "",
+                      amount: p.amount != null ? String(p.amount) : "",
+                    }));
+                    setTiers(p.price_tiers as any);
+                    toast.success("Champs pré-remplis");
+                  }}>
+                    <SelectTrigger><SelectValue placeholder={`Choisir parmi ${presets.length} produit(s) déjà commandé(s)…`} /></SelectTrigger>
+                    <SelectContent className="max-h-80">
+                      {presets.map((p) => (
+                        <SelectItem key={p.key} value={p.key}>
+                          {[p.description, p.format, p.support, p.grammage].filter(Boolean).join(" · ")}
+                          {p.amount != null ? ` — ${fmtMoney(p.amount)} HT` : ""} ({p.count}×)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5 col-span-2">
                   <Label className="text-xs">Description *</Label>
