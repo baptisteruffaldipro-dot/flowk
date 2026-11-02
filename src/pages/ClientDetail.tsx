@@ -218,7 +218,7 @@ export default function ClientDetail() {
 function EditableCard({
   label, value, editing, draft, setDraft, saving, onStart, onSave, onCancel, type,
 }: {
-  label: string; field: string; value: string | null;
+  label: string; field?: string; value: string | null;
   editing: boolean; draft: string; setDraft: (s: string) => void; saving: boolean;
   onStart: () => void; onSave: () => void; onCancel: () => void; type?: string;
 }) {
