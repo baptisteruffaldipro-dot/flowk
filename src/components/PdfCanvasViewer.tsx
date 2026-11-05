@@ -18,6 +18,7 @@ export default function PdfCanvasViewer({ src, zoom, baseWidth, overlay, onPageC
   const [pages, setPages] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const docRef = useRef<any>(null);
+  const renderTasksRef = useRef<any[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +53,15 @@ export default function PdfCanvasViewer({ src, zoom, baseWidth, overlay, onPageC
     const container = containerRef.current;
     if (!doc || !container || !pages) return;
     let cancelled = false;
+    const tasks: any[] = [];
     (async () => {
+      // Attendre la fin des rendus précédents : deux rendus simultanés sur un même canvas
+      // mélangent les transformations et peuvent afficher la page inversée.
+      const prev = renderTasksRef.current;
+      prev.forEach((t) => t.cancel?.());
+      await Promise.all(prev.map((t) => t.promise?.catch(() => {})));
+      renderTasksRef.current = tasks;
+      if (cancelled) return;
       const width = (baseWidth || container.clientWidth || 320) - 16;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       for (let i = 1; i <= pages; i++) {
@@ -69,10 +78,13 @@ export default function PdfCanvasViewer({ src, zoom, baseWidth, overlay, onPageC
         canvas.style.height = `${viewport.height / dpr}px`;
         const ctx = canvas.getContext("2d");
         if (!ctx) continue;
-        await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        const task = page.render({ canvasContext: ctx, viewport, canvas } as any);
+        tasks.push(task);
+        try { await task.promise; } catch { return; }
       }
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; tasks.forEach((t) => t.cancel?.()); };
   }, [pages, zoom, src, baseWidth]);
 
   if (error) {
