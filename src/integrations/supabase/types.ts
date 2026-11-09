@@ -649,6 +649,7 @@ export type Database = {
       }
       client_portal_messages: {
         Row: {
+          attachments: Json
           author: string
           body: string
           created_at: string
@@ -658,6 +659,7 @@ export type Database = {
           resolved: boolean
         }
         Insert: {
+          attachments?: Json
           author: string
           body: string
           created_at?: string
@@ -667,6 +669,7 @@ export type Database = {
           resolved?: boolean
         }
         Update: {
+          attachments?: Json
           author?: string
           body?: string
           created_at?: string
@@ -3831,6 +3834,10 @@ export type Database = {
           _quantity: number
           _token: string
         }
+        Returns: Json
+      }
+      portal_clean_attachments: {
+        Args: { _att: Json; _portal_id: string }
         Returns: Json
       }
       portal_delete_annotation_by_token: {

@@ -134,6 +134,13 @@
       "when": 1793177976376,
       "tag": "0018_logo_moodboard_reaction_log",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794220716449,
+      "tag": "0019_portal_client_attachments",
+      "breakpoints": true
     }
   ]
 }
