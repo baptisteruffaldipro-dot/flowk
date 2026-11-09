@@ -141,6 +141,13 @@
       "when": 1794220716449,
       "tag": "0019_portal_client_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794242053947,
+      "tag": "0020_migration",
+      "breakpoints": true
     }
   ]
 }
