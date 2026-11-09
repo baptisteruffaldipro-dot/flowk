@@ -23,6 +23,7 @@ import { Plus, Calendar, Tag, GripVertical, Trash2, Search, X, CheckCircle2, Fil
 import { toast } from "sonner";
 import { STATUS_LABEL, PRESTATION_LABEL, PRIORITY_LABEL, PRIORITY_COLOR, STATUS_META, tagColor, fmtDate, fmtMinutes, fmtMoney } from "@/lib/format";
 import { computeTaskBudget } from "@/lib/budget";
+import { tiimeTaskBadge } from "@/lib/tiimeInvoice";
 import { computePriorityScore, priorityScoreColor, isColumnSaturated, WIP_LIMITS, detectMultipleDeliverables } from "@/lib/priority";
 import NewBatDialog from "@/components/NewBatDialog";
 import NewPrintOrderDialog from "@/components/NewPrintOrderDialog";
@@ -516,6 +517,24 @@ function KanbanCard({
                 onChange={(v) => onUpdate(task.id, { deadline: v })}
               />
             )}
+            {(() => {
+              const tb = tiimeTaskBadge(task);
+              if (!tb) return null;
+              return (
+                <Badge
+                  variant="outline"
+                  title={tb.title}
+                  className={`text-[11px] font-medium px-2 py-0.5 inline-flex items-center gap-1 ${
+                    tb.state === "invoiced"
+                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                      : "bg-amber-100 text-amber-800 border-amber-300"
+                  }`}
+                >
+                  <FileText className="h-3 w-3" />
+                  {tb.label}
+                </Badge>
+              );
+            })()}
             <AddStickerMenu task={task} onUpdate={onUpdate} />
             {(() => {
               const score = computePriorityScore(task);
