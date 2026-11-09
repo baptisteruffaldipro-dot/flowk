@@ -110,7 +110,7 @@ export function tiimeTaskBadge(task: {
       ? ` · ${amt.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT`
       : "";
     return {
-      label: `Facturé Tiime${n}`,
+      label: "Facturé",
       title: `Facture Tiime${n} créée${amount}`,
       state: "invoiced",
     };
