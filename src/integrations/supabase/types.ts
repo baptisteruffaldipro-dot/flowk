@@ -3302,7 +3302,7 @@ export type Database = {
           note_attachments: Json
           notes: string | null
           position: number
-          prestation: Database["public"]["Enums"]["prestation_type"]
+          prestation: Database["public"]["Enums"]["prestation_type"] | null
           prestations: string[]
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -3350,7 +3350,7 @@ export type Database = {
           note_attachments?: Json
           notes?: string | null
           position?: number
-          prestation?: Database["public"]["Enums"]["prestation_type"]
+          prestation?: Database["public"]["Enums"]["prestation_type"] | null
           prestations?: string[]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -3398,7 +3398,7 @@ export type Database = {
           note_attachments?: Json
           notes?: string | null
           position?: number
-          prestation?: Database["public"]["Enums"]["prestation_type"]
+          prestation?: Database["public"]["Enums"]["prestation_type"] | null
           prestations?: string[]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null

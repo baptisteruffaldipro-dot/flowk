@@ -1,0 +1,2 @@
+ALTER TABLE public.tasks ALTER COLUMN prestation DROP NOT NULL;
+ALTER TABLE public.tasks ALTER COLUMN prestation DROP DEFAULT;
