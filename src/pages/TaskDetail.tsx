@@ -33,6 +33,8 @@ import PrestationPicker from "@/components/PrestationPicker";
 import NewBatDialog from "@/components/NewBatDialog";
 import PortalPanel from "@/components/PortalPanel";
 import TiimeInvoiceDialog from "@/components/TiimeInvoiceDialog";
+import ManualTiimeDialog from "@/components/ManualTiimeDialog";
+import { CLEAR_TIIME_PATCH } from "@/lib/tiimeInvoice";
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -56,6 +58,7 @@ export default function TaskDetail() {
   const [creatingClient, setCreatingClient] = useState(false);
   const [billingRevision, setBillingRevision] = useState(0);
   const [tiimeOpen, setTiimeOpen] = useState(false);
+  const [manualTiimeOpen, setManualTiimeOpen] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -570,15 +573,44 @@ export default function TaskDetail() {
         <div className="flex items-center justify-between mb-4 gap-2">
           <h2 className="text-sm font-semibold">Chiffrage de la prestation</h2>
           {task.tiime_invoice_id ? (
-            <Badge variant="secondary">
-              Facture Tiime {task.tiime_invoice_number ? `n° ${task.tiime_invoice_number}` : "créée"}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">
+                Facture Tiime {task.tiime_invoice_number ? `n° ${task.tiime_invoice_number}` : "créée"}
+                {task.tiime_invoice_status === "manual" ? " (manuelle)" : ""}
+              </Badge>
+              {task.tiime_invoice_status === "manual" && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={async () => {
+                    if (!confirm("Retirer le marquage « facturée dans Tiime » de cette tâche ?")) return;
+                    await updateField(CLEAR_TIIME_PATCH);
+                    toast.success("Marquage retiré");
+                  }}
+                >
+                  Retirer
+                </Button>
+              )}
+            </div>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => setTiimeOpen(true)} disabled={task.tiime_invoice_status === "pending"}>
-              Créer la facture Tiime
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setManualTiimeOpen(true)} disabled={task.tiime_invoice_status === "pending"}>
+                Déjà facturée dans Tiime
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setTiimeOpen(true)} disabled={task.tiime_invoice_status === "pending"}>
+                Créer la facture Tiime
+              </Button>
+            </div>
           )}
         </div>
+        <ManualTiimeDialog
+          open={manualTiimeOpen}
+          onOpenChange={setManualTiimeOpen}
+          taskId={task.id}
+          defaultAmountHT={billing ? Number((billing.total - (task.acompte_invoiced ? billing.acompte : 0)).toFixed(2)) : 0}
+          onDone={load}
+        />
         <TiimeInvoiceDialog
           open={tiimeOpen}
           onOpenChange={setTiimeOpen}
