@@ -174,7 +174,7 @@ export default function PortalPanel({
     if (row?.id) {
       const { data: portalMessages } = await supabase
         .from("client_portal_messages")
-        .select("id,author,body,created_at,kind,resolved")
+        .select("id,author,body,created_at,kind,resolved,attachments")
         .eq("portal_id", row.id)
         .order("created_at", { ascending: true });
       setMessages((portalMessages as PortalMessage[] | null) ?? []);
