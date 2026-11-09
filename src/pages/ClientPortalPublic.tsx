@@ -18,6 +18,8 @@ import PrintDeliveryInfo from "@/components/PrintDeliveryInfo";
 import { isPortalPaymentReceived } from "@/lib/portalPayment";
 import { fmtDateTime } from "@/lib/format";
 import { EmailHistoryList } from "@/components/EmailHistoryList";
+import { AttachmentPicker, AttachmentList } from "@/components/PortalAttachments";
+import type { PortalAttachment } from "@/lib/portalUploads";
 
 
 
@@ -41,6 +43,8 @@ export default function ClientPortalPublic() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState("");
+  const [replyFiles, setReplyFiles] = useState<PortalAttachment[]>([]);
+  const [replyUploading, setReplyUploading] = useState(false);
   const [paidNote, setPaidNote] = useState("");
   const [openFile, setOpenFile] = useState<string | null>(null);
   const [ribOpen, setRibOpen] = useState(false);
@@ -243,7 +247,8 @@ export default function ClientPortalPublic() {
               <header className="space-y-2">{client?.name && <p className="text-sm text-muted-foreground">Bonjour <strong className="text-foreground">{client.name}</strong>,</p>}<h1 className="text-3xl font-semibold leading-tight tracking-normal">{selectedReview ? "Merci, c’est validé" : "Votre BAT est prêt à être validé"}</h1><p className="text-sm text-muted-foreground break-words">{title}</p></header>
               <ClientBatApproval key={selectedKey} busy={busy} approved={!!selectedReview} signedBy={selectedReview?.signed_by} signedAt={selectedReview?.at}
                 onApprove={async name => { const ok = await act("approve_file", { file: selectedFile.name, signed_by: name, checks: 3, user_agent: navigator.userAgent }); if (ok) toast.success("BAT signé — certificat généré"); return ok; }}
-                onCorrection={async note => { const ok = await act("request_changes", { file: selectedFile.name, note }); if (ok) toast.success("Demande de correction envoyée à l’atelier"); return ok; }}
+                uploadToken={token}
+                onCorrection={async (note, attachments) => { const ok = await act("request_changes", { file: selectedFile.name, note, attachments }); if (ok) toast.success("Demande de correction envoyée à l’atelier"); return ok; }}
                 onCertificate={selectedReview ? () => setCertView(selectedReview) : undefined}
                 downloadUrl={deliv?.unlocked && selectedReview ? selectedFile.url : undefined}
               />
@@ -676,13 +681,15 @@ export default function ClientPortalPublic() {
                     )}
                   </div>
                   <div className="whitespace-pre-wrap">{m.body}</div>
+                  <AttachmentList attachments={m.attachments} token={token} />
                 </div>
               ))}
             </div>
           )}
           <div className="space-y-2">
             <Textarea placeholder="Écrire un message…" value={reply} onChange={(e) => setReply(e.target.value)} rows={3} />
-            <Button size="sm" onClick={async () => { if (!reply.trim()) return; await act("add_message", { body: reply.trim() }); setReply(""); }} disabled={!reply.trim() || busy}>
+            {token && <AttachmentPicker token={token} value={replyFiles} onChange={setReplyFiles} disabled={busy} onUploadingChange={setReplyUploading} />}
+            <Button size="sm" onClick={async () => { if (!reply.trim() && replyFiles.length === 0) return; const ok = await act("add_message", { body: reply.trim(), attachments: replyFiles }); if (ok) { setReply(""); setReplyFiles([]); } }} disabled={(!reply.trim() && replyFiles.length === 0) || busy || replyUploading}>
               <Send className="h-3.5 w-3.5 mr-1" /> Envoyer
             </Button>
           </div>

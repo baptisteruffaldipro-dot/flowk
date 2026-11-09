@@ -21,6 +21,8 @@ import { getPublicAppUrl } from "@/lib/publicUrl";
 import { computeTaskBilling } from "@/lib/billing";
 import { summarizeHistory, type EmailHistoryKind } from "@/lib/emailHistory";
 import { EmailHistoryList } from "@/components/EmailHistoryList";
+import { AttachmentList } from "@/components/PortalAttachments";
+import type { PortalAttachment } from "@/lib/portalUploads";
 
 type EntityType = "task" | "project";
 
@@ -61,6 +63,7 @@ type PortalMessage = {
   created_at: string;
   kind?: string;
   resolved?: boolean;
+  attachments?: PortalAttachment[] | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -1062,6 +1065,7 @@ export default function PortalPanel({
                   )}
                 </div>
                 <div className="whitespace-pre-wrap break-words">{message.body}</div>
+                <AttachmentList attachments={message.attachments} />
               </div>
             ))}
           </div>
