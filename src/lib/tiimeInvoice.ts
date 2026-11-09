@@ -120,3 +120,24 @@ export function tiimeTaskBadge(task: {
   }
   return null;
 }
+
+// Marquage manuel : facture faite directement dans Tiime, hors Flowk.
+export function manualTiimePatch(input: { number?: string; date: string; amountHT?: number | null }, uid: string) {
+  const number = input.number?.trim() || null;
+  const amt = Number(input.amountHT);
+  return {
+    tiime_invoice_id: `manual-${uid}`,
+    tiime_invoice_number: number,
+    tiime_invoice_status: "manual",
+    tiime_sent_at: new Date(`${input.date}T12:00:00`).toISOString(),
+    tiime_amount_ht: Number.isFinite(amt) && amt > 0 ? r2(amt) : null,
+  };
+}
+
+export const CLEAR_TIIME_PATCH = {
+  tiime_invoice_id: null,
+  tiime_invoice_number: null,
+  tiime_invoice_status: null,
+  tiime_sent_at: null,
+  tiime_amount_ht: null,
+};

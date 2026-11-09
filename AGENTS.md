@@ -13,3 +13,4 @@
 - Keep inactive task tab panels mounted but hidden so switching sections preserves unsent messages, upload inputs and edits.
 - Tiime invoices are created through a Make.com webhook (function make-tiime-invoice) that groups task prestation and linked print orders into one draft invoice; per-row tiime_* columns prevent double invoicing because Tiime offers no public API.
 - Client files sent from public portal links go to the private client-uploads bucket under the portal id, through the portal-client-upload function (signed upload/download URLs); portal_action_by_token only accepts attachment paths inside that portal's folder, so one link can never read or attach another client's files.
+- Invoices made directly in Tiime are recorded by marking the task with tiime_invoice_status "manual" and a "manual-" tiime_invoice_id, so badges, Ventes & CA and double-invoice guards treat them like Make-created invoices.
