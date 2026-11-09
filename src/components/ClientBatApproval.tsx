@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AttachmentPicker } from "@/components/PortalAttachments";
+import type { PortalAttachment } from "@/lib/portalUploads";
 
 export const CLIENT_BAT_CHECKS = [
   "Textes et orthographe vérifiés",
@@ -18,16 +20,20 @@ interface Props {
   signedAt?: string;
   canValidate?: boolean;
   onApprove: (name: string) => Promise<boolean | void>;
-  onCorrection: (note: string) => Promise<boolean | void>;
+  onCorrection: (note: string, attachments: PortalAttachment[]) => Promise<boolean | void>;
   onCertificate?: () => void;
   downloadUrl?: string;
+  /** Lien public du portail : active l'ajout de fichiers à la demande de correction. */
+  uploadToken?: string;
 }
 
-export default function ClientBatApproval({ busy, approved, signedBy, signedAt, canValidate = true, onApprove, onCorrection, onCertificate, downloadUrl }: Props) {
+export default function ClientBatApproval({ busy, approved, signedBy, signedAt, canValidate = true, onApprove, onCorrection, onCertificate, downloadUrl, uploadToken }: Props) {
   const [checks, setChecks] = useState([false, false, false]);
   const [name, setName] = useState("");
   const [correction, setCorrection] = useState(false);
   const [note, setNote] = useState("");
+  const [files, setFiles] = useState<PortalAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
   const count = checks.filter(Boolean).length;
 
   if (approved) return (
@@ -50,7 +56,8 @@ export default function ClientBatApproval({ busy, approved, signedBy, signedAt, 
         <div className="space-y-3">
           <label htmlFor="bat-correction" className="text-sm font-medium">Votre demande de correction</label>
           <Textarea id="bat-correction" autoFocus rows={5} value={note} onChange={e => setNote(e.target.value)} maxLength={2000} />
-          <div className="flex gap-2"><Button disabled={busy || !note.trim()} onClick={async () => { const ok = await onCorrection(note.trim()); if (ok !== false) { setNote(""); setCorrection(false); } }}><Send className="mr-2 h-4 w-4" />Envoyer</Button><Button variant="ghost" disabled={busy} onClick={() => setCorrection(false)}><X className="mr-1 h-4 w-4" />Annuler</Button></div>
+          {uploadToken && <AttachmentPicker token={uploadToken} value={files} onChange={setFiles} disabled={busy} onUploadingChange={setUploading} />}
+          <div className="flex gap-2"><Button disabled={busy || uploading || !note.trim()} onClick={async () => { const ok = await onCorrection(note.trim(), files); if (ok !== false) { setNote(""); setFiles([]); setCorrection(false); } }}><Send className="mr-2 h-4 w-4" />Envoyer</Button><Button variant="ghost" disabled={busy} onClick={() => setCorrection(false)}><X className="mr-1 h-4 w-4" />Annuler</Button></div>
         </div>
       ) : (
         <>

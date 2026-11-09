@@ -21,3 +21,5 @@ project_id = "mfboxlbczltwsgobylwn"
     verify_jwt = false
   [functions.bat-public]
     verify_jwt = false
+  [functions.portal-client-upload]
+    verify_jwt = false
