@@ -868,7 +868,7 @@ export default function Tasks() {
   const [printForTask, setPrintForTask] = useState<any | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const [form, setForm] = useState<any>({
-    title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire",
+    title: "", client_id: "", project_id: "", prestation: "", priority: "secondaire",
     deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "", estimated_print_amount: "",
   });
 
@@ -1231,7 +1231,7 @@ export default function Tasks() {
       title: form.title.trim(),
       client_id: form.client_id || null,
       project_id: form.project_id || null,
-      prestation: form.prestation,
+      prestation: form.prestation || null,
       prestations: form.prestation ? [form.prestation] : [],
       priority: form.priority,
       deadline: form.deadline || null,
@@ -1245,7 +1245,7 @@ export default function Tasks() {
     if (error) return toast.error(error.message);
     toast.success("Tâche créée");
     setOpen(false);
-    setForm({ title: "", client_id: "", project_id: "", prestation: "creation", priority: "secondaire", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "", estimated_print_amount: "" });
+    setForm({ title: "", client_id: "", project_id: "", prestation: "", priority: "secondaire", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "", estimated_print_amount: "" });
     load();
   };
 
@@ -1255,8 +1255,8 @@ export default function Tasks() {
       title,
       status,
       position,
-      prestation: "creation",
-      prestations: ["creation"],
+      prestation: null,
+      prestations: [],
       priority: "secondaire",
       billing_type: "horaire",
     } as any);
@@ -1417,9 +1417,10 @@ export default function Tasks() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Prestation</Label>
-                    <Select value={form.prestation} onValueChange={(v) => setForm({ ...form, prestation: v })}>
+                    <Select value={form.prestation || "none"} onValueChange={(v) => setForm({ ...form, prestation: v === "none" ? "" : v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">Aucune</SelectItem>
                         {Object.entries(PRESTATION_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                       </SelectContent>
                     </Select>

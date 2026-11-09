@@ -22,7 +22,7 @@ export function QuickCreateMenu({ onCreated, variant = "grid" }: { onCreated?: (
   const [projects, setProjects] = useState<any[]>([]);
 
   // Forms
-  const [task, setTask] = useState<any>({ title: "", client_id: "", project_id: "", prestation: "creation", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
+  const [task, setTask] = useState<any>({ title: "", client_id: "", project_id: "", prestation: "", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
   const [project, setProject] = useState<any>({ name: "", client_id: "", type: "autre" });
   const emptyOrder = {
     description: "", client_id: "", amount: "",
@@ -56,7 +56,8 @@ export function QuickCreateMenu({ onCreated, variant = "grid" }: { onCreated?: (
       title: task.title.trim(),
       client_id: task.client_id || null,
       project_id: task.project_id || null,
-      prestation: task.prestation,
+      prestation: task.prestation || null,
+      prestations: task.prestation ? [task.prestation] : [],
       deadline: task.deadline || null,
       billing_type: task.billing_type,
       hourly_rate: task.hourly_rate ? Number(task.hourly_rate) : null,
@@ -66,7 +67,7 @@ export function QuickCreateMenu({ onCreated, variant = "grid" }: { onCreated?: (
     if (error) return toast.error(error.message);
     toast.success("Tâche créée");
     close();
-    setTask({ title: "", client_id: "", project_id: "", prestation: "creation", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
+    setTask({ title: "", client_id: "", project_id: "", prestation: "", deadline: "", billing_type: "horaire", hourly_rate: "", flat_amount: "", estimated_minutes: "" });
     onCreated?.();
     if (data?.id) navigate(`/taches/${data.id}`);
   };
@@ -309,9 +310,9 @@ export function QuickCreateMenu({ onCreated, variant = "grid" }: { onCreated?: (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Prestation</Label>
-                <Select value={task.prestation} onValueChange={(v) => setTask({ ...task, prestation: v })}>
+                <Select value={task.prestation || "none"} onValueChange={(v) => setTask({ ...task, prestation: v === "none" ? "" : v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{Object.entries(PRESTATION_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                  <SelectContent><SelectItem value="none">Aucune</SelectItem>{Object.entries(PRESTATION_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">

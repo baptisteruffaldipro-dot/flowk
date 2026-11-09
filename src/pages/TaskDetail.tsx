@@ -333,7 +333,7 @@ export default function TaskDetail() {
       </Link>
       <PageHeader
         title={task.title || "Sans titre"}
-        description={`${task.clients?.name ?? "Sans client"} • ${PRESTATION_LABEL[task.prestation] ?? ""}`}
+        description={[task.clients?.name ?? "Sans client", task.prestation ? PRESTATION_LABEL[task.prestation] : null].filter(Boolean).join(" • ")}
         actions={
           <div className="flex items-center gap-2">
             {running ? (
@@ -395,12 +395,12 @@ export default function TaskDetail() {
             value={prestations}
             onChange={(next) => {
               // La colonne legacy `prestation` est un ENUM Postgres ; on n'y écrit
-              // que des valeurs connues (sinon on garde l'ancienne ou on retombe sur "autre").
+              // que des valeurs connues ; vide si aucune prestation n'est choisie.
               const known = Object.keys(PRESTATION_LABEL);
               const firstKnown = next.find((k) => known.includes(k));
               updateField({
                 prestations: next,
-                prestation: firstKnown ?? (known.includes(task.prestation) ? task.prestation : "autre"),
+                prestation: next.length === 0 ? null : (firstKnown ?? (known.includes(task.prestation) ? task.prestation : "autre")),
               });
             }}
           />
