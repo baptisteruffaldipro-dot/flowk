@@ -95,3 +95,28 @@ export function invoiceTotals(lines: InvoiceLine[]) {
 export function sendableLines(lines: InvoiceLine[], selected: Set<string>) {
   return lines.filter((l) => selected.has(l.key) && !l.already_invoiced && l.line_amount_ht > 0);
 }
+
+// Étiquette affichée sur une carte de tâche pour suivre la facturation Tiime.
+export function tiimeTaskBadge(task: {
+  tiime_invoice_id?: string | null;
+  tiime_invoice_number?: string | null;
+  tiime_invoice_status?: string | null;
+  tiime_amount_ht?: number | string | null;
+}): { label: string; title: string; state: "invoiced" | "pending" } | null {
+  if (task.tiime_invoice_id) {
+    const n = task.tiime_invoice_number ? ` n° ${task.tiime_invoice_number}` : "";
+    const amt = Number(task.tiime_amount_ht);
+    const amount = Number.isFinite(amt) && amt > 0
+      ? ` · ${amt.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT`
+      : "";
+    return {
+      label: `Facturé Tiime${n}`,
+      title: `Facture Tiime${n} créée${amount}`,
+      state: "invoiced",
+    };
+  }
+  if (task.tiime_invoice_status === "pending") {
+    return { label: "Tiime en cours", title: "Facture Tiime en cours de création", state: "pending" };
+  }
+  return null;
+}
